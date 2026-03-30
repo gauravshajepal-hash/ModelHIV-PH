@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "modelhiv-ph"
+version = "0.1.0"
+description = "Probabilistic HIV evidence and semi-Markov cascade modeling platform for the Philippines"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pydantic>=2.7",
+  "pyarrow>=15.0",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+core = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "requests>=2.31",
+  "pydantic>=2.7",
+  "pyarrow>=15.0",
+  "polars>=1.0",
+]
+torch = [
+  "torch>=2.2",
+  "gpytorch>=1.11",
+  "transformers>=4.40",
+]
+jax = [
+  "jax>=0.4.28",
+  "jaxlib>=0.4.28",
+  "numpyro>=0.15",
+]
+phase4 = [
+  "ray[rllib]>=2.30",
+]
+gpu_optional = [
+  "cupy-cuda12x>=13.0; platform_system == 'Windows'",
+  "cudf-cu12>=25.0; platform_system != 'Windows'",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
