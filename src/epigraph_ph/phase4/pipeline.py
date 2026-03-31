@@ -9,6 +9,13 @@ from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.core.node_graph import build_node_graph_bundle
 from epigraph_ph.geography import infer_region_code
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase4.policy_analysis import (
+    build_policy_comparator_report as _policy_build_policy_comparator_report,
+    build_sensitivity_analysis as _policy_build_sensitivity_analysis,
+    channel_alpha as _policy_channel_alpha,
+    counterfactual_rankings as _policy_counterfactual_rankings,
+    non_dominated as _policy_non_dominated,
+)
 from epigraph_ph.runtime import (
     RunContext,
     detect_backends,
@@ -17,6 +24,8 @@ from epigraph_ph.runtime import (
     save_tensor_artifact,
     set_global_seed,
     utc_now_iso,
+    write_boundary_shape_package,
+    write_gold_standard_package,
     write_ground_truth_package,
     write_json,
     read_json,
@@ -58,68 +67,12 @@ def _load_phase4_inputs(run_dir) -> dict[str, Any]:
         "axis_catalogs": read_json(run_dir / "phase1" / "axis_catalogs.json", default={}),
     }
 
-
-def _channel_alpha(counterfactual_rankings: list[dict[str, Any]]) -> np.ndarray:
-    counter_cfg = dict(_phase4_setting("counterfactual", {}) or {})
-    alpha = np.ones((len(INTERVENTION_CHANNELS),), dtype=np.float32) * float(counter_cfg.get("dirichlet_base_alpha", 1.0))
-    for row in counterfactual_rankings:
-        channel = row["channel"]
-        idx = INTERVENTION_CHANNELS.index(channel)
-        alpha[idx] += float(row["counterfactual_score"]) * float(counter_cfg.get("dirichlet_score_scale", 0.0))
-    return np.clip(alpha, float(counter_cfg.get("alpha_floor", 0.0)), None)
-
-
 def _counterfactual_rankings(inputs: dict[str, Any]) -> list[dict[str, Any]]:
-    counter_cfg = dict(_phase4_setting("counterfactual", {}) or {})
-    latest_states = np.asarray(inputs["state_estimates"])[:, -1, :]
-    mean_state = latest_states.mean(axis=0) if latest_states.size else np.zeros((5,), dtype=np.float32)
-    V_gap = max(0.0, float(counter_cfg.get("suppression_gap_target", 0.0)) - float(mean_state[3]))
-    U_burden = float(mean_state[0])
-    D_burden = float(mean_state[1])
-    A_burden = float(mean_state[2])
-    L_burden = float(mean_state[4])
-    blanket_bonus = {
-        row.get("canonical_name", ""): float(counter_cfg.get("blanket_bonus", 0.0)) if row.get("blanket_member") else 0.0
-        for row in inputs["candidate_profiles"]
-    }
-    edge_support = {}
-    for row in inputs["ranked_linkages"]:
-        edge_support.setdefault(row["linkage_target"], 0.0)
-        edge_support[row["linkage_target"]] += float(row.get("linkage_score", 0.0))
-    channel_targets = dict(counter_cfg.get("channel_targets", {}) or {})
-    burden_context = {"U": U_burden, "D": D_burden, "A": A_burden, "L": L_burden, "V_gap": V_gap}
-    base_scores = {
-        channel: sum(float(weight) * float(burden_context.get(name, 0.0)) for name, weight in dict(weights).items())
-        for channel, weights in dict(counter_cfg.get("base_scores", {}) or {}).items()
-    }
-    rankings = []
-    for channel in INTERVENTION_CHANNELS:
-        target_bonus = sum(edge_support.get(target, 0.0) for target in list(channel_targets.get(channel, []) or []))
-        domain_bonus = 0.0
-        for profile in inputs["candidate_profiles"]:
-            if channel.startswith("testing") and "testing" in profile.get("canonical_name", "").lower():
-                domain_bonus += float(counter_cfg.get("testing_domain_bonus", 0.0))
-            if channel == "art_retention" and profile.get("primary_block") == "biology":
-                domain_bonus += float(counter_cfg.get("art_biology_bonus", 0.0))
-            domain_bonus += blanket_bonus.get(profile.get("canonical_name", ""), 0.0) * float(counter_cfg.get("blanket_bonus_scale", 0.0))
-        rankings.append(
-            {
-                "channel": channel,
-                "counterfactual_score": round(
-                    min(
-                        float(_phase4_setting("counterfactual_score_ceiling", 1.0)),
-                        float(base_scores.get(channel, 0.0))
-                        + float(counter_cfg.get("target_bonus_scale", 0.0)) * target_bonus
-                        + domain_bonus,
-                    ),
-                    6,
-                ),
-                "causal_targets": list(channel_targets.get(channel, []) or []),
-                "expected_direction": "improve_cascade",
-            }
-        )
-    rankings.sort(key=lambda item: item["counterfactual_score"], reverse=True)
-    return rankings
+    return _policy_counterfactual_rankings(
+        inputs,
+        intervention_channels=INTERVENTION_CHANNELS,
+        phase4_setting=_phase4_setting,
+    )
 
 
 def _realized_intensity(action: np.ndarray) -> np.ndarray:
@@ -210,22 +163,98 @@ def _simulate_policy(
     )
 
 
+def _policy_rollout_context(inputs: dict[str, Any], counterfactual_rankings: list[dict[str, Any]]) -> dict[str, Any]:
+    latest_states = np.asarray(inputs["state_estimates"])[:, -1, :]
+    base_transition = np.asarray(inputs["forecast_states"])[:, 0, :]
+    map_cfg = dict(_phase4_setting("base_transition_map", {}) or {})
+    mapped = []
+    for transition_name in ["U_to_D", "D_to_A", "A_to_V", "A_to_L", "L_to_A"]:
+        row_cfg = dict(map_cfg.get(transition_name, {}) or {})
+        intercept = float(row_cfg.get("intercept", 0.0))
+        state_index = int(row_cfg.get("state_index", 0))
+        slope = float(row_cfg.get("slope", 0.0))
+        floor = float(row_cfg.get("floor", 0.0))
+        ceiling = float(row_cfg.get("ceiling", 1.0))
+        mapped.append(np.clip(intercept + slope * base_transition[:, state_index], floor, ceiling))
+    return {
+        "latest_states": latest_states.astype(np.float32),
+        "base_transition": np.stack(mapped, axis=-1).astype(np.float32),
+        "alpha": _policy_channel_alpha(
+            counterfactual_rankings,
+            intervention_channels=INTERVENTION_CHANNELS,
+            phase4_setting=_phase4_setting,
+        ),
+        "scalar_weights": np.asarray(_phase4_setting("scalar_objective_weights", []), dtype=np.float32),
+    }
+
+
+def _evaluate_policy_action(
+    *,
+    policy_id: str,
+    action: np.ndarray,
+    rollout_context: dict[str, Any],
+    horizon: int,
+    policy_label: str | None = None,
+) -> tuple[dict[str, Any], np.ndarray]:
+    rollout_states, rollout_objectives, stochastic_summary = _simulate_policy(
+        rollout_context["latest_states"],
+        rollout_context["base_transition"],
+        action,
+        horizon=horizon,
+    )
+    final_objective = rollout_objectives[-1]
+    scalar_score = float(np.dot(final_objective, rollout_context["scalar_weights"]))
+    return (
+        {
+            "policy_id": policy_id,
+            "policy_label": policy_label or policy_id,
+            "action": {INTERVENTION_CHANNELS[idx]: round(float(action[idx]), 6) for idx in range(len(INTERVENTION_CHANNELS))},
+            "intensity": {INTERVENTION_CHANNELS[idx]: round(float(_realized_intensity(action)[idx]), 6) for idx in range(len(INTERVENTION_CHANNELS))},
+            "objectives": {OBJECTIVE_NAMES[idx]: round(float(final_objective[idx]), 6) for idx in range(len(OBJECTIVE_NAMES))},
+            "stochastic_summary": stochastic_summary,
+            "trajectory_summary": stochastic_summary,
+            "scalar_score": round(scalar_score, 6),
+            "horizon": horizon,
+        },
+        rollout_objectives,
+    )
+
+def _build_policy_comparator_report(
+    *,
+    selected_policy: dict[str, Any],
+    rollout_context: dict[str, Any],
+    counterfactual_rankings: list[dict[str, Any]],
+    horizon: int,
+) -> dict[str, Any]:
+    return _policy_build_policy_comparator_report(
+        selected_policy=selected_policy,
+        rollout_context=rollout_context,
+        counterfactual_rankings_rows=counterfactual_rankings,
+        horizon=horizon,
+        intervention_channels=INTERVENTION_CHANNELS,
+        phase4_setting=_phase4_setting,
+        evaluate_policy_action=_evaluate_policy_action,
+    )
+
+def _build_sensitivity_analysis(
+    *,
+    selected_policy: dict[str, Any],
+    rollout_context: dict[str, Any],
+    horizon: int,
+) -> dict[str, Any]:
+    return _policy_build_sensitivity_analysis(
+        selected_policy=selected_policy,
+        rollout_context=rollout_context,
+        horizon=horizon,
+        intervention_channels=INTERVENTION_CHANNELS,
+        objective_names=OBJECTIVE_NAMES,
+        phase4_setting=_phase4_setting,
+        evaluate_policy_action=_evaluate_policy_action,
+    )
+
+
 def _non_dominated(frontier_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    kept = []
-    for idx, row in enumerate(frontier_rows):
-        dominated = False
-        for jdx, other in enumerate(frontier_rows):
-            if idx == jdx:
-                continue
-            better_or_equal = all(other["objectives"][name] >= row["objectives"][name] for name in OBJECTIVE_NAMES)
-            strictly_better = any(other["objectives"][name] > row["objectives"][name] for name in OBJECTIVE_NAMES)
-            if better_or_equal and strictly_better:
-                dominated = True
-                break
-        if not dominated:
-            kept.append(row)
-    kept.sort(key=lambda item: item["scalar_score"], reverse=True)
-    return kept
+    return _policy_non_dominated(frontier_rows, objective_names=OBJECTIVE_NAMES)
 
 
 def _node_graph_enabled() -> bool:
@@ -504,39 +533,18 @@ def _policy_frontier(inputs: dict[str, Any], counterfactual_rankings: list[dict[
     rollouts = int(rollouts if rollouts is not None else search_cfg.get("rollouts", 1))
     horizon = int(horizon if horizon is not None else search_cfg.get("horizon", 1))
     rng = np.random.default_rng(int(search_cfg.get("rng_seed", 0)))
-    latest_states = np.asarray(inputs["state_estimates"])[:, -1, :]
-    base_transition = np.asarray(inputs["forecast_states"])[:, 0, :]
-    map_cfg = dict(_phase4_setting("base_transition_map", {}) or {})
-    mapped = []
-    for transition_name in ["U_to_D", "D_to_A", "A_to_V", "A_to_L", "L_to_A"]:
-        row_cfg = dict(map_cfg.get(transition_name, {}) or {})
-        intercept = float(row_cfg.get("intercept", 0.0))
-        state_index = int(row_cfg.get("state_index", 0))
-        slope = float(row_cfg.get("slope", 0.0))
-        floor = float(row_cfg.get("floor", 0.0))
-        ceiling = float(row_cfg.get("ceiling", 1.0))
-        mapped.append(np.clip(intercept + slope * base_transition[:, state_index], floor, ceiling))
-    base_transition = np.stack(mapped, axis=-1).astype(np.float32)
-    alpha = _channel_alpha(counterfactual_rankings)
-    policies = rng.dirichlet(alpha, size=rollouts).astype(np.float32)
-    scalar_weights = np.asarray(_phase4_setting("scalar_objective_weights", []), dtype=np.float32)
+    rollout_context = _policy_rollout_context(inputs, counterfactual_rankings)
+    policies = rng.dirichlet(rollout_context["alpha"], size=rollouts).astype(np.float32)
     frontier_rows = []
     objective_tensor = []
     for policy_id, action in enumerate(policies):
-        rollout_states, rollout_objectives, stochastic_summary = _simulate_policy(latest_states, base_transition, action, horizon=horizon)
-        final_objective = rollout_objectives[-1]
-        scalar_score = float(np.dot(final_objective, scalar_weights))
-        frontier_rows.append(
-            {
-                "policy_id": f"policy_{policy_id:04d}",
-                "action": {INTERVENTION_CHANNELS[idx]: round(float(action[idx]), 6) for idx in range(len(INTERVENTION_CHANNELS))},
-                "intensity": {INTERVENTION_CHANNELS[idx]: round(float(_realized_intensity(action)[idx]), 6) for idx in range(len(INTERVENTION_CHANNELS))},
-                "objectives": {OBJECTIVE_NAMES[idx]: round(float(final_objective[idx]), 6) for idx in range(len(OBJECTIVE_NAMES))},
-                "stochastic_summary": stochastic_summary,
-                "scalar_score": round(scalar_score, 6),
-                "horizon": horizon,
-            }
+        policy_row, rollout_objectives = _evaluate_policy_action(
+            policy_id=f"policy_{policy_id:04d}",
+            action=action,
+            rollout_context=rollout_context,
+            horizon=horizon,
         )
+        frontier_rows.append(policy_row)
         objective_tensor.append(rollout_objectives)
     return _non_dominated(frontier_rows), np.asarray(objective_tensor, dtype=np.float32)
 
@@ -558,6 +566,24 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
         node_bundle = build_node_graph_bundle(run_dir=ctx.run_dir, plugin_id=plugin_id).to_dict()
         write_json(phase4_dir / "node_graph_bundle.json", node_bundle)
         write_json(phase4_dir / "node_graph_adjustment.json", {"enabled": False, "reason": "phase4_blocked"})
+        write_json(
+            phase4_dir / "policy_comparator_report.json",
+            {
+                "available": False,
+                "reason": "phase4_blocked",
+                "blocking_gates": blocked.get("blocking_gates", []),
+                "comparators": [],
+            },
+        )
+        write_json(
+            phase4_dir / "sensitivity_analysis.json",
+            {
+                "available": False,
+                "reason": "phase4_blocked",
+                "blocking_gates": blocked.get("blocking_gates", []),
+                "perturbations": [],
+            },
+        )
         _write_node_graph_report(phase4_dir, node_bundle, enabled=False)
         backend_map = detect_backends()
         manifest = Phase0ManifestArtifact(
@@ -573,6 +599,8 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
                 "phase4_blocked": str(phase4_dir / "phase4_blocked.json"),
                 "node_graph_bundle": str(phase4_dir / "node_graph_bundle.json"),
                 "node_graph_adjustment": str(phase4_dir / "node_graph_adjustment.json"),
+                "policy_comparator_report": str(phase4_dir / "policy_comparator_report.json"),
+                "sensitivity_analysis": str(phase4_dir / "sensitivity_analysis.json"),
                 "node_graph_report": str(phase4_dir / "node_graph_report.md"),
             },
             backend_status={
@@ -596,7 +624,62 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
             stage_manifest_path=str(phase4_dir / "phase4_manifest.json"),
             summary={"mode": mode, "blocked_gate_count": len(blocked.get("blocking_gates", []))},
         )
+        gold_profile = dict((_HIV_PLUGIN.gold_standard_profiles or {}).get("phase4", {}) or {})
+        gold_paths = write_gold_standard_package(
+            phase_dir=phase4_dir,
+            phase_name="phase4",
+            profile_id=profile,
+            gold_profile=gold_profile,
+            checks=[
+                {"name": "gold_standard_profile_declared", "passed": bool(gold_profile)},
+                {"name": "benchmark_family_declared", "passed": str(gold_profile.get("mode") or "") == "benchmark_family"},
+                {"name": "blocked_phase_visible", "passed": True},
+                {"name": "node_graph_runtime_invariant_present", "passed": bool(node_bundle.get("debug_summary", {}))},
+                {"name": "comparator_policy_report_present", "passed": (phase4_dir / "policy_comparator_report.json").exists()},
+                {"name": "sensitivity_or_stability_report_present", "passed": (phase4_dir / "sensitivity_analysis.json").exists()},
+            ],
+            stage_manifest_path=str(phase4_dir / "phase4_manifest.json"),
+            summary={
+                "mode": mode,
+                "blocked_gate_count": len(blocked.get("blocking_gates", [])),
+                "related_layers": list(gold_profile.get("related_layers", [])),
+            },
+        )
+        manifest["artifact_paths"].update(gold_paths)
         manifest["artifact_paths"].update(truth_paths)
+        boundary_paths = write_boundary_shape_package(
+            phase_dir=phase4_dir,
+            phase_name="phase4",
+            profile_id=profile,
+            boundaries=[
+                {
+                    "name": "phase4_blocked",
+                    "kind": "json_dict",
+                    "path": str(phase4_dir / "phase4_blocked.json"),
+                    "expected_keys": ["profile_id", "mode", "phase4_ready", "reason", "blocking_gates"],
+                },
+                {
+                    "name": "node_graph_bundle",
+                    "kind": "json_dict",
+                    "path": str(phase4_dir / "node_graph_bundle.json"),
+                    "expected_keys": ["block_evidence", "region_node_states", "risk_bonus_by_region", "risk_penalty_by_region", "risk_veto_flag_by_region", "decision_penalty_by_region", "decision_support_by_region", "debug_summary"],
+                },
+                {
+                    "name": "policy_comparator_report",
+                    "kind": "json_dict",
+                    "path": str(phase4_dir / "policy_comparator_report.json"),
+                    "expected_keys": ["available", "reason", "blocking_gates", "comparators"],
+                },
+                {
+                    "name": "sensitivity_analysis",
+                    "kind": "json_dict",
+                    "path": str(phase4_dir / "sensitivity_analysis.json"),
+                    "expected_keys": ["available", "reason", "blocking_gates", "perturbations"],
+                },
+            ],
+            summary={"mode": mode, "blocked_gate_count": len(blocked.get("blocking_gates", []))},
+        )
+        manifest["artifact_paths"].update(boundary_paths)
         write_json(phase4_dir / "phase4_manifest.json", manifest)
         ctx.record_stage_outputs(
             f"phase4_{mode}",
@@ -604,7 +687,15 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
                 phase4_dir / "phase4_blocked.json",
                 phase4_dir / "node_graph_bundle.json",
                 phase4_dir / "node_graph_adjustment.json",
+                phase4_dir / "policy_comparator_report.json",
+                phase4_dir / "sensitivity_analysis.json",
                 phase4_dir / "node_graph_report.md",
+                phase4_dir / "gold_standard_manifest.json",
+                phase4_dir / "gold_standard_checks.json",
+                phase4_dir / "gold_standard_summary.json",
+                phase4_dir / "boundary_shape_manifest.json",
+                phase4_dir / "boundary_shape_checks.json",
+                phase4_dir / "boundary_shape_summary.json",
                 phase4_dir / "phase4_manifest.json",
             ],
         )
@@ -612,6 +703,7 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
     inputs = _load_phase4_inputs(ctx.run_dir)
     counterfactual_rankings = _counterfactual_rankings(inputs)
     policy_frontier, rollout_tensor = _policy_frontier(inputs, counterfactual_rankings)
+    rollout_context = _policy_rollout_context(inputs, counterfactual_rankings)
     node_bundle = build_node_graph_bundle(run_dir=ctx.run_dir, plugin_id=plugin_id).to_dict()
     node_graph_active = _node_graph_enabled()
     selected_policy = policy_frontier[0] if policy_frontier else {
@@ -627,10 +719,22 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
     node_adjustment = {
         "enabled": node_graph_active,
         "reason": "regional_allocation_seam" if node_graph_active else "disabled",
+        "vetoed_regions": [str(row.get("region") or "") for row in regional_risk_scores if bool(row.get("node_graph", {}).get("vetoed"))],
         **regional_risk_summary,
     }
     selected_policy = dict(selected_policy)
     selected_policy["regional_allocations"] = regional_allocation_surface["region_allocations"]
+    policy_comparator_report = _build_policy_comparator_report(
+        selected_policy=selected_policy,
+        rollout_context=rollout_context,
+        counterfactual_rankings=counterfactual_rankings,
+        horizon=int(selected_policy.get("horizon") or dict(_phase4_setting("policy_search", {}) or {}).get("horizon", 1)),
+    )
+    sensitivity_analysis = _build_sensitivity_analysis(
+        selected_policy=selected_policy,
+        rollout_context=rollout_context,
+        horizon=int(selected_policy.get("horizon") or dict(_phase4_setting("policy_search", {}) or {}).get("horizon", 1)),
+    )
     mpc_plan = {
         "control_horizon": int(dict(_phase4_setting("mpc", {}) or {}).get("control_horizon", 2)),
         "execution_steps": [
@@ -681,6 +785,8 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
     write_json(phase4_dir / "node_graph_adjustment.json", node_adjustment)
     write_json(phase4_dir / "regional_risk_scores.json", {"rows": regional_risk_scores, "summary": regional_risk_summary})
     write_json(phase4_dir / "regional_allocation_surface.json", regional_allocation_surface)
+    write_json(phase4_dir / "policy_comparator_report.json", policy_comparator_report)
+    write_json(phase4_dir / "sensitivity_analysis.json", sensitivity_analysis)
     write_json(
         phase4_dir / "regional_selected_policy.json",
         {
@@ -714,6 +820,8 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
             "regional_risk_scores": str(phase4_dir / "regional_risk_scores.json"),
             "regional_allocation_surface": str(phase4_dir / "regional_allocation_surface.json"),
             "regional_selected_policy": str(phase4_dir / "regional_selected_policy.json"),
+            "policy_comparator_report": str(phase4_dir / "policy_comparator_report.json"),
+            "sensitivity_analysis": str(phase4_dir / "sensitivity_analysis.json"),
             "node_graph_report": str(phase4_dir / "node_graph_report.md"),
         },
         backend_status={
@@ -750,7 +858,93 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
             "region_count": regional_risk_summary["region_count"],
         },
     )
+    gold_profile = dict((_HIV_PLUGIN.gold_standard_profiles or {}).get("phase4", {}) or {})
+    gold_paths = write_gold_standard_package(
+        phase_dir=phase4_dir,
+        phase_name="phase4",
+        profile_id=profile,
+        gold_profile=gold_profile,
+        checks=[
+            {"name": "gold_standard_profile_declared", "passed": bool(gold_profile)},
+            {"name": "benchmark_family_declared", "passed": str(gold_profile.get("mode") or "") == "benchmark_family"},
+            {"name": "stochastic_rollout_present", "passed": rollout_tensor.ndim >= 4},
+            {"name": "uncertainty_preserved_in_policy_frontier", "passed": bool(policy_frontier) and any("stochastic_summary" in row for row in policy_frontier)},
+            {"name": "comparator_policy_report_present", "passed": (phase4_dir / "policy_comparator_report.json").exists()},
+            {"name": "sensitivity_or_stability_report_present", "passed": (phase4_dir / "sensitivity_analysis.json").exists()},
+            {"name": "node_graph_runtime_invariant_present", "passed": bool(node_bundle.get("debug_summary", {})) and bool(node_adjustment.get("vetoed_regions") is not None)},
+        ],
+        stage_manifest_path=str(phase4_dir / "phase4_manifest.json"),
+        summary={
+            "counterfactual_count": len(counterfactual_rankings),
+            "frontier_count": len(policy_frontier),
+            "trajectory_count": int(rollout_diagnostics.get("trajectory_count", 0)),
+            "comparator_policy_count": len(policy_comparator_report.get("comparators", [])),
+            "sensitivity_perturbation_count": len(sensitivity_analysis.get("perturbations", [])),
+            "related_layers": list(gold_profile.get("related_layers", [])),
+        },
+    )
+    manifest["artifact_paths"].update(gold_paths)
     manifest["artifact_paths"].update(truth_paths)
+    boundary_paths = write_boundary_shape_package(
+        phase_dir=phase4_dir,
+        phase_name="phase4",
+        profile_id=profile,
+        boundaries=[
+            {
+                "name": "rollout_tensor",
+                "kind": "tensor",
+                "path": str(phase4_dir / "rollout_tensor.npz"),
+                "expected_shape": list(rollout_tensor.shape),
+                "expected_axis_names": ["policy", "horizon_step", "objective"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "counterfactual_rankings",
+                "kind": "json_rows",
+                "path": str(phase4_dir / "counterfactual_rankings.json"),
+                "min_rows": 1,
+                "expected_row_count": len(counterfactual_rankings),
+            },
+            {
+                "name": "policy_frontier",
+                "kind": "json_rows",
+                "path": str(phase4_dir / "policy_frontier.json"),
+                "min_rows": 1,
+                "expected_row_count": len(policy_frontier),
+            },
+            {
+                "name": "node_graph_bundle",
+                "kind": "json_dict",
+                "path": str(phase4_dir / "node_graph_bundle.json"),
+                "expected_keys": ["block_evidence", "region_node_states", "risk_bonus_by_region", "risk_penalty_by_region", "risk_veto_flag_by_region", "decision_penalty_by_region", "decision_support_by_region", "debug_summary"],
+            },
+            {
+                "name": "regional_allocation_surface",
+                "kind": "json_dict",
+                "path": str(phase4_dir / "regional_allocation_surface.json"),
+                "expected_keys": ["rows", "region_allocations"],
+            },
+            {
+                "name": "policy_comparator_report",
+                "kind": "json_dict",
+                "path": str(phase4_dir / "policy_comparator_report.json"),
+                "expected_keys": ["available", "comparators", "selected_policy_scalar_score"],
+            },
+            {
+                "name": "sensitivity_analysis",
+                "kind": "json_dict",
+                "path": str(phase4_dir / "sensitivity_analysis.json"),
+                "expected_keys": ["available", "base_policy", "perturbations", "summary"],
+            },
+        ],
+        summary={
+            "counterfactual_count": len(counterfactual_rankings),
+            "frontier_count": len(policy_frontier),
+            "trajectory_count": int(rollout_diagnostics.get("trajectory_count", 0)),
+        },
+    )
+    manifest["artifact_paths"].update(boundary_paths)
     write_json(phase4_dir / "phase4_manifest.json", manifest)
     ctx.record_stage_outputs(
         f"phase4_{mode}",
@@ -766,7 +960,15 @@ def _run_phase4(run_id: str, plugin_id: str, *, mode: str, profile: str = "legac
             phase4_dir / "regional_risk_scores.json",
             phase4_dir / "regional_allocation_surface.json",
             phase4_dir / "regional_selected_policy.json",
+            phase4_dir / "policy_comparator_report.json",
+            phase4_dir / "sensitivity_analysis.json",
             phase4_dir / "node_graph_report.md",
+            phase4_dir / "gold_standard_manifest.json",
+            phase4_dir / "gold_standard_checks.json",
+            phase4_dir / "gold_standard_summary.json",
+            phase4_dir / "boundary_shape_manifest.json",
+            phase4_dir / "boundary_shape_checks.json",
+            phase4_dir / "boundary_shape_summary.json",
             phase4_dir / "phase4_manifest.json",
         ],
     )

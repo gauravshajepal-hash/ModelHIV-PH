@@ -59,14 +59,20 @@ def _safe_ascii_label(value: str) -> str:
 def _read_pdf_pages(path: Path) -> list[dict[str, Any]]:
     if PdfReader is None or not path.exists():
         return []
-    reader = PdfReader(str(path))
-    pages = []
-    for page_number, page in enumerate(reader.pages, start=1):
-        text = page.extract_text() or ""
-        text = re.sub(r"\s+", " ", text).strip()
-        if text:
-            pages.append({"page_number": page_number, "text": text})
-    return pages
+    try:
+        reader = PdfReader(str(path))
+        pages = []
+        for page_number, page in enumerate(reader.pages, start=1):
+            try:
+                text = page.extract_text() or ""
+            except Exception:
+                text = ""
+            text = re.sub(r"\s+", " ", text).strip()
+            if text:
+                pages.append({"page_number": page_number, "text": text})
+        return pages
+    except Exception:
+        return []
 
 
 def _manual_seed_specs(seed_dir: Path) -> list[dict[str, Any]]:

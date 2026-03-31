@@ -23,6 +23,8 @@ from epigraph_ph.runtime import (
     to_numpy,
     to_torch_tensor,
     utc_now_iso,
+    write_boundary_shape_package,
+    write_gold_standard_package,
     write_json,
     read_json,
     write_ground_truth_package,
@@ -43,12 +45,16 @@ except Exception:  # pragma: no cover
 try:
     import numpyro
     import numpyro.distributions as dist
-    from numpyro.infer import Predictive, SVI, Trace_ELBO
+    from numpyro.diagnostics import summary as numpyro_summary
+    from numpyro.infer import MCMC, NUTS, Predictive, SVI, Trace_ELBO
     from numpyro.infer.autoguide import AutoNormal
     from numpyro.optim import Adam as NumpyroAdam
 except Exception:  # pragma: no cover
     numpyro = None
     dist = None
+    numpyro_summary = None
+    MCMC = None
+    NUTS = None
     Predictive = None
     SVI = None
     Trace_ELBO = None
@@ -68,16 +74,49 @@ DEFAULT_AGE_CATALOG = ["15_24", "25_34", "35_49", "50_plus"]
 DEFAULT_SEX_CATALOG = ["male", "female"]
 OBSERVATION_ORDER = ["diagnosed_stock", "art_stock", "documented_suppression", "testing_coverage", "deaths"]
 _HIV_PLUGIN = get_disease_plugin("hiv")
-_PHASE3_PRIORS = dict(_HIV_PLUGIN.prior_hyperparameters.get("phase3", {}))
-_PHASE3_STABILIZERS = dict(_HIV_PLUGIN.numerical_stabilizers.get("phase3", {}))
-_PHASE3_CONSTRAINTS = dict(_HIV_PLUGIN.constraint_settings.get("phase3", {}))
+_PHASE3_PRIORS = dict(_HIV_PLUGIN.prior_hyperparameters["phase3"])
+_PHASE3_STABILIZERS = dict(_HIV_PLUGIN.numerical_stabilizers["phase3"])
+_PHASE3_CONSTRAINTS = dict(_HIV_PLUGIN.constraint_settings["phase3"])
+_PHASE3_REFERENCE_DATA = dict(_HIV_PLUGIN.reference_data["phase3"])
 
-OBSERVATION_CLASS_WEIGHT = dict(
-    _PHASE3_PRIORS.get(
-        "observation_class_weight",
-        {"direct_observed": 1.0, "bounded_observed": 0.75, "proxy_observed": 0.35, "prior_only": 0.12},
-    )
-)
+
+def _phase3_required_prior(key: str) -> Any:
+    if key not in _PHASE3_PRIORS:
+        raise KeyError(f"missing hiv phase3 prior_hyperparameters['{key}']")
+    return _PHASE3_PRIORS[key]
+
+
+def _phase3_required_constraint(key: str) -> Any:
+    if key not in _PHASE3_CONSTRAINTS:
+        raise KeyError(f"missing hiv phase3 constraint_settings['{key}']")
+    return _PHASE3_CONSTRAINTS[key]
+
+
+def _phase3_required_stabilizer(key: str) -> Any:
+    if key not in _PHASE3_STABILIZERS:
+        raise KeyError(f"missing hiv phase3 numerical_stabilizers['{key}']")
+    return _PHASE3_STABILIZERS[key]
+
+
+def _phase3_required_reference_data(key: str) -> Any:
+    if key not in _PHASE3_REFERENCE_DATA:
+        raise KeyError(f"missing hiv phase3 reference_data['{key}']")
+    return _PHASE3_REFERENCE_DATA[key]
+
+
+def _phase3_prior(key: str) -> Any:
+    return _phase3_required_prior(key)
+
+
+def _phase3_constraint(key: str) -> Any:
+    return _phase3_required_constraint(key)
+
+
+def _phase3_stabilizer(key: str) -> Any:
+    return _phase3_required_stabilizer(key)
+
+
+OBSERVATION_CLASS_WEIGHT = dict(_phase3_required_prior("observation_class_weight"))
 TARGET_PATTERNS: dict[str, dict[str, list[str]]] = {
     "diagnosed_stock": {
         "tokens": ["diagnos", "hiv_case", "case_count", "reported_case", "testing", "late diagnosis"],
@@ -105,64 +144,15 @@ TARGET_PATTERNS: dict[str, dict[str, list[str]]] = {
         "pathways": ["biological_progression"],
     },
 }
-DEFAULT_KP_PRIOR = np.asarray(_PHASE3_PRIORS.get("kp_prior", [0.62, 0.18, 0.03, 0.05, 0.03, 0.03, 0.06]), dtype=np.float32)
-DEFAULT_AGE_PRIOR = np.asarray(_PHASE3_PRIORS.get("age_prior", [0.26, 0.36, 0.24, 0.14]), dtype=np.float32)
-DEFAULT_SEX_PRIOR = np.asarray(_PHASE3_PRIORS.get("sex_prior", [0.78, 0.22]), dtype=np.float32)
-DEFAULT_CD4_PRIOR = np.asarray(_PHASE3_PRIORS.get("cd4_prior", [0.22, 0.28, 0.25, 0.25]), dtype=np.float32)
-TRANSITION_PRIOR = np.asarray(_PHASE3_PRIORS.get("transition_prior", [0.10, 0.13, 0.11, 0.05, 0.08]), dtype=np.float32)
-DEFAULT_DURATION_TEMPLATE = np.asarray(
-    _PHASE3_PRIORS.get(
-        "duration_template",
-        [
-            [0.38, 0.24, 0.20, 0.18],
-            [0.55, 0.23, 0.13, 0.09],
-            [0.30, 0.24, 0.23, 0.23],
-            [0.12, 0.16, 0.24, 0.48],
-            [0.28, 0.24, 0.22, 0.26],
-        ],
-    ),
-    dtype=np.float32,
-)
-AGE_PROGRESS_RATES = np.asarray(_PHASE3_PRIORS.get("age_progress_rates", [1.0 / 120.0, 1.0 / 120.0, 1.0 / 180.0, 0.0]), dtype=np.float32)
-OFFICIAL_REFERENCE_POINTS = [
-    {
-        "label": "UNAIDS Philippines Executive Summary (Most recent data as of 2022)",
-        "month": "2022-01",
-        "reference": {"first95": 0.63, "second95": 0.66, "overall_suppressed": 0.407},
-        "source_url": "https://sustainability.unaids.org/wp-content/uploads/2024/06/Philippines-Executive-Summary-May-2024.pdf",
-    },
-    {
-        "label": "WHO/UNAIDS Philippines joint release (March 2025 operational snapshot, published June 11 2025)",
-        "month": "2025-01",
-        "reference": {"first95": 0.55, "second95": 0.66, "documented_suppression_among_art": 0.40},
-        "source_url": "https://www.who.int/philippines/news/detail/11-06-2025-unaids--who-support-doh-s-call-for-urgent-action-as-the-philippines-faces-the-fastest-growing-hiv-surge-in-the-asia-pacific-region",
-    },
-]
-
-HARP_PROGRAM_POINTS = [
-    {
-        "label": "Philippine HIV Care Cascade as of December 2024",
-        "month": "2025-01",
-        "estimated_plhiv": 216900.0,
-        "diagnosed": 135026.0,
-        "on_art": 90854.0,
-        "viral_load_tested": 43534.0,
-        "suppressed": 41164.0,
-        "source_label": "2025 PH HIV Estimates Core Team for WHO, page 13",
-    }
-]
-
-
-def _phase3_prior(key: str, default: Any) -> Any:
-    return _PHASE3_PRIORS.get(key, default)
-
-
-def _phase3_constraint(key: str, default: Any) -> Any:
-    return _PHASE3_CONSTRAINTS.get(key, default)
-
-
-def _phase3_stabilizer(key: str, default: Any) -> Any:
-    return _PHASE3_STABILIZERS.get(key, default)
+DEFAULT_KP_PRIOR = np.asarray(_phase3_required_prior("kp_prior"), dtype=np.float32)
+DEFAULT_AGE_PRIOR = np.asarray(_phase3_required_prior("age_prior"), dtype=np.float32)
+DEFAULT_SEX_PRIOR = np.asarray(_phase3_required_prior("sex_prior"), dtype=np.float32)
+DEFAULT_CD4_PRIOR = np.asarray(_phase3_required_prior("cd4_prior"), dtype=np.float32)
+TRANSITION_PRIOR = np.asarray(_phase3_required_prior("transition_prior"), dtype=np.float32)
+DEFAULT_DURATION_TEMPLATE = np.asarray(_phase3_required_prior("duration_template"), dtype=np.float32)
+AGE_PROGRESS_RATES = np.asarray(_phase3_required_prior("age_progress_rates"), dtype=np.float32)
+OFFICIAL_REFERENCE_POINTS = [dict(item) for item in _phase3_required_reference_data("official_reference_points")]
+HARP_PROGRAM_POINTS = [dict(item) for item in _phase3_required_reference_data("harp_program_points")]
 
 
 @contextmanager
@@ -189,8 +179,9 @@ def _sigmoid_np(value: np.ndarray) -> np.ndarray:
     return 1.0 / (1.0 + np.exp(-value))
 
 
-def _logit_np(value: np.ndarray, eps: float = 1e-5) -> np.ndarray:
-    clipped = np.clip(value, eps, 1.0 - eps)
+def _logit_np(value: np.ndarray, eps: float | None = None) -> np.ndarray:
+    used_eps = float(_phase3_stabilizer("probability_eps")) if eps is None else float(eps)
+    clipped = np.clip(value, used_eps, 1.0 - used_eps)
     return np.log(clipped / (1.0 - clipped))
 
 
@@ -236,6 +227,7 @@ def _month_year(month_label: str) -> int | None:
 
 
 def _official_anchor_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
+    curve_cfg = dict(_phase3_constraint("anchor_curve") or {})
     month_ordinals = np.asarray([_month_ordinal(month) if _month_ordinal(month) is not None else -1 for month in month_axis], dtype=np.int32)
     valid_month_mask = month_ordinals >= 0
 
@@ -252,7 +244,11 @@ def _official_anchor_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
         interp_values = np.interp(month_ordinals[valid_month_mask].astype(np.float32), points_x, points_y).astype(np.float32)
         values[valid_month_mask] = interp_values
         nearest_distance = np.min(np.abs(month_ordinals[valid_month_mask][:, None].astype(np.float32) - points_x[None, :]), axis=1)
-        weights[valid_month_mask] = np.clip(np.exp(-nearest_distance / 18.0), 0.15, 1.0).astype(np.float32)
+        weights[valid_month_mask] = np.clip(
+            np.exp(-nearest_distance / float(curve_cfg["official_decay_months"])),
+            float(curve_cfg["official_weight_floor"]),
+            1.0,
+        ).astype(np.float32)
         return values, weights
 
     diag_points: list[tuple[int, float]] = []
@@ -297,6 +293,7 @@ def _official_anchor_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
 
 
 def _harp_program_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
+    curve_cfg = dict(_phase3_constraint("anchor_curve") or {})
     month_ordinals = np.asarray([_month_ordinal(month) if _month_ordinal(month) is not None else -1 for month in month_axis], dtype=np.int32)
     valid_month_mask = month_ordinals >= 0
 
@@ -313,7 +310,11 @@ def _harp_program_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
         interp_values = np.interp(month_ordinals[valid_month_mask].astype(np.float32), points_x, points_y).astype(np.float32)
         values[valid_month_mask] = interp_values
         nearest_distance = np.min(np.abs(month_ordinals[valid_month_mask][:, None].astype(np.float32) - points_x[None, :]), axis=1)
-        weights[valid_month_mask] = np.clip(np.exp(-nearest_distance / 14.0), 0.10, 1.0).astype(np.float32)
+        weights[valid_month_mask] = np.clip(
+            np.exp(-nearest_distance / float(curve_cfg["harp_decay_months"])),
+            float(curve_cfg["harp_weight_floor"]),
+            1.0,
+        ).astype(np.float32)
         return values, weights
 
     diag_points: list[tuple[int, float]] = []
@@ -362,6 +363,7 @@ def _linkage_anchor_curves(
     observation_targets: dict[str, np.ndarray],
     province_axis: list[str],
 ) -> dict[str, np.ndarray]:
+    curve_cfg = dict(_phase3_constraint("anchor_curve") or {})
     mask = _national_reference_mask(province_axis)
     national_diag = np.tensordot(mask, np.asarray(observation_targets["diagnosed_stock"], dtype=np.float32), axes=(0, 0)).astype(np.float32)
     national_art = np.tensordot(mask, np.asarray(observation_targets["art_stock"], dtype=np.float32), axes=(0, 0)).astype(np.float32)
@@ -389,7 +391,13 @@ def _linkage_anchor_curves(
         else:
             art_delta = max(float(national_art[idx] - national_art[use_idx]), 0.0)
             diagnosed_gap = max(float(national_diag[use_idx] - national_art[use_idx]), 1e-6)
-        growth_proxy[idx] = float(np.clip((art_delta / float(delta_months)) / diagnosed_gap, 0.02, 0.35))
+        growth_proxy[idx] = float(
+            np.clip(
+                (art_delta / float(delta_months)) / diagnosed_gap,
+                float(curve_cfg["linkage_growth_floor"]),
+                float(curve_cfg["linkage_growth_ceiling"]),
+            )
+        )
 
     official_points: list[tuple[int, float]] = []
     for point in OFFICIAL_REFERENCE_POINTS:
@@ -412,7 +420,11 @@ def _linkage_anchor_curves(
         ordinals = np.asarray([ordinal if ordinal is not None else -1 for ordinal in month_ordinals], dtype=np.float32)
         values[valid] = np.interp(ordinals[valid], points_x, points_y).astype(np.float32)
         nearest_distance = np.min(np.abs(ordinals[valid][:, None] - points_x[None, :]), axis=1)
-        weights[valid] = np.clip(np.exp(-nearest_distance / 18.0), 0.10, 1.0).astype(np.float32)
+        weights[valid] = np.clip(
+            np.exp(-nearest_distance / float(curve_cfg["official_decay_months"])),
+            float(curve_cfg["harp_weight_floor"]),
+            1.0,
+        ).astype(np.float32)
         return values, weights
 
     official_second95, official_weight = _interp_points(official_points)
@@ -427,7 +439,11 @@ def _linkage_anchor_curves(
         observed_second95,
     ).astype(np.float32)
     hazard_from_share = np.clip(0.04 + 0.22 * blended_second95, 0.05, 0.24).astype(np.float32)
-    d_to_a_target = np.clip(0.55 * growth_proxy + 0.45 * hazard_from_share, 0.04, 0.28).astype(np.float32)
+    d_to_a_target = np.clip(
+        float(curve_cfg["linkage_growth_weight"]) * growth_proxy + float(curve_cfg["linkage_hazard_weight"]) * hazard_from_share,
+        float(curve_cfg["linkage_target_floor"]),
+        float(curve_cfg["linkage_target_ceiling"]),
+    ).astype(np.float32)
     linkage_weight = np.clip(np.maximum.reduce([official_weight * 0.9, harp_weight, observed_weight]), 0.05, 1.0).astype(np.float32)
     return {
         "month_axis": np.asarray(month_axis, dtype=object),
@@ -447,6 +463,7 @@ def _suppression_anchor_curves(
     observation_targets: dict[str, np.ndarray],
     province_axis: list[str],
 ) -> dict[str, np.ndarray]:
+    cfg = dict(_phase3_constraint("suppression_process") or {})
     mask = _national_reference_mask(province_axis)
     national_diag = np.tensordot(mask, np.asarray(observation_targets["diagnosed_stock"], dtype=np.float32), axes=(0, 0)).astype(np.float32)
     national_art = np.tensordot(mask, np.asarray(observation_targets["art_stock"], dtype=np.float32), axes=(0, 0)).astype(np.float32)
@@ -456,6 +473,7 @@ def _suppression_anchor_curves(
     observed_overall = np.clip(national_sup, 0.0, 1.0).astype(np.float32)
     observed_supp_among_art = np.clip(national_sup / np.clip(national_art, 1e-6, None), 0.0, 1.0).astype(np.float32)
     observed_tested_among_art = np.clip(national_test / np.clip(national_art, 1e-6, None), 0.0, 1.0).astype(np.float32)
+    observed_documented_given_test = np.clip(national_sup / np.clip(national_test, 1e-6, None), 0.0, 1.0).astype(np.float32)
     observed_weight = ((national_art > 0.02) & (national_test > 0.005)).astype(np.float32) * 0.30
 
     month_ordinals = [_month_ordinal(month) for month in month_axis]
@@ -499,6 +517,11 @@ def _suppression_anchor_curves(
     harp_overall = harp_curves["documented_suppression"].astype(np.float32)
     harp_third = harp_curves["suppressed_among_art"].astype(np.float32)
     harp_tested = harp_curves["viral_load_tested_among_art"].astype(np.float32)
+    harp_documented_given_test = np.clip(
+        harp_third / np.clip(harp_tested, 1e-6, None),
+        0.0,
+        1.0,
+    ).astype(np.float32)
     harp_weight = harp_curves["weight"].astype(np.float32)
 
     total_overall_weight = official_overall_weight + harp_weight + observed_weight
@@ -518,6 +541,11 @@ def _suppression_anchor_curves(
         (harp_tested * harp_weight + observed_tested_among_art * observed_weight) / np.clip(harp_weight + observed_weight, 1e-6, None),
         observed_tested_among_art,
     ).astype(np.float32)
+    documented_given_test_target = np.where(
+        harp_weight + observed_weight > 0,
+        (harp_documented_given_test * harp_weight + observed_documented_given_test * observed_weight) / np.clip(harp_weight + observed_weight, 1e-6, None),
+        observed_documented_given_test,
+    ).astype(np.float32)
     transition_target = np.clip(0.02 + 0.08 * supp_among_art_target + 0.04 * overall_target, 0.04, 0.16).astype(np.float32)
     suppression_weight = np.clip(np.maximum.reduce([official_overall_weight, official_third_weight, harp_weight, observed_weight]), 0.05, 1.0).astype(np.float32)
     return {
@@ -525,16 +553,27 @@ def _suppression_anchor_curves(
         "overall_suppression_target": overall_target,
         "suppressed_among_art_target": supp_among_art_target,
         "tested_among_art_target": tested_among_art_target,
+        "documented_given_test_target": documented_given_test_target,
         "a_to_v_transition_target": transition_target,
         "weight": suppression_weight,
         "observed_overall_suppression": observed_overall,
         "observed_suppressed_among_art": observed_supp_among_art,
         "observed_tested_among_art": observed_tested_among_art,
+        "observed_documented_given_test": observed_documented_given_test,
         "official_overall_suppression": official_overall,
         "official_suppressed_among_art": official_third,
         "harp_overall_suppression": harp_overall,
         "harp_suppressed_among_art": harp_third,
         "harp_tested_among_art": harp_tested,
+        "harp_documented_given_test": harp_documented_given_test,
+        "process_weights": {
+            "transition_weight": float(cfg["transition_weight"]),
+            "suppressed_among_art_weight": float(cfg["suppressed_among_art_weight"]),
+            "overall_weight": float(cfg["overall_weight"]),
+            "tested_among_art_weight": float(cfg["tested_among_art_weight"]),
+            "documented_given_test_weight": float(cfg["documented_given_test_weight"]),
+            "national_tested_gap_weight": float(cfg["national_tested_gap_weight"]),
+        },
     }
 
 
@@ -577,20 +616,19 @@ def _normalized_counter(counter: Counter[str], labels: list[str], prior: np.ndar
 
 
 def _subgroup_row_weight(row: dict[str, Any]) -> float:
+    cfg = dict(_phase3_constraint("subgroup_row_weight") or {})
+    geo_cfg = dict(cfg.get("geo_factor", {}) or {})
     if str(row.get("source_bank") or "") == "phase1_standardized_tensor":
         return 0.0
     weight = float(row.get("evidence_weight") or 0.0)
-    weight *= 0.45 + 0.25 * float(row.get("measurement_quality_weight") or 0.0)
-    weight *= 0.35 + 0.35 * float(row.get("spatial_relevance_weight") or 0.0) + 0.30 * float(row.get("source_tier_weight") or 0.0)
+    weight *= float(cfg["measurement_base"]) + float(cfg["measurement_scale"]) * float(row.get("measurement_quality_weight") or 0.0)
+    weight *= (
+        float(cfg["spatial_base"])
+        + float(cfg["spatial_scale"]) * float(row.get("spatial_relevance_weight") or 0.0)
+        + float(cfg["tier_scale"]) * float(row.get("source_tier_weight") or 0.0)
+    )
     geo_resolution = str(row.get("geo_resolution") or "")
-    if geo_resolution in {"province", "city"}:
-        geo_factor = 1.0
-    elif geo_resolution == "region":
-        geo_factor = 0.8
-    elif geo_resolution == "national":
-        geo_factor = 0.45
-    else:
-        geo_factor = 0.2
+    geo_factor = float(geo_cfg.get(geo_resolution, geo_cfg["unknown"]))
     return float(max(0.0, weight * geo_factor))
 
 
@@ -602,6 +640,8 @@ def _load_subgroup_anchor_pack(run_dir: Any) -> dict[str, Any]:
 
 
 def _load_network_prior_signals(run_dir: Any, province_axis: list[str]) -> dict[str, dict[str, float]]:
+    mix_cfg = dict(_phase3_constraint("network_signal_mix") or {})
+    neutral_probability = float(_phase3_stabilizer("neutral_probability"))
     tensor_path = run_dir / "phase15" / "network_feature_tensor.npz"
     catalog_path = run_dir / "phase15" / "network_feature_catalog.json"
     if not tensor_path.exists() or not catalog_path.exists():
@@ -625,7 +665,7 @@ def _load_network_prior_signals(run_dir: Any, province_axis: list[str]) -> dict[
         lo = float(values[finite].min())
         hi = float(values[finite].max())
         if hi - lo < 1e-6:
-            return np.full(values.shape, 0.5, dtype=np.float32)
+            return np.full(values.shape, neutral_probability, dtype=np.float32)
         out = (values - lo) / (hi - lo)
         return np.clip(out, 0.0, 1.0).astype(np.float32)
 
@@ -635,8 +675,15 @@ def _load_network_prior_signals(run_dir: Any, province_axis: list[str]) -> dict[
     fragility = _normalize(_mean_surface("service_giant_component_loss"))
     continuity = _normalize(_mean_surface("continuity_of_care_stress"))
     isolation = _normalize(_mean_surface("community_information_isolation_score"))
-    urbanity = _normalize(0.4 * awareness + 0.35 * accessibility + 0.25 * inbound - 0.15 * isolation)
-    stress = _normalize(0.55 * fragility + 0.45 * continuity)
+    urbanity_cfg = dict(mix_cfg.get("urbanity", {}) or {})
+    stress_cfg = dict(mix_cfg.get("stress", {}) or {})
+    urbanity = _normalize(
+        float(urbanity_cfg["awareness"]) * awareness
+        + float(urbanity_cfg["accessibility"]) * accessibility
+        + float(urbanity_cfg["inbound"]) * inbound
+        + float(urbanity_cfg["isolation"]) * isolation
+    )
+    stress = _normalize(float(stress_cfg["fragility"]) * fragility + float(stress_cfg["continuity"]) * continuity)
     return {
         province_axis[idx]: {
             "urbanity": float(urbanity[idx]),
@@ -655,11 +702,12 @@ def _anchor_distribution_for_geo(
     region: str,
     kp_axis: list[str],
 ) -> Counter[str]:
+    cfg = dict(_phase3_constraint("subgroup_anchor_strength") or {})
     counter: Counter[str] = Counter()
     national_profile = anchor_pack.get("national_kp_profile") or {}
     mapped = national_profile.get("mapped_distribution") or {}
     for label in kp_axis:
-        counter[label] += float(mapped.get(label, 0.0)) * 18.0
+        counter[label] += float(mapped.get(label, 0.0)) * float(cfg["national_distribution_scale"])
     for anchor in anchor_pack.get("subnational_kp_anchors", []):
         anchor_geo = str(anchor.get("geo") or "")
         anchor_region = str(anchor.get("region") or "")
@@ -667,10 +715,13 @@ def _anchor_distribution_for_geo(
             continue
         estimate = float(anchor.get("estimated_population_15_plus") or 0.0)
         coverage = float(anchor.get("prevention_coverage") or 0.0)
-        strength = min(20.0, max(2.0, estimate / 80_000.0) + 6.0 * coverage)
-        counter["msm"] += 0.78 * strength
+        strength = min(
+            float(cfg["strength_ceiling"]),
+            max(float(cfg["strength_floor"]), estimate / float(cfg["estimate_divisor"])) + float(cfg["coverage_scale"]) * coverage,
+        )
+        counter["msm"] += float(cfg["msm_share"]) * strength
         if "tgw" in kp_axis:
-            counter["tgw"] += 0.22 * strength
+            counter["tgw"] += float(cfg["tgw_share"]) * strength
     return counter
 
 
@@ -681,40 +732,43 @@ def _network_adjusted_distribution(
     signal: dict[str, float],
     kind: str,
 ) -> np.ndarray:
+    neutral_probability = float(_phase3_stabilizer("neutral_probability"))
+    clip_floor = float(_phase3_stabilizer("clip_floor"))
+    mass_eps = float(_phase3_stabilizer("mass_eps"))
     adjusted = prior.astype(np.float32).copy()
-    urbanity = float(signal.get("urbanity", 0.5))
-    stress = float(signal.get("stress", 0.5))
-    awareness = float(signal.get("awareness", 0.5))
-    adjustment = dict((_phase3_prior("subgroup_network_adjustment", {}) or {}).get(kind, {}))
+    urbanity = float(signal.get("urbanity", neutral_probability))
+    stress = float(signal.get("stress", neutral_probability))
+    awareness = float(signal.get("awareness", neutral_probability))
+    adjustment = dict((_phase3_prior("subgroup_network_adjustment") or {}).get(kind, {}))
     label_to_idx = {label: idx for idx, label in enumerate(labels)}
     if kind == "kp":
         for label, coeffs in adjustment.items():
             if label not in label_to_idx:
                 continue
             delta = 0.0
-            delta += float(coeffs.get("urbanity", 0.0)) * (urbanity - 0.5)
-            delta += float(coeffs.get("awareness", 0.0)) * (awareness - 0.5)
-            delta += float(coeffs.get("stress", 0.0)) * (stress - 0.5)
+            delta += float(coeffs.get("urbanity", 0.0)) * (urbanity - neutral_probability)
+            delta += float(coeffs.get("awareness", 0.0)) * (awareness - neutral_probability)
+            delta += float(coeffs.get("stress", 0.0)) * (stress - neutral_probability)
             adjusted[label_to_idx[label]] += delta
     elif kind == "age":
         for label, coeffs in adjustment.items():
             if label not in label_to_idx:
                 continue
             delta = 0.0
-            delta += float(coeffs.get("urbanity", 0.0)) * (urbanity - 0.5)
-            delta += float(coeffs.get("awareness", 0.0)) * (awareness - 0.5)
+            delta += float(coeffs.get("urbanity", 0.0)) * (urbanity - neutral_probability)
+            delta += float(coeffs.get("awareness", 0.0)) * (awareness - neutral_probability)
             adjusted[label_to_idx[label]] += delta
     elif kind == "sex":
         for label, coeffs in adjustment.items():
             if label not in label_to_idx:
                 continue
-            urbanity_center = float(coeffs.get("urbanity_center", 0.5))
+            urbanity_center = float(coeffs.get("urbanity_center", neutral_probability))
             delta = 0.0
             delta += float(coeffs.get("urbanity", 0.0)) * (urbanity - urbanity_center)
-            delta += float(coeffs.get("stress", 0.0)) * (stress - 0.5)
+            delta += float(coeffs.get("stress", 0.0)) * (stress - neutral_probability)
             adjusted[label_to_idx[label]] += delta
-    adjusted = np.clip(adjusted, 1e-4, None)
-    adjusted = adjusted / np.clip(adjusted.sum(), 1e-6, None)
+    adjusted = np.clip(adjusted, clip_floor, None)
+    adjusted = adjusted / np.clip(adjusted.sum(), mass_eps, None)
     return adjusted.astype(np.float32)
 
 
@@ -726,10 +780,11 @@ def _build_subgroup_weights(
     age_axis: list[str],
     sex_axis: list[str],
 ) -> tuple[np.ndarray, dict[str, Any]]:
-    strength_cfg = dict(_phase3_prior("subgroup_counter_strength", {}) or {})
+    strength_cfg = dict(_phase3_prior("subgroup_counter_strength") or {})
+    anchor_cfg = dict(_phase3_constraint("subgroup_anchor_strength") or {})
     national_strength = dict(strength_cfg.get("national", {}) or {})
-    region_strength = float(strength_cfg.get("region", 11.0))
-    province_strength = float(strength_cfg.get("province", 7.5))
+    region_strength = float(strength_cfg["region"])
+    province_strength = float(strength_cfg["province"])
     province_counts: dict[str, dict[str, Counter[str]]] = defaultdict(lambda: {"kp": Counter(), "age": Counter(), "sex": Counter()})
     region_counts: dict[str, dict[str, Counter[str]]] = defaultdict(lambda: {"kp": Counter(), "age": Counter(), "sex": Counter()})
     national_counts: dict[str, Counter[str]] = {"kp": Counter(), "age": Counter(), "sex": Counter()}
@@ -743,7 +798,7 @@ def _build_subgroup_weights(
             province = ""
         if row.get("kp_group"):
             kp_label = str(row["kp_group"])
-            kp_weight = weight * (0.40 if kp_label == "remaining_population" else 1.0)
+            kp_weight = weight * (float(anchor_cfg["remaining_population_discount"]) if kp_label == "remaining_population" else 1.0)
             national_counts["kp"][kp_label] += kp_weight
             if region:
                 region_counts[region]["kp"][kp_label] += kp_weight
@@ -770,9 +825,9 @@ def _build_subgroup_weights(
     for label, value in national_anchor_kp.items():
         national_counts["kp"][label] += value
 
-    national_kp = _normalized_counter(national_counts["kp"], kp_axis, DEFAULT_KP_PRIOR[: len(kp_axis)], strength=float(national_strength.get("kp", 18.0)))
-    national_age = _normalized_counter(national_counts["age"], age_axis, DEFAULT_AGE_PRIOR[: len(age_axis)], strength=float(national_strength.get("age", 16.0)))
-    national_sex = _normalized_counter(national_counts["sex"], sex_axis, DEFAULT_SEX_PRIOR[: len(sex_axis)], strength=float(national_strength.get("sex", 16.0)))
+    national_kp = _normalized_counter(national_counts["kp"], kp_axis, DEFAULT_KP_PRIOR[: len(kp_axis)], strength=float(national_strength["kp"]))
+    national_age = _normalized_counter(national_counts["age"], age_axis, DEFAULT_AGE_PRIOR[: len(age_axis)], strength=float(national_strength["age"]))
+    national_sex = _normalized_counter(national_counts["sex"], sex_axis, DEFAULT_SEX_PRIOR[: len(sex_axis)], strength=float(national_strength["sex"]))
 
     weights = np.zeros((len(province_axis), len(kp_axis), len(age_axis), len(sex_axis)), dtype=np.float32)
     summary_rows = []
@@ -828,6 +883,7 @@ def _subgroup_prior_feature_matrix(
     archetype_bundle: dict[str, Any],
     province_axis: list[str],
 ) -> tuple[np.ndarray, list[str]]:
+    neutral_probability = float(_phase3_stabilizer("neutral_probability"))
     subgroup_rows = {str(row.get("province") or ""): row for row in list(subgroup_summary.get("rows", []) or [])}
     archetype_rows = {str(row.get("province") or ""): row for row in list(archetype_bundle.get("rows", []) or [])}
     feature_names = [
@@ -848,10 +904,10 @@ def _subgroup_prior_feature_matrix(
         archetype_mix = dict((archetype_rows.get(province, {}) or {}).get("archetype_mixture", {}) or {})
         matrix[province_idx] = np.asarray(
             [
-                float(signal.get("urbanity", 0.5)),
-                float(signal.get("accessibility", 0.5)),
-                float(signal.get("awareness", 0.5)),
-                float(signal.get("stress", 0.5)),
+                float(signal.get("urbanity", neutral_probability)),
+                float(signal.get("accessibility", neutral_probability)),
+                float(signal.get("awareness", neutral_probability)),
+                float(signal.get("stress", neutral_probability)),
                 float(archetype_mix.get("urban_high_throughput", 0.0)),
                 float(archetype_mix.get("migrant_corridor", 0.0)),
                 float(archetype_mix.get("remote_island", 0.0)),
@@ -884,13 +940,14 @@ def _build_province_archetype_bundle(
 
 
 def _feature_support_weight(profile: dict[str, Any], target_name: str) -> float:
-    support = 0.35
-    support += 0.20 * min(1.0, float(profile.get("numeric_row_count", 0)) / 4.0)
-    support += 0.15 * min(1.0, float(sum(profile.get("source_banks", {}).values())) / 4.0)
+    cfg = dict(_phase3_constraint("feature_support") or {})
+    support = float(cfg["base"])
+    support += float(cfg["numeric_row_bonus"]) * min(1.0, float(profile.get("numeric_row_count", 0)) / float(cfg["numeric_row_denominator"]))
+    support += float(cfg["source_bank_bonus"]) * min(1.0, float(sum(profile.get("source_banks", {}).values())) / float(cfg["source_bank_denominator"]))
     if target_name == "documented_suppression":
-        support += 0.10 if "biology" in profile.get("domain_families", {}) else 0.0
+        support += float(cfg["documented_suppression_biology_bonus"]) if "biology" in profile.get("domain_families", {}) else 0.0
     if target_name == "testing_coverage":
-        support += 0.10 if "behavior" in profile.get("domain_families", {}) else 0.0
+        support += float(cfg["testing_coverage_behavior_bonus"]) if "behavior" in profile.get("domain_families", {}) else 0.0
     return float(min(1.0, support))
 
 
@@ -899,6 +956,7 @@ def _match_target_indices(
     canonical_axis: list[str],
     parameter_catalog: list[dict[str, Any]],
 ) -> list[tuple[int, float, dict[str, Any]]]:
+    match_cfg = dict(_phase3_constraint("target_match") or {})
     rules = TARGET_PATTERNS[target_name]
     catalog_by_name = {str(row.get("canonical_name") or ""): row for row in parameter_catalog}
     matches: list[tuple[int, float, dict[str, Any]]] = []
@@ -912,10 +970,10 @@ def _match_target_indices(
         pathway_hit = any(pathway in pathway_keys for pathway in rules["pathways"])
         if not (token_hit or domain_hit or pathway_hit):
             continue
-        score = 0.25
-        score += 0.35 if token_hit else 0.0
-        score += 0.20 if domain_hit else 0.0
-        score += 0.20 if pathway_hit else 0.0
+        score = float(match_cfg["base_score"])
+        score += float(match_cfg["token_bonus"]) if token_hit else 0.0
+        score += float(match_cfg["domain_bonus"]) if domain_hit else 0.0
+        score += float(match_cfg["pathway_bonus"]) if pathway_hit else 0.0
         score += _feature_support_weight(profile, target_name)
         matches.append((index, float(score), profile | {"canonical_name": canonical_name}))
     matches.sort(key=lambda item: item[1], reverse=True)
@@ -923,19 +981,20 @@ def _match_target_indices(
 
 
 def _surface_from_matches(standardized_tensor: np.ndarray, matches: list[tuple[int, float, dict[str, Any]]]) -> tuple[np.ndarray, dict[str, Any]]:
+    top_k = int(dict(_phase3_constraint("target_match") or {})["top_k"])
     if standardized_tensor.size == 0 or not matches:
         empty = np.zeros(standardized_tensor.shape[:2], dtype=np.float32)
         return empty, {"matched_features": [], "feature_count": 0, "direct_support": 0, "anchor_support": 0}
-    indices = [item[0] for item in matches[: min(8, len(matches))]]
-    raw_weights = np.asarray([item[1] for item in matches[: min(8, len(matches))]], dtype=np.float32)
+    indices = [item[0] for item in matches[: min(top_k, len(matches))]]
+    raw_weights = np.asarray([item[1] for item in matches[: min(top_k, len(matches))]], dtype=np.float32)
     weights = raw_weights / np.clip(raw_weights.sum(), 1e-6, None)
     projected = standardized_tensor[:, :, indices]
     blended = np.tensordot(projected, weights, axes=([2], [0]))
     surface = _sigmoid_np(blended).astype(np.float32)
-    direct_support = sum(int(item[2].get("evidence_classes", {}).get("observed_numeric", 0) > 0) for item in matches[: min(8, len(matches))])
-    anchor_support = sum(int(item[2].get("evidence_classes", {}).get("numeric_prior", 0) > 0) for item in matches[: min(8, len(matches))])
+    direct_support = sum(int(item[2].get("evidence_classes", {}).get("observed_numeric", 0) > 0) for item in matches[: min(top_k, len(matches))])
+    anchor_support = sum(int(item[2].get("evidence_classes", {}).get("numeric_prior", 0) > 0) for item in matches[: min(top_k, len(matches))])
     return surface, {
-        "matched_features": [str(matches[idx][2].get("canonical_name") or "") for idx in range(min(8, len(matches)))],
+        "matched_features": [str(matches[idx][2].get("canonical_name") or "") for idx in range(min(top_k, len(matches)))],
         "feature_count": len(indices),
         "direct_support": direct_support,
         "anchor_support": anchor_support,
@@ -958,6 +1017,7 @@ def _matched_support_tensor(
     province_axis: list[str],
     month_axis: list[str],
 ) -> np.ndarray:
+    cfg = dict(_phase3_constraint("matched_support") or {})
     support = np.zeros((len(province_axis), len(month_axis), len(canonical_axis)), dtype=np.float32)
     province_lookup = {province: idx for idx, province in enumerate(province_axis)}
     month_lookup = _month_index_lookup(month_axis)
@@ -982,12 +1042,13 @@ def _matched_support_tensor(
         spatial = float(row.get("spatial_relevance_weight") or 0.0)
         support[province_lookup[province], month_lookup[month], canonical_lookup[canonical_name]] += max(
             0.0,
-            weight * (0.5 + 0.3 * quality + 0.2 * spatial),
+            weight * (float(cfg["weight_base"]) + float(cfg["quality_scale"]) * quality + float(cfg["spatial_scale"]) * spatial),
         )
     return support
 
 
 def _fill_sparse_surface(surface: np.ndarray, province_axis: list[str]) -> np.ndarray:
+    neutral_probability = float(_phase3_stabilizer("neutral_probability"))
     if surface.size == 0:
         return surface.astype(np.float32)
     filled = np.asarray(surface, dtype=np.float32).copy()
@@ -1019,7 +1080,7 @@ def _fill_sparse_surface(surface: np.ndarray, province_axis: list[str]) -> np.nd
     national_month_mean = np.asarray(_safe_nanmean(filled, axis=0), dtype=np.float32)
     national_mean = float(_safe_nanmean(filled))
     if not np.isfinite(national_mean):
-        national_mean = 0.5
+        national_mean = neutral_probability
     national_month_mean = np.where(np.isfinite(national_month_mean), national_month_mean, national_mean)
 
     for province_idx, province in enumerate(province_axis):
@@ -1047,6 +1108,7 @@ def _surface_from_sparse_support(
     matches: list[tuple[int, float, dict[str, Any]]],
     province_axis: list[str],
 ) -> tuple[np.ndarray, dict[str, Any]]:
+    top_k = int(dict(_phase3_constraint("target_match") or {})["top_k"])
     if standardized_tensor.size == 0 or support_tensor.size == 0 or not matches:
         empty = np.zeros(standardized_tensor.shape[:2], dtype=np.float32)
         return empty, {
@@ -1058,7 +1120,7 @@ def _surface_from_sparse_support(
             "observed_mask": np.zeros_like(empty, dtype=np.float32),
             "support_surface": np.zeros_like(empty, dtype=np.float32),
         }
-    top_matches = matches[: min(8, len(matches))]
+    top_matches = matches[: min(top_k, len(matches))]
     indices = [item[0] for item in top_matches]
     raw_weights = np.asarray([item[1] for item in top_matches], dtype=np.float32)
     weights = raw_weights / np.clip(raw_weights.sum(), 1e-6, None)
@@ -1134,6 +1196,8 @@ def _surface_from_normalized_rows(
     province_axis: list[str],
     month_axis: list[str],
 ) -> tuple[np.ndarray, dict[str, Any]]:
+    cfg = dict(_phase3_constraint("normalized_row_support") or {})
+    neutral_probability = float(_phase3_stabilizer("neutral_probability"))
     province_lookup = {province: idx for idx, province in enumerate(province_axis)}
     month_lookup = _month_index_lookup(month_axis)
     share_sum = np.zeros((len(province_axis), len(month_axis)), dtype=np.float32)
@@ -1155,7 +1219,11 @@ def _surface_from_normalized_rows(
         if share_value is None and count_value is None:
             continue
         weight = float(row.get("evidence_weight") or 0.0)
-        weight *= 0.4 + 0.3 * float(row.get("measurement_quality_weight") or 0.0) + 0.3 * float(row.get("spatial_relevance_weight") or 0.0)
+        weight *= (
+            float(cfg["weight_base"])
+            + float(cfg["quality_scale"]) * float(row.get("measurement_quality_weight") or 0.0)
+            + float(cfg["spatial_scale"]) * float(row.get("spatial_relevance_weight") or 0.0)
+        )
         if weight <= 0.0:
             continue
         province_idx = province_lookup[province]
@@ -1188,7 +1256,7 @@ def _surface_from_normalized_rows(
             lo = float(np.min(month_values[mask]))
             hi = float(np.max(month_values[mask]))
             if hi - lo < 1e-6:
-                normalized = np.full(month_values.shape, 0.5, dtype=np.float32)
+                normalized = np.full(month_values.shape, neutral_probability, dtype=np.float32)
             else:
                 normalized = np.clip((month_values - lo) / (hi - lo), 0.0, 1.0).astype(np.float32)
             use_mask = mask & ~np.isfinite(surface[:, month_idx])
@@ -1238,7 +1306,8 @@ def _blend_curve_components(components: list[tuple[np.ndarray, np.ndarray]], *, 
 
 
 def _observation_prior_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
-    fallback_cfg = dict(_phase3_prior("observation_fallback", {}) or {})
+    fallback_cfg = dict(_phase3_prior("observation_fallback") or {})
+    mass_eps = float(_phase3_stabilizer("mass_eps"))
     official_curves = _official_anchor_curves(month_axis)
     harp_curves = _harp_program_curves(month_axis)
 
@@ -1247,15 +1316,15 @@ def _observation_prior_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
             (official_curves["diagnosed_stock"], official_curves["weight"]),
             (harp_curves["diagnosed_stock"], harp_curves["weight"]),
         ],
-        default_value=float(fallback_cfg.get("diagnosed_floor", 0.08)),
+        default_value=float(fallback_cfg["diagnosed_floor"]),
     )
     second95_official = np.clip(
-        official_curves["art_stock"] / np.clip(official_curves["diagnosed_stock"], 1e-6, None),
+        official_curves["art_stock"] / np.clip(official_curves["diagnosed_stock"], mass_eps, None),
         0.0,
         1.0,
     ).astype(np.float32)
     second95_harp = np.clip(
-        harp_curves["art_stock"] / np.clip(harp_curves["diagnosed_stock"], 1e-6, None),
+        harp_curves["art_stock"] / np.clip(harp_curves["diagnosed_stock"], mass_eps, None),
         0.0,
         1.0,
     ).astype(np.float32)
@@ -1264,20 +1333,20 @@ def _observation_prior_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
             (second95_official, official_curves["weight"]),
             (second95_harp, harp_curves["weight"]),
         ],
-        default_value=float(fallback_cfg.get("second95_prior", 0.66)),
+        default_value=float(fallback_cfg["second95_prior"]),
     )
     art = np.clip(
         diagnosed * second95,
-        float(fallback_cfg.get("art_floor", 0.02)),
+        float(fallback_cfg["art_floor"]),
         np.clip(diagnosed, 0.0, 1.0),
     ).astype(np.float32)
     tested_among_art = _blend_curve_components(
         [(harp_curves["viral_load_tested_among_art"], harp_curves["weight"])],
-        default_value=float(fallback_cfg.get("tested_among_art_prior", 0.42)),
+        default_value=float(fallback_cfg["tested_among_art_prior"]),
     )
     testing = np.clip(
         art * tested_among_art,
-        float(fallback_cfg.get("testing_floor", 0.01)),
+        float(fallback_cfg["testing_floor"]),
         np.clip(art, 0.0, 1.0),
     ).astype(np.float32)
     suppressed_among_art = _blend_curve_components(
@@ -1285,11 +1354,11 @@ def _observation_prior_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
             (official_curves["third95"], official_curves["weight"]),
             (harp_curves["suppressed_among_art"], harp_curves["weight"]),
         ],
-        default_value=float(fallback_cfg.get("suppressed_among_art_prior", 0.58)),
+        default_value=float(fallback_cfg["suppressed_among_art_prior"]),
     )
     suppression = np.clip(
         art * suppressed_among_art,
-        float(fallback_cfg.get("suppression_floor", 0.01)),
+        float(fallback_cfg["suppression_floor"]),
         np.clip(testing, 0.0, 1.0),
     ).astype(np.float32)
     return {
@@ -1301,17 +1370,17 @@ def _observation_prior_curves(month_axis: list[str]) -> dict[str, np.ndarray]:
 
 
 def _enforce_cascade_ordering(targets: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    bounds = dict(_phase3_prior("observation_bounds", {}) or {})
-    diagnosed = np.clip(targets["diagnosed_stock"], *(bounds.get("diagnosed_stock", [0.04, 0.98])))
-    art = np.clip(targets["art_stock"], *(bounds.get("art_stock", [0.01, 0.96])))
-    suppression = np.clip(targets["documented_suppression"], *(bounds.get("documented_suppression", [0.0, 0.94])))
-    testing = np.clip(targets["testing_coverage"], *(bounds.get("testing_coverage", [0.0, 0.96])))
+    bounds = dict(_phase3_prior("observation_bounds") or {})
+    diagnosed = np.clip(targets["diagnosed_stock"], *bounds["diagnosed_stock"])
+    art = np.clip(targets["art_stock"], *bounds["art_stock"])
+    suppression = np.clip(targets["documented_suppression"], *bounds["documented_suppression"])
+    testing = np.clip(targets["testing_coverage"], *bounds["testing_coverage"])
     art = np.minimum(art, diagnosed)
     testing = np.minimum(testing, art)
     suppression = np.minimum(suppression, testing)
     art = np.maximum(art, testing)
     diagnosed = np.maximum(diagnosed, art)
-    deaths = np.clip(targets["deaths"], *(bounds.get("deaths", [0.0, 0.12])))
+    deaths = np.clip(targets["deaths"], *bounds["deaths"])
     return {
         "diagnosed_stock": diagnosed.astype(np.float32),
         "art_stock": art.astype(np.float32),
@@ -1498,9 +1567,9 @@ def _build_observation_support_bundle(
     month_axis: list[str],
     observation_ladder: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    latent_cfg = dict(_phase3_prior("latent_observation", {}) or {})
-    support_floor = float(latent_cfg.get("support_floor", 0.05))
-    support_power = float(latent_cfg.get("support_power", 0.85))
+    latent_cfg = dict(_phase3_prior("latent_observation") or {})
+    support_floor = float(latent_cfg["support_floor"])
+    support_power = float(latent_cfg["support_power"])
     support_tensor = _matched_support_tensor(normalized_rows, canonical_axis, province_axis, month_axis)
     ladder_map = {str(row.get("target_name") or ""): row for row in observation_ladder}
     target_support: dict[str, dict[str, np.ndarray | str | float]] = {}
@@ -1602,8 +1671,9 @@ def _state_initialization_prior(
     *,
     support_bundle: dict[str, Any] | None = None,
 ) -> dict[str, np.ndarray]:
-    init_cfg = dict(_phase3_prior("state_initialization", {}) or {})
-    eps = float(_phase3_stabilizer("clip_floor", 1e-4))
+    init_cfg = dict(_phase3_prior("state_initialization") or {})
+    eps = float(_phase3_stabilizer("clip_floor"))
+    mass_eps = float(_phase3_stabilizer("mass_eps"))
     diagnosed = observation_targets["diagnosed_stock"]
     art = np.minimum(observation_targets["art_stock"], diagnosed)
     testing = np.minimum(observation_targets["testing_coverage"], art)
@@ -1617,21 +1687,18 @@ def _state_initialization_prior(
     suppression_gap = np.clip(1.0 - suppression / np.clip(testing, eps, None), 0.0, 1.0)
     loss_share = np.clip(
         base_loss_share
-        + float(init_cfg.get("loss_share_art_gap_weight", 0.25)) * art_gap
-        + float(init_cfg.get("loss_share_suppression_gap_weight", 0.15)) * suppression_gap,
-        float(init_cfg.get("loss_share_lower", 0.05)),
-        float(init_cfg.get("loss_share_upper", 0.85)),
+        + float(init_cfg["loss_share_art_gap_weight"]) * art_gap
+        + float(init_cfg["loss_share_suppression_gap_weight"]) * suppression_gap,
+        float(init_cfg["loss_share_lower"]),
+        float(init_cfg["loss_share_upper"]),
     )
     lost = np.minimum(diagnosed_nonart * loss_share, diagnosed_nonart)
     diagnosed_no_art = np.maximum(diagnosed_nonart - lost, eps)
     on_art_unsuppressed = np.maximum(art - suppression, eps)
     undiagnosed = np.maximum(1.0 - diagnosed, eps)
     stacked = np.stack([undiagnosed, diagnosed_no_art, on_art_unsuppressed, suppression, lost], axis=-1).astype(np.float32)
-    mean = stacked / np.clip(stacked.sum(axis=-1, keepdims=True), float(_phase3_stabilizer("mass_eps", 1e-6)), None)
-    default_state = np.asarray(
-        ((_phase3_prior("frozen_backtest", {}) or {}).get("default_initial_state", [0.48, 0.19, 0.18, 0.10, 0.05])),
-        dtype=np.float32,
-    ).reshape(1, 1, len(STATE_NAMES))
+    mean = stacked / np.clip(stacked.sum(axis=-1, keepdims=True), mass_eps, None)
+    default_state = np.asarray(_phase3_prior("frozen_backtest")["default_initial_state"], dtype=np.float32).reshape(1, 1, len(STATE_NAMES))
     if support_bundle is not None:
         support_targets = dict(support_bundle.get("targets", {}) or {})
         support_surfaces = [
@@ -1643,14 +1710,14 @@ def _state_initialization_prior(
         else:
             support_strength = np.zeros_like(diagnosed, dtype=np.float32)
     else:
-        support_strength = np.ones_like(diagnosed, dtype=np.float32) * 0.5
+        support_strength = np.ones_like(diagnosed, dtype=np.float32) * float(_phase3_stabilizer("neutral_probability"))
     blended = (support_strength[..., None] * mean + (1.0 - support_strength[..., None]) * default_state).astype(np.float32)
-    blended = blended / np.clip(blended.sum(axis=-1, keepdims=True), float(_phase3_stabilizer("mass_eps", 1e-6)), None)
+    blended = blended / np.clip(blended.sum(axis=-1, keepdims=True), float(_phase3_stabilizer("mass_eps")), None)
     concentration = np.clip(
-        float(init_cfg.get("prior_strength_lower", 6.0))
-        + (float(init_cfg.get("prior_strength_upper", 26.0)) - float(init_cfg.get("prior_strength_lower", 6.0))) * support_strength,
-        float(init_cfg.get("prior_strength_lower", 6.0)),
-        float(init_cfg.get("prior_strength_upper", 26.0)),
+        float(init_cfg["prior_strength_lower"])
+        + (float(init_cfg["prior_strength_upper"]) - float(init_cfg["prior_strength_lower"])) * support_strength,
+        float(init_cfg["prior_strength_lower"]),
+        float(init_cfg["prior_strength_upper"]),
     ).astype(np.float32)
     return {
         "mean": blended.astype(np.float32),
@@ -1835,8 +1902,8 @@ def _build_cd4_overlay(
     age_axis: list[str],
     sex_axis: list[str],
 ) -> tuple[np.ndarray, dict[str, Any]]:
-    cd4_cfg = dict(_phase3_prior("cd4_overlay", {}) or {})
-    clip_floor = float(_phase3_stabilizer("clip_floor", 1e-4))
+    cd4_cfg = dict(_phase3_prior("cd4_overlay") or {})
+    clip_floor = float(_phase3_stabilizer("clip_floor"))
     province_count = len(province_axis)
     month_count = observation_targets["diagnosed_stock"].shape[1]
     overlay = np.zeros((province_count, len(kp_axis), len(age_axis), len(sex_axis), len(CD4_CATALOG), month_count), dtype=np.float32)
@@ -1846,11 +1913,11 @@ def _build_cd4_overlay(
         art = observation_targets["art_stock"][province_idx]
         suppression = observation_targets["documented_suppression"][province_idx]
         for month_idx in range(month_count):
-            low_shift = float(cd4_cfg.get("low_art_weight", 0.10)) * float(1.0 - art[month_idx]) + float(cd4_cfg.get("low_suppression_weight", 0.08)) * float(1.0 - suppression[month_idx])
-            high_shift = float(cd4_cfg.get("high_suppression_weight", 0.12)) * float(suppression[month_idx])
+            low_shift = float(cd4_cfg["low_art_weight"]) * float(1.0 - art[month_idx]) + float(cd4_cfg["low_suppression_weight"]) * float(1.0 - suppression[month_idx])
+            high_shift = float(cd4_cfg["high_suppression_weight"]) * float(suppression[month_idx])
             base = DEFAULT_CD4_PRIOR.copy()
             base[0] += low_shift
-            base[1] += float(cd4_cfg.get("mid_low_weight", 0.50)) * low_shift
+            base[1] += float(cd4_cfg["mid_low_weight"]) * low_shift
             base[3] += high_shift
             base = np.clip(base, clip_floor, None)
             base = base / np.clip(base.sum(), 1e-6, None)
@@ -1972,15 +2039,73 @@ def _transition_hook_mask(hooks: list[str]) -> list[float]:
     return mask.tolist()
 
 
+def _build_intervention_tensor_from_covariates(
+    covariates: np.ndarray,
+    covariate_meta: dict[str, Any],
+) -> tuple[np.ndarray, dict[str, Any]]:
+    cfg = dict(_phase3_constraint("intervention_tensor") or {})
+    channel_rows = list(cfg.get("channels") or [])
+    covariate_names = [str(name) for name in list(covariate_meta.get("covariate_names") or [])]
+    hook_masks = [np.asarray(row, dtype=np.float32) for row in list(covariate_meta.get("transition_hook_masks") or [])]
+    if covariates.size == 0 or not channel_rows or not covariate_names or not hook_masks:
+        empty = np.zeros((*covariates.shape[:2], 0), dtype=np.float32)
+        return empty, {"channel_names": [], "channel_sources": {}, "hook_masks": [], "available": False}
+    base_floor = float(cfg["base_covariate_floor"])
+    channel_parts: list[np.ndarray] = []
+    channel_names: list[str] = []
+    channel_sources: dict[str, list[str]] = {}
+    channel_hook_masks: list[list[float]] = []
+    for row in channel_rows:
+        channel_name = str(row.get("name") or f"channel_{len(channel_names)}")
+        transition_indices = {int(value) for value in list(row.get("transition_indices") or [])}
+        matched_indices = [
+            idx
+            for idx, (name, hook_mask) in enumerate(zip(covariate_names, hook_masks))
+            if not name.startswith("obs_") and any(t_idx in transition_indices for t_idx in np.nonzero(hook_mask > 0.0)[0].tolist())
+        ]
+        if matched_indices:
+            signal = 1.0 / (1.0 + np.exp(-covariates[:, :, matched_indices]))
+            surface = signal.mean(axis=-1).astype(np.float32)
+            combined_mask = np.max(np.stack([hook_masks[idx] for idx in matched_indices], axis=0), axis=0)
+        else:
+            surface = np.full(covariates.shape[:2], base_floor, dtype=np.float32)
+            combined_mask = np.zeros((len(TRANSITION_NAMES),), dtype=np.float32)
+        channel_parts.append(surface[:, :, None])
+        channel_names.append(channel_name)
+        channel_sources[channel_name] = [covariate_names[idx] for idx in matched_indices]
+        channel_hook_masks.append(combined_mask.round(6).tolist())
+    intervention_tensor = np.concatenate(channel_parts, axis=-1).astype(np.float32) if channel_parts else np.zeros((*covariates.shape[:2], 0), dtype=np.float32)
+    return intervention_tensor, {
+        "channel_names": channel_names,
+        "channel_sources": channel_sources,
+        "hook_masks": channel_hook_masks,
+        "available": bool(channel_names),
+    }
+
+
 def _build_mesoscopic_modifier_covariates(
     *,
     run_dir: Any,
     observation_targets: dict[str, np.ndarray],
+    selection_variant: str = "phase2_active",
 ) -> tuple[np.ndarray, dict[str, Any]]:
     base = _build_covariates(observation_targets)
     factor_catalog = read_json(run_dir / "phase15" / "mesoscopic_factor_catalog.json", default=[])
-    promoted = read_json(run_dir / "phase2" / "promoted_factor_set.json", default=[])
-    supporting = read_json(run_dir / "phase2" / "supporting_factor_set.json", default=[])
+    if selection_variant == "phase15_baseline":
+        pool_rows = read_json(run_dir / "phase15" / "factor_survival_pool_baseline.json", default=[])
+        promoted = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_primary"]
+        supporting = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_secondary"]
+    elif selection_variant == "phase15_optimized":
+        pool_rows = read_json(run_dir / "phase15" / "factor_survival_pool_optimized.json", default=[])
+        promoted = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_primary"]
+        supporting = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_secondary"]
+    else:
+        promoted = read_json(run_dir / "phase2" / "retained_predictive_factor_set.json", default=[])
+        if not promoted:
+            promoted = read_json(run_dir / "phase2" / "promoted_factor_set.json", default=[])
+        supporting = read_json(run_dir / "phase2" / "retained_context_factor_set.json", default=[])
+        if not supporting:
+            supporting = read_json(run_dir / "phase2" / "supporting_factor_set.json", default=[])
     factor_tensor_path = run_dir / "phase15" / "mesoscopic_factor_tensor.npz"
     if not factor_catalog or not factor_tensor_path.exists():
         return base, {
@@ -1989,6 +2114,7 @@ def _build_mesoscopic_modifier_covariates(
             "transition_hook_masks": [[1.0, 0.4, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.5, 0.5], [0.0, 0.0, 1.0, 0.5, 0.0]],
             "coupling_covariate_names": [],
             "network_family_indices": {},
+            "selection_variant": selection_variant,
         }
 
     factor_tensor = load_tensor_artifact(factor_tensor_path).astype(np.float32)
@@ -2042,6 +2168,7 @@ def _build_mesoscopic_modifier_covariates(
                 "transition_hooks": hooks,
                 "network_feature_family": row.get("network_feature_family", ""),
                 "diagnostic_score": row.get("diagnostic_score", 0.0),
+                "selection_variant": selection_variant,
             }
         )
         if row.get("network_feature_family") in {"reaction_diffusion", "information_propagation"} or "subgroup_allocation_priors" in hooks:
@@ -2057,7 +2184,167 @@ def _build_mesoscopic_modifier_covariates(
         "coupling_covariate_names": coupling_names,
         "network_family_indices": {key: value for key, value in network_family_indices.items()},
         "alignment_notes": alignment_notes,
+        "selection_variant": selection_variant,
     }
+
+
+def _resolve_modifier_representation(profile_id: str, requested_representation: str | None) -> str:
+    requested = str(requested_representation or "").strip().lower()
+    if requested in {"unclumped", "clumped", "hybrid", "clumped_baseline", "clumped_optimized", "hybrid_baseline", "hybrid_optimized"}:
+        return requested
+    return "clumped" if profile_id == RESCUE_V2_PROFILE_ID else "unclumped"
+
+
+def _build_hybrid_modifier_covariates(
+    *,
+    run_dir: Any,
+    observation_targets: dict[str, np.ndarray],
+    standardized_tensor: np.ndarray,
+    canonical_axis: list[str],
+    candidate_profiles: list[dict[str, Any]],
+    mesoscopic_selection_variant: str = "phase2_active",
+) -> tuple[np.ndarray, dict[str, Any]]:
+    raw_covariates, raw_meta = _build_modifier_covariates(
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+    )
+    meso_covariates, meso_meta = _build_mesoscopic_modifier_covariates(
+        run_dir=run_dir,
+        observation_targets=observation_targets,
+        selection_variant=mesoscopic_selection_variant,
+    )
+    if raw_covariates.shape[:2] != meso_covariates.shape[:2]:
+        return raw_covariates, raw_meta | {"representation_mode": "hybrid_fallback_unclumped", "alignment_notes": ["hybrid_shape_mismatch"]}
+
+    combined_parts = [raw_covariates[:, :, :3]]
+    combined_names = list(raw_meta.get("covariate_names", [])[:3])
+    combined_masks = list(raw_meta.get("transition_hook_masks", [])[:3])
+    combined_selected = []
+    coupling_names: list[str] = []
+    network_family_indices: dict[str, list[int]] = defaultdict(list)
+    alignment_notes = list(raw_meta.get("alignment_notes", []) or []) + list(meso_meta.get("alignment_notes", []) or [])
+    seen_names = set(combined_names)
+
+    def _append_sources(
+        covariates: np.ndarray,
+        meta: dict[str, Any],
+        *,
+        prefix: str,
+    ) -> None:
+        nonlocal combined_parts, combined_names, combined_masks, combined_selected, coupling_names, network_family_indices
+        source_names = list(meta.get("covariate_names", []))
+        source_masks = list(meta.get("transition_hook_masks", []))
+        selected_rows = list(meta.get("selected_determinant_modifiers", []))
+        source_couplings = set(str(name) for name in list(meta.get("coupling_covariate_names", [])))
+        source_network_indices = {
+            str(key): [int(value) for value in list(values)]
+            for key, values in dict(meta.get("network_family_indices", {}) or {}).items()
+        }
+        for local_idx in range(3, covariates.shape[-1]):
+            source_name = source_names[local_idx] if local_idx < len(source_names) else f"{prefix}::{local_idx}"
+            renamed = f"{prefix}::{source_name}"
+            if renamed in seen_names:
+                continue
+            seen_names.add(renamed)
+            combined_parts.append(covariates[:, :, local_idx : local_idx + 1].astype(np.float32))
+            combined_names.append(renamed)
+            combined_masks.append(source_masks[local_idx] if local_idx < len(source_masks) else _transition_hook_mask(["diagnosis_transitions"]))
+            if source_name in source_couplings:
+                coupling_names.append(renamed)
+            combined_idx = len(combined_names) - 1
+            for family_name, family_indices in source_network_indices.items():
+                if local_idx in family_indices:
+                    network_family_indices[family_name].append(combined_idx)
+            selected_idx = local_idx - 3
+            if 0 <= selected_idx < len(selected_rows):
+                selected_row = dict(selected_rows[selected_idx])
+                selected_row["representation_source"] = prefix
+                selected_row["covariate_name"] = renamed
+                combined_selected.append(selected_row)
+
+    _append_sources(raw_covariates, raw_meta, prefix="unclumped")
+    _append_sources(meso_covariates, meso_meta, prefix="clumped")
+    covariates = np.concatenate(combined_parts, axis=-1).astype(np.float32)
+    return covariates, {
+        "selected_determinant_modifiers": combined_selected,
+        "covariate_names": combined_names,
+        "transition_hook_masks": combined_masks,
+        "coupling_covariate_names": coupling_names,
+        "network_family_indices": {key: value for key, value in network_family_indices.items()},
+        "alignment_notes": alignment_notes,
+        "selection_variant": mesoscopic_selection_variant,
+        "representation_mode": "hybrid",
+    }
+
+
+def _build_representation_modifier_covariates(
+    *,
+    run_dir: Any,
+    profile_id: str,
+    observation_targets: dict[str, np.ndarray],
+    standardized_tensor: np.ndarray,
+    canonical_axis: list[str],
+    candidate_profiles: list[dict[str, Any]],
+    modifier_representation: str | None,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    resolved = _resolve_modifier_representation(profile_id, modifier_representation)
+    if resolved == "unclumped":
+        covariates, meta = _build_modifier_covariates(
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+        )
+    elif resolved == "hybrid":
+        covariates, meta = _build_hybrid_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+            mesoscopic_selection_variant="phase2_active",
+        )
+    elif resolved == "hybrid_baseline":
+        covariates, meta = _build_hybrid_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+            mesoscopic_selection_variant="phase15_baseline",
+        )
+    elif resolved == "hybrid_optimized":
+        covariates, meta = _build_hybrid_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+            mesoscopic_selection_variant="phase15_optimized",
+        )
+    elif resolved == "clumped_baseline":
+        covariates, meta = _build_mesoscopic_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            selection_variant="phase15_baseline",
+        )
+    elif resolved == "clumped_optimized":
+        covariates, meta = _build_mesoscopic_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            selection_variant="phase15_optimized",
+        )
+    else:
+        covariates, meta = _build_mesoscopic_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            selection_variant="phase2_active",
+        )
+    meta = dict(meta)
+    meta["representation_mode"] = resolved
+    return covariates, meta
 
 
 def _fit_rescue_core_numpy(
@@ -2076,19 +2363,20 @@ def _fit_rescue_core_numpy(
     age_axis: list[str],
     sex_axis: list[str],
     duration_catalog: list[str],
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     del subgroup_weights, cd4_overlay, province_axis, age_axis, sex_axis, duration_catalog
-    _, covariate_meta = (
-        _build_mesoscopic_modifier_covariates(run_dir=run_dir, observation_targets=observation_targets)
-        if profile_id == RESCUE_V2_PROFILE_ID
-        else _build_modifier_covariates(
-            observation_targets=observation_targets,
-            standardized_tensor=standardized_tensor,
-            canonical_axis=canonical_axis,
-            candidate_profiles=candidate_profiles,
-        )
+    covariates, covariate_meta = _build_representation_modifier_covariates(
+        run_dir=run_dir,
+        profile_id=profile_id,
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+        modifier_representation=modifier_representation,
     )
+    intervention_tensor, intervention_summary = _build_intervention_tensor_from_covariates(covariates, covariate_meta)
     state_estimates = _province_observed_state_targets(observation_targets, support_bundle=observation_support_bundle).astype(np.float32)
     base_transition = np.broadcast_to(TRANSITION_PRIOR.reshape(1, 1, -1), (state_estimates.shape[0], state_estimates.shape[1], len(TRANSITION_NAMES))).astype(np.float32)
     kp_coupling_matrix = np.eye(len(kp_axis), dtype=np.float32).tolist()
@@ -2118,10 +2406,19 @@ def _fit_rescue_core_numpy(
             "national_transition": TRANSITION_PRIOR.round(6).tolist(),
             "kp_coupling_matrix": kp_coupling_matrix,
             "determinant_covariates": covariate_meta,
+            "intervention_tensor": intervention_summary,
             "metapopulation_engine": {"enabled": False, "operator_names": [], "scale": []},
         },
         "device": "cpu",
         "inference_family": "numpy_map",
+        "intervention_tensor": intervention_tensor.astype(np.float32),
+        "intervention_summary": intervention_summary,
+        "posterior_calibration": {"available": False, "reason": "posterior_samples_unavailable_for_numpy_map"},
+        "chain_diagnostics": {
+            "available": False,
+            "inference_method": "numpy_map",
+            "reason": "mcmc_unavailable_for_numpy_map",
+        },
     }
 
 
@@ -2210,33 +2507,37 @@ def _rescue_svi_model(
     if numpyro is None or jnp is None:
         raise RuntimeError("NumPyro/JAX backend is unavailable")
     province_count, month_count, cov_count = covariates.shape
-    svi_cfg = dict(_phase3_prior("jax_svi_priors", {}) or {})
-    latent_cfg = dict(_phase3_prior("latent_observation", {}) or {})
-    subgroup_cfg = dict(_phase3_prior("subgroup_hyperpriors", {}) or {})
-    cd4_hyper_cfg = dict(_phase3_prior("cd4_hyperpriors", {}) or {})
-    archetype_cfg = dict(_phase3_prior("archetype_hyperpriors", {}) or {})
+    svi_cfg = dict(_phase3_prior("jax_svi_priors") or {})
+    frozen_cfg = dict(_phase3_prior("frozen_backtest") or {})
+    semi_markov_cfg = dict(frozen_cfg.get("semi_markov_hyperpriors", {}) or {})
+    latent_cfg = dict(_phase3_prior("latent_observation") or {})
+    subgroup_cfg = dict(_phase3_prior("subgroup_hyperpriors") or {})
+    cd4_hyper_cfg = dict(_phase3_prior("cd4_hyperpriors") or {})
+    archetype_cfg = dict(_phase3_prior("archetype_hyperpriors") or {})
+    init_cfg = dict(_phase3_constraint("torch_initialization") or {})
+    suppression_process_cfg = dict(_phase3_constraint("suppression_process") or {})
     kp_count = int(base_kp_log.shape[-1])
     age_count = int(base_age_log.shape[-1])
     sex_count = int(base_sex_log.shape[-1])
     feature_count = int(subgroup_feature_matrix.shape[-1])
     prior_logit = jnp.asarray(_logit_np(TRANSITION_PRIOR), dtype=jnp.float32)
-    national_logit = numpyro.sample("national_logit", dist.Normal(prior_logit, float(svi_cfg.get("transition_prior_sigma", 0.35))).to_event(1))
+    national_logit = numpyro.sample("national_logit", dist.Normal(prior_logit, float(svi_cfg["transition_prior_sigma"])).to_event(1))
     region_offset = numpyro.sample(
         "region_offset",
-        dist.Normal(jnp.zeros((region_count, len(TRANSITION_NAMES))), float(svi_cfg.get("province_transition_sigma", 0.12)) * 1.15).to_event(2),
+        dist.Normal(jnp.zeros((region_count, len(TRANSITION_NAMES))), float(svi_cfg["province_transition_sigma"]) * 1.15).to_event(2),
     )
     archetype_transition_scale_log = numpyro.sample(
         "archetype_transition_scale_log",
-        dist.Normal(jnp.zeros((len(TRANSITION_NAMES),), dtype=jnp.float32), float(archetype_cfg.get("transition_scale_sigma", 0.25))).to_event(1),
+        dist.Normal(jnp.zeros((len(TRANSITION_NAMES),), dtype=jnp.float32), float(archetype_cfg["transition_scale_sigma"])).to_event(1),
     )
     archetype_transition_scale = jnp.exp(archetype_transition_scale_log)
     province_offset = numpyro.sample(
         "province_offset",
-        dist.Normal(province_transition_prior * archetype_transition_scale.reshape(1, len(TRANSITION_NAMES)), float(svi_cfg.get("province_transition_sigma", 0.12))).to_event(2),
+        dist.Normal(province_transition_prior * archetype_transition_scale.reshape(1, len(TRANSITION_NAMES)), float(svi_cfg["province_transition_sigma"])).to_event(2),
     )
-    subgroup_feature_sigma = float(subgroup_cfg.get("feature_coef_sigma", 0.18))
-    subgroup_state_sigma = float(subgroup_cfg.get("state_effect_sigma", 0.10))
-    subgroup_transition_sigma = float(subgroup_cfg.get("transition_effect_sigma", 0.08))
+    subgroup_feature_sigma = float(subgroup_cfg["feature_coef_sigma"])
+    subgroup_state_sigma = float(subgroup_cfg["state_effect_sigma"])
+    subgroup_transition_sigma = float(subgroup_cfg["transition_effect_sigma"])
     kp_prior_coef = numpyro.sample("kp_prior_coef", dist.Normal(jnp.zeros((feature_count, kp_count), dtype=jnp.float32), subgroup_feature_sigma).to_event(2))
     age_prior_coef = numpyro.sample("age_prior_coef", dist.Normal(jnp.zeros((feature_count, age_count), dtype=jnp.float32), subgroup_feature_sigma).to_event(2))
     sex_prior_coef = numpyro.sample("sex_prior_coef", dist.Normal(jnp.zeros((feature_count, sex_count), dtype=jnp.float32), subgroup_feature_sigma).to_event(2))
@@ -2246,48 +2547,66 @@ def _rescue_svi_model(
     kp_transition_effect = numpyro.sample("kp_transition_effect", dist.Normal(jnp.zeros((kp_count, len(TRANSITION_NAMES)), dtype=jnp.float32), subgroup_transition_sigma).to_event(2))
     age_transition_effect = numpyro.sample("age_transition_effect", dist.Normal(jnp.zeros((age_count, len(TRANSITION_NAMES)), dtype=jnp.float32), subgroup_transition_sigma).to_event(2))
     sex_transition_effect = numpyro.sample("sex_transition_effect", dist.Normal(jnp.zeros((sex_count, len(TRANSITION_NAMES)), dtype=jnp.float32), subgroup_transition_sigma).to_event(2))
-    covariate_weights = numpyro.sample("covariate_weights", dist.Normal(jnp.zeros((cov_count, len(TRANSITION_NAMES))), 0.10).to_event(2))
-    initial_logit = numpyro.sample("initial_logit", dist.Normal(init_base, 0.22).to_event(1))
-    init_sigma = 0.28 / jnp.sqrt(jnp.clip(init_prior_strength.reshape(province_count, 1), 1.0, None))
+    horseshoe_global = numpyro.sample(
+        "horseshoe_global",
+        dist.HalfCauchy(jnp.ones((len(TRANSITION_NAMES),), dtype=jnp.float32) * float(semi_markov_cfg["horseshoe_global_scale"])).to_event(1),
+    )
+    horseshoe_local = numpyro.sample(
+        "horseshoe_local",
+        dist.HalfCauchy(jnp.ones((cov_count, len(TRANSITION_NAMES)), dtype=jnp.float32) * float(semi_markov_cfg["horseshoe_local_scale"])).to_event(2),
+    )
+    covariate_scale = jnp.clip(
+        horseshoe_local
+        * horseshoe_global.reshape(1, len(TRANSITION_NAMES))
+        * float(init_cfg["covariate_penalty"]),
+        1e-6,
+        None,
+    )
+    covariate_weights = numpyro.sample(
+        "covariate_weights",
+        dist.Normal(jnp.zeros((cov_count, len(TRANSITION_NAMES)), dtype=jnp.float32), covariate_scale).to_event(2),
+    )
+    initial_logit = numpyro.sample("initial_logit", dist.Normal(init_base, float(latent_cfg["month_offset_sigma"])).to_event(1))
+    init_sigma = float(latent_cfg["province_offset_sigma"]) / jnp.sqrt(jnp.clip(init_prior_strength.reshape(province_count, 1), 1.0, None))
     province_initial = numpyro.sample("province_initial", dist.Normal(init_province_base, init_sigma).to_event(2))
-    metapopulation_scale_logit = numpyro.sample("metapopulation_scale_logit", dist.Normal(jnp.asarray([-2.2, -2.35, -2.3]), 0.35).to_event(1))
-    mobility_weights = jnp.asarray([0.45, 0.35, 0.10, 0.00, 0.10], dtype=jnp.float32)
-    service_weights = jnp.asarray([0.05, 0.18, 0.36, 0.21, 0.20], dtype=jnp.float32)
-    information_weights = jnp.asarray([0.40, 0.34, 0.12, 0.04, 0.10], dtype=jnp.float32)
-    vl_test_logit = numpyro.sample("vl_test_logit", dist.Normal(vl_test_prior_logit, float(svi_cfg.get("vl_test_sigma", 0.20))).to_event(1))
+    metapopulation_scale_logit = numpyro.sample("metapopulation_scale_logit", dist.Normal(jnp.asarray(init_cfg["metapopulation_initial_logit"]), float(archetype_cfg["transition_scale_sigma"])).to_event(1))
+    mobility_weights = jnp.asarray(init_cfg["mobility_state_weights"], dtype=jnp.float32)
+    service_weights = jnp.asarray(init_cfg["service_state_weights"], dtype=jnp.float32)
+    information_weights = jnp.asarray(init_cfg["information_state_weights"], dtype=jnp.float32)
+    vl_test_logit = numpyro.sample("vl_test_logit", dist.Normal(vl_test_prior_logit, float(svi_cfg["vl_test_sigma"])).to_event(1))
     suppressed_given_test_logit = numpyro.sample(
         "suppressed_given_test_logit",
-        dist.Normal(suppressed_given_test_prior_logit, float(svi_cfg.get("suppressed_given_test_sigma", 0.16))).to_event(1),
+        dist.Normal(suppressed_given_test_prior_logit, float(svi_cfg["suppressed_given_test_sigma"])).to_event(1),
     )
     archetype_process_scale_log = numpyro.sample(
         "archetype_process_scale_log",
-        dist.Normal(jnp.zeros((2,), dtype=jnp.float32), float(archetype_cfg.get("process_scale_sigma", 0.22))).to_event(1),
+        dist.Normal(jnp.zeros((2,), dtype=jnp.float32), float(archetype_cfg["process_scale_sigma"])).to_event(1),
     )
     archetype_process_scale = jnp.exp(archetype_process_scale_log)
     vl_test_province_offset = numpyro.sample(
         "vl_test_province_offset",
-        dist.Normal(province_vl_prior * archetype_process_scale[0], float(svi_cfg.get("vl_province_sigma", 0.18))).to_event(1),
+        dist.Normal(province_vl_prior * archetype_process_scale[0], float(svi_cfg["vl_province_sigma"])).to_event(1),
     )
     documented_province_offset = numpyro.sample(
         "documented_province_offset",
-        dist.Normal(province_documentation_prior * archetype_process_scale[1], float(svi_cfg.get("documentation_province_sigma", 0.16))).to_event(1),
+        dist.Normal(province_documentation_prior * archetype_process_scale[1], float(svi_cfg["documentation_province_sigma"])).to_event(1),
     )
     obs_province_offset = numpyro.sample(
         "obs_province_offset",
-        dist.Normal(jnp.zeros((province_count, 4), dtype=jnp.float32), float(latent_cfg.get("province_offset_sigma", 0.28))).to_event(2),
+        dist.Normal(jnp.zeros((province_count, 4), dtype=jnp.float32), float(latent_cfg["province_offset_sigma"])).to_event(2),
     )
     obs_month_offset = numpyro.sample(
         "obs_month_offset",
-        dist.Normal(jnp.zeros((month_count, 4), dtype=jnp.float32), float(latent_cfg.get("month_offset_sigma", 0.22))).to_event(2),
+        dist.Normal(jnp.zeros((month_count, 4), dtype=jnp.float32), float(latent_cfg["month_offset_sigma"])).to_event(2),
     )
     archetype_observation_scale_log = numpyro.sample(
         "archetype_observation_scale_log",
-        dist.Normal(jnp.zeros((3,), dtype=jnp.float32), float(archetype_cfg.get("observation_scale_sigma", 0.18))).to_event(1),
+        dist.Normal(jnp.zeros((3,), dtype=jnp.float32), float(archetype_cfg["observation_scale_sigma"])).to_event(1),
     )
     archetype_observation_scale = jnp.exp(archetype_observation_scale_log)
-    cd4_age_sigma = float(cd4_hyper_cfg.get("age_low_sigma", 0.08))
-    cd4_high_sigma = float(cd4_hyper_cfg.get("kp_sex_high_sigma", 0.06))
-    cd4_transition_sigma = float(cd4_hyper_cfg.get("transition_coef_sigma", 0.10))
+    cd4_age_sigma = float(cd4_hyper_cfg["age_low_sigma"])
+    cd4_high_sigma = float(cd4_hyper_cfg["kp_sex_high_sigma"])
+    cd4_transition_sigma = float(cd4_hyper_cfg["transition_coef_sigma"])
     cd4_age_low_offset = numpyro.sample("cd4_age_low_offset", dist.Normal(jnp.zeros((age_count,), dtype=jnp.float32), cd4_age_sigma).to_event(1))
     cd4_kp_sex_high_offset = numpyro.sample("cd4_kp_sex_high_offset", dist.Normal(jnp.zeros((kp_count, sex_count), dtype=jnp.float32), cd4_high_sigma).to_event(2))
     cd4_low_coef = numpyro.sample("cd4_low_coef", dist.Normal(jnp.zeros((len(TRANSITION_NAMES),), dtype=jnp.float32), cd4_transition_sigma).to_event(1))
@@ -2378,6 +2697,7 @@ def _rescue_svi_model(
     national_sup = jnp.sum(suppression_pred * national_mask.reshape(province_count, 1), axis=0)
     national_third = national_sup / jnp.clip(national_art, 1e-6, None)
     national_tested_among_art = national_tested / jnp.clip(national_art, 1e-6, None)
+    national_documented_given_test = national_sup / jnp.clip(national_tested, 1e-6, None)
     national_d_to_a = jnp.sum(probs[..., 1] * national_mask.reshape(province_count, 1), axis=0)
     national_a_to_v = jnp.sum(probs[..., 2] * national_mask.reshape(province_count, 1), axis=0)
 
@@ -2393,7 +2713,7 @@ def _rescue_svi_model(
         + jnp.mean(jnp.square((testing_pred - latent_test) / (sigma_test / province_weight)))
     )
     numpyro.factor("observation_fit", -0.5 * obs_fit)
-    anchor_reversion_scale = float(latent_cfg.get("anchor_reversion_scale", 9.0))
+    anchor_reversion_scale = float(latent_cfg["anchor_reversion_scale"])
     latent_anchor_penalty = jnp.mean(observed_diag_support * jnp.square(latent_diag - observed_diag))
     latent_anchor_penalty = latent_anchor_penalty + jnp.mean(observed_art_support * jnp.square(latent_art - observed_art))
     latent_anchor_penalty = latent_anchor_penalty + jnp.mean(observed_sup_support * jnp.square(latent_sup - observed_sup))
@@ -2429,13 +2749,17 @@ def _rescue_svi_model(
     numpyro.factor("harp_program_penalty", -52.0 * (harp_penalty + jnp.mean(harp_ratio_penalty) + jnp.mean(harp_sup_ratio_penalty) + 0.20 * vl_smooth_penalty))
     linkage_penalty = jnp.mean(linkage_weight * (jnp.square(national_d_to_a - linkage_d_to_a_target) + 0.85 * jnp.square(national_art / jnp.clip(national_diag, 1e-6, None) - linkage_second95_target)))
     numpyro.factor("linkage_penalty", -36.0 * linkage_penalty)
+    documented_given_test_target = suppression_among_art_target / jnp.clip(suppression_tested_among_art_target, 1e-6, None)
+    national_tested_gap = jax.nn.relu(national_sup - national_tested)
     suppression_penalty = jnp.mean(
         suppression_weight
         * (
-            jnp.square(national_a_to_v - suppression_transition_target)
-            + 0.90 * jnp.square(national_third - suppression_among_art_target)
-            + 0.65 * jnp.square(national_sup - suppression_overall_target)
-            + 0.35 * jnp.square(national_tested_among_art - suppression_tested_among_art_target)
+            float(suppression_process_cfg["transition_weight"]) * jnp.square(national_a_to_v - suppression_transition_target)
+            + float(suppression_process_cfg["suppressed_among_art_weight"]) * jnp.square(national_third - suppression_among_art_target)
+            + float(suppression_process_cfg["overall_weight"]) * jnp.square(national_sup - suppression_overall_target)
+            + float(suppression_process_cfg["tested_among_art_weight"]) * jnp.square(national_tested_among_art - suppression_tested_among_art_target)
+            + float(suppression_process_cfg["documented_given_test_weight"]) * jnp.square(national_documented_given_test - documented_given_test_target)
+            + float(suppression_process_cfg["national_tested_gap_weight"]) * jnp.square(national_tested_gap)
         )
     )
     numpyro.factor("suppression_penalty", -16.0 * suppression_penalty)
@@ -2470,20 +2794,35 @@ def _fit_rescue_core_jax_svi(
     age_axis: list[str],
     sex_axis: list[str],
     archetype_bundle: dict[str, Any],
+    inference_method: str = "svi",
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if jax is None or numpyro is None or SVI is None or AutoNormal is None or Predictive is None or Trace_ELBO is None or NumpyroAdam is None:
+    if jax is None or numpyro is None or Predictive is None:
         raise RuntimeError("JAX/NumPyro backend is unavailable for hiv_rescue_v1 jax_svi")
-    covariates_np, covariate_meta = (
-        _build_mesoscopic_modifier_covariates(run_dir=run_dir, observation_targets=observation_targets)
-        if profile_id == RESCUE_V2_PROFILE_ID
-        else _build_modifier_covariates(
-            observation_targets=observation_targets,
-            standardized_tensor=standardized_tensor,
-            canonical_axis=canonical_axis,
-            candidate_profiles=candidate_profiles,
-        )
+    if inference_method == "svi" and (SVI is None or AutoNormal is None or Trace_ELBO is None or NumpyroAdam is None):
+        raise RuntimeError("JAX/NumPyro SVI backend is unavailable for hiv_rescue_v1 jax_svi")
+    if inference_method == "nuts" and (MCMC is None or NUTS is None or numpyro_summary is None):
+        raise RuntimeError("JAX/NumPyro NUTS backend is unavailable for hiv_rescue_v1 jax_nuts")
+    posterior_cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("posterior_inference", {}) or {})
+    covariates_np, covariate_meta = _build_representation_modifier_covariates(
+        run_dir=run_dir,
+        profile_id=profile_id,
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+        modifier_representation=modifier_representation,
     )
+    intervention_tensor_np, intervention_summary = _build_intervention_tensor_from_covariates(covariates_np, covariate_meta)
+    if intervention_tensor_np.shape[-1] > 0:
+        covariates_np = np.concatenate([covariates_np, intervention_tensor_np], axis=-1).astype(np.float32)
+        covariate_meta = {
+            **dict(covariate_meta),
+            "covariate_names": list(covariate_meta.get("covariate_names", [])) + [f"intervention::{name}" for name in intervention_summary["channel_names"]],
+            "transition_hook_masks": list(covariate_meta.get("transition_hook_masks", [])) + list(intervention_summary["hook_masks"]),
+            "intervention_tensor": intervention_summary,
+        }
     covariates = numpy_to_jax_handoff(covariates_np).astype(jnp.float32)
     hook_mask = numpy_to_jax_handoff(np.asarray(covariate_meta["transition_hook_masks"], dtype=np.float32)).astype(jnp.float32)
     network_family_indices = covariate_meta.get("network_family_indices", {})
@@ -2589,161 +2928,164 @@ def _fit_rescue_core_jax_svi(
     ).astype(jnp.float32)
     national_mask = numpy_to_jax_handoff(_national_reference_mask(province_axis)).astype(jnp.float32)
 
-    guide = AutoNormal(_rescue_svi_model)
-    svi = SVI(_rescue_svi_model, guide, NumpyroAdam(0.04), Trace_ELBO())
+    model_kwargs = {
+        "covariates": covariates,
+        "region_index": region_index_jax,
+        "region_count": region_count,
+        "observed_diag": observed_diag,
+        "observed_art": observed_art,
+        "observed_sup": observed_sup,
+        "observed_test": observed_test,
+        "init_base": init_base,
+        "init_province_base": init_province_base,
+        "init_prior_strength": init_prior_strength,
+        "hook_mask": hook_mask,
+        "mobility_operator": mobility_operator,
+        "service_operator": service_operator,
+        "information_operator": information_operator,
+        "mobility_pressure": mobility_pressure,
+        "service_pressure": service_pressure,
+        "information_pressure": information_pressure,
+        "national_anchor_diag": national_anchor_diag,
+        "national_anchor_art": national_anchor_art,
+        "national_anchor_sup": national_anchor_sup,
+        "national_anchor_third": national_anchor_third,
+        "national_anchor_weight": national_anchor_weight,
+        "vl_test_prior_logit": vl_test_prior_logit,
+        "harp_diag": harp_diag,
+        "harp_art": harp_art,
+        "harp_tested": harp_tested,
+        "harp_sup": harp_sup,
+        "harp_tested_among_art": harp_tested_among_art,
+        "harp_suppressed_among_art": harp_suppressed_among_art,
+        "harp_weight": harp_weight,
+        "linkage_second95_target": linkage_second95_target,
+        "linkage_d_to_a_target": linkage_d_to_a_target,
+        "linkage_weight": linkage_weight,
+        "suppression_overall_target": suppression_overall_target,
+        "suppression_among_art_target": suppression_among_art_target,
+        "suppression_tested_among_art_target": suppression_tested_among_art_target,
+        "suppression_transition_target": suppression_transition_target,
+        "suppression_weight": suppression_weight,
+        "suppressed_given_test_prior_logit": suppressed_given_test_prior_logit,
+        "province_transition_prior": archetype_transition_prior,
+        "province_reporting_weight": archetype_reporting_weight,
+        "province_vl_prior": archetype_vl_prior,
+        "province_documentation_prior": archetype_documentation_prior,
+        "subgroup_feature_matrix": subgroup_feature_matrix,
+        "base_kp_log": base_kp_log,
+        "base_age_log": base_age_log,
+        "base_sex_log": base_sex_log,
+        "cd4_low_base": cd4_low_base,
+        "cd4_high_base": cd4_high_base,
+        "observed_diag_support": observed_diag_support,
+        "observed_art_support": observed_art_support,
+        "observed_sup_support": observed_sup_support,
+        "observed_test_support": observed_test_support,
+        "national_mask": national_mask,
+    }
+    return_sites = [
+        "transition_probs",
+        "state_path",
+        "national_logit",
+        "region_offset",
+        "province_offset",
+        "archetype_transition_scale_log",
+        "archetype_process_scale_log",
+        "archetype_observation_scale_log",
+        "horseshoe_global",
+        "horseshoe_local",
+        "covariate_weights",
+        "metapopulation_scale_logit",
+        "vl_test_logit",
+        "suppressed_given_test_logit",
+        "vl_test_province_offset",
+        "documented_province_offset",
+        "kp_prior_coef",
+        "age_prior_coef",
+        "sex_prior_coef",
+        "kp_probs_dynamic",
+        "age_probs_dynamic",
+        "sex_probs_dynamic",
+        "cd4_age_low_offset",
+        "cd4_kp_sex_high_offset",
+        "cd4_low_coef",
+        "cd4_high_coef",
+        "latent_obs_diag",
+        "latent_obs_art",
+        "latent_obs_sup",
+        "latent_obs_test",
+    ]
     rng_key = jax.random.PRNGKey(17)
-    svi_result = svi.run(
-        rng_key,
-        180,
-        covariates=covariates,
-        region_index=region_index_jax,
-        region_count=region_count,
-        observed_diag=observed_diag,
-        observed_art=observed_art,
-        observed_sup=observed_sup,
-        observed_test=observed_test,
-        init_base=init_base,
-        init_province_base=init_province_base,
-        init_prior_strength=init_prior_strength,
-        hook_mask=hook_mask,
-        mobility_operator=mobility_operator,
-        service_operator=service_operator,
-        information_operator=information_operator,
-        mobility_pressure=mobility_pressure,
-        service_pressure=service_pressure,
-        information_pressure=information_pressure,
-        national_anchor_diag=national_anchor_diag,
-        national_anchor_art=national_anchor_art,
-        national_anchor_sup=national_anchor_sup,
-        national_anchor_third=national_anchor_third,
-        national_anchor_weight=national_anchor_weight,
-        vl_test_prior_logit=vl_test_prior_logit,
-        harp_diag=harp_diag,
-        harp_art=harp_art,
-        harp_tested=harp_tested,
-        harp_sup=harp_sup,
-        harp_tested_among_art=harp_tested_among_art,
-        harp_suppressed_among_art=harp_suppressed_among_art,
-        harp_weight=harp_weight,
-        linkage_second95_target=linkage_second95_target,
-        linkage_d_to_a_target=linkage_d_to_a_target,
-        linkage_weight=linkage_weight,
-        suppression_overall_target=suppression_overall_target,
-        suppression_among_art_target=suppression_among_art_target,
-        suppression_tested_among_art_target=suppression_tested_among_art_target,
-        suppression_transition_target=suppression_transition_target,
-        suppression_weight=suppression_weight,
-        suppressed_given_test_prior_logit=suppressed_given_test_prior_logit,
-        province_transition_prior=archetype_transition_prior,
-        province_reporting_weight=archetype_reporting_weight,
-        province_vl_prior=archetype_vl_prior,
-        province_documentation_prior=archetype_documentation_prior,
-        subgroup_feature_matrix=subgroup_feature_matrix,
-        base_kp_log=base_kp_log,
-        base_age_log=base_age_log,
-        base_sex_log=base_sex_log,
-        cd4_low_base=cd4_low_base,
-        cd4_high_base=cd4_high_base,
-        observed_diag_support=observed_diag_support,
-        observed_art_support=observed_art_support,
-        observed_sup_support=observed_sup_support,
-        observed_test_support=observed_test_support,
-        national_mask=national_mask,
-        progress_bar=False,
-    )
-    predictive = Predictive(
-        _rescue_svi_model,
-        guide=guide,
-        params=svi_result.params,
-        num_samples=48,
-        return_sites=[
-            "transition_probs",
-            "state_path",
-            "national_logit",
-            "region_offset",
-            "province_offset",
-            "archetype_transition_scale_log",
-            "archetype_process_scale_log",
-            "archetype_observation_scale_log",
-            "covariate_weights",
-            "metapopulation_scale_logit",
-            "vl_test_logit",
-            "suppressed_given_test_logit",
-            "vl_test_province_offset",
-            "documented_province_offset",
-            "kp_prior_coef",
-            "age_prior_coef",
-            "sex_prior_coef",
-            "kp_probs_dynamic",
-            "age_probs_dynamic",
-            "sex_probs_dynamic",
-            "cd4_age_low_offset",
-            "cd4_kp_sex_high_offset",
-            "cd4_low_coef",
-            "cd4_high_coef",
-            "latent_obs_diag",
-            "latent_obs_art",
-            "latent_obs_sup",
-            "latent_obs_test",
-        ],
-    )
-    samples = predictive(
-        jax.random.PRNGKey(18),
-        covariates=covariates,
-        region_index=region_index_jax,
-        region_count=region_count,
-        observed_diag=observed_diag,
-        observed_art=observed_art,
-        observed_sup=observed_sup,
-        observed_test=observed_test,
-        init_base=init_base,
-        init_province_base=init_province_base,
-        init_prior_strength=init_prior_strength,
-        hook_mask=hook_mask,
-        mobility_operator=mobility_operator,
-        service_operator=service_operator,
-        information_operator=information_operator,
-        mobility_pressure=mobility_pressure,
-        service_pressure=service_pressure,
-        information_pressure=information_pressure,
-        national_anchor_diag=national_anchor_diag,
-        national_anchor_art=national_anchor_art,
-        national_anchor_sup=national_anchor_sup,
-        national_anchor_third=national_anchor_third,
-        national_anchor_weight=national_anchor_weight,
-        vl_test_prior_logit=vl_test_prior_logit,
-        harp_diag=harp_diag,
-        harp_art=harp_art,
-        harp_tested=harp_tested,
-        harp_sup=harp_sup,
-        harp_tested_among_art=harp_tested_among_art,
-        harp_suppressed_among_art=harp_suppressed_among_art,
-        harp_weight=harp_weight,
-        linkage_second95_target=linkage_second95_target,
-        linkage_d_to_a_target=linkage_d_to_a_target,
-        linkage_weight=linkage_weight,
-        suppression_overall_target=suppression_overall_target,
-        suppression_among_art_target=suppression_among_art_target,
-        suppression_tested_among_art_target=suppression_tested_among_art_target,
-        suppression_transition_target=suppression_transition_target,
-        suppression_weight=suppression_weight,
-        suppressed_given_test_prior_logit=suppressed_given_test_prior_logit,
-        province_transition_prior=archetype_transition_prior,
-        province_reporting_weight=archetype_reporting_weight,
-        province_vl_prior=archetype_vl_prior,
-        province_documentation_prior=archetype_documentation_prior,
-        subgroup_feature_matrix=subgroup_feature_matrix,
-        base_kp_log=base_kp_log,
-        base_age_log=base_age_log,
-        base_sex_log=base_sex_log,
-        cd4_low_base=cd4_low_base,
-        cd4_high_base=cd4_high_base,
-        observed_diag_support=observed_diag_support,
-        observed_art_support=observed_art_support,
-        observed_sup_support=observed_sup_support,
-        observed_test_support=observed_test_support,
-        national_mask=national_mask,
-    )
+    samples: dict[str, Any]
+    loss_trace: list[float]
+    total_loss_value = 0.0
+    chain_diagnostics: dict[str, Any]
+    if inference_method == "nuts":
+        kernel = NUTS(
+            _rescue_svi_model,
+            target_accept_prob=float(posterior_cfg["nuts_target_accept_prob"]),
+            max_tree_depth=int(posterior_cfg["nuts_max_tree_depth"]),
+        )
+        mcmc = MCMC(
+            kernel,
+            num_warmup=int(posterior_cfg["nuts_warmup"]),
+            num_samples=int(posterior_cfg["nuts_samples"]),
+            num_chains=int(posterior_cfg["nuts_chains"]),
+            progress_bar=False,
+            chain_method="sequential",
+        )
+        mcmc.run(rng_key, **model_kwargs)
+        grouped_samples = mcmc.get_samples(group_by_chain=True)
+        posterior_samples = mcmc.get_samples(group_by_chain=False)
+        diagnostics_summary = numpyro_summary(grouped_samples, group_by_chain=True)
+        extra_fields = mcmc.get_extra_fields()
+        predictive = Predictive(_rescue_svi_model, posterior_samples=posterior_samples, return_sites=return_sites)
+        samples = predictive(jax.random.PRNGKey(18), **model_kwargs)
+        rhat_rows = {
+            key: float(np.nanmax(np.asarray(value.get("r_hat"), dtype=np.float32)))
+            for key, value in diagnostics_summary.items()
+            if isinstance(value, dict) and value.get("r_hat") is not None
+        }
+        chain_diagnostics = {
+            "available": True,
+            "inference_method": "nuts",
+            "nuts_warmup": int(posterior_cfg["nuts_warmup"]),
+            "nuts_samples": int(posterior_cfg["nuts_samples"]),
+            "nuts_chains": int(posterior_cfg["nuts_chains"]),
+            "target_accept_prob": float(posterior_cfg["nuts_target_accept_prob"]),
+            "max_tree_depth": int(posterior_cfg["nuts_max_tree_depth"]),
+            "divergence_count": int(np.sum(np.asarray(extra_fields.get("diverging", []), dtype=np.int32))),
+            "rhat_by_site": {key: round(value, 6) for key, value in rhat_rows.items()},
+            "rhat_max": round(max(rhat_rows.values()) if rhat_rows else 1.0, 6),
+        }
+        loss_trace = []
+    else:
+        guide = AutoNormal(_rescue_svi_model)
+        svi = SVI(_rescue_svi_model, guide, NumpyroAdam(0.04), Trace_ELBO())
+        svi_result = svi.run(
+            rng_key,
+            180,
+            **model_kwargs,
+            progress_bar=False,
+        )
+        predictive = Predictive(
+            _rescue_svi_model,
+            guide=guide,
+            params=svi_result.params,
+            num_samples=48,
+            return_sites=return_sites,
+        )
+        samples = predictive(jax.random.PRNGKey(18), **model_kwargs)
+        loss_trace = [float(value) for value in svi_result.losses[-12:]]
+        total_loss_value = float(svi_result.losses[-1]) if len(svi_result.losses) else 0.0
+        chain_diagnostics = {
+            "available": False,
+            "inference_method": "svi",
+            "reason": "rhat_unavailable_for_variational_fit",
+            "posterior_samples": 48,
+        }
+
     state_path = to_numpy(samples["state_path"]).mean(axis=0).astype(np.float32)
     transition_probs = to_numpy(samples["transition_probs"]).mean(axis=0).astype(np.float32)
     archetype_transition_scale = np.exp(to_numpy(samples["archetype_transition_scale_log"]).mean(axis=0)).astype(np.float32)
@@ -2784,6 +3126,12 @@ def _fit_rescue_core_jax_svi(
         0.0,
         1.0,
     ).astype(np.float32)
+    calibration_interval = tuple(float(value) for value in posterior_cfg["calibration_interval"])
+    posterior_calibration = _phase3_calibration_report(
+        _posterior_prediction_stack_from_samples(samples),
+        observation_targets,
+        interval=calibration_interval,
+    )
     return {
         "state_estimates": state_path,
         "transition_probs": transition_probs[:, None, None, None, None, :, :].transpose(0, 1, 2, 3, 4, 6, 5),
@@ -2795,7 +3143,7 @@ def _fit_rescue_core_jax_svi(
             "deaths": np.clip(state_path[..., 4] * 0.18, 0.0, 0.25).astype(np.float32),
         },
         "loss_breakdown": {
-            "observation_fit_loss": float(svi_result.losses[-1]) if len(svi_result.losses) else 0.0,
+            "observation_fit_loss": total_loss_value,
             "lower_bound_suppression_penalty": 0.0,
             "diagnosed_optimism_penalty": 0.0,
             "hierarchy_reconciliation_penalty": 0.0,
@@ -2805,13 +3153,19 @@ def _fit_rescue_core_jax_svi(
             "linkage_penalty": 0.0,
             "suppression_penalty": 0.0,
             "regularization_penalty": 0.0,
-            "total_loss": float(svi_result.losses[-1]) if len(svi_result.losses) else 0.0,
+            "total_loss": total_loss_value,
         },
-        "loss_trace": [float(value) for value in svi_result.losses[-12:]],
+        "loss_trace": loss_trace,
+        "intervention_tensor": intervention_tensor_np.astype(np.float32),
+        "intervention_summary": intervention_summary,
+        "posterior_calibration": posterior_calibration,
+        "chain_diagnostics": chain_diagnostics,
         "parameters_summary": {
             "national_transition": to_numpy(jax.nn.sigmoid(samples["national_logit"]).mean(axis=0)).round(6).tolist(),
             "region_transition_sd": round(float(np.std(to_numpy(samples["region_offset"]))), 6),
             "province_transition_sd": round(float(np.std(to_numpy(samples["province_offset"]))), 6),
+            "horseshoe_global": np.round(to_numpy(samples["horseshoe_global"]).mean(axis=0), 6).tolist(),
+            "horseshoe_local_mean": np.round(to_numpy(samples["horseshoe_local"]).mean(axis=0).mean(axis=0), 6).tolist(),
             "vl_test_process_share": np.round(vl_test_process, 6).tolist(),
             "suppressed_given_test_share": np.round(suppressed_given_test, 6).tolist(),
             "province_vl_test_offsets": np.round(province_vl_offset_raw, 6).tolist(),
@@ -2831,6 +3185,7 @@ def _fit_rescue_core_jax_svi(
             "suppression_anchor_curves": {key: value.round(6).tolist() if isinstance(value, np.ndarray) else value for key, value in suppression_curves.items() if key != "month_axis"} | {"month_axis": month_axis},
             "kp_coupling_matrix": np.eye(len(kp_axis), dtype=np.float32).round(6).tolist(),
             "determinant_covariates": covariate_meta,
+            "intervention_tensor": intervention_summary,
             "metapopulation_engine": {
                 "enabled": bool(operator_names),
                 "operator_names": operator_names,
@@ -2857,14 +3212,14 @@ def _fit_rescue_core_jax_svi(
                 "high_transition_coefficients": np.round(cd4_high_coef_mean, 6).tolist(),
             },
             "synthetic_pretraining": {
-                "mean_observation_weight": round(float(np.mean(archetype_bundle.get("observation_weight", []))) if len(archetype_bundle.get("observation_weight", [])) else 0.0, 6),
-                "mean_reporting_noise": round(float(np.mean(archetype_bundle.get("reporting_noise", []))) if len(archetype_bundle.get("reporting_noise", [])) else 0.0, 6),
-                "mean_pretraining_weight": round(float(np.mean(archetype_bundle.get("synthetic_pretraining_weight", []))) if len(archetype_bundle.get("synthetic_pretraining_weight", [])) else 0.0, 6),
+        "mean_observation_weight": round(float(np.mean(archetype_bundle.get("observation_weight", []))) if len(archetype_bundle.get("observation_weight", [])) else 0.0, 6),
+        "mean_reporting_noise": round(float(np.mean(archetype_bundle.get("reporting_noise", []))) if len(archetype_bundle.get("reporting_noise", [])) else 0.0, 6),
+        "mean_pretraining_weight": round(float(np.mean(archetype_bundle.get("synthetic_pretraining_weight", []))) if len(archetype_bundle.get("synthetic_pretraining_weight", [])) else 0.0, 6),
                 "library": archetype_bundle.get("synthetic_library", {}),
             },
         },
         "device": choose_jax_device(prefer_gpu=True),
-        "inference_family": "jax_svi",
+        "inference_family": "jax_nuts" if inference_method == "nuts" else "jax_svi",
     }
 
 
@@ -2890,6 +3245,7 @@ def _fit_rescue_core_torch(
     duration_catalog: list[str],
     requested_inference_family: str,
     archetype_bundle: dict[str, Any],
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if torch is None:  # pragma: no cover
@@ -2899,33 +3255,42 @@ def _fit_rescue_core_torch(
     duration_count = len(duration_catalog)
     device = _choose_rescue_device(province_count * month_count * len(kp_axis) * len(age_axis) * len(sex_axis) * len(STATE_NAMES) * duration_count)
     calibration_overrides = dict(calibration_overrides or {})
-    loss_scale_cfg = dict(_phase3_prior("torch_map_loss_scales", {}) or {})
+    loss_scale_cfg = dict(_phase3_prior("torch_map_loss_scales") or {})
     reg_cfg = dict(loss_scale_cfg.get("regularization", {}) or {})
+    init_cfg = dict(_phase3_constraint("torch_initialization") or {})
     transition_prior_override = np.asarray(calibration_overrides.get("transition_prior_override", TRANSITION_PRIOR), dtype=np.float32)
     if transition_prior_override.shape != TRANSITION_PRIOR.shape:
         transition_prior_override = np.asarray(TRANSITION_PRIOR, dtype=np.float32)
     transition_prior_override = np.clip(transition_prior_override, 0.01, 0.60).astype(np.float32)
-    diagnosed_penalty_scale = float(calibration_overrides.get("diagnosed_penalty_scale", loss_scale_cfg.get("diagnosed_penalty_scale", 4.0)))
-    official_reference_penalty_scale = float(calibration_overrides.get("official_reference_penalty_scale", loss_scale_cfg.get("official_reference_penalty_scale", 18.0)))
-    national_anchor_penalty_scale = float(calibration_overrides.get("national_anchor_penalty_scale", loss_scale_cfg.get("national_anchor_penalty_scale", 12.0)))
-    harp_program_penalty_scale = float(calibration_overrides.get("harp_program_penalty_scale", loss_scale_cfg.get("harp_program_penalty_scale", 24.0)))
-    linkage_penalty_scale = float(calibration_overrides.get("linkage_penalty_scale", loss_scale_cfg.get("linkage_penalty_scale", 22.0)))
-    suppression_penalty_scale = float(calibration_overrides.get("suppression_penalty_scale", loss_scale_cfg.get("suppression_penalty_scale", 0.0)))
-    fit_steps = max(20, int(calibration_overrides.get("fit_steps", loss_scale_cfg.get("fit_steps", 160))))
-    latent_cfg = dict(_phase3_prior("latent_observation", {}) or {})
-    subgroup_cfg = dict(_phase3_prior("subgroup_hyperpriors", {}) or {})
-    archetype_cfg = dict(_phase3_prior("archetype_hyperpriors", {}) or {})
-    cd4_hyper_cfg = dict(_phase3_prior("cd4_hyperpriors", {}) or {})
-    covariates, covariate_meta = (
-        _build_mesoscopic_modifier_covariates(run_dir=run_dir, observation_targets=observation_targets)
-        if profile_id == RESCUE_V2_PROFILE_ID
-        else _build_modifier_covariates(
-            observation_targets=observation_targets,
-            standardized_tensor=standardized_tensor,
-            canonical_axis=canonical_axis,
-            candidate_profiles=candidate_profiles,
-        )
+    diagnosed_penalty_scale = float(calibration_overrides.get("diagnosed_penalty_scale", loss_scale_cfg["diagnosed_penalty_scale"]))
+    official_reference_penalty_scale = float(calibration_overrides.get("official_reference_penalty_scale", loss_scale_cfg["official_reference_penalty_scale"]))
+    national_anchor_penalty_scale = float(calibration_overrides.get("national_anchor_penalty_scale", loss_scale_cfg["national_anchor_penalty_scale"]))
+    harp_program_penalty_scale = float(calibration_overrides.get("harp_program_penalty_scale", loss_scale_cfg["harp_program_penalty_scale"]))
+    linkage_penalty_scale = float(calibration_overrides.get("linkage_penalty_scale", loss_scale_cfg["linkage_penalty_scale"]))
+    suppression_penalty_scale = float(calibration_overrides.get("suppression_penalty_scale", loss_scale_cfg["suppression_penalty_scale"]))
+    fit_steps = max(20, int(calibration_overrides.get("fit_steps", loss_scale_cfg["fit_steps"])))
+    latent_cfg = dict(_phase3_prior("latent_observation") or {})
+    subgroup_cfg = dict(_phase3_prior("subgroup_hyperpriors") or {})
+    archetype_cfg = dict(_phase3_prior("archetype_hyperpriors") or {})
+    cd4_hyper_cfg = dict(_phase3_prior("cd4_hyperpriors") or {})
+    covariates, covariate_meta = _build_representation_modifier_covariates(
+        run_dir=run_dir,
+        profile_id=profile_id,
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+        modifier_representation=modifier_representation,
     )
+    intervention_tensor, intervention_summary = _build_intervention_tensor_from_covariates(covariates, covariate_meta)
+    if intervention_tensor.shape[-1] > 0:
+        covariates = np.concatenate([covariates, intervention_tensor], axis=-1).astype(np.float32)
+        covariate_meta = {
+            **dict(covariate_meta),
+            "covariate_names": list(covariate_meta.get("covariate_names", [])) + [f"intervention::{name}" for name in intervention_summary["channel_names"]],
+            "transition_hook_masks": list(covariate_meta.get("transition_hook_masks", [])) + list(intervention_summary["hook_masks"]),
+            "intervention_tensor": intervention_summary,
+        }
     network_family_indices = covariate_meta.get("network_family_indices", {})
     mobility_pressure_np = _network_family_pressure_np(covariates, list(network_family_indices.get("reaction_diffusion", [])))
     service_pressure_np = _network_family_pressure_np(covariates, list(network_family_indices.get("percolation_fragility", [])))
@@ -3017,9 +3382,9 @@ def _fit_rescue_core_torch(
     observed_sup_support_t = to_torch_tensor(observed_sup_support_np, device=device, dtype=torch.float32)
     observed_test_support_t = to_torch_tensor(observed_test_support_np, device=device, dtype=torch.float32)
     init_prior_strength_t = to_torch_tensor(init_prior_strength_np, device=device, dtype=torch.float32)
-    mobility_state_weights_t = to_torch_tensor(np.asarray([0.45, 0.35, 0.10, 0.00, 0.10], dtype=np.float32), device=device, dtype=torch.float32)
-    service_state_weights_t = to_torch_tensor(np.asarray([0.05, 0.18, 0.36, 0.21, 0.20], dtype=np.float32), device=device, dtype=torch.float32)
-    information_state_weights_t = to_torch_tensor(np.asarray([0.40, 0.34, 0.12, 0.04, 0.10], dtype=np.float32), device=device, dtype=torch.float32)
+    mobility_state_weights_t = to_torch_tensor(np.asarray(init_cfg["mobility_state_weights"], dtype=np.float32), device=device, dtype=torch.float32)
+    service_state_weights_t = to_torch_tensor(np.asarray(init_cfg["service_state_weights"], dtype=np.float32), device=device, dtype=torch.float32)
+    information_state_weights_t = to_torch_tensor(np.asarray(init_cfg["information_state_weights"], dtype=np.float32), device=device, dtype=torch.float32)
 
     region_count = int(region_index.max()) + 1 if region_index.size else 1
     transition_prior_logit = _logit_np(transition_prior_override)
@@ -3044,25 +3409,43 @@ def _fit_rescue_core_torch(
     kp_prior_coef = torch.nn.Parameter(torch.zeros((subgroup_feature_matrix_np.shape[-1], len(kp_axis)), device=device, dtype=torch.float32))
     age_prior_coef = torch.nn.Parameter(torch.zeros((subgroup_feature_matrix_np.shape[-1], len(age_axis)), device=device, dtype=torch.float32))
     sex_prior_coef = torch.nn.Parameter(torch.zeros((subgroup_feature_matrix_np.shape[-1], len(sex_axis)), device=device, dtype=torch.float32))
-    duration_transition = torch.nn.Parameter(torch.linspace(-0.18, 0.18, steps=duration_count, device=device).unsqueeze(-1).repeat(1, len(TRANSITION_NAMES)) * 0.5)
+    duration_transition = torch.nn.Parameter(
+        torch.linspace(
+            float(init_cfg["duration_transition_start"]),
+            float(init_cfg["duration_transition_end"]),
+            steps=duration_count,
+            device=device,
+        ).unsqueeze(-1).repeat(1, len(TRANSITION_NAMES))
+        * float(init_cfg["duration_transition_scale"])
+    )
     kp_coupling_logits = torch.nn.Parameter(torch.zeros((len(kp_axis), len(kp_axis)), device=device, dtype=torch.float32))
-    metapopulation_logit = torch.nn.Parameter(torch.tensor([-2.2, -2.35, -2.3], device=device, dtype=torch.float32))
-    cd4_low_coef = torch.nn.Parameter(torch.tensor([0.16, 0.12, -0.08, 0.10, -0.05], device=device, dtype=torch.float32))
-    cd4_high_coef = torch.nn.Parameter(torch.tensor([-0.12, -0.06, 0.14, -0.10, 0.05], device=device, dtype=torch.float32))
+    metapopulation_logit = torch.nn.Parameter(torch.tensor(init_cfg["metapopulation_initial_logit"], device=device, dtype=torch.float32))
+    cd4_low_coef = torch.nn.Parameter(torch.tensor(init_cfg["cd4_low_coef_init"], device=device, dtype=torch.float32))
+    cd4_high_coef = torch.nn.Parameter(torch.tensor(init_cfg["cd4_high_coef_init"], device=device, dtype=torch.float32))
     cd4_age_low_offset = torch.nn.Parameter(torch.zeros((len(age_axis),), device=device, dtype=torch.float32))
     cd4_kp_sex_high_offset = torch.nn.Parameter(torch.zeros((len(kp_axis), len(sex_axis)), device=device, dtype=torch.float32))
     covariate_coef = torch.nn.Parameter(torch.zeros((covariates.shape[-1], len(TRANSITION_NAMES)), device=device, dtype=torch.float32))
     vl_test_process_logit = torch.nn.Parameter(
-        to_torch_tensor(_logit_np(np.clip(_harp_program_curves(month_axis)["viral_load_tested_among_art"], 0.10, 0.95)), device=device, dtype=torch.float32)
+        to_torch_tensor(
+            _logit_np(
+                np.clip(
+                    _harp_program_curves(month_axis)["viral_load_tested_among_art"],
+                    float(init_cfg["vl_test_share_floor"]),
+                    float(init_cfg["vl_test_share_ceiling"]),
+                )
+            ),
+            device=device,
+            dtype=torch.float32,
+        )
     )
     suppressed_given_test_logit = torch.nn.Parameter(
         to_torch_tensor(
             _logit_np(
                 np.clip(
                     _harp_program_curves(month_axis)["suppressed_among_art"]
-                    / np.clip(_harp_program_curves(month_axis)["viral_load_tested_among_art"], 1e-4, None),
-                    0.50,
-                    0.995,
+                    / np.clip(_harp_program_curves(month_axis)["viral_load_tested_among_art"], float(_phase3_stabilizer("clip_floor")), None),
+                    float(init_cfg["documented_given_test_floor"]),
+                    float(init_cfg["documented_given_test_ceiling"]),
                 )
             ),
             device=device,
@@ -3118,7 +3501,7 @@ def _fit_rescue_core_torch(
         age_initial,
         sex_initial,
     ]
-    optimizer = torch.optim.Adam(parameters, lr=float(loss_scale_cfg.get("optimizer_lr", 0.045)))
+    optimizer = torch.optim.Adam(parameters, lr=float(loss_scale_cfg["optimizer_lr"]))
     loss_trace: list[float] = []
 
     observed_diag = to_torch_tensor(observation_targets["diagnosed_stock"], device=device, dtype=torch.float32)
@@ -3204,7 +3587,7 @@ def _fit_rescue_core_torch(
             suppressed_given_test_logit.view(1, month_count) + province_documented_offset.view(province_count, 1)
         )
         suppression_pred = torch.clamp(torch.minimum(aggregate[..., 3], testing_pred * documented_given_test_share), 0.0, 1.0)
-        deaths_pred = torch.clamp(aggregate[..., 4] * 0.18, 0.0, 0.25)
+        deaths_pred = torch.clamp(aggregate[..., 4] * float(init_cfg["death_scale"]), 0.0, 0.25)
         prediction_stack = torch.stack([diagnosed_pred, art_pred, suppression_pred, testing_pred, deaths_pred], dim=-1)
         observation_stack = torch.stack([observed_diag, observed_art, observed_sup, observed_test, observed_deaths], dim=-1)
         observed_support_stack = torch.stack(
@@ -3236,13 +3619,19 @@ def _fit_rescue_core_torch(
             * observation_weight_vec.view(1, 1, -1)
             * scaled_observation_weight.view(province_count, 1, 1)
         )
-        observation_anchor_penalty = float(latent_cfg.get("anchor_reversion_scale", 9.0)) * torch.mean(
+        observation_anchor_penalty = float(latent_cfg["anchor_reversion_scale"]) * torch.mean(
             ((latent_observation_stack - observation_stack) ** 2)
             * observed_support_stack
             * observation_weight_vec.view(1, 1, -1)
         )
-        lower_bound_penalty = torch.mean(torch.relu(suppression_pred - torch.maximum(latent_sup + 0.03, latent_test * 0.95)) ** 2)
-        diagnosed_penalty = torch.mean(torch.relu(diagnosed_pred - latent_diag - 0.02) ** 2)
+        lower_bound_penalty = torch.mean(
+            torch.relu(
+                suppression_pred
+                - torch.maximum(latent_sup + float(init_cfg["suppression_margin"]), latent_test * float(init_cfg["testing_ceiling_scale"]))
+            )
+            ** 2
+        )
+        diagnosed_penalty = torch.mean(torch.relu(diagnosed_pred - latent_diag - float(init_cfg["diagnosed_margin"])) ** 2)
         official_reference_penalty, official_reference_detail = _official_reference_penalty_torch(
             diagnosed_pred=diagnosed_pred,
             art_pred=art_pred,
@@ -3298,55 +3687,64 @@ def _fit_rescue_core_torch(
         mass = latent.sum(dim=(-2, -1))
         stock_penalty = torch.mean((mass - 1.0) ** 2)
         duration_smooth = torch.mean((duration_transition[1:] - duration_transition[:-1]) ** 2)
-        transition_reg = float(reg_cfg.get("region_transition", 0.15)) * torch.mean(region_transition**2) + float(reg_cfg.get("province_transition_prior", 0.16)) * torch.mean((province_transition - scaled_archetype_transition_prior) ** 2)
+        transition_reg = float(reg_cfg["region_transition"]) * torch.mean(region_transition**2) + float(reg_cfg["province_transition_prior"]) * torch.mean((province_transition - scaled_archetype_transition_prior) ** 2)
         init_prior_target = to_torch_tensor(initial_logit_guess - initial_logit_guess.mean(axis=0, keepdims=True), device=device, dtype=torch.float32)
         init_reg = (
-            0.10 * torch.mean(region_initial**2)
-            + 0.15 * torch.mean(((province_initial - init_prior_target) ** 2) * init_prior_strength_t.view(province_count, 1))
+            float(init_cfg["region_initial_penalty"]) * torch.mean(region_initial**2)
+            + float(init_cfg["province_initial_penalty"]) * torch.mean(((province_initial - init_prior_target) ** 2) * init_prior_strength_t.view(province_count, 1))
         )
-        subgroup_feature_sigma = max(float(subgroup_cfg.get("feature_coef_sigma", 0.18)), 1e-3)
+        subgroup_feature_sigma = max(float(subgroup_cfg["feature_coef_sigma"]), 1e-3)
         subgroup_reg = (
-            0.08 * (torch.mean(kp_transition**2) + torch.mean(age_transition**2) + torch.mean(sex_transition**2))
-            + 0.5
+            float(init_cfg["subgroup_transition_penalty"]) * (torch.mean(kp_transition**2) + torch.mean(age_transition**2) + torch.mean(sex_transition**2))
+            + float(init_cfg["subgroup_prior_penalty"])
             * (
                 torch.mean((kp_prior_coef / subgroup_feature_sigma) ** 2)
                 + torch.mean((age_prior_coef / subgroup_feature_sigma) ** 2)
                 + torch.mean((sex_prior_coef / subgroup_feature_sigma) ** 2)
             )
         )
-        coupling_reg = 0.25 * torch.mean((kp_mixing_matrix - torch.eye(len(kp_axis), device=device, dtype=torch.float32)) ** 2)
-        metapop_reg = 0.08 * torch.mean(torch.sigmoid(metapopulation_logit) ** 2)
-        cd4_age_sigma = max(float(cd4_hyper_cfg.get("age_low_sigma", 0.08)), 1e-3)
-        cd4_high_sigma = max(float(cd4_hyper_cfg.get("kp_sex_high_sigma", 0.06)), 1e-3)
+        coupling_reg = float(init_cfg["coupling_penalty"]) * torch.mean((kp_mixing_matrix - torch.eye(len(kp_axis), device=device, dtype=torch.float32)) ** 2)
+        metapop_reg = float(init_cfg["metapopulation_penalty"]) * torch.mean(torch.sigmoid(metapopulation_logit) ** 2)
+        cd4_age_sigma = max(float(cd4_hyper_cfg["age_low_sigma"]), 1e-3)
+        cd4_high_sigma = max(float(cd4_hyper_cfg["kp_sex_high_sigma"]), 1e-3)
         cd4_reg = (
-            0.04 * (torch.mean(cd4_low_coef**2) + torch.mean(cd4_high_coef**2))
-            + 0.5
+            float(init_cfg["cd4_coef_penalty"]) * (torch.mean(cd4_low_coef**2) + torch.mean(cd4_high_coef**2))
+            + float(init_cfg["cd4_prior_penalty"])
             * (
                 torch.mean((cd4_age_low_offset / cd4_age_sigma) ** 2)
                 + torch.mean((cd4_kp_sex_high_offset / cd4_high_sigma) ** 2)
             )
         )
-        covariate_reg = 0.10 * torch.mean(covariate_coef**2)
-        vl_test_reg = 0.08 * torch.mean((torch.sigmoid(vl_test_process_logit[1:]) - torch.sigmoid(vl_test_process_logit[:-1])) ** 2) if month_count > 1 else torch.tensor(0.0, device=device, dtype=torch.float32)
-        documented_process_reg = 0.06 * torch.mean((torch.sigmoid(suppressed_given_test_logit[1:]) - torch.sigmoid(suppressed_given_test_logit[:-1])) ** 2) if month_count > 1 else torch.tensor(0.0, device=device, dtype=torch.float32)
-        province_process_reg = float(reg_cfg.get("province_process_prior", 0.08)) * torch.mean((province_vl_test_offset - scaled_archetype_vl_prior) ** 2) + float(reg_cfg.get("province_process_prior", 0.08)) * torch.mean((province_documented_offset - scaled_archetype_doc_prior) ** 2)
-        reporting_reg = (
-            0.04 * torch.mean((scaled_observation_weight - (1.0 - 0.55 * archetype_reporting_noise_t * observation_scale[1])) ** 2)
-            + 0.03 * torch.mean(synthetic_pretraining_weight_t**2)
-            + float(latent_cfg.get("offset_regularization", 0.05)) * (torch.mean(obs_province_offset**2) + torch.mean(obs_month_offset**2))
-            + 0.04 * torch.mean((transition_scale - 1.0) ** 2)
-            + 0.04 * torch.mean((process_scale - 1.0) ** 2)
-            + 0.03 * torch.mean((observation_scale - 1.0) ** 2)
+        covariate_reg = float(init_cfg["covariate_penalty"]) * torch.mean(covariate_coef**2)
+        vl_test_reg = (
+            float(init_cfg["vl_test_smooth_penalty"]) * torch.mean((torch.sigmoid(vl_test_process_logit[1:]) - torch.sigmoid(vl_test_process_logit[:-1])) ** 2)
+            if month_count > 1
+            else torch.tensor(0.0, device=device, dtype=torch.float32)
         )
-        plausibility_penalty = float(reg_cfg.get("plausibility", 0.05)) * torch.mean((torch.sigmoid(national_transition) - to_torch_tensor(transition_prior_override, device=device, dtype=torch.float32)) ** 2)
-        regularization = transition_reg + init_reg + subgroup_reg + coupling_reg + metapop_reg + cd4_reg + covariate_reg + float(loss_scale_cfg.get("duration_smooth_multiplier", 0.25)) * duration_smooth + plausibility_penalty + vl_test_reg + documented_process_reg + province_process_reg + reporting_reg
+        documented_process_reg = (
+            float(init_cfg["documented_smooth_penalty"]) * torch.mean((torch.sigmoid(suppressed_given_test_logit[1:]) - torch.sigmoid(suppressed_given_test_logit[:-1])) ** 2)
+            if month_count > 1
+            else torch.tensor(0.0, device=device, dtype=torch.float32)
+        )
+        province_process_reg = float(reg_cfg["province_process_prior"]) * torch.mean((province_vl_test_offset - scaled_archetype_vl_prior) ** 2) + float(reg_cfg["province_process_prior"]) * torch.mean((province_documented_offset - scaled_archetype_doc_prior) ** 2)
+        reporting_reg = (
+            float(init_cfg["reporting_observation_weight_penalty"])
+            * torch.mean((scaled_observation_weight - (1.0 - float(init_cfg["archetype_noise_weight"]) * archetype_reporting_noise_t * observation_scale[1])) ** 2)
+            + float(init_cfg["synthetic_pretraining_penalty"]) * torch.mean(synthetic_pretraining_weight_t**2)
+            + float(latent_cfg["offset_regularization"]) * (torch.mean(obs_province_offset**2) + torch.mean(obs_month_offset**2))
+            + float(init_cfg["transition_scale_penalty"]) * torch.mean((transition_scale - 1.0) ** 2)
+            + float(init_cfg["process_scale_penalty"]) * torch.mean((process_scale - 1.0) ** 2)
+            + float(init_cfg["observation_scale_penalty"]) * torch.mean((observation_scale - 1.0) ** 2)
+        )
+        plausibility_penalty = float(reg_cfg["plausibility"]) * torch.mean((torch.sigmoid(national_transition) - to_torch_tensor(transition_prior_override, device=device, dtype=torch.float32)) ** 2)
+        regularization = transition_reg + init_reg + subgroup_reg + coupling_reg + metapop_reg + cd4_reg + covariate_reg + float(loss_scale_cfg["duration_smooth_multiplier"]) * duration_smooth + plausibility_penalty + vl_test_reg + documented_process_reg + province_process_reg + reporting_reg
         total_loss = (
             obs_loss
             + observation_anchor_penalty
-            + float(loss_scale_cfg.get("lower_bound_penalty", 5.0)) * lower_bound_penalty
+            + float(loss_scale_cfg["lower_bound_penalty"]) * lower_bound_penalty
             + diagnosed_penalty_scale * diagnosed_penalty
-            + float(loss_scale_cfg.get("hierarchy_penalty", 2.0)) * hierarchy_penalty
-            + float(loss_scale_cfg.get("stock_penalty", 8.0)) * stock_penalty
+            + float(loss_scale_cfg["hierarchy_penalty"]) * hierarchy_penalty
+            + float(loss_scale_cfg["stock_penalty"]) * stock_penalty
             + official_reference_penalty_scale * official_reference_penalty
             + national_anchor_penalty_scale * national_anchor_penalty
             + harp_program_penalty_scale * harp_program_penalty
@@ -3408,6 +3806,36 @@ def _fit_rescue_core_torch(
         total_loss, aggregate, transition_probs, breakdown, linkage_curves, suppression_curves, aux_summary = _forward()
         aggregate_np = to_numpy(aggregate).astype(np.float32)
         transition_probs_np = to_numpy(transition_probs).astype(np.float32)
+        vl_test_share_np = to_numpy(torch.sigmoid(vl_test_process_logit)).astype(np.float32)
+        suppressed_given_test_share_np = to_numpy(torch.sigmoid(suppressed_given_test_logit)).astype(np.float32)
+        province_vl_offset_np = to_numpy(province_vl_test_offset).astype(np.float32)
+        province_documented_offset_np = to_numpy(province_documented_offset).astype(np.float32)
+        predictive_samples, predictive_summary = _torch_map_predictive_posterior_samples(
+            state_estimates=aggregate_np,
+            vl_test_process_share=vl_test_share_np,
+            suppressed_given_test_share=suppressed_given_test_share_np,
+            province_vl_offsets=province_vl_offset_np,
+            province_documented_offsets=province_documented_offset_np,
+            observation_targets=observation_targets,
+            observed_diag_support=observed_diag_support_np,
+            observed_art_support=observed_art_support_np,
+            observed_sup_support=observed_sup_support_np,
+            observed_test_support=observed_test_support_np,
+            reporting_noise=archetype_reporting_noise_np,
+            seed=int(dict(dict(_phase3_prior("frozen_backtest") or {}).get("posterior_inference", {}) or {}).get("seed", 17)),
+        )
+        posterior_calibration = _phase3_calibration_report(
+            _posterior_prediction_stack_from_samples(predictive_samples),
+            observation_targets,
+            interval=tuple(
+                float(value)
+                for value in dict(dict(_phase3_prior("frozen_backtest") or {}).get("posterior_inference", {}) or {}).get(
+                    "calibration_interval",
+                    [0.05, 0.95],
+                )
+            ),
+        )
+        posterior_calibration["approximate_posterior"] = predictive_summary
         kp_probs_summary = torch.softmax(base_kp_log_t + subgroup_feature_t @ kp_prior_coef, dim=-1)
         age_probs_summary = torch.softmax(base_age_log_t + subgroup_feature_t @ age_prior_coef, dim=-1)
         sex_probs_summary = torch.softmax(base_sex_log_t + subgroup_feature_t @ sex_prior_coef, dim=-1)
@@ -3426,14 +3854,15 @@ def _fit_rescue_core_torch(
                 "suppression_penalty_scale": suppression_penalty_scale,
                 "fit_steps": fit_steps,
             },
-            "vl_test_process_share": to_numpy(torch.sigmoid(vl_test_process_logit)).round(6).tolist(),
-            "suppressed_given_test_share": to_numpy(torch.sigmoid(suppressed_given_test_logit)).round(6).tolist(),
-            "province_vl_test_offsets": to_numpy(province_vl_test_offset).round(6).tolist(),
-            "province_documentation_offsets": to_numpy(province_documented_offset).round(6).tolist(),
+            "vl_test_process_share": vl_test_share_np.round(6).tolist(),
+            "suppressed_given_test_share": suppressed_given_test_share_np.round(6).tolist(),
+            "province_vl_test_offsets": province_vl_offset_np.round(6).tolist(),
+            "province_documentation_offsets": province_documented_offset_np.round(6).tolist(),
             "linkage_anchor_curves": {key: value.round(6).tolist() if isinstance(value, np.ndarray) else value for key, value in linkage_curves.items() if key != "month_axis"} | {"month_axis": month_axis},
             "suppression_anchor_curves": {key: value.round(6).tolist() if isinstance(value, np.ndarray) else value for key, value in suppression_curves.items() if key != "month_axis"} | {"month_axis": month_axis},
             "kp_coupling_matrix": to_numpy(torch.softmax(kp_coupling_logits + torch.eye(len(kp_axis), device=device, dtype=torch.float32) * 3.5, dim=-1)).round(6).tolist(),
             "determinant_covariates": covariate_meta,
+            "intervention_tensor": intervention_summary,
             "metapopulation_engine": {
                 "enabled": bool(operator_names),
                 "operator_names": operator_names,
@@ -3467,6 +3896,8 @@ def _fit_rescue_core_torch(
         return {
             "state_estimates": aggregate_np,
             "transition_probs": transition_probs_np,
+            "intervention_tensor": intervention_tensor.astype(np.float32),
+            "intervention_summary": intervention_summary,
             "prediction_stack": {
                 "diagnosed_stock": np.clip(1.0 - aggregate_np[..., 0], 0.0, 1.0).astype(np.float32),
                 "art_stock": np.clip(aggregate_np[..., 2] + aggregate_np[..., 3], 0.0, 1.0).astype(np.float32),
@@ -3484,6 +3915,15 @@ def _fit_rescue_core_torch(
             },
             "loss_breakdown": breakdown | {"total_loss": float(total_loss.detach().cpu())},
             "loss_trace": loss_trace,
+            "posterior_calibration": posterior_calibration,
+            "chain_diagnostics": {
+                "available": False,
+                "inference_method": "torch_map",
+                "reason": "mcmc_unavailable_for_torch_map",
+                "approximate_posterior_available": True,
+                "approximate_posterior_method": predictive_summary["method"],
+                "posterior_samples": int(predictive_summary["sample_count"]),
+            },
             "parameters_summary": parameters_summary,
             "device": device,
             "inference_family": RESCUE_INFERENCE_FAMILY if requested_inference_family == "jax_svi" else requested_inference_family,
@@ -3564,6 +4004,312 @@ def _forecast_prediction_stack(
     }
 
 
+def _posterior_prediction_stack_from_samples(samples: dict[str, Any]) -> dict[str, np.ndarray]:
+    state_path_samples = np.asarray(to_numpy(samples["state_path"]), dtype=np.float32)
+    vl_test_logit_samples = np.asarray(to_numpy(samples["vl_test_logit"]), dtype=np.float32)
+    suppressed_given_test_logit_samples = np.asarray(to_numpy(samples["suppressed_given_test_logit"]), dtype=np.float32)
+    vl_offset_samples = np.asarray(to_numpy(samples["vl_test_province_offset"]), dtype=np.float32)
+    doc_offset_samples = np.asarray(to_numpy(samples["documented_province_offset"]), dtype=np.float32)
+    art_stock = np.clip(state_path_samples[..., 2] + state_path_samples[..., 3], 0.0, 1.0).astype(np.float32)
+    testing_coverage = np.clip(
+        art_stock
+        * (1.0 / (1.0 + np.exp(-(vl_test_logit_samples[:, None, :] + vl_offset_samples[:, :, None])))),
+        0.0,
+        1.0,
+    ).astype(np.float32)
+    documented_suppression = np.clip(
+        np.minimum(
+            state_path_samples[..., 3],
+            testing_coverage
+            * (1.0 / (1.0 + np.exp(-(suppressed_given_test_logit_samples[:, None, :] + doc_offset_samples[:, :, None])))),
+        ),
+        0.0,
+        1.0,
+    ).astype(np.float32)
+    return {
+        "diagnosed_stock": np.clip(1.0 - state_path_samples[..., 0], 0.0, 1.0).astype(np.float32),
+        "art_stock": art_stock,
+        "testing_coverage": testing_coverage,
+        "documented_suppression": documented_suppression,
+        "deaths": np.clip(state_path_samples[..., 4] * 0.18, 0.0, 0.25).astype(np.float32),
+    }
+
+
+def _torch_map_predictive_posterior_samples(
+    *,
+    state_estimates: np.ndarray,
+    vl_test_process_share: np.ndarray,
+    suppressed_given_test_share: np.ndarray,
+    province_vl_offsets: np.ndarray,
+    province_documented_offsets: np.ndarray,
+    observation_targets: dict[str, np.ndarray],
+    observed_diag_support: np.ndarray,
+    observed_art_support: np.ndarray,
+    observed_sup_support: np.ndarray,
+    observed_test_support: np.ndarray,
+    reporting_noise: np.ndarray,
+    seed: int,
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    posterior_cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("posterior_inference", {}) or {})
+    fallback_cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("fallback_posterior", {}) or {})
+    hyper_cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("semi_markov_hyperpriors", {}) or {})
+    fallback_sample_count = int(fallback_cfg["posterior_samples"])
+    sample_count = max(16, int(posterior_cfg.get("posterior_samples", fallback_sample_count)))
+    base_concentration = max(float(hyper_cfg["beta_concentration"]), 1.0)
+    dirichlet_floor = max(float(hyper_cfg["beta_floor"]), 1e-3)
+    process_logit_scale = max(float(fallback_cfg["national_logit_scale"]), 1e-3)
+    province_offset_scale = max(float(fallback_cfg["province_offset_scale"]), 1e-3)
+    logit_eps = max(float(_phase3_stabilizer("clip_floor")), 1e-5)
+    rng = np.random.default_rng(seed)
+
+    state_estimates = np.asarray(state_estimates, dtype=np.float32)
+    vl_test_process_share = np.asarray(vl_test_process_share, dtype=np.float32)
+    suppressed_given_test_share = np.asarray(suppressed_given_test_share, dtype=np.float32)
+    province_vl_offsets = np.asarray(province_vl_offsets, dtype=np.float32)
+    province_documented_offsets = np.asarray(province_documented_offsets, dtype=np.float32)
+    observed_diag_support = np.asarray(observed_diag_support, dtype=np.float32)
+    observed_art_support = np.asarray(observed_art_support, dtype=np.float32)
+    observed_sup_support = np.asarray(observed_sup_support, dtype=np.float32)
+    observed_test_support = np.asarray(observed_test_support, dtype=np.float32)
+    reporting_noise = np.asarray(reporting_noise, dtype=np.float32)
+    vl_test_process_logit = _logit_np(np.clip(vl_test_process_share, logit_eps, 1.0 - logit_eps))
+    suppressed_given_test_logit = _logit_np(np.clip(suppressed_given_test_share, logit_eps, 1.0 - logit_eps))
+
+    art_stock = np.clip(state_estimates[..., 2] + state_estimates[..., 3], 0.0, 1.0).astype(np.float32)
+    testing_pred = np.clip(
+        art_stock
+        * (1.0 / (1.0 + np.exp(-(vl_test_process_logit.reshape(1, -1) + province_vl_offsets.reshape(-1, 1))))),
+        0.0,
+        1.0,
+    ).astype(np.float32)
+    documented_pred = np.clip(
+        np.minimum(
+            state_estimates[..., 3],
+            testing_pred
+            * (
+                1.0
+                / (
+                    1.0
+                    + np.exp(
+                        -(
+                            suppressed_given_test_logit.reshape(1, -1)
+                            + province_documented_offsets.reshape(-1, 1)
+                        )
+                    )
+                )
+            ),
+        ),
+        0.0,
+        1.0,
+    ).astype(np.float32)
+    metric_predictions = {
+        "diagnosed_stock": np.clip(1.0 - state_estimates[..., 0], 0.0, 1.0).astype(np.float32),
+        "art_stock": art_stock,
+        "testing_coverage": testing_pred,
+        "documented_suppression": documented_pred,
+        "deaths": np.clip(state_estimates[..., 4] * 0.18, 0.0, 0.25).astype(np.float32),
+    }
+
+    metric_support = np.stack(
+        [
+            observed_diag_support,
+            observed_art_support,
+            observed_test_support,
+            observed_sup_support,
+        ],
+        axis=0,
+    ).mean(axis=0)
+    metric_residual = np.stack(
+        [
+            np.abs(metric_predictions["diagnosed_stock"] - np.asarray(observation_targets["diagnosed_stock"], dtype=np.float32)),
+            np.abs(metric_predictions["art_stock"] - np.asarray(observation_targets["art_stock"], dtype=np.float32)),
+            np.abs(metric_predictions["testing_coverage"] - np.asarray(observation_targets["testing_coverage"], dtype=np.float32)),
+            np.abs(metric_predictions["documented_suppression"] - np.asarray(observation_targets["documented_suppression"], dtype=np.float32)),
+        ],
+        axis=0,
+    ).mean(axis=0)
+    uncertainty_surface = np.clip((1.0 - np.clip(metric_support, 0.0, 1.0)) + metric_residual + reporting_noise[:, None], 0.0, None)
+    concentration_surface = base_concentration / (1.0 + uncertainty_surface)
+
+    state_samples = np.zeros((sample_count, *state_estimates.shape), dtype=np.float32)
+    for province_idx in range(state_estimates.shape[0]):
+        for month_idx in range(state_estimates.shape[1]):
+            alpha = np.clip(state_estimates[province_idx, month_idx], logit_eps, None) * concentration_surface[province_idx, month_idx]
+            alpha = np.clip(alpha + dirichlet_floor, dirichlet_floor, None)
+            state_samples[:, province_idx, month_idx, :] = rng.dirichlet(alpha, size=sample_count).astype(np.float32)
+
+    month_support = np.clip(observed_test_support.mean(axis=0), 0.0, 1.0)
+    month_residual = np.abs(metric_predictions["testing_coverage"] - np.asarray(observation_targets["testing_coverage"], dtype=np.float32)).mean(axis=0)
+    process_scale = process_logit_scale * (1.0 + (1.0 - month_support) + month_residual)
+    documented_month_support = np.clip(observed_sup_support.mean(axis=0), 0.0, 1.0)
+    documented_month_residual = np.abs(metric_predictions["documented_suppression"] - np.asarray(observation_targets["documented_suppression"], dtype=np.float32)).mean(axis=0)
+    documented_scale = process_logit_scale * (1.0 + (1.0 - documented_month_support) + documented_month_residual)
+    province_support = np.clip(metric_support.mean(axis=1), 0.0, 1.0)
+    province_scale = province_offset_scale * (1.0 + (1.0 - province_support) + reporting_noise)
+
+    vl_test_logit_samples = rng.normal(
+        loc=vl_test_process_logit,
+        scale=process_scale,
+        size=(sample_count, vl_test_process_share.shape[0]),
+    ).astype(np.float32)
+    suppressed_given_test_logit_samples = rng.normal(
+        loc=suppressed_given_test_logit,
+        scale=documented_scale,
+        size=(sample_count, suppressed_given_test_share.shape[0]),
+    ).astype(np.float32)
+    vl_offset_samples = rng.normal(
+        loc=province_vl_offsets,
+        scale=province_scale,
+        size=(sample_count, province_vl_offsets.shape[0]),
+    ).astype(np.float32)
+    doc_offset_samples = rng.normal(
+        loc=province_documented_offsets,
+        scale=province_scale,
+        size=(sample_count, province_documented_offsets.shape[0]),
+    ).astype(np.float32)
+    return (
+        {
+            "state_path": state_samples,
+            "vl_test_logit": vl_test_logit_samples,
+            "suppressed_given_test_logit": suppressed_given_test_logit_samples,
+            "vl_test_province_offset": vl_offset_samples,
+            "documented_province_offset": doc_offset_samples,
+        },
+        {
+            "method": "torch_map_dirichlet_logit_predictive",
+            "sample_count": sample_count,
+            "base_concentration": round(base_concentration, 6),
+            "dirichlet_floor": round(dirichlet_floor, 6),
+            "mean_concentration": round(float(np.mean(concentration_surface)) if concentration_surface.size else 0.0, 6),
+            "mean_reporting_noise": round(float(np.mean(reporting_noise)) if reporting_noise.size else 0.0, 6),
+        },
+    )
+
+
+def _phase3_calibration_report(
+    prediction_samples: dict[str, np.ndarray],
+    observation_targets: dict[str, np.ndarray],
+    *,
+    interval: tuple[float, float],
+) -> dict[str, Any]:
+    lower_q, upper_q = interval
+    metric_rows: list[dict[str, Any]] = []
+    available = False
+    for metric_name, observed in observation_targets.items():
+        sample_stack = np.asarray(prediction_samples.get(metric_name), dtype=np.float32)
+        observed_array = np.asarray(observed, dtype=np.float32)
+        if sample_stack.size == 0 or sample_stack.ndim < 3 or sample_stack.shape[1:] != observed_array.shape:
+            metric_rows.append({"metric": metric_name, "available": False, "reason": "sample_shape_mismatch"})
+            continue
+        lower = np.quantile(sample_stack, lower_q, axis=0)
+        upper = np.quantile(sample_stack, upper_q, axis=0)
+        coverage = ((observed_array >= lower) & (observed_array <= upper)).astype(np.float32)
+        observed_expanded = np.broadcast_to(observed_array, sample_stack.shape)
+        ranks = np.sum(sample_stack < observed_expanded, axis=0).astype(np.int32)
+        rank_hist = np.bincount(ranks.ravel(), minlength=sample_stack.shape[0] + 1).astype(np.int32)
+        metric_rows.append(
+            {
+                "metric": metric_name,
+                "available": True,
+                "picp": round(float(np.mean(coverage)), 6),
+                "mean_interval_width": round(float(np.mean(upper - lower)), 6),
+                "rank_histogram": rank_hist.tolist(),
+                "sample_count": int(sample_stack.shape[0]),
+            }
+        )
+        available = True
+    return {
+        "available": available,
+        "interval": [round(float(lower_q), 4), round(float(upper_q), 4)],
+        "metrics": metric_rows,
+    }
+
+
+def _aggregate_transition_probabilities_for_rollout(
+    transition_tensor: np.ndarray,
+    subgroup_weights: np.ndarray | None = None,
+) -> np.ndarray:
+    tensor = np.asarray(transition_tensor, dtype=np.float32)
+    if tensor.size == 0:
+        return np.zeros((0, 0, len(TRANSITION_NAMES)), dtype=np.float32)
+    if tensor.ndim == 3:
+        return tensor.astype(np.float32)
+    if tensor.ndim == 7:
+        if subgroup_weights is not None and np.asarray(subgroup_weights).ndim == 4:
+            weights = np.asarray(subgroup_weights, dtype=np.float32)[..., None, None, None]
+            weighted = tensor * weights
+            aggregate = weighted.mean(axis=4).sum(axis=(1, 2, 3))
+            return np.transpose(aggregate, (0, 2, 1)).astype(np.float32)
+        aggregate = tensor.mean(axis=(1, 2, 3, 4))
+        return np.transpose(aggregate, (0, 2, 1)).astype(np.float32)
+    if tensor.ndim >= 4:
+        reduce_axes = tuple(range(1, tensor.ndim - 2))
+        aggregate = tensor.mean(axis=reduce_axes) if reduce_axes else tensor
+        if aggregate.ndim == 3 and aggregate.shape[-2] == len(TRANSITION_NAMES):
+            return np.transpose(aggregate, (0, 2, 1)).astype(np.float32)
+    raise ValueError(f"Unsupported transition tensor shape for categorical rollout: {tensor.shape}")
+
+
+def _categorical_rollout_summary_from_transition_tensor(
+    transition_probs: np.ndarray,
+    *,
+    seed: int,
+    particle_count: int,
+    initial_state: np.ndarray | None = None,
+) -> dict[str, Any]:
+    cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("evolution", {}) or {})
+    transition_probs = np.asarray(transition_probs, dtype=np.float32)
+    if transition_probs.size == 0 or transition_probs.ndim != 3:
+        return {"available": False, "reason": "transition_probs_empty"}
+    province_count, month_count, _ = transition_probs.shape
+    base_state = np.asarray(initial_state if initial_state is not None else _phase3_prior("frozen_backtest")["default_initial_state"], dtype=np.float32)
+    base_state = np.clip(base_state, float(cfg["state_mass_eps"]), None)
+    base_state = base_state / np.clip(base_state.sum(), float(cfg["state_mass_eps"]), None)
+    rng = np.random.default_rng(seed)
+    shares = np.zeros((province_count, month_count, len(STATE_NAMES)), dtype=np.float32)
+    state_catalog = np.arange(len(STATE_NAMES), dtype=np.int32)
+    rows: list[dict[str, Any]] = []
+    for province_idx in range(province_count):
+        current = rng.choice(state_catalog, size=int(particle_count), p=base_state)
+        for month_idx in range(month_count):
+            probs_t = transition_probs[province_idx, month_idx]
+            p_ud, p_da, p_av, p_al, p_la = [
+                float(np.clip(probs_t[idx], float(cfg["transition_floor"]), float(cfg["transition_ceiling"])))
+                for idx in range(len(TRANSITION_NAMES))
+            ]
+            next_particles = np.empty_like(current)
+            for particle_idx, state in enumerate(current):
+                if state == 0:
+                    row = np.asarray([1.0 - p_ud, p_ud, 0.0, 0.0, 0.0], dtype=np.float64)
+                elif state == 1:
+                    row = np.asarray([0.0, 1.0 - p_da, p_da, 0.0, 0.0], dtype=np.float64)
+                elif state == 2:
+                    row = np.asarray([0.0, 0.0, max(1.0 - p_av - p_al, 0.0), p_av, p_al], dtype=np.float64)
+                elif state == 3:
+                    row = np.asarray([0.0, 0.0, 0.0, 1.0, 0.0], dtype=np.float64)
+                else:
+                    row = np.asarray([0.0, 0.0, p_la, 0.0, max(1.0 - p_la, 0.0)], dtype=np.float64)
+                row = row / np.clip(row.sum(), float(cfg["state_mass_eps"]), None)
+                next_particles[particle_idx] = int(rng.choice(state_catalog, p=row))
+            current = next_particles
+            counts = np.bincount(current, minlength=len(STATE_NAMES)).astype(np.float32)
+            shares[province_idx, month_idx] = counts / float(particle_count)
+        rows.append(
+            {
+                "province_index": province_idx,
+                "particle_count": int(particle_count),
+                "terminal_distribution": shares[province_idx, -1].round(6).tolist(),
+            }
+        )
+    return {
+        "available": True,
+        "particle_count": int(particle_count),
+        "state_names": list(STATE_NAMES),
+        "sample_rows": rows,
+        "sampled_state_shares": shares.round(6).tolist(),
+    }
+
+
 def _point_reference_from_harp(point: dict[str, Any]) -> dict[str, float]:
     estimated_plhiv = max(float(point.get("estimated_plhiv") or 0.0), 1.0)
     diagnosed = float(point.get("diagnosed") or 0.0) / estimated_plhiv
@@ -3613,6 +4359,164 @@ def _carry_forward_backtest_summary(
         "comparisons": comparisons,
         "mean_absolute_error": round(mean_error, 6),
     }
+
+
+def _annual_metric_series_from_points(points: list[dict[str, Any]]) -> dict[str, list[tuple[int, float]]]:
+    series: dict[str, list[tuple[int, float]]] = defaultdict(list)
+    for point in points:
+        year = int(_month_year(str(point.get("month") or "")) or 0)
+        reference = _point_reference_from_harp(point)
+        for metric_name, value in reference.items():
+            series[metric_name].append((year, float(value)))
+    for metric_name in list(series):
+        series[metric_name] = sorted(series[metric_name], key=lambda item: item[0])
+    return series
+
+
+def _arima_backtest_summary(
+    train_points: list[dict[str, Any]],
+    holdout_points: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not train_points or not holdout_points:
+        return {"available": False, "comparisons": [], "mean_absolute_error": 0.0}
+    cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("baseline_family", {}) or {})
+    phi_clip = float(cfg["arima_phi_clip"])
+    arima_order = list(cfg["arima_order"])
+    train_series = _annual_metric_series_from_points(train_points)
+    holdout_lookup = {int(_month_year(str(point.get("month") or "")) or 0): _point_reference_from_harp(point) for point in holdout_points}
+    holdout_years = sorted(holdout_lookup)
+    comparisons: list[dict[str, Any]] = []
+    for horizon, holdout_year in enumerate(holdout_years, start=1):
+        baseline_reference: dict[str, float] = {}
+        holdout_reference = holdout_lookup[holdout_year]
+        for metric_name, rows in train_series.items():
+            values = np.asarray([value for _, value in rows], dtype=np.float32)
+            if values.size < 2:
+                forecast = float(values[-1]) if values.size else 0.0
+            else:
+                x = values[:-1]
+                y = values[1:]
+                x_centered = x - x.mean()
+                denom = float(np.dot(x_centered, x_centered))
+                phi = float(np.dot(x_centered, y - y.mean()) / denom) if denom > 0.0 else 1.0
+                phi = float(np.clip(phi, -phi_clip, phi_clip))
+                intercept = float(y.mean() - phi * x.mean())
+                forecast = float(values[-1])
+                for _ in range(horizon):
+                    forecast = intercept + phi * forecast
+            baseline_reference[metric_name] = forecast
+        errors = {f"{metric}_abs_error": round(abs(float(baseline_reference[metric]) - float(holdout_reference[metric])), 6) for metric in holdout_reference}
+        comparisons.append(
+            {
+                "holdout_year": holdout_year,
+                "baseline_reference": {key: round(float(value), 6) for key, value in baseline_reference.items()},
+                "holdout_reference": {key: round(float(value), 6) for key, value in holdout_reference.items()},
+                "errors": errors,
+                "arima_order": arima_order,
+            }
+        )
+    mean_error = float(np.mean([np.mean(list(item["errors"].values())) for item in comparisons if item["errors"]])) if comparisons else 0.0
+    return {
+        "available": bool(comparisons),
+        "comparisons": comparisons,
+        "mean_absolute_error": round(mean_error, 6),
+        "arima_order": arima_order,
+    }
+
+
+def _simple_compartmental_backtest_summary(
+    train_points: list[dict[str, Any]],
+    holdout_points: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if len(train_points) < 2 or not holdout_points:
+        return {"available": False, "comparisons": [], "mean_absolute_error": 0.0}
+    cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("baseline_family", {}) or {})
+    floor = float(cfg["compartment_floor"])
+    train_rows = [(_month_year(str(point.get("month") or "")) or 0, _point_reference_from_harp(point)) for point in train_points]
+    train_rows.sort(key=lambda item: item[0])
+    rate_rows: list[tuple[float, float, float]] = []
+    for (_, prev), (_, nxt) in zip(train_rows[:-1], train_rows[1:]):
+        undiagnosed = max(1.0 - float(prev["diagnosed_stock"]), floor)
+        diagnosed_not_art = max(float(prev["diagnosed_stock"]) - float(prev["art_stock"]), floor)
+        art_not_suppressed = max(float(prev["art_stock"]) - float(prev["documented_suppression"]), floor)
+        rate_rows.append(
+            (
+                max(float(nxt["diagnosed_stock"]) - float(prev["diagnosed_stock"]), 0.0) / undiagnosed,
+                max(float(nxt["art_stock"]) - float(prev["art_stock"]), 0.0) / diagnosed_not_art,
+                max(float(nxt["documented_suppression"]) - float(prev["documented_suppression"]), 0.0) / art_not_suppressed,
+            )
+        )
+    mean_rates = np.mean(np.asarray(rate_rows, dtype=np.float32), axis=0) if rate_rows else np.zeros((3,), dtype=np.float32)
+    holdout_lookup = {int(_month_year(str(point.get("month") or "")) or 0): _point_reference_from_harp(point) for point in holdout_points}
+    comparisons: list[dict[str, Any]] = []
+    diagnosed = float(train_rows[-1][1]["diagnosed_stock"])
+    art = float(train_rows[-1][1]["art_stock"])
+    suppressed = float(train_rows[-1][1]["documented_suppression"])
+    for holdout_year in sorted(holdout_lookup):
+        diagnosed = diagnosed + float(mean_rates[0]) * max(1.0 - diagnosed, floor)
+        art = art + float(mean_rates[1]) * max(diagnosed - art, floor)
+        suppressed = suppressed + float(mean_rates[2]) * max(art - suppressed, floor)
+        baseline_reference = {
+            "diagnosed_stock": diagnosed,
+            "art_stock": min(art, diagnosed),
+            "viral_load_tested_stock": min(art, max(train_rows[-1][1]["viral_load_tested_stock"], suppressed)),
+            "documented_suppression": min(suppressed, art),
+        }
+        baseline_reference["second95"] = baseline_reference["art_stock"] / max(baseline_reference["diagnosed_stock"], floor)
+        baseline_reference["viral_load_tested_among_art"] = baseline_reference["viral_load_tested_stock"] / max(baseline_reference["art_stock"], floor)
+        baseline_reference["suppressed_among_art"] = baseline_reference["documented_suppression"] / max(baseline_reference["art_stock"], floor)
+        holdout_reference = holdout_lookup[holdout_year]
+        errors = {f"{metric}_abs_error": round(abs(float(baseline_reference[metric]) - float(holdout_reference[metric])), 6) for metric in holdout_reference}
+        comparisons.append(
+            {
+                "holdout_year": holdout_year,
+                "baseline_reference": {key: round(float(value), 6) for key, value in baseline_reference.items()},
+                "holdout_reference": {key: round(float(value), 6) for key, value in holdout_reference.items()},
+                "errors": errors,
+            }
+        )
+    mean_error = float(np.mean([np.mean(list(item["errors"].values())) for item in comparisons if item["errors"]])) if comparisons else 0.0
+    return {"available": bool(comparisons), "comparisons": comparisons, "mean_absolute_error": round(mean_error, 6)}
+
+
+def _spatial_holdout_summary(
+    state_estimates: np.ndarray,
+    observation_targets: dict[str, np.ndarray],
+    region_axis: list[str],
+    region_index: np.ndarray,
+    province_axis: list[str],
+    month_axis: list[str],
+) -> dict[str, Any]:
+    if state_estimates.size == 0 or not province_axis or not month_axis:
+        return {"available": False, "reason": "state_estimates_empty", "rows": []}
+    cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("baseline_family", {}) or {})
+    evaluation_months = min(int(cfg["spatial_holdout_months"]), len(month_axis))
+    month_slice = slice(max(0, len(month_axis) - evaluation_months), len(month_axis))
+    rows: list[dict[str, Any]] = []
+    for province_idx, province in enumerate(province_axis):
+        region_id = int(region_index[province_idx]) if province_idx < len(region_index) else -1
+        peers = [idx for idx in range(len(province_axis)) if idx != province_idx and (region_id < 0 or region_index[idx] == region_id)]
+        if not peers:
+            peers = [idx for idx in range(len(province_axis)) if idx != province_idx]
+        if not peers:
+            continue
+        peer_diag = np.mean(1.0 - state_estimates[peers, month_slice, 0], axis=0)
+        peer_art = np.mean(state_estimates[peers, month_slice, 2] + state_estimates[peers, month_slice, 3], axis=0)
+        peer_sup = np.mean(state_estimates[peers, month_slice, 3], axis=0)
+        obs_diag = observation_targets["diagnosed_stock"][province_idx, month_slice]
+        obs_art = observation_targets["art_stock"][province_idx, month_slice]
+        obs_sup = observation_targets["documented_suppression"][province_idx, month_slice]
+        rows.append(
+            {
+                "province": province,
+                "region": region_axis[region_id] if 0 <= region_id < len(region_axis) else "unknown",
+                "diagnosed_mae": round(float(np.mean(np.abs(peer_diag - obs_diag))), 6),
+                "art_mae": round(float(np.mean(np.abs(peer_art - obs_art))), 6),
+                "suppression_mae": round(float(np.mean(np.abs(peer_sup - obs_sup))), 6),
+            }
+        )
+    mean_mae = float(np.mean([np.mean([row["diagnosed_mae"], row["art_mae"], row["suppression_mae"]]) for row in rows])) if rows else 0.0
+    return {"available": bool(rows), "rows": rows, "mean_absolute_error": round(mean_mae, 6)}
 
 
 def _compute_observation_residuals(
@@ -3899,6 +4803,7 @@ def _suppression_penalty_torch(
     month_axis: list[str],
     device: Any,
 ) -> tuple[Any, dict[str, float], dict[str, np.ndarray]]:
+    cfg = dict(_phase3_constraint("suppression_process") or {})
     mask_np = _national_reference_mask(province_axis)
     curves = _suppression_anchor_curves(month_axis=month_axis, observation_targets=observation_targets, province_axis=province_axis)
     if not np.any(mask_np) or not np.any(curves["weight"] > 0):
@@ -3910,6 +4815,7 @@ def _suppression_penalty_torch(
     overall_target = to_torch_tensor(curves["overall_suppression_target"].astype(np.float32), device=device, dtype=torch.float32)
     supp_art_target = to_torch_tensor(curves["suppressed_among_art_target"].astype(np.float32), device=device, dtype=torch.float32)
     tested_art_target = to_torch_tensor(curves["tested_among_art_target"].astype(np.float32), device=device, dtype=torch.float32)
+    documented_given_test_target = to_torch_tensor(curves["documented_given_test_target"].astype(np.float32), device=device, dtype=torch.float32)
     a_to_v_target = to_torch_tensor(curves["a_to_v_transition_target"].astype(np.float32), device=device, dtype=torch.float32)
 
     a_mass = latent[..., 2, :, :]
@@ -3927,14 +4833,18 @@ def _suppression_penalty_torch(
     national_test_t = torch.sum(testing_pred * mask.view(-1, 1), dim=0)
     national_supp_art = national_sup / torch.clamp(national_art, min=1e-6)
     national_test_art = national_test_t / torch.clamp(national_art, min=1e-6)
+    national_documented_given_test = national_sup / torch.clamp(national_test_t, min=1e-6)
+    national_tested_gap = torch.relu(national_sup - national_test_t)
 
     penalty = torch.mean(
         weights
         * (
-            torch.square(national_supp_transition - a_to_v_target)
-            + 0.90 * torch.square(national_supp_art - supp_art_target)
-            + 0.65 * torch.square(national_sup - overall_target)
-            + 0.35 * torch.square(national_test_art - tested_art_target)
+            float(cfg["transition_weight"]) * torch.square(national_supp_transition - a_to_v_target)
+            + float(cfg["suppressed_among_art_weight"]) * torch.square(national_supp_art - supp_art_target)
+            + float(cfg["overall_weight"]) * torch.square(national_sup - overall_target)
+            + float(cfg["tested_among_art_weight"]) * torch.square(national_test_art - tested_art_target)
+            + float(cfg["documented_given_test_weight"]) * torch.square(national_documented_given_test - documented_given_test_target)
+            + float(cfg["national_tested_gap_weight"]) * torch.square(national_tested_gap)
         )
     )
     details = {
@@ -3943,6 +4853,8 @@ def _suppression_penalty_torch(
         "suppression_overall_mae": float(torch.mean(torch.abs(national_sup - overall_target) * weights).detach().cpu()),
         "suppression_among_art_mae": float(torch.mean(torch.abs(national_supp_art - supp_art_target) * weights).detach().cpu()),
         "tested_among_art_alignment_mae": float(torch.mean(torch.abs(national_test_art - tested_art_target) * weights).detach().cpu()),
+        "documented_given_test_alignment_mae": float(torch.mean(torch.abs(national_documented_given_test - documented_given_test_target) * weights).detach().cpu()),
+        "national_tested_gap_mae": float(torch.mean(national_tested_gap * weights).detach().cpu()),
     }
     return penalty, details, curves
 
@@ -4104,6 +5016,11 @@ def _frozen_history_backtest_evaluation(
     profile_id: str,
     inference_family: str,
     province_axis: list[str],
+    region_axis: list[str],
+    region_index: np.ndarray,
+    state_estimates: np.ndarray,
+    observation_targets: dict[str, np.ndarray],
+    month_axis: list[str],
     forecast_states: np.ndarray,
     parameters_summary: dict[str, Any],
     backtest_config: dict[str, Any],
@@ -4127,6 +5044,22 @@ def _frozen_history_backtest_evaluation(
         list(backtest_config.get("train_harp_points") or []),
         holdout_points,
     )
+    arima_baseline = _arima_backtest_summary(
+        list(backtest_config.get("train_harp_points") or []),
+        holdout_points,
+    )
+    simple_compartmental = _simple_compartmental_backtest_summary(
+        list(backtest_config.get("train_harp_points") or []),
+        holdout_points,
+    )
+    spatial_holdout = _spatial_holdout_summary(
+        state_estimates,
+        observation_targets,
+        region_axis,
+        region_index,
+        province_axis,
+        month_axis,
+    )
     holdout_errors = [
         float(np.mean(list(item.get("errors", {}).values())))
         for item in holdout_check.get("comparisons", [])
@@ -4142,6 +5075,9 @@ def _frozen_history_backtest_evaluation(
         "comparison_count": len(holdout_check.get("comparisons", [])),
         "model_mean_absolute_error": model_mean_error,
         "carry_forward_mean_absolute_error": carry_forward.get("mean_absolute_error", 0.0),
+        "arima_mean_absolute_error": arima_baseline.get("mean_absolute_error", 0.0),
+        "simple_compartmental_mean_absolute_error": simple_compartmental.get("mean_absolute_error", 0.0),
+        "spatial_holdout_mean_absolute_error": spatial_holdout.get("mean_absolute_error", 0.0),
         "model_beats_carry_forward": bool(
             carry_forward.get("available") and model_mean_error < float(carry_forward.get("mean_absolute_error") or 0.0)
         ),
@@ -4151,6 +5087,135 @@ def _frozen_history_backtest_evaluation(
         "summary": summary,
         "holdout_reference_check": holdout_check,
         "carry_forward_baseline": carry_forward,
+        "arima_baseline": arima_baseline,
+        "simple_compartmental_baseline": simple_compartmental,
+        "spatial_holdout": spatial_holdout,
+    }
+
+
+def _state_to_cascade_metrics(state: np.ndarray) -> dict[str, float]:
+    U, D, A, V, L = [float(state[idx]) for idx in range(len(STATE_NAMES))]
+    diagnosed = 1.0 - U
+    on_art = A + V
+    suppressed = V
+    return {
+        "diagnosed_share": diagnosed,
+        "art_share": on_art,
+        "suppressed_share": suppressed,
+        "second95": on_art / max(diagnosed, 1e-6),
+        "suppressed_among_art": suppressed / max(on_art, 1e-6),
+        "lost_share": L,
+    }
+
+
+def _month_year(month_label: str) -> int | None:
+    ordinal = _month_ordinal(month_label)
+    if ordinal is None:
+        return None
+    return ordinal // 12
+
+
+def _latest_matching_month(month_axis: list[str], year: int) -> str | None:
+    candidates = [month for month in month_axis if _month_year(month) == year]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: _month_ordinal(item) or -1)
+
+
+def _spectrum_style_comparison(
+    *,
+    run_id: str,
+    profile_id: str,
+    inference_family: str,
+    province_axis: list[str],
+    month_axis: list[str],
+    state_estimates: np.ndarray,
+    forecast_states: np.ndarray,
+    backtest_config: dict[str, Any] | None,
+) -> dict[str, Any]:
+    ctx = RunContext.create(run_id=run_id, plugin_id="hiv")
+    archive_rows = list(read_json(ctx.run_dir / "harp_archive" / "historical_harp_panel.json", default={}).get("rows") or [])
+    if not archive_rows:
+        return {"available": False, "reason": "historical_harp_panel_missing", "comparisons": []}
+    national_mask = _national_reference_mask(province_axis)
+    if not np.any(national_mask):
+        return {"available": False, "reason": "national_reference_mask_missing", "comparisons": []}
+
+    train_points = {int(row.get("year") or 0): str(row.get("month") or "") for row in list((backtest_config or {}).get("train_harp_points") or [])}
+    holdout_points = {int(row.get("year") or 0): str(row.get("month") or "") for row in list((backtest_config or {}).get("holdout_harp_points") or [])}
+    forecast_month_axis = _forecast_month_axis(str((backtest_config or {}).get("train_last_model_month") or ""), int((backtest_config or {}).get("forecast_horizon") or forecast_states.shape[1] or 0))
+    train_years = {int(year) for year in list((backtest_config or {}).get("train_years") or [])}
+    holdout_years = {int(year) for year in list((backtest_config or {}).get("holdout_years") or [])}
+
+    comparisons = []
+    for row in archive_rows:
+        year = int(row.get("year") or 0)
+        plhiv = row.get("estimated_plhiv")
+        diagnosed = row.get("diagnosed_plhiv")
+        on_art = row.get("alive_on_art")
+        suppressed = row.get("virally_suppressed")
+        if any(value in {None, ""} for value in [plhiv, diagnosed, on_art, suppressed]):
+            continue
+        source = None
+        selected_month = ""
+        if year in holdout_years and forecast_states.size:
+            selected_month = holdout_points.get(year) or _latest_matching_month(forecast_month_axis, year) or ""
+            if selected_month and selected_month in forecast_month_axis:
+                source = np.tensordot(national_mask, forecast_states[:, forecast_month_axis.index(selected_month)], axes=(0, 0))
+        elif year in train_years or not backtest_config:
+            selected_month = train_points.get(year) or _latest_matching_month(month_axis, year) or ""
+            if selected_month and selected_month in month_axis:
+                source = np.tensordot(national_mask, state_estimates[:, month_axis.index(selected_month)], axes=(0, 0))
+        if source is None:
+            continue
+        model_metrics = _state_to_cascade_metrics(np.asarray(source, dtype=np.float32))
+        comparator_metrics = {
+            "diagnosed_share": float(diagnosed) / max(float(plhiv), 1.0),
+            "art_share": float(on_art) / max(float(plhiv), 1.0),
+            "suppressed_share": float(suppressed) / max(float(plhiv), 1.0),
+            "second95": float(on_art) / max(float(diagnosed), 1.0),
+            "suppressed_among_art": float(suppressed) / max(float(on_art), 1.0),
+        }
+        errors = {
+            key: round(abs(float(model_metrics[key]) - float(comparator_metrics[key])), 6)
+            for key in comparator_metrics
+        }
+        comparisons.append(
+            {
+                "year": year,
+                "month": selected_month,
+                "comparison_kind": "holdout" if year in holdout_years else "train_window",
+                "source_label": "Historical annual external-denominator comparator (Spectrum/AIM-style)",
+                "estimated_plhiv": float(plhiv),
+                "model_metrics": {key: round(float(value), 6) for key, value in model_metrics.items()},
+                "comparator_metrics": {key: round(float(value), 6) for key, value in comparator_metrics.items()},
+                "errors": errors,
+            }
+        )
+    mean_abs_error = round(
+        float(
+            np.mean(
+                [
+                    np.mean(list(item.get("errors", {}).values()))
+                    for item in comparisons
+                    if item.get("errors")
+                ]
+            )
+        )
+        if comparisons
+        else 0.0,
+        6,
+    )
+    return {
+        "available": bool(comparisons),
+        "comparator_family": "spectrum_aim_style_external_denominator_program_series",
+        "profile_id": profile_id,
+        "inference_family": inference_family,
+        "comparison_count": len(comparisons),
+        "mean_absolute_error": mean_abs_error,
+        "train_years": sorted(train_years),
+        "holdout_years": sorted(holdout_years),
+        "comparisons": comparisons,
     }
 
 
@@ -4257,6 +5322,7 @@ def run_phase3_rescue_core(
     standardized_tensor_override: np.ndarray | None = None,
     reference_overrides: dict[str, Any] | None = None,
     backtest_config: dict[str, Any] | None = None,
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
@@ -4320,7 +5386,7 @@ def run_phase3_rescue_core(
         )
         cd4_overlay, cd4_summary = _build_cd4_overlay(observation_targets, province_axis, kp_axis, age_axis, sex_axis)
 
-        if requested_inference_family == "jax_svi":
+        if requested_inference_family in {"jax_svi", "jax_nuts"}:
             fit_result = _fit_rescue_core_jax_svi(
                 run_dir=ctx.run_dir,
                 profile_id=profile_id,
@@ -4339,6 +5405,8 @@ def run_phase3_rescue_core(
                 age_axis=age_axis,
                 sex_axis=sex_axis,
                 archetype_bundle=archetype_bundle,
+                inference_method="nuts" if requested_inference_family == "jax_nuts" else "svi",
+                modifier_representation=modifier_representation,
                 calibration_overrides=calibration_overrides,
             )
         elif torch is not None:
@@ -4363,6 +5431,7 @@ def run_phase3_rescue_core(
                 duration_catalog=DURATION_CATALOG,
                 requested_inference_family=requested_inference_family,
                 archetype_bundle=archetype_bundle,
+                modifier_representation=modifier_representation,
                 calibration_overrides=calibration_overrides,
             )
         else:  # pragma: no cover
@@ -4381,10 +5450,18 @@ def run_phase3_rescue_core(
                 age_axis=age_axis,
                 sex_axis=sex_axis,
                 duration_catalog=DURATION_CATALOG,
+                modifier_representation=modifier_representation,
                 calibration_overrides=calibration_overrides,
             )
 
     state_estimates = fit_result["state_estimates"]
+    rollout_transition_probs = _aggregate_transition_probabilities_for_rollout(fit_result["transition_probs"], subgroup_weights)
+    categorical_rollout = _categorical_rollout_summary_from_transition_tensor(
+        rollout_transition_probs,
+        seed=17,
+        particle_count=int(dict(dict(_phase3_prior("frozen_backtest") or {}).get("posterior_inference", {}) or {})["categorical_particle_count"]),
+        initial_state=fit_result["state_estimates"][:, 0, :].mean(axis=0),
+    )
     forecast_horizon = int(backtest_config.get("forecast_horizon") or 0) if backtest_config else 0
     if forecast_horizon <= 0:
         forecast_horizon = min(6, max(2, len(month_axis)))
@@ -4415,12 +5492,27 @@ def run_phase3_rescue_core(
             profile_id=profile_id,
             inference_family=fit_result["inference_family"],
             province_axis=province_axis,
+            region_axis=region_axis,
+            region_index=region_index,
+            state_estimates=state_estimates,
+            observation_targets=observation_targets,
+            month_axis=month_axis,
             forecast_states=forecast_states,
             parameters_summary=fit_result["parameters_summary"],
             backtest_config=backtest_config,
         )
         if backtest_config
         else None
+    )
+    spectrum_comparison = _spectrum_style_comparison(
+        run_id=run_id,
+        profile_id=profile_id,
+        inference_family=fit_result["inference_family"],
+        province_axis=province_axis,
+        month_axis=month_axis,
+        state_estimates=state_estimates,
+        forecast_states=forecast_states,
+        backtest_config=backtest_config,
     )
     national_anchor_surfaces = {
         "month_axis": month_axis,
@@ -4471,6 +5563,11 @@ def run_phase3_rescue_core(
             "comparison_count": len(reference_check_harp.get("comparisons", [])),
             "vl_test_process_share": fit_result["parameters_summary"].get("vl_test_process_share", []),
         },
+        "incumbent_comparator_summary": {
+            "available": bool(spectrum_comparison.get("available")),
+            "comparison_count": int(spectrum_comparison.get("comparison_count", 0)),
+            "mean_absolute_error": float(spectrum_comparison.get("mean_absolute_error", 0.0)),
+        },
         "linkage_calibration_summary": {
             "linkage_penalty": fit_result["loss_breakdown"].get("linkage_penalty", 0.0),
             "linkage_d_to_a_mae": fit_result["loss_breakdown"].get("linkage_d_to_a_mae", 0.0),
@@ -4483,6 +5580,7 @@ def run_phase3_rescue_core(
             "suppression_among_art_mae": fit_result["loss_breakdown"].get("suppression_among_art_mae", 0.0),
         },
         "phase4_ready": False,
+        "modifier_representation": fit_result["parameters_summary"].get("determinant_covariates", {}).get("representation_mode"),
         "fit_rows": _state_rows(state_estimates, province_axis, month_axis),
         "observation_weight_summary": {row["target_name"]: row["weight"] for row in observation_ladder},
         "observation_support_summary": observation_support_summary,
@@ -4495,17 +5593,30 @@ def run_phase3_rescue_core(
         "synthetic_pretraining_summary": fit_result["parameters_summary"].get("synthetic_pretraining", {}),
         "subgroup_prior_learning_summary": fit_result["parameters_summary"].get("subgroup_prior_learning_summary", {}),
         "cd4_prior_learning_summary": fit_result["parameters_summary"].get("cd4_prior_learning_summary", {}),
+        "intervention_tensor_summary": fit_result.get("intervention_summary", {}),
+        "posterior_calibration": fit_result.get("posterior_calibration", {"available": False}),
+        "chain_diagnostics": fit_result.get("chain_diagnostics", {"available": False}),
+        "categorical_rollout": categorical_rollout,
         "loss_trace_tail": [round(float(value), 6) for value in fit_result["loss_trace"][-12:]],
     }
     if frozen_history_backtest is not None:
         fit_artifact["frozen_history_backtest"] = frozen_history_backtest["summary"]
+        fit_artifact["baseline_family"] = {
+            "carry_forward": frozen_history_backtest.get("carry_forward_baseline", {}),
+            "arima": frozen_history_backtest.get("arima_baseline", {}),
+            "simple_compartmental": frozen_history_backtest.get("simple_compartmental_baseline", {}),
+            "spatial_holdout": frozen_history_backtest.get("spatial_holdout", {}),
+        }
     validation_artifact["profile_id"] = profile_id
     validation_artifact["phase4_ready"] = False
     validation_artifact["validation_gates"] = benchmark_gate_report["primary_gates"]
     validation_artifact["claim_eligible"] = all(row["passed"] for row in benchmark_gate_report["primary_gates"])
     validation_artifact["harp_program_checks"] = reference_check_harp
+    validation_artifact["incumbent_comparator"] = spectrum_comparison
     validation_artifact["linkage_program_checks"] = linkage_anchor_surfaces
     validation_artifact["suppression_program_checks"] = suppression_anchor_surfaces
+    validation_artifact["posterior_calibration"] = fit_result.get("posterior_calibration", {"available": False})
+    validation_artifact["chain_diagnostics"] = fit_result.get("chain_diagnostics", {"available": False})
     if frozen_history_backtest is not None:
         validation_artifact["frozen_history_backtest"] = frozen_history_backtest
     mechanistic_guardrails["phase4_ready"] = False
@@ -4522,14 +5633,26 @@ def run_phase3_rescue_core(
         "duration_catalog": DURATION_CATALOG,
         "core_latent_shape": [len(province_axis), len(kp_axis), len(age_axis), len(sex_axis), len(STATE_NAMES), len(DURATION_CATALOG), len(month_axis)],
         "minimal_covariate_hook": ["diagnosed_stock", "art_stock", "documented_suppression"],
+        "intervention_tensor_shape": list(np.asarray(fit_result.get("intervention_tensor", np.zeros((0, 0, 0), dtype=np.float32))).shape),
         "requested_inference_family": requested_inference_family,
         "resolved_inference_family": fit_result["inference_family"],
+        "modifier_representation": fit_result["parameters_summary"].get("determinant_covariates", {}).get("representation_mode"),
         "phase2_hook": {"mode": "transition_modifiers_only", "determinants_active": len(fit_result["parameters_summary"].get("determinant_covariates", {}).get("selected_determinant_modifiers", []))},
         "phase4_ready": False,
     }
 
     state_estimates_artifact = save_tensor_artifact(array=state_estimates, axis_names=["province", "month", "state"], artifact_dir=phase3_dir, stem="state_estimates", backend="torch" if torch is not None else "numpy", device=fit_result["device"], notes=["phase3_rescue_core_aggregate_state_estimates"], save_pt=False)
     forecast_states_artifact = save_tensor_artifact(array=forecast_states, axis_names=["province", "forecast_step", "state"], artifact_dir=phase3_dir, stem="forecast_states", backend="torch" if torch is not None else "numpy", device=fit_result["device"], notes=["phase3_rescue_core_forecast_states"], save_pt=False)
+    intervention_artifact = save_tensor_artifact(
+        array=np.asarray(fit_result.get("intervention_tensor", np.zeros((len(province_axis), len(month_axis), 0), dtype=np.float32)), dtype=np.float32),
+        axis_names=["province", "month", "intervention_channel"],
+        artifact_dir=phase3_dir,
+        stem="intervention_tensor",
+        backend="torch" if torch is not None else "numpy",
+        device=fit_result["device"],
+        notes=["phase3_rescue_core_intervention_tensor"],
+        save_pt=False,
+    )
     cd4_artifact = save_tensor_artifact(array=cd4_overlay, axis_names=["province", "kp_group", "age_band", "sex", "cd4_bin", "month"], artifact_dir=phase3_dir, stem="cd4_overlay_tensor", backend="numpy", device="cpu", notes=["phase3_rescue_core_cd4_overlay"], save_pt=False)
 
     write_json(phase3_dir / "rescue_core_spec.json", rescue_core_spec)
@@ -4544,6 +5667,7 @@ def run_phase3_rescue_core(
     write_json(phase3_dir / "benchmark_gate_report.json", benchmark_gate_report)
     write_json(phase3_dir / "reference_check_official.json", reference_check_official)
     write_json(phase3_dir / "reference_check_harp.json", reference_check_harp)
+    write_json(phase3_dir / "spectrum_comparison.json", spectrum_comparison)
     write_json(phase3_dir / "national_anchor_surfaces.json", national_anchor_surfaces)
     write_json(phase3_dir / "harp_program_surfaces.json", harp_program_surfaces)
     write_json(phase3_dir / "linkage_anchor_surfaces.json", linkage_anchor_surfaces)
@@ -4561,6 +5685,10 @@ def run_phase3_rescue_core(
     write_json(phase3_dir / "synthetic_pretraining_summary.json", fit_result["parameters_summary"].get("synthetic_pretraining", {}))
     write_json(phase3_dir / "subgroup_prior_learning_summary.json", fit_result["parameters_summary"].get("subgroup_prior_learning_summary", {}))
     write_json(phase3_dir / "cd4_prior_learning_summary.json", fit_result["parameters_summary"].get("cd4_prior_learning_summary", {}))
+    write_json(phase3_dir / "intervention_tensor_summary.json", fit_result.get("intervention_summary", {}))
+    write_json(phase3_dir / "posterior_calibration.json", fit_result.get("posterior_calibration", {"available": False}))
+    write_json(phase3_dir / "chain_diagnostics.json", fit_result.get("chain_diagnostics", {"available": False}))
+    write_json(phase3_dir / "categorical_rollout.json", categorical_rollout)
     write_json(phase3_dir / "state_estimates_rows.json", _state_rows(state_estimates, province_axis, month_axis))
     write_json(phase3_dir / "cd4_severity_summary.json", cd4_summary)
     write_json(phase3_dir / "subgroup_weight_summary.json", subgroup_summary)
@@ -4583,12 +5711,14 @@ def run_phase3_rescue_core(
         phase3_dir / "model_artifact.json",
         {
             "model_family": "hiv_rescue_core_v2" if profile_id == RESCUE_V2_PROFILE_ID else "hiv_rescue_core_v1",
-            "backend": "torch_map" if torch is not None else "numpy_map",
+            "backend": fit_result["inference_family"],
             "state_names": STATE_NAMES,
             "transition_names": TRANSITION_NAMES,
             "province_axis": province_axis,
             "region_axis": region_axis,
             "month_axis": month_axis,
+            "intervention_tensor_shape": list(np.asarray(fit_result.get("intervention_tensor", np.zeros((0, 0, 0), dtype=np.float32))).shape),
+            "modifier_representation": fit_result["parameters_summary"].get("determinant_covariates", {}).get("representation_mode"),
             "curated_candidate_block_count": len(curated_candidate_blocks),
             "candidate_profile_count": len(candidate_profiles),
         },
@@ -4619,6 +5749,7 @@ def run_phase3_rescue_core(
             "rescue_core_spec": str(phase3_dir / "rescue_core_spec.json"),
             "state_estimates": state_estimates_artifact["value_path"],
             "forecast_states": forecast_states_artifact["value_path"],
+            "intervention_tensor": intervention_artifact["value_path"],
             "cd4_overlay_tensor": cd4_artifact["value_path"],
             "transition_parameters": str(phase3_dir / "transition_parameters.json"),
             "fit_artifact": str(phase3_dir / "fit_artifact.json"),
@@ -4630,6 +5761,7 @@ def run_phase3_rescue_core(
             "benchmark_gate_report": str(phase3_dir / "benchmark_gate_report.json"),
             "reference_check_official": str(phase3_dir / "reference_check_official.json"),
             "reference_check_harp": str(phase3_dir / "reference_check_harp.json"),
+            "spectrum_comparison": str(phase3_dir / "spectrum_comparison.json"),
             "national_anchor_surfaces": str(phase3_dir / "national_anchor_surfaces.json"),
             "harp_program_surfaces": str(phase3_dir / "harp_program_surfaces.json"),
             "linkage_anchor_surfaces": str(phase3_dir / "linkage_anchor_surfaces.json"),
@@ -4642,6 +5774,10 @@ def run_phase3_rescue_core(
             "synthetic_pretraining_summary": str(phase3_dir / "synthetic_pretraining_summary.json"),
             "subgroup_prior_learning_summary": str(phase3_dir / "subgroup_prior_learning_summary.json"),
             "cd4_prior_learning_summary": str(phase3_dir / "cd4_prior_learning_summary.json"),
+            "intervention_tensor_summary": str(phase3_dir / "intervention_tensor_summary.json"),
+            "posterior_calibration": str(phase3_dir / "posterior_calibration.json"),
+            "chain_diagnostics": str(phase3_dir / "chain_diagnostics.json"),
+            "categorical_rollout": str(phase3_dir / "categorical_rollout.json"),
             "state_estimates_rows": str(phase3_dir / "state_estimates_rows.json"),
             "cd4_severity_summary": str(phase3_dir / "cd4_severity_summary.json"),
             **(
@@ -4655,7 +5791,7 @@ def run_phase3_rescue_core(
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, torch is not None, notes=fit_result["device"]),
-            "jax": Phase0BackendStatus("jax", backend_map["jax"].available, False, notes=backend_map["jax"].device),
+            "jax": Phase0BackendStatus("jax", backend_map["jax"].available, fit_result["inference_family"].startswith("jax_"), notes=backend_map["jax"].device),
         },
         source_count=len(candidate_profiles),
         canonical_candidate_count=len(candidate_profiles),
@@ -4707,7 +5843,126 @@ def run_phase3_rescue_core(
             "frozen_history_holdout_count": len(frozen_history_backtest.get("holdout_reference_check", {}).get("comparisons", [])) if frozen_history_backtest is not None else 0,
         },
     )
+    gold_profile = dict((_HIV_PLUGIN.gold_standard_profiles or {}).get("phase3", {}) or {})
+    gold_paths = write_gold_standard_package(
+        phase_dir=phase3_dir,
+        phase_name="phase3",
+        profile_id=profile_id,
+        gold_profile=gold_profile,
+        checks=[
+            {"name": "gold_standard_profile_declared", "passed": bool(gold_profile)},
+            {"name": "who_unaids_reference_points_declared", "passed": bool(_PHASE3_REFERENCE_DATA.get("official_reference_points"))},
+            {"name": "harp_program_points_declared", "passed": bool(_PHASE3_REFERENCE_DATA.get("harp_program_points"))},
+            {"name": "official_reference_comparisons_present", "passed": bool(reference_check_official.get("comparisons", []))},
+            {"name": "harp_program_comparisons_present", "passed": bool(reference_check_harp.get("comparisons", []))},
+            {"name": "historical_harp_backtest_present", "passed": frozen_history_backtest is not None or (ctx.run_dir / "harp_archive" / "frozen_backtest_summary.json").exists()},
+            {"name": "incumbent_comparator_present", "passed": bool(spectrum_comparison.get("available")) or (phase3_dir / "pepfar_mer_comparison.json").exists()},
+            {"name": "hierarchy_consistency_gate_present", "passed": bool(benchmark_gate_report.get("primary_gates", []))},
+        ],
+        stage_manifest_path=str(phase3_dir / "phase3_manifest.json"),
+        summary={
+            "official_reference_comparison_count": len(reference_check_official.get("comparisons", [])),
+            "harp_program_comparison_count": len(reference_check_harp.get("comparisons", [])),
+            "incumbent_comparison_count": int(spectrum_comparison.get("comparison_count", 0)),
+            "frozen_history_holdout_count": len(frozen_history_backtest.get("holdout_reference_check", {}).get("comparisons", [])) if frozen_history_backtest is not None else 0,
+        },
+    )
+    manifest["artifact_paths"].update(gold_paths)
     manifest["artifact_paths"].update(truth_paths)
+    boundary_paths = write_boundary_shape_package(
+        phase_dir=phase3_dir,
+        phase_name="phase3",
+        profile_id=profile_id,
+        boundaries=[
+            {
+                "name": "rescue_core_spec",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "rescue_core_spec.json"),
+                "expected_keys": ["profile_id", "inference_family", "state_catalog", "transition_names", "core_latent_shape", "phase4_ready"],
+            },
+            {
+                "name": "state_estimates",
+                "kind": "tensor",
+                "path": str(phase3_dir / "state_estimates.npz"),
+                "expected_shape": list(state_estimates.shape),
+                "expected_axis_names": ["province", "month", "state"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "forecast_states",
+                "kind": "tensor",
+                "path": str(phase3_dir / "forecast_states.npz"),
+                "expected_shape": list(forecast_states.shape),
+                "expected_axis_names": ["province", "forecast_step", "state"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "intervention_tensor",
+                "kind": "tensor",
+                "path": str(phase3_dir / "intervention_tensor.npz"),
+                "expected_shape": list(np.asarray(fit_result.get("intervention_tensor", np.zeros((len(province_axis), len(month_axis), 0), dtype=np.float32))).shape),
+                "expected_axis_names": ["province", "month", "intervention_channel"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "cd4_overlay_tensor",
+                "kind": "tensor",
+                "path": str(phase3_dir / "cd4_overlay_tensor.npz"),
+                "expected_shape": list(cd4_overlay.shape),
+                "expected_axis_names": ["province", "kp_group", "age_band", "sex", "cd4_bin", "month"],
+                "min_rank": 6,
+                "finite_required": True,
+            },
+            {
+                "name": "observation_targets",
+                "kind": "json_rows",
+                "path": str(phase3_dir / "observation_targets.json"),
+                "min_rows": 1,
+                "expected_row_count": len(observation_target_rows),
+            },
+            {
+                "name": "observation_residuals",
+                "kind": "json_rows",
+                "path": str(phase3_dir / "observation_residuals.json"),
+                "min_rows": 1,
+                "expected_row_count": len(observation_residuals),
+            },
+            {
+                "name": "fit_artifact",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "fit_artifact.json"),
+                "expected_keys": ["profile_id", "inference_family", "state_catalog", "axis_catalogs", "transition_names", "loss_breakdown", "phase4_ready", "fit_rows"],
+            },
+            {
+                "name": "validation_artifact",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "validation_artifact.json"),
+                "expected_keys": ["profile_id", "phase4_ready", "validation_gates", "claim_eligible", "harp_program_checks", "incumbent_comparator"],
+            },
+            {
+                "name": "chain_diagnostics",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "chain_diagnostics.json"),
+                "expected_keys": ["available", "inference_method"],
+            },
+            {
+                "name": "categorical_rollout",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "categorical_rollout.json"),
+                "expected_keys": ["available"],
+            },
+        ],
+        summary={
+            "province_count": len(province_axis),
+            "month_count": len(month_axis),
+            "observation_target_row_count": len(observation_target_rows),
+            "observation_residual_row_count": len(observation_residuals),
+        },
+    )
+    manifest["artifact_paths"].update(boundary_paths)
     write_json(phase3_dir / "phase3_manifest.json", manifest)
     ctx.record_stage_outputs(
         "phase3_build",
@@ -4715,6 +5970,7 @@ def run_phase3_rescue_core(
             phase3_dir / "rescue_core_spec.json",
             phase3_dir / "state_estimates.npz",
             phase3_dir / "forecast_states.npz",
+            phase3_dir / "intervention_tensor.npz",
             phase3_dir / "cd4_overlay_tensor.npz",
             phase3_dir / "transition_parameters.json",
             phase3_dir / "fit_artifact.json",
@@ -4727,6 +5983,7 @@ def run_phase3_rescue_core(
             phase3_dir / "benchmark_gate_report.json",
             phase3_dir / "reference_check_official.json",
             phase3_dir / "reference_check_harp.json",
+            phase3_dir / "spectrum_comparison.json",
             phase3_dir / "national_anchor_surfaces.json",
             phase3_dir / "harp_program_surfaces.json",
             phase3_dir / "linkage_anchor_surfaces.json",
@@ -4736,7 +5993,17 @@ def run_phase3_rescue_core(
             phase3_dir / "subgroup_coupling.json",
             phase3_dir / "province_archetype_mixture.json",
             phase3_dir / "synthetic_pretraining_summary.json",
+            phase3_dir / "intervention_tensor_summary.json",
+            phase3_dir / "posterior_calibration.json",
+            phase3_dir / "chain_diagnostics.json",
+            phase3_dir / "categorical_rollout.json",
             phase3_dir / "state_estimates_rows.json",
+            phase3_dir / "gold_standard_manifest.json",
+            phase3_dir / "gold_standard_checks.json",
+            phase3_dir / "gold_standard_summary.json",
+            phase3_dir / "boundary_shape_manifest.json",
+            phase3_dir / "boundary_shape_checks.json",
+            phase3_dir / "boundary_shape_summary.json",
             *( [phase3_dir / "frozen_history_backtest_spec.json", phase3_dir / "frozen_history_backtest_evaluation.json"] if frozen_history_backtest is not None else [] ),
             phase3_dir / "phase3_manifest.json",
         ],

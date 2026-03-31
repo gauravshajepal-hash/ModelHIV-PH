@@ -19,6 +19,11 @@ def test_phase1_constraint_settings_are_declared_in_plugin_contract() -> None:
     phase1_cfg = (plugin.constraint_settings or {}).get("phase1", {})
     literature_cfg = (plugin.constraint_settings or {}).get("literature_review", {})
 
+    assert phase1_cfg.get("denominator_rules", {}).get("default_count_denominator") is not None
+    assert phase1_cfg.get("winsorization", {}).get("lower_quantile") is not None
+    assert phase1_cfg.get("preprocessing", {}).get("transform_mode") is not None
+    assert phase1_cfg.get("preprocessing", {}).get("scaling_mode") is not None
+    assert phase1_cfg.get("missing_data", {}).get("quality_beta") is not None
     assert phase1_cfg.get("evidence_class_weights", {}).get("observed_numeric") is not None
     assert phase1_cfg.get("reliability_class_rules", {}).get("official_routine_anchor") is not None
     assert phase1_cfg.get("bias_class_thresholds", {}).get("measurement_low") is not None
@@ -64,6 +69,9 @@ def test_phase1_normalized_rows_have_bias_and_truth_fields(rescue_v2_run_dir) ->
         "spatial_relevance_weight",
         "replication_weight",
         "bias_penalty",
+        "signal_family",
+        "payload_family",
+        "geo_binding_class",
     }
     for row in rows:
         assert required.issubset(row.keys())
@@ -85,21 +93,37 @@ def test_phase1_tensor_contract_and_sanity(rescue_v2_run_dir) -> None:
     truth_summary = read_json(rescue_v2_run_dir / "phase1" / "ground_truth_summary.json", default={})
     tensor_rows = read_json(rescue_v2_run_dir / "phase1" / "tensor_rows.json", default=[])
     report = read_json(rescue_v2_run_dir / "phase1" / "normalization_report.json", default={})
+    interop_report = read_json(rescue_v2_run_dir / "phase1" / "interop_report.json", default={})
+    tensor_schema = read_json(rescue_v2_run_dir / "phase1" / "tensor_schema.json", default={})
     standardized = load_tensor_artifact(rescue_v2_run_dir / "phase1" / "standardized_tensor.npz")
     denominators = load_tensor_artifact(rescue_v2_run_dir / "phase1" / "denominator_tensor.npz")
+    missing_mask = load_tensor_artifact(rescue_v2_run_dir / "phase1" / "missing_mask.npz")
+    quality_weight_tensor = load_tensor_artifact(rescue_v2_run_dir / "phase1" / "quality_weight_tensor.npz")
 
     province_axis = axis_catalogs.get("province", [])
     month_axis = axis_catalogs.get("month", [])
     canonical_axis = axis_catalogs.get("canonical_name", [])
     assert standardized.shape == (len(province_axis), len(month_axis), len(canonical_axis))
     assert denominators.shape == standardized.shape
+    assert missing_mask.shape == standardized.shape
+    assert quality_weight_tensor.shape == standardized.shape
     assert np.isfinite(standardized).all()
     assert np.isfinite(denominators).all()
+    assert np.isfinite(missing_mask).all()
+    assert np.isfinite(quality_weight_tensor).all()
+    assert np.any(denominators != 1.0)
+    assert set(np.unique(missing_mask)).issubset({0.0, 1.0})
     assert len(tensor_rows) == len(province_axis) * len(month_axis) * len(canonical_axis)
     assert len({row["tensor_row_id"] for row in tensor_rows}) == len(tensor_rows)
     assert report.get("normalized_row_count", 0) >= report.get("anchor_eligible_count", 0)
     assert report.get("tensor_row_count", 0) == len(tensor_rows)
     assert len(report.get("source_reliability_counts", {})) > 0
+    assert report.get("source_registry_mode") in {"registry", "phase0_candidates_fallback"}
+    assert report.get("preprocess_meta", {}).get("transform", {}).get("transform_mode") in {"log1p", "boxcox"}
+    assert report.get("preprocess_meta", {}).get("scaling", {}).get("scaling_mode") in {"iqr", "huber"}
+    assert "used_dlpack" in interop_report
+    assert "missing_mask" in tensor_schema.get("value_fields", {})
+    assert "quality_weight_tensor" in tensor_schema.get("value_fields", {})
     assert truth_summary.get("phase_name") == "phase1"
 
 

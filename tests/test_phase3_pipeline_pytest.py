@@ -1,20 +1,30 @@
 from __future__ import annotations
 
 import math
+import re
+from pathlib import Path
 
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
-from epigraph_ph.phase3.pipeline import _adaptive_frozen_tuning_candidates, _trial_calibration_overrides
+from epigraph_ph.phase3.pipeline import (
+    _holdout_reference_smape,
+    _adaptive_frozen_tuning_candidates,
+    _posterior_draws,
+    _require_requested_inference_family,
+    _trial_calibration_overrides,
+)
 from epigraph_ph.phase3.rescue_core import (
     _enforce_cascade_ordering,
     _fallback_observation_targets,
+    _build_intervention_tensor_from_covariates,
     _inject_harp_program_targets,
     _province_operator_jax,
     _state_initialization_prior,
+    _suppression_anchor_curves,
     _surface_from_sparse_support,
 )
-from epigraph_ph.runtime import load_tensor_artifact, read_json
+from epigraph_ph.runtime import detect_backends, load_tensor_artifact, read_json
 
 try:
     import jax.numpy as jnp
@@ -44,11 +54,56 @@ def test_phase3_prior_hyperparameters_are_declared_in_plugin_contract() -> None:
     assert frozen_cfg.get("default_initial_state") is not None
     assert frozen_cfg.get("empirical_transition_targets", {}).get("positive_mass_weight") is not None
     assert frozen_cfg.get("semi_markov_hyperpriors", {}).get("duration_prior_mean") is not None
+    assert frozen_cfg.get("semi_markov_hyperpriors", {}).get("sigma_intervention") is not None
+    assert frozen_cfg.get("semi_markov_hyperpriors", {}).get("horseshoe_global_scale") is not None
+    assert frozen_cfg.get("semi_markov_hyperpriors", {}).get("horseshoe_local_scale") is not None
     assert frozen_cfg.get("posterior_inference", {}).get("optimizer_lr") is not None
+    assert frozen_cfg.get("posterior_inference", {}).get("inference_method") is not None
+    assert frozen_cfg.get("posterior_inference", {}).get("nuts_warmup") is not None
+    assert frozen_cfg.get("posterior_inference", {}).get("nuts_samples") is not None
+    assert frozen_cfg.get("posterior_inference", {}).get("nuts_chains") is not None
+    assert frozen_cfg.get("posterior_inference", {}).get("calibration_interval") is not None
     assert frozen_cfg.get("fallback_posterior", {}).get("duration_mean") is not None
     assert frozen_cfg.get("evolution", {}).get("transition_floor") is not None
+    assert frozen_cfg.get("baseline_family", {}).get("arima_order") is not None
+    assert frozen_cfg.get("representation_tournament", {}).get("modes") is not None
+    assert {"clumped_baseline", "clumped_optimized", "hybrid_baseline", "hybrid_optimized"}.issubset(
+        set(frozen_cfg.get("representation_tournament", {}).get("modes") or [])
+    )
     assert frozen_cfg.get("legacy_selection", {}).get("mass_error_tolerance") is not None
     assert frozen_cfg.get("tuning", {}).get("adaptive_rules", {}).get("final_fit_steps") is not None
+    assert any(
+        float(row.get("suppression_penalty_scale", 0.0)) > 0.0
+        for row in (frozen_cfg.get("tuning", {}).get("initial_candidates") or [])
+    )
+
+
+def test_phase3_reference_data_and_constraint_settings_are_declared_in_plugin_contract() -> None:
+    plugin = get_disease_plugin("hiv")
+    phase3_constraints = (plugin.constraint_settings or {}).get("phase3", {})
+    phase3_reference = (plugin.reference_data or {}).get("phase3", {})
+
+    assert phase3_constraints.get("anchor_curve", {}).get("official_decay_months") is not None
+    assert phase3_constraints.get("subgroup_row_weight", {}).get("measurement_base") is not None
+    assert phase3_constraints.get("network_signal_mix", {}).get("urbanity", {}).get("awareness") is not None
+    assert phase3_constraints.get("feature_support", {}).get("base") is not None
+    assert phase3_constraints.get("target_match", {}).get("top_k") is not None
+    assert phase3_constraints.get("matched_support", {}).get("weight_base") is not None
+    assert phase3_constraints.get("normalized_row_support", {}).get("weight_base") is not None
+    assert phase3_constraints.get("torch_initialization", {}).get("metapopulation_initial_logit") is not None
+    assert phase3_constraints.get("intervention_tensor", {}).get("channels") is not None
+    assert phase3_reference.get("official_reference_points")
+    assert phase3_reference.get("harp_program_points")
+
+
+def test_phase3_rescue_core_has_no_numeric_plugin_fallbacks() -> None:
+    path = Path(r"D:\EpiGraph_PH\src\epigraph_ph\phase3\rescue_core.py")
+    text = path.read_text(encoding="utf-8")
+    pattern = re.compile(
+        r"(_phase3_prior|_phase3_constraint|_phase3_stabilizer|svi_cfg|latent_cfg|subgroup_cfg|cd4_hyper_cfg|"
+        r"archetype_cfg|loss_scale_cfg|reg_cfg|init_cfg|curve_cfg|cfg|geo_cfg)\.get\([^\n]*,\s*[-0-9]"
+    )
+    assert pattern.search(text) is None, "phase3/rescue_core.py still contains numeric fallbacks on plugin/config reads"
 
 
 def test_phase3_legacy_output_contract(legacy_full_run_dir) -> None:
@@ -56,11 +111,17 @@ def test_phase3_legacy_output_contract(legacy_full_run_dir) -> None:
     truth_summary = read_json(legacy_full_run_dir / "phase3" / "ground_truth_summary.json", default={})
     validation = read_json(legacy_full_run_dir / "phase3" / "validation_artifact.json", default={})
     transitions = read_json(legacy_full_run_dir / "phase3" / "transition_parameters.json", default={})
+    intervention_summary = read_json(legacy_full_run_dir / "phase3" / "intervention_tensor_summary.json", default={})
+    categorical_rollout = read_json(legacy_full_run_dir / "phase3" / "categorical_rollout.json", default={})
+    calibration = read_json(legacy_full_run_dir / "phase3" / "calibration_diagnostics.json", default={})
     state_estimates = load_tensor_artifact(legacy_full_run_dir / "phase3" / "state_estimates.npz")
 
     assert fit_artifact.get("fit_rows", [])
     assert validation.get("validation_gates", [])
     assert transitions.get("transition_names", [])
+    assert intervention_summary.get("available") is True
+    assert categorical_rollout.get("available") is True
+    assert calibration.get("U_to_D", {}).get("available") is True
     assert state_estimates.shape[-1] == 5
     assert np.isfinite(state_estimates).all()
     assert truth_summary.get("phase_name") == "phase3"
@@ -75,11 +136,16 @@ def test_phase3_rescue_v1_truth_artifacts(rescue_v1_run_dir) -> None:
     guardrails = read_json(rescue_v1_run_dir / "phase3" / "mechanistic_guardrails.json", default={})
     reference_check = read_json(rescue_v1_run_dir / "phase3" / "reference_check_official.json", default={})
     harp_check = read_json(rescue_v1_run_dir / "phase3" / "reference_check_harp.json", default={})
+    spectrum_comparison = read_json(rescue_v1_run_dir / "phase3" / "spectrum_comparison.json", default={})
     national_anchor = read_json(rescue_v1_run_dir / "phase3" / "national_anchor_surfaces.json", default={})
     harp_surfaces = read_json(rescue_v1_run_dir / "phase3" / "harp_program_surfaces.json", default={})
     linkage_surfaces = read_json(rescue_v1_run_dir / "phase3" / "linkage_anchor_surfaces.json", default={})
     suppression_surfaces = read_json(rescue_v1_run_dir / "phase3" / "suppression_anchor_surfaces.json", default={})
     observation_support = read_json(rescue_v1_run_dir / "phase3" / "observation_support_summary.json", default={})
+    chain_diagnostics = read_json(rescue_v1_run_dir / "phase3" / "chain_diagnostics.json", default={})
+    posterior_calibration = read_json(rescue_v1_run_dir / "phase3" / "posterior_calibration.json", default={})
+    intervention_summary = read_json(rescue_v1_run_dir / "phase3" / "intervention_tensor_summary.json", default={})
+    categorical_rollout = read_json(rescue_v1_run_dir / "phase3" / "categorical_rollout.json", default={})
     truth_summary = read_json(rescue_v1_run_dir / "phase3" / "ground_truth_summary.json", default={})
     state_estimates = load_tensor_artifact(rescue_v1_run_dir / "phase3" / "state_estimates.npz")
     forecast_states = load_tensor_artifact(rescue_v1_run_dir / "phase3" / "forecast_states.npz")
@@ -87,6 +153,7 @@ def test_phase3_rescue_v1_truth_artifacts(rescue_v1_run_dir) -> None:
 
     assert spec.get("state_catalog") == ["U", "D", "A", "V", "L"]
     assert fit_artifact.get("phase4_ready") is False
+    assert fit_artifact.get("modifier_representation") == "unclumped"
     assert "harp_program_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "linkage_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "suppression_penalty" in fit_artifact.get("loss_breakdown", {})
@@ -95,6 +162,7 @@ def test_phase3_rescue_v1_truth_artifacts(rescue_v1_run_dir) -> None:
     assert guardrails.get("phase4_ready") is False
     assert reference_check.get("comparisons", []) != []
     assert harp_check.get("comparisons", []) != []
+    assert spectrum_comparison.get("available") is True
     assert ladder
     assert all(row["observation_class"] in ALLOWED_OBSERVATION_CLASSES for row in ladder)
     assert np.isfinite(state_estimates).all()
@@ -110,6 +178,11 @@ def test_phase3_rescue_v1_truth_artifacts(rescue_v1_run_dir) -> None:
     assert linkage_surfaces.get("month_axis", []) != []
     assert suppression_surfaces.get("month_axis", []) != []
     assert observation_support.get("rows", []) != []
+    assert chain_diagnostics.get("available") is False
+    assert posterior_calibration.get("available") is True
+    assert posterior_calibration.get("approximate_posterior", {}).get("method") == "torch_map_dirichlet_logit_predictive"
+    assert intervention_summary.get("available") is True
+    assert categorical_rollout.get("available") is True
     assert fit_artifact.get("observation_support_summary", {}).get("rows", []) != []
     assert truth_summary.get("phase_name") == "phase3"
 
@@ -124,11 +197,14 @@ def test_phase3_rescue_v2_factor_and_metapop_contract(rescue_v2_run_dir) -> None
     cd4_prior_learning = read_json(rescue_v2_run_dir / "phase3" / "cd4_prior_learning_summary.json", default={})
     reference_check = read_json(rescue_v2_run_dir / "phase3" / "reference_check_official.json", default={})
     harp_check = read_json(rescue_v2_run_dir / "phase3" / "reference_check_harp.json", default={})
+    spectrum_comparison = read_json(rescue_v2_run_dir / "phase3" / "spectrum_comparison.json", default={})
+    posterior_calibration = read_json(rescue_v2_run_dir / "phase3" / "posterior_calibration.json", default={})
     linkage_surfaces = read_json(rescue_v2_run_dir / "phase3" / "linkage_anchor_surfaces.json", default={})
     suppression_surfaces = read_json(rescue_v2_run_dir / "phase3" / "suppression_anchor_surfaces.json", default={})
     subgroup_summary = read_json(rescue_v2_run_dir / "phase3" / "subgroup_weight_summary.json", default={})
 
     assert fit_artifact.get("profile_id") == "hiv_rescue_v2"
+    assert fit_artifact.get("modifier_representation") == "clumped"
     assert "harp_program_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "linkage_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "suppression_penalty" in fit_artifact.get("loss_breakdown", {})
@@ -141,6 +217,7 @@ def test_phase3_rescue_v2_factor_and_metapop_contract(rescue_v2_run_dir) -> None
     }
     assert reference_check.get("comparisons", []) != []
     assert harp_check.get("comparisons", []) != []
+    assert spectrum_comparison.get("available") is True
     assert linkage_surfaces.get("month_axis", []) != []
     assert suppression_surfaces.get("month_axis", []) != []
     assert province_archetypes.get("rows", []) != []
@@ -152,6 +229,8 @@ def test_phase3_rescue_v2_factor_and_metapop_contract(rescue_v2_run_dir) -> None
     assert subgroup_prior_learning.get("mean_kp_distribution", []) != []
     assert cd4_prior_learning.get("age_low_offset", []) != []
     assert cd4_prior_learning.get("kp_sex_high_offset", []) != []
+    assert posterior_calibration.get("available") is True
+    assert posterior_calibration.get("approximate_posterior", {}).get("sample_count", 0) >= 16
     rows = subgroup_summary.get("rows", [])
     assert rows
     kp_vectors = {tuple(sorted(row.get("kp_distribution", {}).items())) for row in rows}
@@ -165,6 +244,7 @@ def test_phase3_frozen_history_backtest_contract(rescue_v2_backtest_run_dir) -> 
     validation = read_json(backtest_dir / "validation_artifact.json", default={})
     spec = read_json(backtest_dir / "frozen_history_backtest_spec.json", default={})
     evaluation = read_json(backtest_dir / "frozen_history_backtest_evaluation.json", default={})
+    spectrum_comparison = read_json(backtest_dir / "spectrum_comparison.json", default={})
     state_estimates = load_tensor_artifact(backtest_dir / "state_estimates.npz")
     forecast_states = load_tensor_artifact(backtest_dir / "forecast_states.npz")
 
@@ -176,29 +256,134 @@ def test_phase3_frozen_history_backtest_contract(rescue_v2_backtest_run_dir) -> 
     assert evaluation.get("summary", {}).get("comparison_count", 0) >= 1
     assert evaluation.get("holdout_reference_check", {}).get("comparisons", []) != []
     assert evaluation.get("carry_forward_baseline", {}).get("available") is True
+    assert evaluation.get("arima_baseline", {}).get("available") is True
+    assert evaluation.get("simple_compartmental_baseline", {}).get("available") is True
+    assert evaluation.get("spatial_holdout", {}).get("available") is True
     assert fit_artifact.get("frozen_history_backtest", {}).get("comparison_count", 0) >= 1
+    assert fit_artifact.get("baseline_family", {}).get("arima", {}).get("available") is True
     assert validation.get("frozen_history_backtest", {}).get("summary", {}).get("comparison_count", 0) >= 1
+    assert spectrum_comparison.get("comparison_count", 0) >= 1
     assert np.isfinite(state_estimates).all()
     assert np.isfinite(forecast_states).all()
     assert state_estimates.shape[-1] == 5
     assert forecast_states.shape[-1] == 5
 
 
+def test_phase3_holdout_smape_summary_computes_expected_value() -> None:
+    holdout_reference_check = {
+        "comparisons": [
+            {
+                "model": {"diagnosed_stock": 0.60, "art_stock": 0.40},
+                "reference": {"diagnosed_stock": 0.50, "art_stock": 0.50},
+            }
+        ]
+    }
+
+    smape = _holdout_reference_smape(holdout_reference_check, eps=1e-6)
+
+    expected = (
+        abs(0.60 - 0.50) / (((abs(0.60) + abs(0.50)) / 2.0))
+        + abs(0.40 - 0.50) / (((abs(0.40) + abs(0.50)) / 2.0))
+    ) / 2.0
+    assert math.isclose(smape, round(expected, 6), rel_tol=1e-6, abs_tol=1e-6)
+
+
 def test_phase3_jax_svi_contract(rescue_v1_jax_run_dir) -> None:
     fit_artifact = read_json(rescue_v1_jax_run_dir / "phase3" / "fit_artifact.json", default={})
     spec = read_json(rescue_v1_jax_run_dir / "phase3" / "rescue_core_spec.json", default={})
     manifest = read_json(rescue_v1_jax_run_dir / "phase3" / "phase3_manifest.json", default={})
+    model_artifact = read_json(rescue_v1_jax_run_dir / "phase3" / "model_artifact.json", default={})
     subgroup_prior_learning = read_json(rescue_v1_jax_run_dir / "phase3" / "subgroup_prior_learning_summary.json", default={})
     cd4_prior_learning = read_json(rescue_v1_jax_run_dir / "phase3" / "cd4_prior_learning_summary.json", default={})
+    chain_diagnostics = read_json(rescue_v1_jax_run_dir / "phase3" / "chain_diagnostics.json", default={})
 
     assert fit_artifact.get("inference_family") == "jax_svi"
     assert spec.get("requested_inference_family") == "jax_svi"
     assert spec.get("resolved_inference_family") == "jax_svi"
+    assert model_artifact.get("backend") == "jax_svi"
     assert manifest.get("backend_status", {}).get("jax", {}).get("available") is True
+    assert manifest.get("artifact_paths", {}).get("chain_diagnostics")
     assert fit_artifact.get("subgroup_prior_learning_summary", {}).get("feature_names", []) != []
     assert fit_artifact.get("cd4_prior_learning_summary", {}).get("age_low_offset", []) != []
+    assert chain_diagnostics.get("available") is False
     assert subgroup_prior_learning.get("mean_kp_distribution", []) != []
     assert cd4_prior_learning.get("kp_sex_high_offset", []) != []
+
+
+def test_phase3_intervention_tensor_builder_creates_expected_channels() -> None:
+    covariates = np.asarray(
+        [
+            [[2.0, -1.0, 0.5], [1.0, 0.5, -0.5]],
+            [[-2.0, 1.5, 1.0], [0.0, -0.5, 0.25]],
+        ],
+        dtype=np.float32,
+    )
+    covariate_meta = {
+        "covariate_names": ["testing_signal", "linkage_signal", "suppression_signal"],
+        "transition_hook_masks": [
+            [1.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.4, 0.4],
+            [0.0, 0.0, 1.0, 0.3, 0.0],
+        ],
+    }
+
+    intervention_tensor, summary = _build_intervention_tensor_from_covariates(covariates, covariate_meta)
+
+    assert intervention_tensor.shape[:2] == covariates.shape[:2]
+    assert intervention_tensor.shape[-1] == len(summary.get("channel_names", []))
+    assert summary.get("available") is True
+    assert "diagnosis_intervention" in summary.get("channel_names", [])
+    assert "linkage_intervention" in summary.get("channel_names", [])
+    assert np.isfinite(intervention_tensor).all()
+    assert np.all(intervention_tensor >= 0.0)
+    assert np.all(intervention_tensor <= 1.0)
+
+
+def test_phase3_legacy_posterior_draws_support_nuts_when_jax_available() -> None:
+    backends = detect_backends()
+    if not backends["jax"].available or jnp is None:
+        return
+
+    features = np.asarray(
+        [
+            [[0.1, -0.2], [0.3, 0.2]],
+            [[-0.1, 0.4], [0.05, -0.15]],
+        ],
+        dtype=np.float32,
+    )
+    intervention_tensor = np.asarray(
+        [
+            [[0.2], [0.1]],
+            [[0.05], [0.15]],
+        ],
+        dtype=np.float32,
+    )
+    region_index = np.asarray([0, 0], dtype=np.int32)
+    empirical_targets = np.asarray(
+        [
+            [[0.12, 0.18, 0.10, 0.05, 0.07], [0.11, 0.20, 0.12, 0.04, 0.08]],
+            [[0.09, 0.16, 0.08, 0.06, 0.06], [0.10, 0.17, 0.09, 0.05, 0.07]],
+        ],
+        dtype=np.float32,
+    )
+
+    samples, diagnostics = _posterior_draws(
+        features,
+        intervention_tensor,
+        region_index,
+        empirical_targets,
+        seed=11,
+        inference_method="nuts",
+        nuts_warmup=8,
+        nuts_samples=12,
+        nuts_chains=1,
+    )
+
+    assert diagnostics.get("inference_method") == "nuts"
+    assert diagnostics.get("rhat_max") is not None
+    assert "horseshoe_global" in samples
+    assert "intervention_weights" in samples
+    assert samples["transition_probs"].shape[-1] == 5
 
 
 def test_phase3_no_silent_fallback_and_truth_surfaces(rescue_v2_run_dir) -> None:
@@ -276,6 +461,26 @@ def test_phase3_fallback_targets_use_anchor_curves_when_surfaces_are_empty() -> 
     assert float(repaired["testing_coverage"].sum()) > 0.0
     assert np.all(repaired["testing_coverage"] <= repaired["art_stock"] + 1e-6)
     assert np.all(repaired["art_stock"] <= repaired["diagnosed_stock"] + 1e-6)
+
+
+def test_phase3_suppression_anchor_curves_include_documentation_process_target() -> None:
+    month_axis = ["2025-01"]
+    province_axis = ["Philippines"]
+    observation_targets = {
+        "diagnosed_stock": np.asarray([[0.70]], dtype=np.float32),
+        "art_stock": np.asarray([[0.50]], dtype=np.float32),
+        "documented_suppression": np.asarray([[0.18]], dtype=np.float32),
+        "testing_coverage": np.asarray([[0.24]], dtype=np.float32),
+        "deaths": np.asarray([[0.02]], dtype=np.float32),
+    }
+    curves = _suppression_anchor_curves(
+        month_axis=month_axis,
+        observation_targets=observation_targets,
+        province_axis=province_axis,
+    )
+    assert "documented_given_test_target" in curves
+    assert float(curves["documented_given_test_target"][0]) > 0.0
+    assert "process_weights" in curves
 
 
 def test_phase3_harp_injection_can_pull_national_target_down() -> None:
@@ -391,3 +596,20 @@ def test_phase3_adaptive_tuning_candidates_push_diagnosis_lower_and_linkage_high
     assert candidates
     assert min(float(row["u_to_d_prior"]) for row in candidates) < 0.02
     assert max(float(row["d_to_a_prior"]) for row in candidates) > 0.14
+    assert min(float(row.get("suppression_penalty_scale", 0.0)) for row in candidates) > 0.0
+
+
+def test_phase3_frozen_backtest_requires_requested_backend(tmp_path: Path) -> None:
+    artifact_dir = tmp_path / "trial"
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    fit_artifact_path = artifact_dir / "fit_artifact.json"
+    fit_artifact_path.write_text('{"inference_family":"numpy_map"}', encoding="utf-8")
+
+    manifest = {"artifact_paths": {"fit_artifact": str(fit_artifact_path)}}
+    try:
+        _require_requested_inference_family(manifest, "torch_map", context="unit-test")
+    except RuntimeError as exc:
+        assert "requested inference family 'torch_map'" in str(exc)
+        assert "resolved 'numpy_map'" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected a RuntimeError when the requested backend silently falls back")

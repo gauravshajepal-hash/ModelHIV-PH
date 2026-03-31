@@ -20,4 +20,16 @@ def test_builtin_plugins_list_is_not_empty() -> None:
 
 def test_structured_source_adapters_cover_requested_non_hiv_sources() -> None:
     adapter_ids = {row.adapter_id for row in get_structured_source_adapters("hiv")}
-    assert {"ndhs", "yafs", "fies", "philgis_boundary_proxy", "transport_network_proxies"}.issubset(adapter_ids)
+    assert {
+        "pubmed_literature",
+        "arxiv_literature",
+        "biorxiv_literature",
+        "openalex_literature",
+        "crossref_literature",
+        "semantic_scholar_literature",
+        "ndhs",
+        "yafs",
+        "fies",
+        "philgis_boundary_proxy",
+        "transport_network_proxies",
+    }.issubset(adapter_ids)

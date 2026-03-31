@@ -24,6 +24,18 @@ def test_source_registry_contract(phase0_registry_run_dir) -> None:
         assert any(str(note).startswith("parse:") for note in notes)
 
 
+def test_structured_source_adapters_have_multi_document_history(phase0_registry_run_dir) -> None:
+    payload = read_json(phase0_registry_run_dir / "registry" / "source_registry.json", default={})
+    adapters = payload.get("structured_source_adapters", [])
+    assert adapters
+    for row in adapters:
+        history = row.get("historical_records") or []
+        assert len(history) >= 3
+        years = [int(item["year"]) for item in history if item.get("year") is not None]
+        assert years
+        assert min(years) >= 2010
+
+
 def test_subparameter_registry_contract(phase0_registry_run_dir) -> None:
     payload = read_json(phase0_registry_run_dir / "registry" / "subparameter_registry.json", default={})
     rows = payload.get("subparameters", [])
@@ -33,6 +45,7 @@ def test_subparameter_registry_contract(phase0_registry_run_dir) -> None:
     assert payload.get("literature_review_path")
     allowed_banks = {
         "phase0_extracted",
+        "phase0_chunk_soft_candidates",
         "phase0_wide_sweep_literature",
         "phase0_wide_sweep_hiv_direct",
         "phase0_wide_sweep_upstream_determinants",

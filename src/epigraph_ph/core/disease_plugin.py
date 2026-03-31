@@ -33,6 +33,7 @@ class StructuredSourceAdapterSpec:
     seed_queries: list[str] = field(default_factory=list)
     preferred_file_patterns: list[str] = field(default_factory=list)
     fallback_urls: list[str] = field(default_factory=list)
+    historical_records: list[dict[str, Any]] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -54,6 +55,8 @@ class DiseasePlugin:
     numerical_stabilizers: dict[str, Any] = field(default_factory=dict)
     constraint_settings: dict[str, Any] = field(default_factory=dict)
     policy_settings: dict[str, Any] = field(default_factory=dict)
+    reference_data: dict[str, Any] = field(default_factory=dict)
+    gold_standard_profiles: dict[str, Any] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -71,6 +74,8 @@ class DiseasePlugin:
             "numerical_stabilizers": dict(self.numerical_stabilizers),
             "constraint_settings": dict(self.constraint_settings),
             "policy_settings": dict(self.policy_settings),
+            "reference_data": dict(self.reference_data),
+            "gold_standard_profiles": dict(self.gold_standard_profiles),
             "notes": list(self.notes),
         }
 

@@ -3,8 +3,192 @@ from __future__ import annotations
 from epigraph_ph.core.disease_plugin import StructuredSourceAdapterSpec
 
 
+def _historical_record(*, title: str, url: str, year: int | None, document_type: str = "dataset_catalog", notes: list[str] | None = None) -> dict[str, object]:
+    return {
+        "title": title,
+        "url": url,
+        "year": year,
+        "document_type": document_type,
+        "notes": list(notes or []),
+    }
+
+
+def _literature_adapter(
+    *,
+    adapter_id: str,
+    source_name: str,
+    organization: str,
+    platform: str,
+    landing_url: str,
+    seed_queries: list[str],
+    determinant_silos: list[str],
+    preferred_file_patterns: list[str],
+    fallback_urls: list[str],
+    historical_records: list[dict[str, object]],
+    notes: list[str],
+) -> StructuredSourceAdapterSpec:
+    return StructuredSourceAdapterSpec(
+        adapter_id=adapter_id,
+        source_name=source_name,
+        organization=organization,
+        source_tier="tier2_scientific_literature",
+        access_mode="public_literature_index_api",
+        spatial_resolution="study_specific",
+        temporal_resolution="publication_year",
+        landing_url=landing_url,
+        determinant_silos=determinant_silos,
+        promotion_track="supporting_context",
+        platform=platform,
+        seed_queries=seed_queries,
+        preferred_file_patterns=preferred_file_patterns,
+        fallback_urls=fallback_urls,
+        historical_records=historical_records,
+        notes=notes,
+    )
+
+
 def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
     return [
+        _literature_adapter(
+            adapter_id="pubmed_literature",
+            source_name="PubMed HIV and Determinant Literature",
+            organization="US National Library of Medicine",
+            platform="pubmed",
+            landing_url="https://pubmed.ncbi.nlm.nih.gov/",
+            seed_queries=[
+                "HIV Philippines care cascade PubMed",
+                "HIV stigma testing uptake logistics Philippines PubMed",
+                "mobility network mixing HIV treatment continuity PubMed",
+            ],
+            determinant_silos=["testing_uptake", "linkage_to_care", "retention_adherence", "suppression_outcomes", "mobility_network_mixing"],
+            preferred_file_patterns=["*pubmed*", "*pmid*", "*full*text*", "*journal*article*"],
+            fallback_urls=["https://pmc.ncbi.nlm.nih.gov/", "https://pubmed.ncbi.nlm.nih.gov/"],
+            historical_records=[
+                _historical_record(title="PubMed HIV determinant collector 2010", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+Philippines", year=2010, document_type="literature_index_search"),
+                _historical_record(title="PubMed HIV determinant collector 2015", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+stigma+testing+Philippines", year=2015, document_type="literature_index_search"),
+                _historical_record(title="PubMed HIV determinant collector 2020", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+mobility+retention+Philippines", year=2020, document_type="literature_index_search"),
+                _historical_record(title="PubMed HIV determinant collector 2024", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+suppression+logistics+Philippines", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Treat as a primary biomedical and public-health literature index for the evidence-mining layer.",
+                "PubMed is not itself a truth source; extracted signals remain weighted by study design and provenance.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="arxiv_literature",
+            source_name="arXiv Modeling and Network Literature",
+            organization="Cornell arXiv",
+            platform="arxiv",
+            landing_url="https://arxiv.org/",
+            seed_queries=[
+                "epidemic modeling mobility networks arXiv",
+                "statistical physics contagion social behavior arXiv",
+                "population dynamics health systems modeling arXiv",
+            ],
+            determinant_silos=["mobility_network_mixing", "collective_risk_behavior", "transport_friction", "health_system_reach"],
+            preferred_file_patterns=["*arxiv*", "*pdf*", "*preprint*"],
+            fallback_urls=["https://export.arxiv.org/"],
+            historical_records=[
+                _historical_record(title="arXiv mobility and epidemic modeling collector 2010", url="https://arxiv.org/search/?query=epidemic+mobility+modeling", year=2010, document_type="literature_index_search"),
+                _historical_record(title="arXiv contagion and social behavior collector 2016", url="https://arxiv.org/search/?query=contagion+social+behavior", year=2016, document_type="literature_index_search"),
+                _historical_record(title="arXiv health-system network collector 2022", url="https://arxiv.org/search/?query=health+systems+network+modeling", year=2022, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use arXiv for methods, mobility, network, and statistical-physics literature that may not be indexed in PubMed.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="biorxiv_literature",
+            source_name="bioRxiv HIV Biology and Progression Literature",
+            organization="Cold Spring Harbor Laboratory",
+            platform="biorxiv",
+            landing_url="https://www.biorxiv.org/",
+            seed_queries=[
+                "immune response antiviral compounds bioRxiv",
+                "CD4 viral reservoir progression bioRxiv",
+                "drug resistance long acting therapeutics bioRxiv",
+            ],
+            determinant_silos=["suppression_outcomes", "retention_adherence", "health_system_reach"],
+            preferred_file_patterns=["*biorxiv*", "*preprint*", "*pdf*"],
+            fallback_urls=["https://connect.biorxiv.org/relate/content/181"],
+            historical_records=[
+                _historical_record(title="bioRxiv HIV progression collector 2015", url="https://www.biorxiv.org/search/hiv", year=2015, document_type="literature_index_search"),
+                _historical_record(title="bioRxiv HIV suppression collector 2020", url="https://www.biorxiv.org/search/viral%20suppression", year=2020, document_type="literature_index_search"),
+                _historical_record(title="bioRxiv HIV resistance collector 2024", url="https://www.biorxiv.org/search/drug%20resistance%20hiv", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use bioRxiv for biology-heavy and preclinical signals that can inform progression or suppression context.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="openalex_literature",
+            source_name="OpenAlex Literature Index",
+            organization="OpenAlex",
+            platform="openalex",
+            landing_url="https://openalex.org/",
+            seed_queries=[
+                "HIV Philippines economics stigma logistics OpenAlex",
+                "population dynamics transport access health OpenAlex",
+                "Philippines HIV care cascade determinants OpenAlex",
+            ],
+            determinant_silos=["poverty", "transport_friction", "collective_risk_behavior", "mobility_network_mixing", "health_system_reach"],
+            preferred_file_patterns=["*openalex*", "*works*", "*doi*"],
+            fallback_urls=["https://api.openalex.org/"],
+            historical_records=[
+                _historical_record(title="OpenAlex HIV determinants collector 2010", url="https://api.openalex.org/works?search=HIV+Philippines", year=2010, document_type="literature_index_search"),
+                _historical_record(title="OpenAlex logistics and stigma collector 2018", url="https://api.openalex.org/works?search=HIV+logistics+stigma+Philippines", year=2018, document_type="literature_index_search"),
+                _historical_record(title="OpenAlex mobility and care continuity collector 2024", url="https://api.openalex.org/works?search=HIV+mobility+care+continuity", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use OpenAlex as the broadest literature-discovery layer to complement PubMed and Crossref.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="crossref_literature",
+            source_name="Crossref Literature Index",
+            organization="Crossref",
+            platform="crossref",
+            landing_url="https://search.crossref.org/",
+            seed_queries=[
+                "HIV Philippines care cascade Crossref",
+                "health system reach linkage to care HIV Crossref",
+                "Philippines transport stigma HIV Crossref",
+            ],
+            determinant_silos=["testing_uptake", "linkage_to_care", "transport_friction", "policy_implementation_weakness"],
+            preferred_file_patterns=["*crossref*", "*doi*", "*journal*article*"],
+            fallback_urls=["https://api.crossref.org/works"],
+            historical_records=[
+                _historical_record(title="Crossref HIV cascade collector 2010", url="https://api.crossref.org/works?query=HIV+Philippines", year=2010, document_type="literature_index_search"),
+                _historical_record(title="Crossref linkage and care collector 2017", url="https://api.crossref.org/works?query=HIV+linkage+care+Philippines", year=2017, document_type="literature_index_search"),
+                _historical_record(title="Crossref transport and stigma collector 2024", url="https://api.crossref.org/works?query=HIV+transport+stigma+Philippines", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use Crossref as a DOI-first literature expander and metadata repair layer.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="semantic_scholar_literature",
+            source_name="Semantic Scholar Literature Index",
+            organization="Semantic Scholar",
+            platform="semanticscholar",
+            landing_url="https://www.semanticscholar.org/",
+            seed_queries=[
+                "HIV biology economics logistics policy Semantic Scholar",
+                "migration behavior disease dynamics Semantic Scholar",
+                "Philippines HIV suppression determinants Semantic Scholar",
+            ],
+            determinant_silos=["suppression_outcomes", "mobility_network_mixing", "cash_instability", "policy_implementation_weakness"],
+            preferred_file_patterns=["*semantic*scholar*", "*corpusid*", "*pdf*"],
+            fallback_urls=["https://api.semanticscholar.org/graph/v1/paper/search"],
+            historical_records=[
+                _historical_record(title="Semantic Scholar HIV determinants collector 2012", url="https://api.semanticscholar.org/graph/v1/paper/search?query=HIV+Philippines", year=2012, document_type="literature_index_search"),
+                _historical_record(title="Semantic Scholar migration and behavior collector 2019", url="https://api.semanticscholar.org/graph/v1/paper/search?query=migration+behavior+disease+dynamics", year=2019, document_type="literature_index_search"),
+                _historical_record(title="Semantic Scholar suppression and logistics collector 2024", url="https://api.semanticscholar.org/graph/v1/paper/search?query=HIV+suppression+logistics", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use Semantic Scholar as a broad literature-recall layer with strong cross-disciplinary coverage.",
+            ],
+        ),
         StructuredSourceAdapterSpec(
             adapter_id="ndhs",
             source_name="National Demographic and Health Survey",
@@ -23,6 +207,26 @@ def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
             ],
             preferred_file_patterns=["*ndhs*", "*demographic*health*survey*"],
             fallback_urls=["https://dhsprogram.com/"],
+            historical_records=[
+                _historical_record(
+                    title="Philippines National Demographic and Health Survey 2013",
+                    url="https://dhsprogram.com/publications/publication-fr294-dhs-final-reports.cfm",
+                    year=2013,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="Philippines National Demographic and Health Survey 2017",
+                    url="https://psa.gov.ph/content/national-demographic-and-health-survey-ndhs",
+                    year=2017,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="Philippines National Demographic and Health Survey 2022",
+                    url="https://psa.gov.ph/content/2022-national-demographic-and-health-survey-ndhs-key-findings",
+                    year=2022,
+                    document_type="survey_report_pdf",
+                ),
+            ],
             notes=[
                 "Use as a survey-wave behavior and access source with uncertainty retained through alignment.",
                 "Do not coerce to province-month without partial pooling or explicit downscaling uncertainty.",
@@ -46,6 +250,26 @@ def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
             ],
             preferred_file_patterns=["*yafs*", "*fertility*sexuality*"],
             fallback_urls=["https://www.uppi.upd.edu.ph/"],
+            historical_records=[
+                _historical_record(
+                    title="Young Adult Fertility and Sexuality Study 4",
+                    url="https://www.uppi.upd.edu.ph/yafs4",
+                    year=2013,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="Young Adult Fertility and Sexuality Study 5 National Report",
+                    url="https://www.uppi.upd.edu.ph/yafs5",
+                    year=2021,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="YAFS 5 Key Indicators and Regional Tables",
+                    url="https://www.uppi.upd.edu.ph/yafs5",
+                    year=2021,
+                    document_type="survey_table_pack",
+                ),
+            ],
             notes=[
                 "Treat YAFS as a youth and emerging-adult risk-behavior substrate rather than a direct cascade anchor.",
             ],
@@ -68,6 +292,32 @@ def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
             ],
             preferred_file_patterns=["*fies*", "*family*income*expenditure*"],
             fallback_urls=["https://psada.psa.gov.ph/"],
+            historical_records=[
+                _historical_record(
+                    title="Family Income and Expenditure Survey 2012",
+                    url="https://psa.gov.ph/statistics/income-expenditure/fies",
+                    year=2012,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="Family Income and Expenditure Survey 2015",
+                    url="https://psa.gov.ph/statistics/income-expenditure/fies",
+                    year=2015,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="Family Income and Expenditure Survey 2018",
+                    url="https://psa.gov.ph/statistics/income-expenditure/fies",
+                    year=2018,
+                    document_type="survey_report_pdf",
+                ),
+                _historical_record(
+                    title="Family Income and Expenditure Survey 2021",
+                    url="https://psa.gov.ph/statistics/income-expenditure/fies",
+                    year=2021,
+                    document_type="survey_report_pdf",
+                ),
+            ],
             notes=[
                 "Use as the main household economic capability and instability adapter.",
                 "Supports affordability and continuity-of-care factors rather than direct HIV state replacement.",
@@ -91,6 +341,26 @@ def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
             ],
             preferred_file_patterns=["*psgc*", "*boundary*", "*shapefile*", "*geojson*"],
             fallback_urls=["https://www.openstreetmap.org/", "https://data.humdata.org/"],
+            historical_records=[
+                _historical_record(
+                    title="Philippine Standard Geographic Code Province List 2015",
+                    url="https://psa.gov.ph/classification/psgc/",
+                    year=2015,
+                    document_type="boundary_catalog",
+                ),
+                _historical_record(
+                    title="Philippine Standard Geographic Code Province List 2020",
+                    url="https://psa.gov.ph/classification/psgc/",
+                    year=2020,
+                    document_type="boundary_catalog",
+                ),
+                _historical_record(
+                    title="Philippine Standard Geographic Code Province List 2024",
+                    url="https://psa.gov.ph/classification/psgc/",
+                    year=2024,
+                    document_type="boundary_catalog",
+                ),
+            ],
             notes=[
                 "The old public PhilGIS domain is not trusted as a current landing page; use PSGC and open boundary mirrors as the safer active proxy.",
                 "This adapter seeds geometry and travel-friction literature and repository retrieval.",
@@ -115,9 +385,200 @@ def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
             ],
             preferred_file_patterns=["*road*", "*route*", "*travel*time*", "*airport*", "*ferry*"],
             fallback_urls=["https://data.humdata.org/", "https://www.geofabrik.de/"],
+            historical_records=[
+                _historical_record(
+                    title="OpenStreetMap Philippines Extract",
+                    url="https://download.geofabrik.de/asia/philippines.html",
+                    year=2024,
+                    document_type="network_extract",
+                ),
+                _historical_record(
+                    title="HDX Philippines Transport Accessibility Proxy",
+                    url="https://data.humdata.org/",
+                    year=2021,
+                    document_type="proxy_dataset",
+                ),
+                _historical_record(
+                    title="OpenFlights Philippines Airport and Route Proxy",
+                    url="https://openflights.org/data.html",
+                    year=2024,
+                    document_type="network_extract",
+                ),
+            ],
             notes=[
                 "Use as open fallback when gated mobility feeds are unavailable.",
                 "These are proxies and should remain down-weighted unless validated against direct program patterns.",
+            ],
+        ),
+        StructuredSourceAdapterSpec(
+            adapter_id="google_mobility",
+            source_name="Google Community Mobility Reports",
+            organization="Google",
+            source_tier="tier3_structured_repository",
+            access_mode="public_csv_archive",
+            spatial_resolution="region_province_week",
+            temporal_resolution="daily_weekly",
+            landing_url="https://www.google.com/covid19/mobility/",
+            determinant_silos=["mobility_network_mixing", "congestion_travel_time", "transport_friction", "health_system_reach"],
+            promotion_track="supporting_context",
+            platform="google_mobility",
+            seed_queries=[
+                "Philippines Google mobility transit workplace retail province",
+                "Philippines mobility reports travel time congestion access",
+            ],
+            preferred_file_patterns=["*mobility*", "*region*csv*", "*philippines*mobility*"],
+            fallback_urls=["https://www.google.com/covid19/mobility/", "https://www.kaggle.com/"],
+            historical_records=[
+                _historical_record(
+                    title="Google Community Mobility Reports Philippines 2020",
+                    url="https://www.google.com/covid19/mobility/",
+                    year=2020,
+                    document_type="csv_archive",
+                ),
+                _historical_record(
+                    title="Google Community Mobility Reports Philippines 2021",
+                    url="https://www.google.com/covid19/mobility/",
+                    year=2021,
+                    document_type="csv_archive",
+                ),
+                _historical_record(
+                    title="Google Community Mobility Reports Philippines 2022",
+                    url="https://www.google.com/covid19/mobility/",
+                    year=2022,
+                    document_type="csv_archive",
+                ),
+            ],
+            notes=[
+                "Use as a relative movement and congestion proxy rather than a direct epidemiologic anchor.",
+                "Historical coverage matters more than current update cadence because the public Google series ended in 2022.",
+            ],
+        ),
+        StructuredSourceAdapterSpec(
+            adapter_id="world_bank_wdi",
+            source_name="World Bank World Development Indicators",
+            organization="World Bank",
+            source_tier="tier3_structured_repository",
+            access_mode="public_api_csv",
+            spatial_resolution="national_annual",
+            temporal_resolution="annual",
+            landing_url="https://data.worldbank.org/",
+            determinant_silos=["poverty", "education", "health_system_reach", "cash_instability"],
+            promotion_track="supporting_context",
+            platform="world_bank_wdi",
+            seed_queries=[
+                "Philippines World Bank WDI poverty health expenditure education",
+                "Philippines WDI GDP per capita health spending poverty rate",
+            ],
+            preferred_file_patterns=["*wdi*", "*world*development*indicators*", "*api*csv*"],
+            fallback_urls=["https://api.worldbank.org/"],
+            historical_records=[
+                _historical_record(
+                    title="WDI Poverty Headcount Ratio Philippines",
+                    url="https://api.worldbank.org/v2/country/PHL/indicator/SI.POV.NAHC?format=json",
+                    year=2024,
+                    document_type="api_series",
+                ),
+                _historical_record(
+                    title="WDI Current Health Expenditure per Capita Philippines",
+                    url="https://api.worldbank.org/v2/country/PHL/indicator/SH.XPD.CHEX.PC.CD?format=json",
+                    year=2024,
+                    document_type="api_series",
+                ),
+                _historical_record(
+                    title="WDI Lower Secondary Completion Rate Philippines",
+                    url="https://api.worldbank.org/v2/country/PHL/indicator/SE.SEC.CMPT.LO.ZS?format=json",
+                    year=2024,
+                    document_type="api_series",
+                ),
+            ],
+            notes=[
+                "Treat WDI as a national macro-structural context layer.",
+                "Do not over-interpret WDI as province-specific evidence without explicit downscaling uncertainty.",
+            ],
+        ),
+        StructuredSourceAdapterSpec(
+            adapter_id="philhealth_reports",
+            source_name="PhilHealth Annual Reports",
+            organization="PhilHealth",
+            source_tier="tier2_official_survey",
+            access_mode="public_report_pdf_excel",
+            spatial_resolution="national_region_annual",
+            temporal_resolution="annual",
+            landing_url="https://www.philhealth.gov.ph/about_us/statsncharts/",
+            determinant_silos=["health_system_reach", "poverty", "cash_instability", "policy_implementation_weakness"],
+            promotion_track="supporting_context",
+            platform="philhealth",
+            seed_queries=[
+                "PhilHealth annual report enrollment claims regional coverage",
+                "PhilHealth Philippines health insurance coverage annual report",
+            ],
+            preferred_file_patterns=["*philhealth*", "*annual*report*", "*claims*", "*coverage*"],
+            fallback_urls=["https://www.philhealth.gov.ph/"],
+            historical_records=[
+                _historical_record(
+                    title="PhilHealth Annual Report 2018",
+                    url="https://www.philhealth.gov.ph/about_us/statsncharts/",
+                    year=2018,
+                    document_type="annual_report_pdf",
+                ),
+                _historical_record(
+                    title="PhilHealth Annual Report 2020",
+                    url="https://www.philhealth.gov.ph/about_us/statsncharts/",
+                    year=2020,
+                    document_type="annual_report_pdf",
+                ),
+                _historical_record(
+                    title="PhilHealth Annual Report 2023",
+                    url="https://www.philhealth.gov.ph/about_us/statsncharts/",
+                    year=2023,
+                    document_type="annual_report_pdf",
+                ),
+            ],
+            notes=[
+                "Useful for insured-access context and financing coverage, not as a direct HIV cascade truth source.",
+            ],
+        ),
+        StructuredSourceAdapterSpec(
+            adapter_id="doh_facility_stats",
+            source_name="DOH Facility Statistics and Master Lists",
+            organization="Department of Health Philippines",
+            source_tier="tier1_official_anchor",
+            access_mode="public_report_excel_request",
+            spatial_resolution="facility_province_annual",
+            temporal_resolution="annual",
+            landing_url="https://doh.gov.ph/",
+            determinant_silos=["health_system_reach", "linkage_to_care", "transport_friction", "policy_implementation_weakness"],
+            promotion_track="main_predictive_candidate",
+            platform="doh_facility_stats",
+            seed_queries=[
+                "DOH Philippines facility master list HIV treatment hub laboratory",
+                "DOH Philippines clinic treatment site physician facility statistics",
+            ],
+            preferred_file_patterns=["*facility*", "*master*list*", "*treatment*hub*", "*laboratory*"],
+            fallback_urls=["https://doh.gov.ph/"],
+            historical_records=[
+                _historical_record(
+                    title="DOH Health Facility Master List 2019",
+                    url="https://doh.gov.ph/",
+                    year=2019,
+                    document_type="facility_master_list",
+                ),
+                _historical_record(
+                    title="DOH HIV Treatment Hub and Laboratory List 2022",
+                    url="https://doh.gov.ph/",
+                    year=2022,
+                    document_type="facility_master_list",
+                ),
+                _historical_record(
+                    title="DOH Health Facility Statistics and Licensing Tables 2024",
+                    url="https://doh.gov.ph/",
+                    year=2024,
+                    document_type="facility_master_list",
+                ),
+            ],
+            notes=[
+                "Prefer direct facility inventories, treatment hubs, and laboratory lists where available.",
+                "This is the strongest source family in the non-HARP infrastructure layer and should be treated as promotion-eligible when numeric and geographically resolvable.",
             ],
         ),
     ]

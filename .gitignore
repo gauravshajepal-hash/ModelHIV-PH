@@ -7,14 +7,22 @@ __pycache__/
 .venv/
 venv/
 env/
+.lighton-ocr-venv/
 
 artifacts/
 tmp/
+.hf-cache/
 
 .coverage
 .mypy_cache/
 .ruff_cache/
 .hypothesis/
+src/*.egg-info/
+src/**/*.egg-info/
+*.egg-info/
+*.whl
+build/
+dist/
 
 *.log
 Thumbs.db
