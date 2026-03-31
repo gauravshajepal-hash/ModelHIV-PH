@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from epigraph_ph.cli.main import build_parser
+from epigraph_ph.phase0.boundary_models import build_phase0_family_candidate_banks, validate_phase0_candidate_rows
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows, wide_sweep_record_canonical_names
 from epigraph_ph.phase0.pipeline import (
     _phase0_alignment_bundle,
@@ -33,6 +34,7 @@ from epigraph_ph.phase0.pipeline import (
 )
 from epigraph_ph.phase0.shard_materializer import build_slice_payload, select_document_shard
 from epigraph_ph.phase0.semantic_benchmark import run_phase0_semantic_benchmark
+from epigraph_ph.plugins.hiv import HIV_CONSTRAINT_SETTINGS
 from epigraph_ph.runtime import read_json
 
 
@@ -237,6 +239,12 @@ def test_offline_build_and_registry_smoke(phase0_registry_run_dir: Path) -> None
     collector_manifest = read_json(run_dir / "phase0" / "raw" / "collector_manifest.json", default=[])
     adapter_ids = {row.get("adapter_id") for row in adapter_manifest}
     assert {
+        "pubmed_literature",
+        "arxiv_literature",
+        "biorxiv_literature",
+        "openalex_literature",
+        "crossref_literature",
+        "semantic_scholar_literature",
         "ndhs",
         "yafs",
         "fies",
@@ -249,7 +257,25 @@ def test_offline_build_and_registry_smoke(phase0_registry_run_dir: Path) -> None
     }.issubset(adapter_ids)
     assert collector_manifest
     collector_ids = {row.get("collector_id") for row in collector_manifest}
-    assert {"who", "unaids", "doh_philippines", "un", "ndhs", "yafs", "fies", "google_mobility", "world_bank_wdi", "philhealth_reports", "doh_facility_stats"}.issubset(collector_ids)
+    assert {
+        "who",
+        "unaids",
+        "doh_philippines",
+        "un",
+        "pubmed_literature",
+        "arxiv_literature",
+        "biorxiv_literature",
+        "openalex_literature",
+        "crossref_literature",
+        "semantic_scholar_literature",
+        "ndhs",
+        "yafs",
+        "fies",
+        "google_mobility",
+        "world_bank_wdi",
+        "philhealth_reports",
+        "doh_facility_stats",
+    }.issubset(collector_ids)
     assert (run_dir / "phase0" / "raw" / "source_manifest.parquet").exists()
     assert (run_dir / "phase0" / "parsed" / "parsed_document_blocks.parquet").exists()
     assert (run_dir / "phase0" / "extracted" / "canonical_parameter_candidates.parquet").exists()
@@ -263,9 +289,298 @@ def test_offline_build_and_registry_smoke(phase0_registry_run_dir: Path) -> None
     assert (run_dir / "phase0" / "analysis" / "resource_usage_manifest.json").exists()
     assert (run_dir / "phase0" / "analysis" / "implementation_reality_summary.json").exists()
     assert (run_dir / "phase0" / "extracted" / "canonicalization_summary.json").exists()
+    assert (run_dir / "phase0" / "extracted" / "boundary_validation_report.json").exists()
+    assert (run_dir / "phase0" / "extracted" / "rejected_canonical_parameter_candidates.json").exists()
+    assert (run_dir / "phase0" / "extracted" / "family_candidate_banks_manifest.json").exists()
+    family_bank_manifest = read_json(run_dir / "phase0" / "extracted" / "family_candidate_banks_manifest.json", default={})
+    assert family_bank_manifest.get("family_bank_count", 0) >= 1
+    assert family_bank_manifest.get("paths", {})
     assert (run_dir / "phase0" / "boundary_shape_manifest.json").exists()
     assert (run_dir / "phase0" / "boundary_shape_checks.json").exists()
     assert (run_dir / "phase0" / "boundary_shape_summary.json").exists()
+
+
+def test_phase0_candidate_boundary_validation_accepts_numeric_and_soft_rows() -> None:
+    cfg = dict(HIV_CONSTRAINT_SETTINGS["phase0"]["boundary_validation"])
+    rows = [
+        {
+            "candidate_id": "cand-1",
+            "document_id": "doc-1",
+            "source_id": "src-1",
+            "canonical_name": "population_count",
+            "candidate_text": "population_count Philippines 2024-12",
+            "parameter_text": "Estimated PLHIV",
+            "evidence_span": "Estimated PLHIV",
+            "extraction_method": "official_anchor_pack",
+            "confidence": 0.98,
+            "source_bank": "phase0_extracted",
+            "source_tier": "tier1_official_anchor",
+            "observation_id": "obs-1",
+            "geo": "Philippines",
+            "region": "national",
+            "province": "",
+            "population": "",
+            "time": "2024-12",
+            "sex": "",
+            "age_band": "",
+            "kp_group": "",
+            "geo_mentions": ["philippines"],
+            "literature_ref_details": [{"source_id": "src-1", "title": "WHO deck", "year": 2025, "source_tier": "tier1_official_anchor", "url": "file:///who.pdf", "doi": None, "pmid": None, "openalex_id": None}],
+            "linkage_targets": [],
+            "soft_ontology_tags": [],
+            "soft_subparameter_hints": [],
+            "measurement_type": "count",
+            "denominator_type": "plhiv",
+            "normalization_basis": "absolute",
+            "value_semantics": "direct_observed",
+            "value": 216900.0,
+            "unit": "people",
+            "is_anchor_eligible": True,
+            "is_direct_measurement": True,
+            "is_prior_only": False,
+        },
+        {
+            "candidate_id": "cand-2",
+            "document_id": "doc-2",
+            "source_id": "src-2",
+            "canonical_name": "mobility_network_mixing",
+            "candidate_text": "mobility corridor and labor migration delay testing",
+            "parameter_text": "mobility_network_mixing",
+            "evidence_span": "mobility corridor and labor migration delay testing",
+            "extraction_method": "chunk_soft_candidate",
+            "confidence": 0.55,
+            "source_bank": "phase0_chunk_soft_candidates",
+            "source_tier": "tier2_scientific_literature",
+            "chunk_id": "chunk-2",
+            "geo": "Philippines",
+            "region": "",
+            "province": "",
+            "population": "",
+            "time": "2023",
+            "sex": "",
+            "age_band": "",
+            "kp_group": "",
+            "geo_mentions": ["philippines"],
+            "literature_ref_details": [],
+            "linkage_targets": ["testing_uptake"],
+            "soft_ontology_tags": ["mobility"],
+            "soft_subparameter_hints": ["labor_migration"],
+            "measurement_type": "unknown",
+            "denominator_type": "unknown",
+            "normalization_basis": "unknown",
+            "value_semantics": "bounded_proxy",
+            "value": None,
+            "unit": "",
+            "is_anchor_eligible": False,
+            "is_direct_measurement": False,
+            "is_prior_only": True,
+        },
+    ]
+    accepted, rejected, summary = validate_phase0_candidate_rows(rows, validation_cfg=cfg)
+
+    assert len(accepted) == 2
+    assert rejected == []
+    assert summary["candidate_count_accepted"] == 2
+    assert {row["geo_id"] for row in accepted} == {"national:philippines"}
+    assert {row["value_presence_class"] for row in accepted} == {"numeric_observed", "soft_support"}
+    assert {row["payload_family"] for row in accepted} == {"PopulationMeasure", "LogisticsAccess"}
+    assert summary["geo_binding_class_counts"]["explicit_geo"] >= 1
+
+
+def test_phase0_candidate_boundary_validation_accepts_text_supported_literature_row() -> None:
+    cfg = dict(HIV_CONSTRAINT_SETTINGS["phase0"]["boundary_validation"])
+    rows = [
+        {
+            "candidate_id": "cand-lit",
+            "document_id": "doc-lit",
+            "source_id": "openalex-signal",
+            "canonical_name": "prevention_access",
+            "candidate_text": "Philippines prevention access and testing barriers in key populations",
+            "parameter_text": "prevention access",
+            "evidence_span": "testing barriers and prevention access remained uneven",
+            "extraction_method": "regex_rule",
+            "confidence": 0.62,
+            "source_bank": "phase0_extracted",
+            "source_tier": "tier2_scientific_literature",
+            "source_title": "Prevention access and testing barriers in the Philippines",
+            "platform": "openalex",
+            "query_geo_focus": "philippines",
+            "geo": "",
+            "region": "",
+            "province": "",
+            "population": "",
+            "time": "2021",
+            "sex": "",
+            "age_band": "",
+            "kp_group": "",
+            "geo_mentions": [],
+            "literature_ref_details": [{"source_id": "openalex-signal", "title": "Prevention access and testing barriers in the Philippines", "year": 2021, "source_tier": "tier2_scientific_literature", "url": "https://openalex.org/W123", "doi": "10.1000/demo", "pmid": None, "openalex_id": "https://openalex.org/W123"}],
+            "linkage_targets": [],
+            "soft_ontology_tags": [],
+            "soft_subparameter_hints": [],
+            "measurement_type": "rate",
+            "denominator_type": "population",
+            "normalization_basis": "share",
+            "value_semantics": "direct_observed",
+            "value": 0.42,
+            "unit": "percent",
+            "is_anchor_eligible": False,
+            "is_direct_measurement": False,
+            "is_prior_only": True,
+        },
+    ]
+    accepted, rejected, summary = validate_phase0_candidate_rows(rows, validation_cfg=cfg)
+
+    assert len(accepted) == 1
+    assert rejected == []
+    assert summary["candidate_count_accepted"] == 1
+    assert accepted[0]["geo_id"] == "national:philippines"
+    assert accepted[0]["geo_binding_class"] in {"query_geo_focus_national", "text_inferred_national"}
+    assert accepted[0]["textual_signal_support_count"] >= 2
+    assert accepted[0]["support_signal_count"] >= accepted[0]["signal_evidence_count"]
+
+
+def test_phase0_candidate_boundary_validation_rejects_soft_rows_without_signal() -> None:
+    cfg = dict(HIV_CONSTRAINT_SETTINGS["phase0"]["boundary_validation"])
+    rows = [
+        {
+            "candidate_id": "cand-bad",
+            "document_id": "doc-bad",
+            "source_id": "src-bad",
+            "canonical_name": "numeric_observation",
+            "candidate_text": "1",
+            "parameter_text": "1",
+            "evidence_span": "1",
+            "extraction_method": "chunk_soft_candidate",
+            "confidence": 0.4,
+            "source_bank": "phase0_chunk_soft_candidates",
+            "source_tier": "tier2_scientific_literature",
+            "chunk_id": "chunk-bad",
+            "geo": "Philippines",
+            "region": "",
+            "province": "",
+            "population": "",
+            "time": "2023",
+            "sex": "",
+            "age_band": "",
+            "kp_group": "",
+            "geo_mentions": ["philippines"],
+            "literature_ref_details": [],
+            "linkage_targets": [],
+            "soft_ontology_tags": [],
+            "soft_subparameter_hints": [],
+            "measurement_type": "unknown",
+            "denominator_type": "unknown",
+            "normalization_basis": "unknown",
+            "value_semantics": "bounded_proxy",
+            "value": None,
+            "unit": "",
+            "is_anchor_eligible": False,
+            "is_direct_measurement": False,
+            "is_prior_only": True,
+        },
+    ]
+    accepted, rejected, summary = validate_phase0_candidate_rows(rows, validation_cfg=cfg)
+
+    assert accepted == []
+    assert len(rejected) == 1
+    assert summary["candidate_count_rejected"] == 1
+    assert "soft_candidate_requires_signal" in summary["rejection_reason_counts"]
+
+
+def test_phase0_family_candidate_banks_emit_envelope_and_payload() -> None:
+    rows = [
+        {
+            "boundary_schema_version": "phase0_candidate_v1",
+            "candidate_id": "cand-1",
+            "document_id": "doc-1",
+            "source_id": "src-1",
+            "source_bank": "phase0_extracted",
+            "source_tier": "tier1_official_anchor",
+            "extraction_method": "official_anchor_pack",
+            "confidence": 0.98,
+            "candidate_text": "cascade reference",
+            "parameter_text": "diagnosed stock",
+            "evidence_span": "diagnosed stock",
+            "geo": "Philippines",
+            "region": "national",
+            "province": "",
+            "geo_id": "national:philippines",
+            "geo_scope": "national",
+            "time": "2024-12",
+            "geo_mentions": ["philippines"],
+            "signal_family": "epidemiology_cascade",
+            "value_presence_class": "numeric_observed",
+            "signal_evidence_count": 2,
+            "linkage_targets": ["testing_uptake"],
+            "literature_ref_details": [],
+            "is_anchor_eligible": True,
+            "is_direct_measurement": True,
+            "is_prior_only": False,
+            "canonical_name": "diagnosed_stock",
+            "measurement_type": "rate",
+            "denominator_type": "plhiv",
+            "normalization_basis": "share",
+            "value_semantics": "direct_observed",
+            "value": 0.62,
+            "unit": "percent",
+            "soft_ontology_tags": [],
+            "soft_subparameter_hints": [],
+            "payload_family": "CascadeObservation",
+            "payload_schema_version": "phase0_cascadeobservation_v1",
+            "observation_id": "obs-1",
+        },
+        {
+            "boundary_schema_version": "phase0_candidate_v1",
+            "candidate_id": "cand-2",
+            "document_id": "doc-2",
+            "source_id": "src-2",
+            "source_bank": "phase0_chunk_soft_candidates",
+            "source_tier": "tier2_scientific_literature",
+            "extraction_method": "chunk_soft_candidate",
+            "confidence": 0.56,
+            "candidate_text": "mobility and transport barrier",
+            "parameter_text": "travel friction",
+            "evidence_span": "mobility and transport barrier",
+            "geo": "Region VI",
+            "region": "Region VI",
+            "province": "",
+            "geo_id": "region:region_vi",
+            "geo_scope": "region",
+            "time": "2023",
+            "geo_mentions": ["region vi"],
+            "signal_family": "mobility_logistics",
+            "value_presence_class": "soft_support",
+            "signal_evidence_count": 3,
+            "linkage_targets": ["linkage_to_care"],
+            "literature_ref_details": [],
+            "is_anchor_eligible": False,
+            "is_direct_measurement": False,
+            "is_prior_only": True,
+            "canonical_name": "transport_friction",
+            "measurement_type": "unknown",
+            "denominator_type": "route",
+            "normalization_basis": "unknown",
+            "value_semantics": "bounded_proxy",
+            "value": None,
+            "unit": "",
+            "soft_ontology_tags": ["mobility"],
+            "soft_subparameter_hints": ["transport_friction"],
+            "payload_family": "LogisticsAccess",
+            "payload_schema_version": "phase0_logisticsaccess_v1",
+        },
+    ]
+    banks, manifest = build_phase0_family_candidate_banks(rows)
+
+    assert set(banks) == {"CascadeObservation", "LogisticsAccess"}
+    cascade_row = banks["CascadeObservation"][0]
+    assert cascade_row["envelope"]["candidate_id"] == "cand-1"
+    assert cascade_row["payload"]["payload_family"] == "CascadeObservation"
+    assert cascade_row["payload"]["canonical_name"] == "diagnosed_stock"
+    logistics_row = banks["LogisticsAccess"][0]
+    assert logistics_row["payload"]["payload_family"] == "LogisticsAccess"
+    assert logistics_row["payload"]["region"] == "Region VI"
+    assert manifest["family_bank_count"] == 2
 
 
 def test_local_official_anchor_specs_pick_up_local_files(tmp_path: Path, monkeypatch) -> None:

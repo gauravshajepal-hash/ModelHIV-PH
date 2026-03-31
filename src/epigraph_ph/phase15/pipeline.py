@@ -9,6 +9,7 @@ import numpy as np
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.geography import macro_region_label
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase15.bayesian_survival import optimize_survival_tournament
 from epigraph_ph.phase15.graph_helpers import build_environment_masks, build_network_feature_bundle, compute_factor_stability
 from epigraph_ph.phase3.rescue_core import build_observation_ladder
 from epigraph_ph.runtime import (
@@ -127,8 +128,24 @@ def _counter_overlap(left: dict[str, int], right: dict[str, int]) -> float:
 def _block_for_row(row: dict[str, Any]) -> tuple[str, str]:
     domain = str(row.get("domain_family") or "").lower()
     pathway = str(row.get("pathway_family") or "").lower()
+    signal_family = str(row.get("signal_family") or "").lower()
+    payload_family = str(row.get("payload_family") or "").lower()
     tags = {str(item).lower() for item in row.get("soft_ontology_tags") or []}
     source_bank = str(row.get("source_bank") or "").lower()
+    if signal_family == "epidemiology_cascade" or payload_family == "cascadeobservation":
+        return "epidemiology_cascade", "cascade"
+    if signal_family == "population_demography" or payload_family == "populationmeasure":
+        return "population_structure_demography", "population"
+    if signal_family == "behavior_stigma" or payload_family == "behaviorsignal":
+        return "stigma_behavior_information", "behavior"
+    if signal_family == "service_delivery" or payload_family == "servicecapacity":
+        return "service_delivery_infrastructure", "service"
+    if signal_family == "economics_access" or payload_family == "economicconstraint":
+        return "economics_affordability", "economics"
+    if signal_family == "policy_environment" or payload_family == "policyenvironment":
+        return "policy_implementation", "policy"
+    if signal_family == "mobility_logistics" or payload_family == "logisticsaccess":
+        return "mobility_network_mixing", "mobility"
     if "biology" in domain or pathway == "biological_progression":
         return "biology_severity", "biology"
     if domain in {"economics"} or "economic" in tags or "afford" in pathway:
@@ -475,7 +492,7 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
                 "promotion_hint": promotion_hint,
                 "network_feature_family": network_hint,
                 "transition_hooks": [],
-                "promotion_class": "scientific_retained",
+                "promotion_class": "unranked",
             }
         )
         factor_surfaces.append(factor_surface)
@@ -504,6 +521,7 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
                 "missingness_rate": 0.0,
                 "interpretability_label": network_factor["network_feature_family"],
                 "promotion_hint": "promotion_eligible",
+                "promotion_class": "unranked",
             }
         )
         mesoscopic_factor_members[network_factor["factor_id"]] = []
@@ -526,15 +544,27 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
         tensor_rows,
         region_labels=region_labels,
     )
-    stability_rows, promotion_pool = compute_factor_stability(
+    stability_cfg = _phase15_required_section("stability")
+    baseline_stability_rows, baseline_promotion_pool = compute_factor_stability(
         factor_tensor,
         factor_catalog,
         observation_targets,
         environments,
         mesoscopic_factor_members,
-        stability_cfg=_phase15_required_section("stability"),
+        stability_cfg=stability_cfg,
         corr_fn=_safe_corr,
     )
+    optimized_stability_rows, optimized_promotion_pool, bayes_report = optimize_survival_tournament(
+        stability_rows=baseline_stability_rows,
+        factor_catalog=factor_catalog,
+        factor_tensor=factor_tensor,
+        observation_targets=observation_targets,
+        stability_cfg=stability_cfg,
+    )
+    use_optimized_pool = bool(bayes_report.get("enabled")) and bool(bayes_report.get("improved_over_default"))
+    stability_rows = optimized_stability_rows if use_optimized_pool else baseline_stability_rows
+    promotion_pool = optimized_promotion_pool if use_optimized_pool else baseline_promotion_pool
+    bayes_report["active_variant"] = "optimized" if use_optimized_pool else "baseline"
     stability_by_id = {row["factor_id"]: row for row in stability_rows}
     for factor in factor_catalog:
         factor.update(stability_by_id.get(factor["factor_id"], {}))
@@ -619,6 +649,13 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
     write_json(phase15_dir / "network_feature_catalog.json", network_factors)
     write_json(phase15_dir / "network_operator_catalog.json", operator_catalog)
     write_json(phase15_dir / "stability_environments.json", {family: list(masks.keys()) for family, masks in environments.items()})
+    write_json(phase15_dir / "factor_survival_tournament_baseline.json", baseline_stability_rows)
+    write_json(phase15_dir / "factor_survival_pool_baseline.json", baseline_promotion_pool)
+    write_json(phase15_dir / "factor_survival_tournament_optimized.json", optimized_stability_rows)
+    write_json(phase15_dir / "factor_survival_pool_optimized.json", optimized_promotion_pool)
+    write_json(phase15_dir / "factor_survival_bayesian_optimization.json", bayes_report)
+    write_json(phase15_dir / "factor_survival_tournament.json", stability_rows)
+    write_json(phase15_dir / "factor_survival_pool.json", promotion_pool)
     write_json(phase15_dir / "factor_stability_report.json", stability_rows)
     write_json(phase15_dir / "factor_promotion_pool.json", promotion_pool)
 
@@ -646,6 +683,13 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             "network_feature_tensor": network_artifact["value_path"],
             "network_operator_catalog": str(phase15_dir / "network_operator_catalog.json"),
             "network_operator_tensor": operator_artifact["value_path"],
+            "factor_survival_tournament_baseline": str(phase15_dir / "factor_survival_tournament_baseline.json"),
+            "factor_survival_pool_baseline": str(phase15_dir / "factor_survival_pool_baseline.json"),
+            "factor_survival_tournament_optimized": str(phase15_dir / "factor_survival_tournament_optimized.json"),
+            "factor_survival_pool_optimized": str(phase15_dir / "factor_survival_pool_optimized.json"),
+            "factor_survival_bayesian_optimization": str(phase15_dir / "factor_survival_bayesian_optimization.json"),
+            "factor_survival_tournament": str(phase15_dir / "factor_survival_tournament.json"),
+            "factor_survival_pool": str(phase15_dir / "factor_survival_pool.json"),
             "factor_stability_report": str(phase15_dir / "factor_stability_report.json"),
             "factor_promotion_pool": str(phase15_dir / "factor_promotion_pool.json"),
         },
@@ -783,6 +827,13 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             phase15_dir / "network_feature_tensor.npz",
             phase15_dir / "network_operator_catalog.json",
             phase15_dir / "network_operator_tensor.npz",
+            phase15_dir / "factor_survival_tournament_baseline.json",
+            phase15_dir / "factor_survival_pool_baseline.json",
+            phase15_dir / "factor_survival_tournament_optimized.json",
+            phase15_dir / "factor_survival_pool_optimized.json",
+            phase15_dir / "factor_survival_bayesian_optimization.json",
+            phase15_dir / "factor_survival_tournament.json",
+            phase15_dir / "factor_survival_pool.json",
             phase15_dir / "factor_stability_report.json",
             phase15_dir / "factor_promotion_pool.json",
             phase15_dir / "gold_standard_manifest.json",

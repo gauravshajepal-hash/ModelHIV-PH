@@ -30,6 +30,7 @@ from epigraph_ph.geography import (
     normalize_geo_label,
     philippines_modeling_geos,
 )
+from epigraph_ph.phase0.boundary_models import build_phase0_family_candidate_banks, validate_phase0_candidate_rows
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows
 from epigraph_ph.phase0.prompts import build_phase0_prompt_library
 from epigraph_ph.phase0.shard_materializer import build_slice_payload
@@ -3016,6 +3017,9 @@ def _extract_chunk_soft_candidates(
                     "unit": "",
                     "source_bank": "phase0_chunk_soft_candidates",
                     "source_tier": source.get("source_tier") or chunk.get("source_tier") or "",
+                    "platform": source.get("platform") or "",
+                    "query_geo_focus": source.get("query_geo_focus") or "",
+                    "source_title": source.get("title") or "",
                     "extraction_method": "chunk_soft_candidate",
                     "confidence": confidence,
                     "is_anchor_eligible": False,
@@ -3413,6 +3417,7 @@ def _phase0_schema_validation_summary(candidates: list[dict[str, Any]]) -> dict[
     measurement_counts = Counter(str(row.get("measurement_type") or "unknown") for row in candidates)
     denominator_counts = Counter(str(row.get("denominator_type") or "unknown") for row in candidates)
     normalization_counts = Counter(str(row.get("normalization_basis") or "unknown") for row in candidates)
+    payload_family_counts = Counter(str(row.get("payload_family") or "unknown") for row in candidates)
     generic_rows = [row for row in candidates if str(row.get("canonical_name") or "") in generic_names]
     direct_rows = [row for row in candidates if float(row.get("confidence") or 0.0) >= float(cfg.get("direct_measurement_threshold", 0.75))]
     return {
@@ -3422,6 +3427,7 @@ def _phase0_schema_validation_summary(candidates: list[dict[str, Any]]) -> dict[
         "measurement_type_counts": dict(measurement_counts),
         "denominator_type_counts": dict(denominator_counts),
         "normalization_basis_counts": dict(normalization_counts),
+        "payload_family_counts": dict(payload_family_counts),
         "high_confidence_candidate_count": len(direct_rows),
     }
 
@@ -4400,6 +4406,9 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
                 "source_id": block["source_id"],
                 "document_id": block["document_id"],
                 "source_bank": "phase0_extracted",
+                "platform": source.get("platform") or "",
+                "query_geo_focus": source.get("query_geo_focus") or "",
+                "source_title": source.get("title") or "",
                 "parameter_text": parameter_text,
                 "canonical_name": refined_name,
                 "value": value,
@@ -4441,6 +4450,9 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
                     "candidate_id": f"cand-{block['block_id']}-{index}",
                     **obs,
                     "source_bank": obs.get("source_bank") or "phase0_extracted",
+                    "platform": obs.get("platform") or "",
+                    "query_geo_focus": obs.get("query_geo_focus") or "",
+                    "source_title": obs.get("source_title") or "",
                     "candidate_text": " ".join(
                         part
                         for part in (
@@ -4458,15 +4470,54 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
     numeric_rows = _ensure_unique_ids(numeric_rows, "observation_id")
     candidate_rows.extend(chunk_soft_candidates)
     candidate_rows = _ensure_unique_ids(candidate_rows, "candidate_id")
+    validated_candidates, rejected_candidates, boundary_validation_summary = validate_phase0_candidate_rows(
+        candidate_rows,
+        validation_cfg=dict(_phase0_required_section("boundary_validation")),
+    )
+    accepted_candidate_ids = {str(row.get("candidate_id") or "") for row in validated_candidates}
+    accepted_observation_ids = {
+        str(row.get("observation_id") or "")
+        for row in validated_candidates
+        if str(row.get("observation_id") or "")
+    }
+    numeric_rows = [row for row in numeric_rows if str(row.get("observation_id") or "") in accepted_observation_ids]
+    validated_chunk_soft_candidates = [
+        row for row in chunk_soft_candidates if str(row.get("candidate_id") or "") in accepted_candidate_ids
+    ]
+    family_candidate_banks, family_candidate_bank_manifest = build_phase0_family_candidate_banks(validated_candidates)
+    family_bank_dir = ensure_dir(extracted_dir / "candidate_banks")
+    family_bank_paths: dict[str, str] = {}
     _write_rows(extracted_dir / "numeric_observations.json", numeric_rows)
-    _write_rows(extracted_dir / "canonical_parameter_candidates.json", candidate_rows)
-    _write_rows(extracted_dir / "chunk_soft_candidates.json", chunk_soft_candidates)
+    _write_rows(extracted_dir / "canonical_parameter_candidates.json", validated_candidates)
+    _write_rows(extracted_dir / "chunk_soft_candidates.json", validated_chunk_soft_candidates)
+    _write_rows(extracted_dir / "rejected_canonical_parameter_candidates.json", rejected_candidates)
     write_json(extracted_dir / "canonicalization_summary.json", canonicalization_summary)
+    write_json(extracted_dir / "boundary_validation_report.json", boundary_validation_summary)
+    for family_name, family_rows in family_candidate_banks.items():
+        family_slug = re.sub(r"[^a-z0-9]+", "_", family_name.strip().lower()).strip("_")
+        family_path = family_bank_dir / f"candidate_bank_{family_slug}.json"
+        write_json(
+            family_path,
+            {
+                "payload_family": family_name,
+                "payload_schema_version": family_rows[0]["payload"].get("payload_schema_version") if family_rows else "",
+                "rows": family_rows,
+            },
+        )
+        family_bank_paths[family_name] = str(family_path)
+    write_json(
+        extracted_dir / "family_candidate_banks_manifest.json",
+        {
+            **family_candidate_bank_manifest,
+            "paths": family_bank_paths,
+        },
+    )
     _persist_duckdb(extracted_dir / "phase0.duckdb", "numeric_observations", numeric_rows)
-    _persist_duckdb(extracted_dir / "phase0.duckdb", "canonical_parameter_candidates", candidate_rows)
-    _persist_duckdb(extracted_dir / "phase0.duckdb", "chunk_soft_candidates", chunk_soft_candidates)
+    _persist_duckdb(extracted_dir / "phase0.duckdb", "canonical_parameter_candidates", validated_candidates)
+    _persist_duckdb(extracted_dir / "phase0.duckdb", "chunk_soft_candidates", validated_chunk_soft_candidates)
+    _persist_duckdb(extracted_dir / "phase0.duckdb", "rejected_canonical_parameter_candidates", rejected_candidates)
     tensor_artifacts = _phase0_alignment_bundle(
-        candidate_rows=candidate_rows,
+        candidate_rows=validated_candidates,
         source_rows=source_rows,
         plugin_id=plugin_id,
         artifact_dir=extracted_dir,
@@ -4483,7 +4534,10 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             "numeric_observations": str(extracted_dir / "numeric_observations.json"),
             "canonical_parameter_candidates": str(extracted_dir / "canonical_parameter_candidates.json"),
             "chunk_soft_candidates": str(extracted_dir / "chunk_soft_candidates.json"),
+            "rejected_canonical_parameter_candidates": str(extracted_dir / "rejected_canonical_parameter_candidates.json"),
             "canonicalization_summary": str(extracted_dir / "canonicalization_summary.json"),
+            "boundary_validation_report": str(extracted_dir / "boundary_validation_report.json"),
+            "family_candidate_banks_manifest": str(extracted_dir / "family_candidate_banks_manifest.json"),
             **{key: (value if isinstance(value, str) else value.get("value_path", "")) for key, value in tensor_artifacts.items()},
         },
         backend_status={
@@ -4492,8 +4546,13 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             "jax": Phase0BackendStatus("jax", backend_map["jax"].available, False, notes=backend_map["jax"].device),
         },
         numeric_observation_count=len(numeric_rows),
-        canonical_candidate_count=len(candidate_rows),
-        notes=[f"skip_live_normalizer:{skip_live_normalizer}", f"chunk_soft_candidates:{len(chunk_soft_candidates)}", "phase0_tensor_bundle:enabled"],
+        canonical_candidate_count=len(validated_candidates),
+        notes=[
+            f"skip_live_normalizer:{skip_live_normalizer}",
+            f"chunk_soft_candidates:{len(validated_chunk_soft_candidates)}",
+            f"candidate_rows_rejected:{len(rejected_candidates)}",
+            "phase0_tensor_bundle:enabled",
+        ],
     )
     write_json(extracted_dir / "phase0_manifest.json", manifest)
     ctx.record_stage_outputs(
@@ -4506,12 +4565,17 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             extracted_dir / "chunk_soft_candidates.json",
             _parquet_sidecar_path(extracted_dir / "chunk_soft_candidates.json"),
             extracted_dir / "canonicalization_summary.json",
+            extracted_dir / "rejected_canonical_parameter_candidates.json",
+            _parquet_sidecar_path(extracted_dir / "rejected_canonical_parameter_candidates.json"),
+            extracted_dir / "boundary_validation_report.json",
+            extracted_dir / "family_candidate_banks_manifest.json",
             extracted_dir / "aligned_tensor.npz",
             extracted_dir / "quality_weights.npz",
             extracted_dir / "semantic_scores.npz",
             extracted_dir / "mi_scores.npz",
             extracted_dir / "alignment_summary.json",
             extracted_dir / "phase0_manifest.json",
+            *[Path(path) for path in family_bank_paths.values()],
         ],
     )
     return manifest

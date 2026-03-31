@@ -476,6 +476,10 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     registry_path = ctx.run_dir / "registry" / "subparameter_registry.json"
     registry = read_json(registry_path, default={})
     subparameters = registry.get("subparameters", [])
+    source_registry_mode = "registry"
+    if not subparameters:
+        subparameters = read_json(ctx.run_dir / "phase0" / "extracted" / "canonical_parameter_candidates.json", default=[])
+        source_registry_mode = "phase0_candidates_fallback"
     alignment_summary = read_json(ctx.run_dir / "phase0" / "extracted" / "alignment_summary.json", default={})
     aligned_tensor = load_tensor_artifact(ctx.run_dir / "phase0" / "extracted" / "aligned_tensor.npz")
 
@@ -553,6 +557,12 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "pathway_family": pathway_family,
             "source_bank": row.get("source_bank") or "",
             "source_id": row.get("source_id") or "",
+            "signal_family": row.get("signal_family") or "",
+            "payload_family": row.get("payload_family") or "",
+            "geo_binding_class": row.get("geo_binding_class") or "",
+            "textual_signal_support_count": int(row.get("textual_signal_support_count") or 0),
+            "support_signal_count": int(row.get("support_signal_count") or 0),
+            "query_geo_focus": row.get("query_geo_focus") or "",
             "evidence_class": evidence_class,
             "evidence_weight": evidence_weight,
             "is_anchor_eligible": bool(row.get("is_anchor_eligible")),
@@ -707,6 +717,7 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         "missing_mask_fraction": round(float(1.0 - missing_mask.mean()), 6) if missing_mask.size else 0.0,
         "denominator_map": denominator_map,
         "preprocess_meta": preprocess_meta,
+        "source_registry_mode": source_registry_mode,
     }
 
     backend_map = detect_backends()
@@ -796,10 +807,10 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, backend_map["torch"].selected, notes=backend_map["torch"].device),
             "jax": Phase0BackendStatus("jax", backend_map["jax"].available, False, notes=backend_map["jax"].device),
         },
-        source_count=registry.get("subparameter_count", 0),
+        source_count=int(registry.get("subparameter_count", 0) or len(subparameters)),
         canonical_candidate_count=len(normalized_rows),
         numeric_observation_count=len(tensor_rows),
-        notes=["phase1_preprocessing:robust_tensor_scaling"],
+        notes=["phase1_preprocessing:robust_tensor_scaling", f"source_registry_mode:{source_registry_mode}"],
     ).to_dict()
     manifest["profile_id"] = profile
     truth_paths = write_ground_truth_package(

@@ -1232,13 +1232,89 @@ def run_phase3_build(
             plugin_id=plugin_id,
             profile_id=profile,
             requested_inference_family=inference_family,
-        )
+    )
     return _run_phase3_build_legacy(
         run_id=run_id,
         plugin_id=plugin_id,
         top_k_per_block=top_k_per_block,
         inference_family=inference_family,
     )
+
+
+def _prepare_frozen_backtest_inputs(
+    *,
+    run_id: str,
+    plugin_id: str,
+    train_years: list[int] | None,
+    holdout_years: list[int] | None,
+) -> dict[str, Any]:
+    run_harp_archive_build(run_id=run_id, plugin_id=plugin_id)
+    ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
+    archive_dir = ctx.run_dir / "harp_archive"
+    archive_spec = read_json(archive_dir / "frozen_backtest_spec.json", default={})
+    archive_panel = read_json(archive_dir / "historical_harp_panel.json", default={})
+    observed_program_panel = read_json(archive_dir / "observed_program_panel.json", default={})
+    if not archive_spec.get("ready_for_model_backtest"):
+        raise RuntimeError("historical HARP archive is not ready for a frozen Phase 3 backtest")
+
+    resolved_train_years = [int(year) for year in (train_years or archive_spec.get("train_years") or [])]
+    resolved_holdout_years = [int(year) for year in (holdout_years or archive_spec.get("holdout_years") or [])]
+    if not resolved_train_years or not resolved_holdout_years:
+        raise RuntimeError("frozen Phase 3 backtest requires non-empty train and holdout years")
+
+    axis_catalogs = read_json(ctx.run_dir / "phase1" / "axis_catalogs.json", default={})
+    normalized_rows = read_json(ctx.run_dir / "phase1" / "normalized_subparameters.json", default=[])
+    parameter_catalog = read_json(ctx.run_dir / "phase1" / "parameter_catalog.json", default=[])
+    standardized_tensor = load_tensor_artifact(ctx.run_dir / "phase1" / "standardized_tensor.npz")
+    full_month_axis = list(axis_catalogs.get("month", []))
+    if not full_month_axis:
+        raise RuntimeError("phase1 month axis is missing; cannot run frozen Phase 3 backtest")
+    month_indices = _month_indices_through_year(full_month_axis, max(resolved_train_years))
+    if not month_indices:
+        raise RuntimeError("no phase1 months were retained after applying the frozen-history training cutoff")
+    filtered_month_axis = [full_month_axis[idx] for idx in month_indices]
+    filtered_axis_catalogs = dict(axis_catalogs)
+    filtered_axis_catalogs["month"] = filtered_month_axis
+    filtered_rows = _filter_rows_through_year(normalized_rows, max(resolved_train_years))
+    filtered_tensor = np.asarray(standardized_tensor[:, month_indices, :], dtype=np.float32)
+
+    panel_rows = list(archive_panel.get("rows") or [])
+    point_month_lookup = _archive_point_month_lookup(list(observed_program_panel.get("rows") or []))
+    train_harp_points = _archive_points_from_panel_rows(panel_rows, resolved_train_years, full_month_axis, point_month_lookup=point_month_lookup)
+    holdout_harp_points = _archive_points_from_panel_rows(panel_rows, resolved_holdout_years, full_month_axis, point_month_lookup=point_month_lookup)
+    if not train_harp_points or not holdout_harp_points:
+        raise RuntimeError("historical HARP panel does not contain complete train/holdout program snapshots")
+    official_points = [
+        dict(point)
+        for point in OFFICIAL_REFERENCE_POINTS
+        if (_month_year(str(point.get("month") or "")) or 0) <= max(resolved_train_years)
+    ]
+    train_last_model_month = filtered_month_axis[-1]
+    holdout_eval_months = [str(point.get("month") or _latest_month_for_year(full_month_axis, int(point.get("year") or 0))) for point in holdout_harp_points]
+    last_train_ordinal = _month_ordinal(train_last_model_month)
+    holdout_ordinals = [_month_ordinal(month) for month in holdout_eval_months if _month_ordinal(month) is not None]
+    forecast_horizon = 1
+    if last_train_ordinal is not None and holdout_ordinals:
+        forecast_horizon = max(max(holdout_ordinals) - last_train_ordinal, 1)
+    backtest_config = {
+        "mode": "frozen_history",
+        "train_years": resolved_train_years,
+        "holdout_years": resolved_holdout_years,
+        "train_last_model_month": train_last_model_month,
+        "holdout_eval_months": holdout_eval_months,
+        "forecast_horizon": forecast_horizon,
+        "train_harp_points": train_harp_points,
+        "holdout_harp_points": holdout_harp_points,
+    }
+    return {
+        "ctx": ctx,
+        "filtered_axis_catalogs": filtered_axis_catalogs,
+        "filtered_rows": filtered_rows,
+        "parameter_catalog": parameter_catalog,
+        "filtered_tensor": filtered_tensor,
+        "official_points": official_points,
+        "backtest_config": backtest_config,
+    }
 
 
 def run_phase3_frozen_backtest(
@@ -1252,77 +1328,24 @@ def run_phase3_frozen_backtest(
 ) -> dict[str, Any]:
     if profile not in {RESCUE_PROFILE_ID, RESCUE_V2_PROFILE_ID}:
         raise ValueError("phase3 frozen backtest is only implemented for hiv rescue profiles")
-    run_harp_archive_build(run_id=run_id, plugin_id=plugin_id)
-    ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
-    archive_dir = ctx.run_dir / "harp_archive"
-    archive_spec = read_json(archive_dir / "frozen_backtest_spec.json", default={})
-    archive_panel = read_json(archive_dir / "historical_harp_panel.json", default={})
-    observed_program_panel = read_json(archive_dir / "observed_program_panel.json", default={})
-    if not archive_spec.get("ready_for_model_backtest"):
-        raise RuntimeError("historical HARP archive is not ready for a frozen Phase 3 backtest")
-
-    train_years = [int(year) for year in (train_years or archive_spec.get("train_years") or [])]
-    holdout_years = [int(year) for year in (holdout_years or archive_spec.get("holdout_years") or [])]
-    if not train_years or not holdout_years:
-        raise RuntimeError("frozen Phase 3 backtest requires non-empty train and holdout years")
-
-    axis_catalogs = read_json(ctx.run_dir / "phase1" / "axis_catalogs.json", default={})
-    normalized_rows = read_json(ctx.run_dir / "phase1" / "normalized_subparameters.json", default=[])
-    parameter_catalog = read_json(ctx.run_dir / "phase1" / "parameter_catalog.json", default=[])
-    standardized_tensor = load_tensor_artifact(ctx.run_dir / "phase1" / "standardized_tensor.npz")
-
-    full_month_axis = list(axis_catalogs.get("month", []))
-    if not full_month_axis:
-        raise RuntimeError("phase1 month axis is missing; cannot run frozen Phase 3 backtest")
-    month_indices = _month_indices_through_year(full_month_axis, max(train_years))
-    if not month_indices:
-        raise RuntimeError("no phase1 months were retained after applying the frozen-history training cutoff")
-    filtered_month_axis = [full_month_axis[idx] for idx in month_indices]
-    filtered_axis_catalogs = dict(axis_catalogs)
-    filtered_axis_catalogs["month"] = filtered_month_axis
-    filtered_rows = _filter_rows_through_year(normalized_rows, max(train_years))
-    filtered_tensor = np.asarray(standardized_tensor[:, month_indices, :], dtype=np.float32)
-
-    panel_rows = list(archive_panel.get("rows") or [])
-    point_month_lookup = _archive_point_month_lookup(list(observed_program_panel.get("rows") or []))
-    train_harp_points = _archive_points_from_panel_rows(panel_rows, train_years, full_month_axis, point_month_lookup=point_month_lookup)
-    holdout_harp_points = _archive_points_from_panel_rows(panel_rows, holdout_years, full_month_axis, point_month_lookup=point_month_lookup)
-    if not train_harp_points or not holdout_harp_points:
-        raise RuntimeError("historical HARP panel does not contain complete train/holdout program snapshots")
-    official_points = [
-        dict(point)
-        for point in OFFICIAL_REFERENCE_POINTS
-        if (_month_year(str(point.get("month") or "")) or 0) <= max(train_years)
-    ]
-    train_last_model_month = filtered_month_axis[-1]
-    holdout_eval_months = [str(point.get("month") or _latest_month_for_year(full_month_axis, int(point.get("year") or 0))) for point in holdout_harp_points]
-    last_train_ordinal = _month_ordinal(train_last_model_month)
-    holdout_ordinals = [_month_ordinal(month) for month in holdout_eval_months if _month_ordinal(month) is not None]
-    forecast_horizon = 1
-    if last_train_ordinal is not None and holdout_ordinals:
-        forecast_horizon = max(max(holdout_ordinals) - last_train_ordinal, 1)
-    backtest_config = {
-        "mode": "frozen_history",
-        "train_years": train_years,
-        "holdout_years": holdout_years,
-        "train_last_model_month": train_last_model_month,
-        "holdout_eval_months": holdout_eval_months,
-        "forecast_horizon": forecast_horizon,
-        "train_harp_points": train_harp_points,
-        "holdout_harp_points": holdout_harp_points,
-    }
+    prepared = _prepare_frozen_backtest_inputs(
+        run_id=run_id,
+        plugin_id=plugin_id,
+        train_years=train_years,
+        holdout_years=holdout_years,
+    )
     manifest = run_phase3_rescue_core(
         run_id=run_id,
         plugin_id=plugin_id,
         profile_id=profile,
         requested_inference_family=inference_family,
         phase_dir_name="phase3_frozen_backtest",
-        axis_catalogs_override=filtered_axis_catalogs,
-        normalized_rows_override=filtered_rows,
-        parameter_catalog_override=parameter_catalog,
-        standardized_tensor_override=filtered_tensor,
-        reference_overrides={"official_points": official_points, "harp_points": train_harp_points},
-        backtest_config=backtest_config,
+        axis_catalogs_override=prepared["filtered_axis_catalogs"],
+        normalized_rows_override=prepared["filtered_rows"],
+        parameter_catalog_override=prepared["parameter_catalog"],
+        standardized_tensor_override=prepared["filtered_tensor"],
+        reference_overrides={"official_points": prepared["official_points"], "harp_points": prepared["backtest_config"]["train_harp_points"]},
+        backtest_config=prepared["backtest_config"],
     )
     _require_requested_inference_family(manifest, inference_family, context="phase3 frozen backtest")
     return manifest
@@ -1449,6 +1472,117 @@ def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any], round_index: 
             "fit_steps": int(rules["adaptive_fit_steps"]),
         },
     ]
+
+
+def _smape_value(predicted: float, observed: float, *, eps: float) -> float:
+    denom = max((abs(float(predicted)) + abs(float(observed))) / 2.0, float(eps))
+    return abs(float(predicted) - float(observed)) / denom
+
+
+def _holdout_reference_smape(holdout_reference_check: dict[str, Any], *, eps: float) -> float:
+    rows = list(holdout_reference_check.get("comparisons") or [])
+    values: list[float] = []
+    for row in rows:
+        model = dict(row.get("model") or {})
+        reference = dict(row.get("reference") or {})
+        for metric_name, observed in reference.items():
+            if metric_name not in model:
+                continue
+            values.append(_smape_value(float(model[metric_name]), float(observed), eps=eps))
+    return round(float(np.mean(values)) if values else 0.0, 6)
+
+
+def run_phase3_frozen_backtest_tournament(
+    *,
+    run_id: str,
+    plugin_id: str,
+    profile: str = RESCUE_V2_PROFILE_ID,
+    inference_family: str = RESCUE_INFERENCE_FAMILY,
+    train_years: list[int] | None = None,
+    holdout_years: list[int] | None = None,
+) -> dict[str, Any]:
+    if profile not in {RESCUE_PROFILE_ID, RESCUE_V2_PROFILE_ID}:
+        raise ValueError("phase3 frozen backtest tournament is only implemented for hiv rescue profiles")
+    prepared = _prepare_frozen_backtest_inputs(
+        run_id=run_id,
+        plugin_id=plugin_id,
+        train_years=train_years,
+        holdout_years=holdout_years,
+    )
+    tournament_cfg = dict(_phase3_required_frozen_section("representation_tournament"))
+    representations = [str(item) for item in list(tournament_cfg.get("modes") or [])]
+    smape_eps = float(tournament_cfg["smape_eps"])
+    ctx = prepared["ctx"]
+    tournament_dir = ensure_dir(ctx.run_dir / "phase3_frozen_backtest_tournament")
+
+    trial_rows: list[dict[str, Any]] = []
+    for representation in representations:
+        phase_dir_name = f"phase3_frozen_backtest_{representation}"
+        manifest = run_phase3_rescue_core(
+            run_id=run_id,
+            plugin_id=plugin_id,
+            profile_id=profile,
+            requested_inference_family=inference_family,
+            phase_dir_name=phase_dir_name,
+            axis_catalogs_override=prepared["filtered_axis_catalogs"],
+            normalized_rows_override=prepared["filtered_rows"],
+            parameter_catalog_override=prepared["parameter_catalog"],
+            standardized_tensor_override=prepared["filtered_tensor"],
+            reference_overrides={"official_points": prepared["official_points"], "harp_points": prepared["backtest_config"]["train_harp_points"]},
+            backtest_config=prepared["backtest_config"],
+            modifier_representation=representation,
+        )
+        fit_artifact = _require_requested_inference_family(
+            manifest,
+            inference_family,
+            context=f"phase3 frozen backtest tournament [{representation}]",
+        )
+        evaluation = read_json(Path(manifest["artifact_paths"]["frozen_history_backtest_evaluation"]), default={})
+        evaluation_summary = dict(evaluation.get("summary") or {})
+        holdout_reference_check = dict(evaluation.get("holdout_reference_check") or {})
+        trial_rows.append(
+            {
+                "representation": representation,
+                "modifier_representation": fit_artifact.get("modifier_representation"),
+                "phase_dir_name": phase_dir_name,
+                "model_mean_absolute_error": float(evaluation_summary.get("model_mean_absolute_error", 0.0)),
+                "model_smape": _holdout_reference_smape(holdout_reference_check, eps=smape_eps),
+                "carry_forward_mean_absolute_error": float(evaluation_summary.get("carry_forward_mean_absolute_error", 0.0)),
+                "model_beats_carry_forward": bool(evaluation_summary.get("model_beats_carry_forward")),
+                "comparison_count": int(evaluation_summary.get("comparison_count", 0)),
+                "artifact_paths": dict(manifest.get("artifact_paths", {})),
+            }
+        )
+
+    ranking = sorted(
+        trial_rows,
+        key=lambda row: (
+            0 if bool(row.get("model_beats_carry_forward")) else 1,
+            float(row.get("model_mean_absolute_error", 0.0)),
+            float(row.get("model_smape", 0.0)),
+            str(row.get("representation") or ""),
+        ),
+    )
+    winner = dict(ranking[0]) if ranking else {}
+    summary = {
+        "profile": profile,
+        "inference_family": inference_family,
+        "train_years": list(prepared["backtest_config"].get("train_years") or []),
+        "holdout_years": list(prepared["backtest_config"].get("holdout_years") or []),
+        "ranking_strategy": str(tournament_cfg.get("ranking_strategy") or "mae_then_smape"),
+        "representation_count": len(trial_rows),
+        "winner_representation": winner.get("representation"),
+        "winner_model_mean_absolute_error": winner.get("model_mean_absolute_error"),
+        "winner_model_smape": winner.get("model_smape"),
+        "winner_beats_carry_forward": winner.get("model_beats_carry_forward"),
+    }
+    payload = {
+        "summary": summary,
+        "trial_rows": ranking,
+    }
+    write_json(tournament_dir / "representation_tournament.json", payload)
+    write_json(tournament_dir / "representation_tournament_summary.json", summary)
+    return payload
 
 
 def run_phase3_frozen_backtest_tuning(

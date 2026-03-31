@@ -13,8 +13,182 @@ def _historical_record(*, title: str, url: str, year: int | None, document_type:
     }
 
 
+def _literature_adapter(
+    *,
+    adapter_id: str,
+    source_name: str,
+    organization: str,
+    platform: str,
+    landing_url: str,
+    seed_queries: list[str],
+    determinant_silos: list[str],
+    preferred_file_patterns: list[str],
+    fallback_urls: list[str],
+    historical_records: list[dict[str, object]],
+    notes: list[str],
+) -> StructuredSourceAdapterSpec:
+    return StructuredSourceAdapterSpec(
+        adapter_id=adapter_id,
+        source_name=source_name,
+        organization=organization,
+        source_tier="tier2_scientific_literature",
+        access_mode="public_literature_index_api",
+        spatial_resolution="study_specific",
+        temporal_resolution="publication_year",
+        landing_url=landing_url,
+        determinant_silos=determinant_silos,
+        promotion_track="supporting_context",
+        platform=platform,
+        seed_queries=seed_queries,
+        preferred_file_patterns=preferred_file_patterns,
+        fallback_urls=fallback_urls,
+        historical_records=historical_records,
+        notes=notes,
+    )
+
+
 def _hiv_structured_source_adapters() -> list[StructuredSourceAdapterSpec]:
     return [
+        _literature_adapter(
+            adapter_id="pubmed_literature",
+            source_name="PubMed HIV and Determinant Literature",
+            organization="US National Library of Medicine",
+            platform="pubmed",
+            landing_url="https://pubmed.ncbi.nlm.nih.gov/",
+            seed_queries=[
+                "HIV Philippines care cascade PubMed",
+                "HIV stigma testing uptake logistics Philippines PubMed",
+                "mobility network mixing HIV treatment continuity PubMed",
+            ],
+            determinant_silos=["testing_uptake", "linkage_to_care", "retention_adherence", "suppression_outcomes", "mobility_network_mixing"],
+            preferred_file_patterns=["*pubmed*", "*pmid*", "*full*text*", "*journal*article*"],
+            fallback_urls=["https://pmc.ncbi.nlm.nih.gov/", "https://pubmed.ncbi.nlm.nih.gov/"],
+            historical_records=[
+                _historical_record(title="PubMed HIV determinant collector 2010", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+Philippines", year=2010, document_type="literature_index_search"),
+                _historical_record(title="PubMed HIV determinant collector 2015", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+stigma+testing+Philippines", year=2015, document_type="literature_index_search"),
+                _historical_record(title="PubMed HIV determinant collector 2020", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+mobility+retention+Philippines", year=2020, document_type="literature_index_search"),
+                _historical_record(title="PubMed HIV determinant collector 2024", url="https://pubmed.ncbi.nlm.nih.gov/?term=HIV+suppression+logistics+Philippines", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Treat as a primary biomedical and public-health literature index for the evidence-mining layer.",
+                "PubMed is not itself a truth source; extracted signals remain weighted by study design and provenance.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="arxiv_literature",
+            source_name="arXiv Modeling and Network Literature",
+            organization="Cornell arXiv",
+            platform="arxiv",
+            landing_url="https://arxiv.org/",
+            seed_queries=[
+                "epidemic modeling mobility networks arXiv",
+                "statistical physics contagion social behavior arXiv",
+                "population dynamics health systems modeling arXiv",
+            ],
+            determinant_silos=["mobility_network_mixing", "collective_risk_behavior", "transport_friction", "health_system_reach"],
+            preferred_file_patterns=["*arxiv*", "*pdf*", "*preprint*"],
+            fallback_urls=["https://export.arxiv.org/"],
+            historical_records=[
+                _historical_record(title="arXiv mobility and epidemic modeling collector 2010", url="https://arxiv.org/search/?query=epidemic+mobility+modeling", year=2010, document_type="literature_index_search"),
+                _historical_record(title="arXiv contagion and social behavior collector 2016", url="https://arxiv.org/search/?query=contagion+social+behavior", year=2016, document_type="literature_index_search"),
+                _historical_record(title="arXiv health-system network collector 2022", url="https://arxiv.org/search/?query=health+systems+network+modeling", year=2022, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use arXiv for methods, mobility, network, and statistical-physics literature that may not be indexed in PubMed.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="biorxiv_literature",
+            source_name="bioRxiv HIV Biology and Progression Literature",
+            organization="Cold Spring Harbor Laboratory",
+            platform="biorxiv",
+            landing_url="https://www.biorxiv.org/",
+            seed_queries=[
+                "immune response antiviral compounds bioRxiv",
+                "CD4 viral reservoir progression bioRxiv",
+                "drug resistance long acting therapeutics bioRxiv",
+            ],
+            determinant_silos=["suppression_outcomes", "retention_adherence", "health_system_reach"],
+            preferred_file_patterns=["*biorxiv*", "*preprint*", "*pdf*"],
+            fallback_urls=["https://connect.biorxiv.org/relate/content/181"],
+            historical_records=[
+                _historical_record(title="bioRxiv HIV progression collector 2015", url="https://www.biorxiv.org/search/hiv", year=2015, document_type="literature_index_search"),
+                _historical_record(title="bioRxiv HIV suppression collector 2020", url="https://www.biorxiv.org/search/viral%20suppression", year=2020, document_type="literature_index_search"),
+                _historical_record(title="bioRxiv HIV resistance collector 2024", url="https://www.biorxiv.org/search/drug%20resistance%20hiv", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use bioRxiv for biology-heavy and preclinical signals that can inform progression or suppression context.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="openalex_literature",
+            source_name="OpenAlex Literature Index",
+            organization="OpenAlex",
+            platform="openalex",
+            landing_url="https://openalex.org/",
+            seed_queries=[
+                "HIV Philippines economics stigma logistics OpenAlex",
+                "population dynamics transport access health OpenAlex",
+                "Philippines HIV care cascade determinants OpenAlex",
+            ],
+            determinant_silos=["poverty", "transport_friction", "collective_risk_behavior", "mobility_network_mixing", "health_system_reach"],
+            preferred_file_patterns=["*openalex*", "*works*", "*doi*"],
+            fallback_urls=["https://api.openalex.org/"],
+            historical_records=[
+                _historical_record(title="OpenAlex HIV determinants collector 2010", url="https://api.openalex.org/works?search=HIV+Philippines", year=2010, document_type="literature_index_search"),
+                _historical_record(title="OpenAlex logistics and stigma collector 2018", url="https://api.openalex.org/works?search=HIV+logistics+stigma+Philippines", year=2018, document_type="literature_index_search"),
+                _historical_record(title="OpenAlex mobility and care continuity collector 2024", url="https://api.openalex.org/works?search=HIV+mobility+care+continuity", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use OpenAlex as the broadest literature-discovery layer to complement PubMed and Crossref.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="crossref_literature",
+            source_name="Crossref Literature Index",
+            organization="Crossref",
+            platform="crossref",
+            landing_url="https://search.crossref.org/",
+            seed_queries=[
+                "HIV Philippines care cascade Crossref",
+                "health system reach linkage to care HIV Crossref",
+                "Philippines transport stigma HIV Crossref",
+            ],
+            determinant_silos=["testing_uptake", "linkage_to_care", "transport_friction", "policy_implementation_weakness"],
+            preferred_file_patterns=["*crossref*", "*doi*", "*journal*article*"],
+            fallback_urls=["https://api.crossref.org/works"],
+            historical_records=[
+                _historical_record(title="Crossref HIV cascade collector 2010", url="https://api.crossref.org/works?query=HIV+Philippines", year=2010, document_type="literature_index_search"),
+                _historical_record(title="Crossref linkage and care collector 2017", url="https://api.crossref.org/works?query=HIV+linkage+care+Philippines", year=2017, document_type="literature_index_search"),
+                _historical_record(title="Crossref transport and stigma collector 2024", url="https://api.crossref.org/works?query=HIV+transport+stigma+Philippines", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use Crossref as a DOI-first literature expander and metadata repair layer.",
+            ],
+        ),
+        _literature_adapter(
+            adapter_id="semantic_scholar_literature",
+            source_name="Semantic Scholar Literature Index",
+            organization="Semantic Scholar",
+            platform="semanticscholar",
+            landing_url="https://www.semanticscholar.org/",
+            seed_queries=[
+                "HIV biology economics logistics policy Semantic Scholar",
+                "migration behavior disease dynamics Semantic Scholar",
+                "Philippines HIV suppression determinants Semantic Scholar",
+            ],
+            determinant_silos=["suppression_outcomes", "mobility_network_mixing", "cash_instability", "policy_implementation_weakness"],
+            preferred_file_patterns=["*semantic*scholar*", "*corpusid*", "*pdf*"],
+            fallback_urls=["https://api.semanticscholar.org/graph/v1/paper/search"],
+            historical_records=[
+                _historical_record(title="Semantic Scholar HIV determinants collector 2012", url="https://api.semanticscholar.org/graph/v1/paper/search?query=HIV+Philippines", year=2012, document_type="literature_index_search"),
+                _historical_record(title="Semantic Scholar migration and behavior collector 2019", url="https://api.semanticscholar.org/graph/v1/paper/search?query=migration+behavior+disease+dynamics", year=2019, document_type="literature_index_search"),
+                _historical_record(title="Semantic Scholar suppression and logistics collector 2024", url="https://api.semanticscholar.org/graph/v1/paper/search?query=HIV+suppression+logistics", year=2024, document_type="literature_index_search"),
+            ],
+            notes=[
+                "Use Semantic Scholar as a broad literature-recall layer with strong cross-disciplinary coverage.",
+            ],
+        ),
         StructuredSourceAdapterSpec(
             adapter_id="ndhs",
             source_name="National Demographic and Health Survey",

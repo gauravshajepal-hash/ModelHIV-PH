@@ -8,6 +8,7 @@ import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.phase3.pipeline import (
+    _holdout_reference_smape,
     _adaptive_frozen_tuning_candidates,
     _posterior_draws,
     _require_requested_inference_family,
@@ -65,6 +66,10 @@ def test_phase3_prior_hyperparameters_are_declared_in_plugin_contract() -> None:
     assert frozen_cfg.get("fallback_posterior", {}).get("duration_mean") is not None
     assert frozen_cfg.get("evolution", {}).get("transition_floor") is not None
     assert frozen_cfg.get("baseline_family", {}).get("arima_order") is not None
+    assert frozen_cfg.get("representation_tournament", {}).get("modes") is not None
+    assert {"clumped_baseline", "clumped_optimized", "hybrid_baseline", "hybrid_optimized"}.issubset(
+        set(frozen_cfg.get("representation_tournament", {}).get("modes") or [])
+    )
     assert frozen_cfg.get("legacy_selection", {}).get("mass_error_tolerance") is not None
     assert frozen_cfg.get("tuning", {}).get("adaptive_rules", {}).get("final_fit_steps") is not None
     assert any(
@@ -148,6 +153,7 @@ def test_phase3_rescue_v1_truth_artifacts(rescue_v1_run_dir) -> None:
 
     assert spec.get("state_catalog") == ["U", "D", "A", "V", "L"]
     assert fit_artifact.get("phase4_ready") is False
+    assert fit_artifact.get("modifier_representation") == "unclumped"
     assert "harp_program_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "linkage_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "suppression_penalty" in fit_artifact.get("loss_breakdown", {})
@@ -198,6 +204,7 @@ def test_phase3_rescue_v2_factor_and_metapop_contract(rescue_v2_run_dir) -> None
     subgroup_summary = read_json(rescue_v2_run_dir / "phase3" / "subgroup_weight_summary.json", default={})
 
     assert fit_artifact.get("profile_id") == "hiv_rescue_v2"
+    assert fit_artifact.get("modifier_representation") == "clumped"
     assert "harp_program_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "linkage_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "suppression_penalty" in fit_artifact.get("loss_breakdown", {})
@@ -260,6 +267,25 @@ def test_phase3_frozen_history_backtest_contract(rescue_v2_backtest_run_dir) -> 
     assert np.isfinite(forecast_states).all()
     assert state_estimates.shape[-1] == 5
     assert forecast_states.shape[-1] == 5
+
+
+def test_phase3_holdout_smape_summary_computes_expected_value() -> None:
+    holdout_reference_check = {
+        "comparisons": [
+            {
+                "model": {"diagnosed_stock": 0.60, "art_stock": 0.40},
+                "reference": {"diagnosed_stock": 0.50, "art_stock": 0.50},
+            }
+        ]
+    }
+
+    smape = _holdout_reference_smape(holdout_reference_check, eps=1e-6)
+
+    expected = (
+        abs(0.60 - 0.50) / (((abs(0.60) + abs(0.50)) / 2.0))
+        + abs(0.40 - 0.50) / (((abs(0.40) + abs(0.50)) / 2.0))
+    ) / 2.0
+    assert math.isclose(smape, round(expected, 6), rel_tol=1e-6, abs_tol=1e-6)
 
 
 def test_phase3_jax_svi_contract(rescue_v1_jax_run_dir) -> None:

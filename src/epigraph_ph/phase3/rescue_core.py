@@ -2087,11 +2087,25 @@ def _build_mesoscopic_modifier_covariates(
     *,
     run_dir: Any,
     observation_targets: dict[str, np.ndarray],
+    selection_variant: str = "phase2_active",
 ) -> tuple[np.ndarray, dict[str, Any]]:
     base = _build_covariates(observation_targets)
     factor_catalog = read_json(run_dir / "phase15" / "mesoscopic_factor_catalog.json", default=[])
-    promoted = read_json(run_dir / "phase2" / "promoted_factor_set.json", default=[])
-    supporting = read_json(run_dir / "phase2" / "supporting_factor_set.json", default=[])
+    if selection_variant == "phase15_baseline":
+        pool_rows = read_json(run_dir / "phase15" / "factor_survival_pool_baseline.json", default=[])
+        promoted = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_primary"]
+        supporting = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_secondary"]
+    elif selection_variant == "phase15_optimized":
+        pool_rows = read_json(run_dir / "phase15" / "factor_survival_pool_optimized.json", default=[])
+        promoted = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_primary"]
+        supporting = [dict(row) for row in pool_rows if str(row.get("promotion_class") or "") == "survivor_secondary"]
+    else:
+        promoted = read_json(run_dir / "phase2" / "retained_predictive_factor_set.json", default=[])
+        if not promoted:
+            promoted = read_json(run_dir / "phase2" / "promoted_factor_set.json", default=[])
+        supporting = read_json(run_dir / "phase2" / "retained_context_factor_set.json", default=[])
+        if not supporting:
+            supporting = read_json(run_dir / "phase2" / "supporting_factor_set.json", default=[])
     factor_tensor_path = run_dir / "phase15" / "mesoscopic_factor_tensor.npz"
     if not factor_catalog or not factor_tensor_path.exists():
         return base, {
@@ -2100,6 +2114,7 @@ def _build_mesoscopic_modifier_covariates(
             "transition_hook_masks": [[1.0, 0.4, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.5, 0.5], [0.0, 0.0, 1.0, 0.5, 0.0]],
             "coupling_covariate_names": [],
             "network_family_indices": {},
+            "selection_variant": selection_variant,
         }
 
     factor_tensor = load_tensor_artifact(factor_tensor_path).astype(np.float32)
@@ -2153,6 +2168,7 @@ def _build_mesoscopic_modifier_covariates(
                 "transition_hooks": hooks,
                 "network_feature_family": row.get("network_feature_family", ""),
                 "diagnostic_score": row.get("diagnostic_score", 0.0),
+                "selection_variant": selection_variant,
             }
         )
         if row.get("network_feature_family") in {"reaction_diffusion", "information_propagation"} or "subgroup_allocation_priors" in hooks:
@@ -2168,7 +2184,167 @@ def _build_mesoscopic_modifier_covariates(
         "coupling_covariate_names": coupling_names,
         "network_family_indices": {key: value for key, value in network_family_indices.items()},
         "alignment_notes": alignment_notes,
+        "selection_variant": selection_variant,
     }
+
+
+def _resolve_modifier_representation(profile_id: str, requested_representation: str | None) -> str:
+    requested = str(requested_representation or "").strip().lower()
+    if requested in {"unclumped", "clumped", "hybrid", "clumped_baseline", "clumped_optimized", "hybrid_baseline", "hybrid_optimized"}:
+        return requested
+    return "clumped" if profile_id == RESCUE_V2_PROFILE_ID else "unclumped"
+
+
+def _build_hybrid_modifier_covariates(
+    *,
+    run_dir: Any,
+    observation_targets: dict[str, np.ndarray],
+    standardized_tensor: np.ndarray,
+    canonical_axis: list[str],
+    candidate_profiles: list[dict[str, Any]],
+    mesoscopic_selection_variant: str = "phase2_active",
+) -> tuple[np.ndarray, dict[str, Any]]:
+    raw_covariates, raw_meta = _build_modifier_covariates(
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+    )
+    meso_covariates, meso_meta = _build_mesoscopic_modifier_covariates(
+        run_dir=run_dir,
+        observation_targets=observation_targets,
+        selection_variant=mesoscopic_selection_variant,
+    )
+    if raw_covariates.shape[:2] != meso_covariates.shape[:2]:
+        return raw_covariates, raw_meta | {"representation_mode": "hybrid_fallback_unclumped", "alignment_notes": ["hybrid_shape_mismatch"]}
+
+    combined_parts = [raw_covariates[:, :, :3]]
+    combined_names = list(raw_meta.get("covariate_names", [])[:3])
+    combined_masks = list(raw_meta.get("transition_hook_masks", [])[:3])
+    combined_selected = []
+    coupling_names: list[str] = []
+    network_family_indices: dict[str, list[int]] = defaultdict(list)
+    alignment_notes = list(raw_meta.get("alignment_notes", []) or []) + list(meso_meta.get("alignment_notes", []) or [])
+    seen_names = set(combined_names)
+
+    def _append_sources(
+        covariates: np.ndarray,
+        meta: dict[str, Any],
+        *,
+        prefix: str,
+    ) -> None:
+        nonlocal combined_parts, combined_names, combined_masks, combined_selected, coupling_names, network_family_indices
+        source_names = list(meta.get("covariate_names", []))
+        source_masks = list(meta.get("transition_hook_masks", []))
+        selected_rows = list(meta.get("selected_determinant_modifiers", []))
+        source_couplings = set(str(name) for name in list(meta.get("coupling_covariate_names", [])))
+        source_network_indices = {
+            str(key): [int(value) for value in list(values)]
+            for key, values in dict(meta.get("network_family_indices", {}) or {}).items()
+        }
+        for local_idx in range(3, covariates.shape[-1]):
+            source_name = source_names[local_idx] if local_idx < len(source_names) else f"{prefix}::{local_idx}"
+            renamed = f"{prefix}::{source_name}"
+            if renamed in seen_names:
+                continue
+            seen_names.add(renamed)
+            combined_parts.append(covariates[:, :, local_idx : local_idx + 1].astype(np.float32))
+            combined_names.append(renamed)
+            combined_masks.append(source_masks[local_idx] if local_idx < len(source_masks) else _transition_hook_mask(["diagnosis_transitions"]))
+            if source_name in source_couplings:
+                coupling_names.append(renamed)
+            combined_idx = len(combined_names) - 1
+            for family_name, family_indices in source_network_indices.items():
+                if local_idx in family_indices:
+                    network_family_indices[family_name].append(combined_idx)
+            selected_idx = local_idx - 3
+            if 0 <= selected_idx < len(selected_rows):
+                selected_row = dict(selected_rows[selected_idx])
+                selected_row["representation_source"] = prefix
+                selected_row["covariate_name"] = renamed
+                combined_selected.append(selected_row)
+
+    _append_sources(raw_covariates, raw_meta, prefix="unclumped")
+    _append_sources(meso_covariates, meso_meta, prefix="clumped")
+    covariates = np.concatenate(combined_parts, axis=-1).astype(np.float32)
+    return covariates, {
+        "selected_determinant_modifiers": combined_selected,
+        "covariate_names": combined_names,
+        "transition_hook_masks": combined_masks,
+        "coupling_covariate_names": coupling_names,
+        "network_family_indices": {key: value for key, value in network_family_indices.items()},
+        "alignment_notes": alignment_notes,
+        "selection_variant": mesoscopic_selection_variant,
+        "representation_mode": "hybrid",
+    }
+
+
+def _build_representation_modifier_covariates(
+    *,
+    run_dir: Any,
+    profile_id: str,
+    observation_targets: dict[str, np.ndarray],
+    standardized_tensor: np.ndarray,
+    canonical_axis: list[str],
+    candidate_profiles: list[dict[str, Any]],
+    modifier_representation: str | None,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    resolved = _resolve_modifier_representation(profile_id, modifier_representation)
+    if resolved == "unclumped":
+        covariates, meta = _build_modifier_covariates(
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+        )
+    elif resolved == "hybrid":
+        covariates, meta = _build_hybrid_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+            mesoscopic_selection_variant="phase2_active",
+        )
+    elif resolved == "hybrid_baseline":
+        covariates, meta = _build_hybrid_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+            mesoscopic_selection_variant="phase15_baseline",
+        )
+    elif resolved == "hybrid_optimized":
+        covariates, meta = _build_hybrid_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            standardized_tensor=standardized_tensor,
+            canonical_axis=canonical_axis,
+            candidate_profiles=candidate_profiles,
+            mesoscopic_selection_variant="phase15_optimized",
+        )
+    elif resolved == "clumped_baseline":
+        covariates, meta = _build_mesoscopic_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            selection_variant="phase15_baseline",
+        )
+    elif resolved == "clumped_optimized":
+        covariates, meta = _build_mesoscopic_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            selection_variant="phase15_optimized",
+        )
+    else:
+        covariates, meta = _build_mesoscopic_modifier_covariates(
+            run_dir=run_dir,
+            observation_targets=observation_targets,
+            selection_variant="phase2_active",
+        )
+    meta = dict(meta)
+    meta["representation_mode"] = resolved
+    return covariates, meta
 
 
 def _fit_rescue_core_numpy(
@@ -2187,18 +2363,18 @@ def _fit_rescue_core_numpy(
     age_axis: list[str],
     sex_axis: list[str],
     duration_catalog: list[str],
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     del subgroup_weights, cd4_overlay, province_axis, age_axis, sex_axis, duration_catalog
-    covariates, covariate_meta = (
-        _build_mesoscopic_modifier_covariates(run_dir=run_dir, observation_targets=observation_targets)
-        if profile_id == RESCUE_V2_PROFILE_ID
-        else _build_modifier_covariates(
-            observation_targets=observation_targets,
-            standardized_tensor=standardized_tensor,
-            canonical_axis=canonical_axis,
-            candidate_profiles=candidate_profiles,
-        )
+    covariates, covariate_meta = _build_representation_modifier_covariates(
+        run_dir=run_dir,
+        profile_id=profile_id,
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+        modifier_representation=modifier_representation,
     )
     intervention_tensor, intervention_summary = _build_intervention_tensor_from_covariates(covariates, covariate_meta)
     state_estimates = _province_observed_state_targets(observation_targets, support_bundle=observation_support_bundle).astype(np.float32)
@@ -2619,6 +2795,7 @@ def _fit_rescue_core_jax_svi(
     sex_axis: list[str],
     archetype_bundle: dict[str, Any],
     inference_method: str = "svi",
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if jax is None or numpyro is None or Predictive is None:
@@ -2628,15 +2805,14 @@ def _fit_rescue_core_jax_svi(
     if inference_method == "nuts" and (MCMC is None or NUTS is None or numpyro_summary is None):
         raise RuntimeError("JAX/NumPyro NUTS backend is unavailable for hiv_rescue_v1 jax_nuts")
     posterior_cfg = dict(dict(_phase3_prior("frozen_backtest") or {}).get("posterior_inference", {}) or {})
-    covariates_np, covariate_meta = (
-        _build_mesoscopic_modifier_covariates(run_dir=run_dir, observation_targets=observation_targets)
-        if profile_id == RESCUE_V2_PROFILE_ID
-        else _build_modifier_covariates(
-            observation_targets=observation_targets,
-            standardized_tensor=standardized_tensor,
-            canonical_axis=canonical_axis,
-            candidate_profiles=candidate_profiles,
-        )
+    covariates_np, covariate_meta = _build_representation_modifier_covariates(
+        run_dir=run_dir,
+        profile_id=profile_id,
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+        modifier_representation=modifier_representation,
     )
     intervention_tensor_np, intervention_summary = _build_intervention_tensor_from_covariates(covariates_np, covariate_meta)
     if intervention_tensor_np.shape[-1] > 0:
@@ -3069,6 +3245,7 @@ def _fit_rescue_core_torch(
     duration_catalog: list[str],
     requested_inference_family: str,
     archetype_bundle: dict[str, Any],
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if torch is None:  # pragma: no cover
@@ -3096,15 +3273,14 @@ def _fit_rescue_core_torch(
     subgroup_cfg = dict(_phase3_prior("subgroup_hyperpriors") or {})
     archetype_cfg = dict(_phase3_prior("archetype_hyperpriors") or {})
     cd4_hyper_cfg = dict(_phase3_prior("cd4_hyperpriors") or {})
-    covariates, covariate_meta = (
-        _build_mesoscopic_modifier_covariates(run_dir=run_dir, observation_targets=observation_targets)
-        if profile_id == RESCUE_V2_PROFILE_ID
-        else _build_modifier_covariates(
-            observation_targets=observation_targets,
-            standardized_tensor=standardized_tensor,
-            canonical_axis=canonical_axis,
-            candidate_profiles=candidate_profiles,
-        )
+    covariates, covariate_meta = _build_representation_modifier_covariates(
+        run_dir=run_dir,
+        profile_id=profile_id,
+        observation_targets=observation_targets,
+        standardized_tensor=standardized_tensor,
+        canonical_axis=canonical_axis,
+        candidate_profiles=candidate_profiles,
+        modifier_representation=modifier_representation,
     )
     intervention_tensor, intervention_summary = _build_intervention_tensor_from_covariates(covariates, covariate_meta)
     if intervention_tensor.shape[-1] > 0:
@@ -5146,6 +5322,7 @@ def run_phase3_rescue_core(
     standardized_tensor_override: np.ndarray | None = None,
     reference_overrides: dict[str, Any] | None = None,
     backtest_config: dict[str, Any] | None = None,
+    modifier_representation: str | None = None,
     calibration_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
@@ -5229,6 +5406,7 @@ def run_phase3_rescue_core(
                 sex_axis=sex_axis,
                 archetype_bundle=archetype_bundle,
                 inference_method="nuts" if requested_inference_family == "jax_nuts" else "svi",
+                modifier_representation=modifier_representation,
                 calibration_overrides=calibration_overrides,
             )
         elif torch is not None:
@@ -5253,6 +5431,7 @@ def run_phase3_rescue_core(
                 duration_catalog=DURATION_CATALOG,
                 requested_inference_family=requested_inference_family,
                 archetype_bundle=archetype_bundle,
+                modifier_representation=modifier_representation,
                 calibration_overrides=calibration_overrides,
             )
         else:  # pragma: no cover
@@ -5271,6 +5450,7 @@ def run_phase3_rescue_core(
                 age_axis=age_axis,
                 sex_axis=sex_axis,
                 duration_catalog=DURATION_CATALOG,
+                modifier_representation=modifier_representation,
                 calibration_overrides=calibration_overrides,
             )
 
@@ -5400,6 +5580,7 @@ def run_phase3_rescue_core(
             "suppression_among_art_mae": fit_result["loss_breakdown"].get("suppression_among_art_mae", 0.0),
         },
         "phase4_ready": False,
+        "modifier_representation": fit_result["parameters_summary"].get("determinant_covariates", {}).get("representation_mode"),
         "fit_rows": _state_rows(state_estimates, province_axis, month_axis),
         "observation_weight_summary": {row["target_name"]: row["weight"] for row in observation_ladder},
         "observation_support_summary": observation_support_summary,
@@ -5455,6 +5636,7 @@ def run_phase3_rescue_core(
         "intervention_tensor_shape": list(np.asarray(fit_result.get("intervention_tensor", np.zeros((0, 0, 0), dtype=np.float32))).shape),
         "requested_inference_family": requested_inference_family,
         "resolved_inference_family": fit_result["inference_family"],
+        "modifier_representation": fit_result["parameters_summary"].get("determinant_covariates", {}).get("representation_mode"),
         "phase2_hook": {"mode": "transition_modifiers_only", "determinants_active": len(fit_result["parameters_summary"].get("determinant_covariates", {}).get("selected_determinant_modifiers", []))},
         "phase4_ready": False,
     }
@@ -5536,6 +5718,7 @@ def run_phase3_rescue_core(
             "region_axis": region_axis,
             "month_axis": month_axis,
             "intervention_tensor_shape": list(np.asarray(fit_result.get("intervention_tensor", np.zeros((0, 0, 0), dtype=np.float32))).shape),
+            "modifier_representation": fit_result["parameters_summary"].get("determinant_covariates", {}).get("representation_mode"),
             "curated_candidate_block_count": len(curated_candidate_blocks),
             "candidate_profile_count": len(candidate_profiles),
         },

@@ -211,7 +211,7 @@ def build_network_feature_bundle(
                 "network_feature_family": family,
                 "block_name": block_name,
                 "member_canonical_names": [],
-                "promotion_class": "scientific_retained",
+                "promotion_class": "unranked",
                 "transition_hooks": [],
             }
         )
@@ -331,6 +331,106 @@ def compute_factor_stability(
     stability_cfg: dict[str, Any],
     corr_fn: Callable[[np.ndarray, np.ndarray], float],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    factor_catalog_by_id = {str(row.get("factor_id") or ""): row for row in factor_catalog}
+    def _mae(left: np.ndarray, right: np.ndarray) -> float:
+        if left.size == 0 or right.size == 0:
+            return 1.0
+        return float(np.mean(np.abs(left - right)))
+
+    def _smape(left: np.ndarray, right: np.ndarray) -> float:
+        if left.size == 0 or right.size == 0:
+            return 1.0
+        denom = np.abs(left) + np.abs(right) + 1e-6
+        return float(np.mean(2.0 * np.abs(left - right) / denom))
+
+    def _time_holdout_columns(month_count: int, *, cfg: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+        if month_count <= 1:
+            return np.asarray([0], dtype=np.int32), np.asarray([0], dtype=np.int32)
+        holdout_fraction = float(cfg["holdout_fraction"])
+        min_holdout = max(1, int(cfg["holdout_min_months"]))
+        holdout_months = max(min_holdout, int(np.ceil(month_count * holdout_fraction)))
+        holdout_months = min(max(1, month_count - 1), holdout_months)
+        split = month_count - holdout_months
+        train_idx = np.arange(0, split, dtype=np.int32)
+        holdout_idx = np.arange(split, month_count, dtype=np.int32)
+        return train_idx, holdout_idx
+
+    def _fit_linear_predictor(train_x: np.ndarray, train_y: np.ndarray, pred_x: np.ndarray) -> np.ndarray:
+        x = train_x.reshape(-1).astype(np.float64)
+        y = train_y.reshape(-1).astype(np.float64)
+        pred = pred_x.reshape(-1).astype(np.float64)
+        if x.size == 0 or y.size == 0 or pred.size == 0:
+            return np.zeros_like(pred, dtype=np.float64)
+        if float(np.std(x)) <= 1e-8:
+            return np.full_like(pred, float(np.mean(y)), dtype=np.float64)
+        design = np.stack([np.ones_like(x), x], axis=1)
+        coeffs, *_ = np.linalg.lstsq(design, y, rcond=None)
+        pred_design = np.stack([np.ones_like(pred), pred], axis=1)
+        return pred_design @ coeffs
+
+    def _holdout_metrics(surface: np.ndarray, target_surface: np.ndarray, *, cfg: dict[str, Any]) -> dict[str, float]:
+        month_count = int(surface.shape[1]) if surface.ndim == 2 else 0
+        if month_count <= 1:
+            return {
+                "holdout_month_count": 0,
+                "holdout_mae": 1.0,
+                "holdout_smape": 1.0,
+                "baseline_holdout_mae": 1.0,
+                "baseline_holdout_smape": 1.0,
+                "holdout_mae_improvement": 0.0,
+                "holdout_smape_improvement": 0.0,
+                "calibration_score": 0.0,
+                "leakage_check_passed": False,
+            }
+        train_idx, holdout_idx = _time_holdout_columns(month_count, cfg=cfg)
+        leakage_check_passed = bool(len(train_idx) > 0 and len(holdout_idx) > 0 and int(train_idx.max()) < int(holdout_idx.min()))
+        train_x = surface[:, train_idx]
+        holdout_x = surface[:, holdout_idx]
+        train_y = target_surface[:, train_idx]
+        holdout_y = target_surface[:, holdout_idx]
+        pred_holdout = _fit_linear_predictor(train_x, train_y, holdout_x).reshape(holdout_y.shape)
+        baseline = np.repeat(train_y[:, [-1]], len(holdout_idx), axis=1)
+        train_pred = _fit_linear_predictor(train_x, train_y, train_x).reshape(train_y.shape)
+        residual_scale = float(np.std(train_y - train_pred))
+        residual_scale = max(residual_scale, 1e-6)
+        coverage = float(np.mean(np.abs(holdout_y - pred_holdout) <= residual_scale))
+        target_coverage = float(cfg["target_coverage"])
+        calibration_score = float(np.clip(1.0 - abs(coverage - target_coverage) / max(target_coverage, 1e-6), 0.0, 1.0))
+        model_mae = _mae(holdout_y, pred_holdout)
+        baseline_mae = _mae(holdout_y, baseline)
+        model_smape = _smape(holdout_y, pred_holdout)
+        baseline_smape = _smape(holdout_y, baseline)
+        mae_improvement = float(np.clip((baseline_mae - model_mae) / max(baseline_mae, 1e-6), -1.0, 1.0))
+        smape_improvement = float(np.clip((baseline_smape - model_smape) / max(baseline_smape, 1e-6), -1.0, 1.0))
+        return {
+            "holdout_month_count": int(len(holdout_idx)),
+            "holdout_mae": round(model_mae, 6),
+            "holdout_smape": round(model_smape, 6),
+            "baseline_holdout_mae": round(baseline_mae, 6),
+            "baseline_holdout_smape": round(baseline_smape, 6),
+            "holdout_mae_improvement": round(mae_improvement, 6),
+            "holdout_smape_improvement": round(smape_improvement, 6),
+            "calibration_score": round(calibration_score, 6),
+            "leakage_check_passed": leakage_check_passed,
+        }
+
+    def _resampling_instability_penalty(surface: np.ndarray, target_surface: np.ndarray, *, cfg: dict[str, Any]) -> float:
+        province_count = int(surface.shape[0]) if surface.ndim == 2 else 0
+        if province_count <= 1:
+            return 0.0
+        draw_count = max(1, int(cfg["resample_draws"]))
+        sample_fraction = float(cfg["resample_fraction"])
+        draws: list[float] = []
+        for _ in range(draw_count):
+            sample_size = max(1, int(np.ceil(province_count * sample_fraction)))
+            sample_idx = rng.choice(province_count, size=sample_size, replace=sample_size > province_count)
+            sample_metrics = _holdout_metrics(surface[sample_idx], target_surface[sample_idx], cfg=cfg)
+            draws.append(float(sample_metrics["holdout_mae_improvement"]))
+        if not draws:
+            return 1.0
+        penalty = float(np.clip(np.std(np.asarray(draws, dtype=np.float32)) / max(float(cfg["resample_penalty_scale"]), 1e-6), 0.0, 1.0))
+        return penalty
+
     target_candidates = {
         "diagnosed_stock": observation_targets["diagnosed_stock"],
         "art_stock": observation_targets["art_stock"],
@@ -341,8 +441,8 @@ def compute_factor_stability(
     promotion_pool = []
     rng = np.random.default_rng(17)
     score_weights = dict(stability_cfg["score_weights"])
-    main_thresholds = dict(stability_cfg["main_thresholds"])
-    support_thresholds = dict(stability_cfg["support_thresholds"])
+    tournament_weights = dict(stability_cfg["tournament_weights"])
+    penalty_weights = dict(stability_cfg["penalty_weights"])
     for factor_idx, factor in enumerate(factor_catalog):
         surface = factor_tensor[:, :, factor_idx]
         flat = surface.reshape(-1)
@@ -405,18 +505,46 @@ def compute_factor_stability(
                 1.0,
             )
         )
-        eligible_main = bool(
-            (predictive_gain >= float(main_thresholds["predictive_gain"]) or subnational_gain >= float(main_thresholds["subnational_gain"]))
-            and stability_score >= float(main_thresholds["stability_score"])
-            and sign_stability >= float(main_thresholds["sign_stability"])
-            and null_gap >= float(main_thresholds["null_gap"])
-            and region_contrast >= float(main_thresholds["region_contrast"])
-            and factor.get("promotion_hint", "candidate_only") != "candidate_only"
+        member_count = len(mesoscopic_factor_members.get(factor["factor_id"], []))
+        finite_check_passed = bool(np.isfinite(surface).all())
+        shape_check_passed = bool(surface.ndim == 2 and surface.shape[0] > 0 and surface.shape[1] > 0)
+        support_check_passed = bool(member_count >= int(stability_cfg["min_member_count"]) or factor.get("factor_class") == "network_feature")
+        holdout_metrics = _holdout_metrics(surface, target_candidates[best_target[0]], cfg=stability_cfg)
+        sparsity_penalty = float(
+            np.clip(
+                max(0, member_count - 1) / max(float(stability_cfg["sparsity_member_denominator"]), 1e-6),
+                0.0,
+                1.0,
+            )
         )
-        eligible_support = bool(
-            predictive_gain >= float(support_thresholds["predictive_gain"])
-            or subnational_gain >= float(support_thresholds["subnational_gain"])
-            or factor.get("factor_class") == "network_feature"
+        resampling_penalty = _resampling_instability_penalty(surface, target_candidates[best_target[0]], cfg=stability_cfg)
+        survives_holdout = bool(
+            float(holdout_metrics["holdout_mae_improvement"]) > 0.0
+            or float(holdout_metrics["holdout_smape_improvement"]) > 0.0
+        )
+        hard_checks_passed = bool(
+            finite_check_passed
+            and shape_check_passed
+            and support_check_passed
+            and bool(holdout_metrics["leakage_check_passed"])
+        )
+        survival_score = float(
+            np.clip(
+                float(tournament_weights["mae_improvement"]) * max(0.0, float(holdout_metrics["holdout_mae_improvement"]))
+                + float(tournament_weights["smape_improvement"]) * max(0.0, float(holdout_metrics["holdout_smape_improvement"]))
+                + float(tournament_weights["calibration"]) * float(holdout_metrics["calibration_score"])
+                + float(tournament_weights["predictive_gain"]) * predictive_gain
+                + float(tournament_weights["subnational_gain"]) * subnational_gain
+                + float(tournament_weights["stability"]) * stability
+                + float(tournament_weights["sign_stability"]) * sign_stability
+                + float(tournament_weights["missing_robustness"]) * missing_robustness
+                + float(tournament_weights["source_dropout_robustness"]) * source_dropout_robustness
+                + float(tournament_weights["region_contrast"]) * region_contrast
+                - float(penalty_weights["sparsity"]) * sparsity_penalty
+                - float(penalty_weights["resampling_instability"]) * resampling_penalty,
+                0.0,
+                1.0,
+            )
         )
         row = {
             "factor_id": factor["factor_id"],
@@ -435,18 +563,62 @@ def compute_factor_stability(
             "source_dropout_robustness": round(source_dropout_robustness, 6),
             "permutation_null_gap": round(null_gap, 6),
             "stability_score": round(stability_score, 6),
-            "eligible_main_predictive": eligible_main,
-            "eligible_supporting_context": eligible_support,
+            "finite_check_passed": finite_check_passed,
+            "shape_check_passed": shape_check_passed,
+            "support_check_passed": support_check_passed,
+            "leakage_check_passed": bool(holdout_metrics["leakage_check_passed"]),
+            "hard_checks_passed": hard_checks_passed,
+            "member_count": member_count,
+            "holdout_month_count": int(holdout_metrics["holdout_month_count"]),
+            "holdout_mae": float(holdout_metrics["holdout_mae"]),
+            "holdout_smape": float(holdout_metrics["holdout_smape"]),
+            "baseline_holdout_mae": float(holdout_metrics["baseline_holdout_mae"]),
+            "baseline_holdout_smape": float(holdout_metrics["baseline_holdout_smape"]),
+            "holdout_mae_improvement": float(holdout_metrics["holdout_mae_improvement"]),
+            "holdout_smape_improvement": float(holdout_metrics["holdout_smape_improvement"]),
+            "calibration_score": float(holdout_metrics["calibration_score"]),
+            "sparsity_penalty": round(sparsity_penalty, 6),
+            "resampling_stability_penalty": round(resampling_penalty, 6),
+            "survives_holdout": survives_holdout,
+            "survival_score": round(survival_score, 6),
             "network_feature_family": factor.get("network_feature_family", ""),
         }
         stability_rows.append(row)
-        promotion_pool.append(
-            row
-            | {
-                "promotion_class": "scientific_retained" if eligible_main else ("supporting_context" if eligible_support else "exploratory"),
-                "factor_class": factor["factor_class"],
-                "transition_hooks": factor.get("transition_hooks", []),
-                "promotion_hint": factor.get("promotion_hint", "candidate_only"),
-            }
+    primary_per_block = max(1, int(stability_cfg["primary_survivors_per_block"]))
+    secondary_per_block = max(0, int(stability_cfg["secondary_survivors_per_block"]))
+    by_block: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in stability_rows:
+        by_block[str(row["block_name"])].append(row)
+    row_by_id = {str(row["factor_id"]): row for row in stability_rows}
+    for block_rows in by_block.values():
+        block_rows.sort(
+            key=lambda item: (
+                bool(item["hard_checks_passed"]),
+                bool(item["survives_holdout"]),
+                float(item["survival_score"]),
+                float(item["holdout_mae_improvement"]),
+                float(item["holdout_smape_improvement"]),
+                -float(item["sparsity_penalty"]),
+            ),
+            reverse=True,
         )
+        for rank, row in enumerate(block_rows):
+            if not bool(row["hard_checks_passed"]):
+                survival_class = "discarded"
+            elif rank < primary_per_block:
+                survival_class = "survivor_primary"
+            elif rank < primary_per_block + secondary_per_block:
+                survival_class = "survivor_secondary"
+            else:
+                survival_class = "reserve"
+            row["survival_rank_in_block"] = int(rank + 1)
+            row["survival_class"] = survival_class
+            promotion_pool.append(
+                row
+                | {
+                    "promotion_class": survival_class,
+                    "factor_class": factor_catalog_by_id.get(str(row["factor_id"]), {}).get("factor_class", "mesoscopic_factor"),
+                    "transition_hooks": factor_catalog_by_id.get(str(row["factor_id"]), {}).get("transition_hooks", []),
+                }
+            )
     return stability_rows, promotion_pool

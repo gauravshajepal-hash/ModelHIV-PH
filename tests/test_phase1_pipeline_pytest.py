@@ -69,6 +69,9 @@ def test_phase1_normalized_rows_have_bias_and_truth_fields(rescue_v2_run_dir) ->
         "spatial_relevance_weight",
         "replication_weight",
         "bias_penalty",
+        "signal_family",
+        "payload_family",
+        "geo_binding_class",
     }
     for row in rows:
         assert required.issubset(row.keys())
@@ -115,6 +118,7 @@ def test_phase1_tensor_contract_and_sanity(rescue_v2_run_dir) -> None:
     assert report.get("normalized_row_count", 0) >= report.get("anchor_eligible_count", 0)
     assert report.get("tensor_row_count", 0) == len(tensor_rows)
     assert len(report.get("source_reliability_counts", {})) > 0
+    assert report.get("source_registry_mode") in {"registry", "phase0_candidates_fallback"}
     assert report.get("preprocess_meta", {}).get("transform", {}).get("transform_mode") in {"log1p", "boxcox"}
     assert report.get("preprocess_meta", {}).get("scaling", {}).get("scaling_mode") in {"iqr", "huber"}
     assert "used_dlpack" in interop_report

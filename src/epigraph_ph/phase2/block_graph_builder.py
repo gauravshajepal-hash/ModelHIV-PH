@@ -62,7 +62,7 @@ def _target_relevance_score(pool: dict[str, Any], factor: dict[str, Any], target
     member_hits = sum(1 for token in target_tokens if token in members)
     score += min(member_hits, 3)
     promotion_class = str(pool.get("promotion_class") or factor.get("promotion_class") or "")
-    if promotion_class in {"supporting_context", "main_predictive"}:
+    if promotion_class in {"supporting_context", "main_predictive", "retained_context", "retained_predictive", "survivor_primary", "survivor_secondary"}:
         score += 1
     return score
 

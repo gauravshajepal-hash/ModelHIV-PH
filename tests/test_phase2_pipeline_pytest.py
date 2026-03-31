@@ -43,7 +43,7 @@ def test_phase2_constraint_settings_are_declared_in_plugin_contract() -> None:
     assert phase2_cfg.get("stability_score_weights", {}).get("source_diversity") is not None
     assert phase2_cfg.get("stability_denominators", {}).get("source_diversity") is not None
     assert phase2_cfg.get("curation_status_thresholds", {}).get("promoted_candidate") is not None
-    assert phase2_cfg.get("factor_diagnostic_weights", {}).get("stability_score") is not None
+    assert phase2_cfg.get("factor_diagnostic_weights", {}).get("survival_score") is not None
     assert phase2_cfg.get("benchmark_artifacts", {}).get("bootstrap_draws") is not None
     assert phase2_cfg.get("budgets", {}).get("main") is not None
     assert phase2_cfg.get("block_graph", {}).get("max_candidates_per_block") is not None
@@ -101,28 +101,28 @@ def test_phase2_legacy_masks_and_dag_contract(legacy_full_run_dir) -> None:
 def test_phase2_rescue_v2_tournament_budgets(rescue_v2_run_dir) -> None:
     manifest = read_json(rescue_v2_run_dir / "phase2" / "phase2_manifest.json", default={})
     truth_summary = read_json(rescue_v2_run_dir / "phase2" / "ground_truth_summary.json", default={})
-    tournament_plan = read_json(rescue_v2_run_dir / "phase2" / "factor_tournament_plan.json", default={})
-    tournament_results = read_json(rescue_v2_run_dir / "phase2" / "factor_tournament_results.json", default={})
-    promoted = read_json(rescue_v2_run_dir / "phase2" / "promoted_factor_set.json", default=[])
-    supporting = read_json(rescue_v2_run_dir / "phase2" / "supporting_factor_set.json", default=[])
-    admission = read_json(rescue_v2_run_dir / "phase2" / "promotion_admission.json", default={})
-    budget_report = read_json(rescue_v2_run_dir / "phase2" / "promotion_budget_report.json", default={})
+    tournament_plan = read_json(rescue_v2_run_dir / "phase2" / "survival_tournament_plan.json", default={})
+    tournament_results = read_json(rescue_v2_run_dir / "phase2" / "survival_tournament_results.json", default={})
+    promoted = read_json(rescue_v2_run_dir / "phase2" / "retained_predictive_factor_set.json", default=[])
+    supporting = read_json(rescue_v2_run_dir / "phase2" / "retained_context_factor_set.json", default=[])
+    admission = read_json(rescue_v2_run_dir / "phase2" / "survival_admission.json", default={})
+    budget_report = read_json(rescue_v2_run_dir / "phase2" / "survival_budget_report.json", default={})
 
     assert manifest.get("profile_id") == "hiv_rescue_v2"
     assert tournament_plan
     assert tournament_results
     assert len(promoted) <= 8
     assert len(supporting) <= 12
-    assert budget_report.get("main_predictive_count", len(promoted)) <= 8
-    assert budget_report.get("supporting_count", len(supporting)) <= 12
+    assert budget_report.get("retained_predictive_count", len(promoted)) <= 8
+    assert budget_report.get("retained_context_count", len(supporting)) <= 12
     assert all(plan["shortlist_count"] <= 6 for plan in tournament_plan)
-    assert admission.get("status") in {"admitted_main_predictive", "none_admitted"}
+    assert admission.get("status") in {"admitted_retained_predictive", "none_admitted"}
     assert truth_summary.get("phase_name") == "phase2"
 
 
 def test_phase2_transition_hook_whitelist_and_network_budget(rescue_v2_run_dir) -> None:
-    promoted = read_json(rescue_v2_run_dir / "phase2" / "promoted_factor_set.json", default=[])
-    supporting = read_json(rescue_v2_run_dir / "phase2" / "supporting_factor_set.json", default=[])
+    promoted = read_json(rescue_v2_run_dir / "phase2" / "retained_predictive_factor_set.json", default=[])
+    supporting = read_json(rescue_v2_run_dir / "phase2" / "retained_context_factor_set.json", default=[])
     diagnostics = read_json(rescue_v2_run_dir / "phase2" / "factor_diagnostics.json", default=[])
     bridge_report = read_json(rescue_v2_run_dir / "phase2" / "bridge_dag_report.json", default={})
     target_blankets = read_json(rescue_v2_run_dir / "phase2" / "phase3_target_blankets.json", default={})
@@ -131,7 +131,7 @@ def test_phase2_transition_hook_whitelist_and_network_budget(rescue_v2_run_dir) 
         assert set(row.get("transition_hooks", [])).issubset(ALLOWED_TRANSITION_HOOKS)
         if row.get("network_feature_family"):
             promoted_network += 1 if row in promoted else 0
-        assert row.get("promotion_class") in {"main_predictive", "supporting_context"}
+        assert row.get("promotion_class") in {"retained_predictive", "retained_context"}
     assert promoted_network <= 3
     assert len(diagnostics) >= len(promoted)
     assert bridge_report.get("status") in {"completed", "unavailable"}
@@ -140,20 +140,20 @@ def test_phase2_transition_hook_whitelist_and_network_budget(rescue_v2_run_dir) 
 
 def test_phase2_no_exploratory_factor_is_promoted(rescue_v2_run_dir) -> None:
     pool = read_json(rescue_v2_run_dir / "phase15" / "factor_promotion_pool.json", default=[])
-    promoted = read_json(rescue_v2_run_dir / "phase2" / "promoted_factor_set.json", default=[])
+    promoted = read_json(rescue_v2_run_dir / "phase2" / "retained_predictive_factor_set.json", default=[])
     pool_by_id = {row["factor_id"]: row for row in pool}
     for row in promoted:
-        assert pool_by_id[row["factor_id"]]["eligible_main_predictive"] is True
-        assert pool_by_id[row["factor_id"]]["promotion_class"] != "exploratory"
+        assert pool_by_id[row["factor_id"]]["hard_checks_passed"] is True
+        assert pool_by_id[row["factor_id"]]["promotion_class"] in {"survivor_primary", "survivor_secondary"}
 
 
 def test_phase2_explicitly_admits_when_no_main_predictive_exists(rescue_v2_run_dir) -> None:
-    promoted = read_json(rescue_v2_run_dir / "phase2" / "promoted_factor_set.json", default=[])
-    admission = read_json(rescue_v2_run_dir / "phase2" / "promotion_admission.json", default={})
+    promoted = read_json(rescue_v2_run_dir / "phase2" / "retained_predictive_factor_set.json", default=[])
+    admission = read_json(rescue_v2_run_dir / "phase2" / "survival_admission.json", default={})
 
     if promoted:
-        assert admission.get("status") == "admitted_main_predictive"
-        assert admission.get("main_predictive_factor_ids", []) != []
+        assert admission.get("status") == "admitted_retained_predictive"
+        assert admission.get("retained_predictive_factor_ids", []) != []
     else:
         assert admission.get("status") == "none_admitted"
         assert admission.get("reason")
@@ -256,7 +256,7 @@ def test_phase2_merge_shard_summaries_aggregates_retained_factors() -> None:
         "network_feature_family": "testing",
         "transition_hooks": ["diagnosis_transitions"],
         "member_canonical_names": ["testing_uptake", "facility_access"],
-        "promotion_class": "main_predictive",
+        "promotion_class": "retained_predictive",
         "phase3_target_relevant": True,
         "predictive_gain": 0.7,
         "stability_score": 0.8,
@@ -274,7 +274,7 @@ def test_phase2_merge_shard_summaries_aggregates_retained_factors() -> None:
         "network_feature_family": "mobility",
         "transition_hooks": ["diagnosis_transitions"],
         "member_canonical_names": ["mobility_network_mixing"],
-        "promotion_class": "supporting_context",
+        "promotion_class": "retained_context",
         "phase3_target_relevant": True,
         "predictive_gain": 0.5,
         "stability_score": 0.6,
@@ -292,7 +292,7 @@ def test_phase2_merge_shard_summaries_aggregates_retained_factors() -> None:
         "network_feature_family": "policy",
         "transition_hooks": ["diagnosis_transitions"],
         "member_canonical_names": ["policy_implementation_weakness"],
-        "promotion_class": "supporting_context",
+        "promotion_class": "retained_context",
         "phase3_target_relevant": True,
         "predictive_gain": 0.55,
         "stability_score": 0.65,

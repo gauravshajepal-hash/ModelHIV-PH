@@ -19,7 +19,7 @@ from epigraph_ph.phase0 import (
 from epigraph_ph.phase1 import run_phase1_build
 from epigraph_ph.phase15 import run_phase15_build
 from epigraph_ph.phase2 import run_phase2_build, run_phase2_merge_shard_summaries
-from epigraph_ph.phase3 import run_phase3_build, run_phase3_frozen_backtest, run_phase3_frozen_backtest_tuning
+from epigraph_ph.phase3 import run_phase3_build, run_phase3_frozen_backtest, run_phase3_frozen_backtest_tournament, run_phase3_frozen_backtest_tuning
 from epigraph_ph.phase4 import run_phase4_build, run_phase4_optimize, run_phase4_simulate
 from epigraph_ph.registry.sources import build_source_registry
 from epigraph_ph.registry.subparameters import build_subparameter_registry
@@ -110,6 +110,13 @@ def build_parser() -> argparse.ArgumentParser:
             backtest.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
             backtest.add_argument("--train-years", nargs="+", type=int, default=None)
             backtest.add_argument("--holdout-years", nargs="+", type=int, default=None)
+            tournament_backtest = phase_sub.add_parser("tournament-frozen-backtest")
+            tournament_backtest.add_argument("--run-id", required=True)
+            tournament_backtest.add_argument("--plugin", default="hiv")
+            tournament_backtest.add_argument("--profile", default="hiv_rescue_v2")
+            tournament_backtest.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
+            tournament_backtest.add_argument("--train-years", nargs="+", type=int, default=None)
+            tournament_backtest.add_argument("--holdout-years", nargs="+", type=int, default=None)
             tune_backtest = phase_sub.add_parser("tune-frozen-backtest")
             tune_backtest.add_argument("--run-id", required=True)
             tune_backtest.add_argument("--plugin", default="hiv")
@@ -284,6 +291,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "phase3" and args.phase3_command == "tune-frozen-backtest":
         run_phase3_frozen_backtest_tuning(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            profile=args.profile,
+            inference_family=args.phase3_inference,
+            train_years=args.train_years,
+            holdout_years=args.holdout_years,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "tournament-frozen-backtest":
+        run_phase3_frozen_backtest_tournament(
             run_id=args.run_id,
             plugin_id=args.plugin,
             profile=args.profile,

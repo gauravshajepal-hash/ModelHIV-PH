@@ -17,8 +17,11 @@ def test_phase15_constraint_settings_are_declared_in_plugin_contract() -> None:
     assert phase15_cfg.get("network_graph", {}).get("positive_edge_threshold") is not None
     assert phase15_cfg.get("stability", {}).get("permutation_draws") is not None
     assert phase15_cfg.get("stability", {}).get("score_weights", {}).get("predictive_gain") is not None
-    assert phase15_cfg.get("stability", {}).get("main_thresholds", {}).get("stability_score") is not None
-    assert phase15_cfg.get("stability", {}).get("support_thresholds", {}).get("predictive_gain") is not None
+    assert phase15_cfg.get("stability", {}).get("tournament_weights", {}).get("mae_improvement") is not None
+    assert phase15_cfg.get("stability", {}).get("penalty_weights", {}).get("sparsity") is not None
+    assert phase15_cfg.get("stability", {}).get("bayesian_optimization", {}).get("trials") is not None
+    assert phase15_cfg.get("stability", {}).get("bayesian_optimization", {}).get("primary_survivors_range") is not None
+    assert phase15_cfg.get("stability", {}).get("bayesian_optimization", {}).get("representation_mix_bonus_scale") is not None
 
 
 def test_phase15_manifest_and_factor_contract(rescue_v2_run_dir) -> None:
@@ -48,7 +51,7 @@ def test_phase15_source_reliability_and_stability_bounds(rescue_v2_run_dir) -> N
     assert sum(row["row_count"] for row in source_reliability.get("rows", [])) == len(normalized_rows)
     assert stability_rows
     assert promotion_pool
-    allowed_classes = {"exploratory", "scientific_retained", "supporting_context"}
+    allowed_classes = {"discarded", "reserve", "survivor_primary", "survivor_secondary"}
     for row in stability_rows:
         for key in (
             "predictive_gain",
@@ -59,10 +62,44 @@ def test_phase15_source_reliability_and_stability_bounds(rescue_v2_run_dir) -> N
             "missing_data_robustness",
             "source_dropout_robustness",
             "stability_score",
+            "calibration_score",
+            "sparsity_penalty",
+            "resampling_stability_penalty",
+            "survival_score",
         ):
             assert 0.0 <= float(row[key]) <= 1.0
+        assert isinstance(bool(row["hard_checks_passed"]), bool)
+        assert isinstance(bool(row["survives_holdout"]), bool)
     for row in promotion_pool:
         assert row["promotion_class"] in allowed_classes
+
+
+def test_phase15_bayesian_survival_artifacts(rescue_v2_run_dir) -> None:
+    baseline_rows = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_tournament_baseline.json", default=[])
+    baseline_pool = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_pool_baseline.json", default=[])
+    optimized_rows = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_tournament_optimized.json", default=[])
+    optimized_pool = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_pool_optimized.json", default=[])
+    active_rows = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_tournament.json", default=[])
+    active_pool = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_pool.json", default=[])
+    bayes_report = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_bayesian_optimization.json", default={})
+
+    assert baseline_rows
+    assert baseline_pool
+    assert optimized_rows
+    assert optimized_pool
+    assert active_rows
+    assert active_pool
+    assert "enabled" in bayes_report
+    assert "active_variant" in bayes_report
+    if bayes_report.get("enabled"):
+        assert bayes_report.get("trial_count", 0) >= 1
+        assert "best_objective" in bayes_report
+        assert "default_objective" in bayes_report
+        assert "best_score_params" in bayes_report
+        assert "best_primary_per_block" in bayes_report
+        assert "best_secondary_per_block" in bayes_report
+        assert "best_representation_mix" in bayes_report
+        assert bayes_report["active_variant"] in {"baseline", "optimized"}
 
 
 def test_phase15_network_features_and_operator_contract(rescue_v2_run_dir) -> None:
