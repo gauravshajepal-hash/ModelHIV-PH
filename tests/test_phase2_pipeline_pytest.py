@@ -45,6 +45,9 @@ def test_phase2_constraint_settings_are_declared_in_plugin_contract() -> None:
     assert phase2_cfg.get("factor_diagnostic_weights", {}).get("stability_score") is not None
     assert phase2_cfg.get("benchmark_artifacts", {}).get("bootstrap_draws") is not None
     assert phase2_cfg.get("budgets", {}).get("main") is not None
+    assert phase2_cfg.get("block_graph", {}).get("max_candidates_per_block") is not None
+    assert phase2_cfg.get("block_graph", {}).get("bridge_edge_budget_per_block_pair") is not None
+    assert phase2_cfg.get("block_graph", {}).get("max_target_factors") is not None
 
 
 def test_phase2_legacy_masks_and_dag_contract(legacy_full_run_dir) -> None:
@@ -59,6 +62,9 @@ def test_phase2_legacy_masks_and_dag_contract(legacy_full_run_dir) -> None:
     interop = read_json(legacy_full_run_dir / "phase2" / "interop_report.json", default={})
     mi_prefilter = read_json(legacy_full_run_dir / "phase2" / "mi_prefilter_report.json", default={})
     pc_skeleton = read_json(legacy_full_run_dir / "phase2" / "pc_skeleton_report.json", default={})
+    block_banks = read_json(legacy_full_run_dir / "phase2" / "block_candidate_banks.json", default={})
+    block_bundle = read_json(legacy_full_run_dir / "phase2" / "block_graph_bundle.json", default={})
+    pruning = read_json(legacy_full_run_dir / "phase2" / "pruning_report.json", default={})
     tier_mask = load_tensor_artifact(legacy_full_run_dir / "phase2" / "tier_mask.npz")
     lag_mask = load_tensor_artifact(legacy_full_run_dir / "phase2" / "lag_mask.npz")
     skeleton_mask = load_tensor_artifact(legacy_full_run_dir / "phase2" / "skeleton_mask.npz")
@@ -84,6 +90,9 @@ def test_phase2_legacy_masks_and_dag_contract(legacy_full_run_dir) -> None:
     assert collinearity.get("available") is True
     assert "condition_number" in collinearity
     assert "used_dlpack" in interop
+    assert block_banks.get("rows")
+    assert block_bundle.get("blocks")
+    assert pruning.get("candidate_level_pruning", {}).get("retained_candidate_count", 0) >= 0
     assert np.sum(lag_mask == 0.0) > dag.shape[0]
     assert truth_summary.get("phase_name") == "phase2"
 
@@ -114,6 +123,8 @@ def test_phase2_transition_hook_whitelist_and_network_budget(rescue_v2_run_dir) 
     promoted = read_json(rescue_v2_run_dir / "phase2" / "promoted_factor_set.json", default=[])
     supporting = read_json(rescue_v2_run_dir / "phase2" / "supporting_factor_set.json", default=[])
     diagnostics = read_json(rescue_v2_run_dir / "phase2" / "factor_diagnostics.json", default=[])
+    bridge_report = read_json(rescue_v2_run_dir / "phase2" / "bridge_dag_report.json", default={})
+    target_blankets = read_json(rescue_v2_run_dir / "phase2" / "phase3_target_blankets.json", default={})
     promoted_network = 0
     for row in promoted + supporting:
         assert set(row.get("transition_hooks", [])).issubset(ALLOWED_TRANSITION_HOOKS)
@@ -122,6 +133,8 @@ def test_phase2_transition_hook_whitelist_and_network_budget(rescue_v2_run_dir) 
         assert row.get("promotion_class") in {"main_predictive", "supporting_context"}
     assert promoted_network <= 3
     assert len(diagnostics) >= len(promoted)
+    assert bridge_report.get("status") in {"completed", "unavailable"}
+    assert "blanket_factor_ids" in target_blankets
 
 
 def test_phase2_no_exploratory_factor_is_promoted(rescue_v2_run_dir) -> None:

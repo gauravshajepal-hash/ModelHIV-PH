@@ -9,6 +9,7 @@ from .pipeline import (
     run_phase0_merge_shards,
     run_phase0_parse,
     run_phase0_score_wide_sweep,
+    run_phase0_slice_corpus,
 )
 from .semantic_benchmark import run_phase0_semantic_benchmark
 
@@ -21,5 +22,6 @@ __all__ = [
     "run_phase0_merge_shards",
     "run_phase0_parse",
     "run_phase0_score_wide_sweep",
+    "run_phase0_slice_corpus",
     "run_phase0_semantic_benchmark",
 ]

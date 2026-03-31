@@ -31,6 +31,7 @@ from epigraph_ph.phase0.pipeline import (
     _source_harvest_budgets,
     _extend_query_bank,
 )
+from epigraph_ph.phase0.shard_materializer import build_slice_payload, select_document_shard
 from epigraph_ph.phase0.semantic_benchmark import run_phase0_semantic_benchmark
 from epigraph_ph.runtime import read_json
 
@@ -149,6 +150,71 @@ def test_heavy_working_set_cap(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr("epigraph_ph.phase0.pipeline._is_heavy_parse_document", lambda doc: True)
     selected = _select_diverse_working_set(docs, limit=1000)
     assert len(selected) <= 250
+
+
+def test_phase0_document_shard_preserves_group_diversity() -> None:
+    documents = []
+    for idx in range(6):
+        documents.append(
+            {
+                "document_id": f"who-{idx}",
+                "platform": "who",
+                "query_silo": "",
+                "source_tier": "tier1_official_anchor",
+                "is_anchor_eligible": True,
+                "snapshot_type": "json_metadata",
+                "year": 2020 + idx,
+            }
+        )
+    for idx in range(6):
+        documents.append(
+            {
+                "document_id": f"openalex-{idx}",
+                "platform": "openalex",
+                "query_silo": "testing_uptake",
+                "source_tier": "tier2_scientific_literature",
+                "is_anchor_eligible": False,
+                "snapshot_type": "pdf",
+                "year": 2015 + idx,
+            }
+        )
+    shard_zero = select_document_shard(documents, shard_count=3, shard_index=0)
+    shard_one = select_document_shard(documents, shard_count=3, shard_index=1)
+    assert shard_zero
+    assert shard_one
+    assert {row["platform"] for row in shard_zero} == {"who", "openalex"}
+    assert {row["platform"] for row in shard_one} == {"who", "openalex"}
+
+
+def test_phase0_build_slice_payload_filters_related_rows() -> None:
+    source_rows = [
+        {"source_id": "src-a", "platform": "who", "query": "official_seed", "query_domain": "anchor", "query_lane": "anchor", "query_geo_focus": "philippines", "query_silo": None},
+        {"source_id": "src-b", "platform": "openalex", "query": "testing", "query_domain": "literature", "query_lane": "direct", "query_geo_focus": "philippines", "query_silo": "testing_uptake"},
+    ]
+    document_rows = [
+        {"document_id": "doc-a", "source_id": "src-a", "platform": "who", "query_silo": None, "source_tier": "tier1_official_anchor", "is_anchor_eligible": True, "snapshot_type": "json_metadata", "year": 2024},
+        {"document_id": "doc-b", "source_id": "src-b", "platform": "openalex", "query_silo": "testing_uptake", "source_tier": "tier2_scientific_literature", "is_anchor_eligible": False, "snapshot_type": "pdf", "year": 2023},
+    ]
+    sweep_rows = [
+        {"source_id": "src-a", "record_id": "src-a"},
+        {"source_id": "src-b", "record_id": "src-b"},
+    ]
+    query_rows = [
+        {"query_id": "q-a", "query": "official_seed", "query_domain": "anchor", "query_lane": "anchor", "query_geo_focus": "philippines", "query_silo": None},
+        {"query_id": "q-b", "query": "testing", "query_domain": "literature", "query_lane": "direct", "query_geo_focus": "philippines", "query_silo": "testing_uptake"},
+    ]
+    payload = build_slice_payload(
+        source_rows=source_rows,
+        document_rows=document_rows,
+        sweep_rows=sweep_rows,
+        query_rows=query_rows,
+        shard_count=2,
+        shard_index=0,
+    )
+    selected_source_ids = {row["source_id"] for row in payload["source_rows"]}
+    assert selected_source_ids == {row["source_id"] for row in payload["document_rows"]}
+    assert {row["source_id"] for row in payload["sweep_rows"]} == selected_source_ids
+    assert payload["summary"]["document_count"] == len(payload["document_rows"])
 
 
 def test_offline_build_and_registry_smoke(phase0_registry_run_dir: Path) -> None:

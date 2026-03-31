@@ -32,6 +32,7 @@ from epigraph_ph.geography import (
 )
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows
 from epigraph_ph.phase0.prompts import build_phase0_prompt_library
+from epigraph_ph.phase0.shard_materializer import build_slice_payload
 from epigraph_ph.validate.literature_review import build_phase0_literature_review
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
 from epigraph_ph.registry.models import LiteratureRefDetail, has_verifiable_locator
@@ -3836,6 +3837,131 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
             adapter_manifest,
             collector_manifest,
             merge_manifest,
+            raw_dir / "phase0_manifest.json",
+        ],
+    )
+    return phase0_manifest
+
+
+def run_phase0_slice_corpus(
+    *,
+    run_id: str,
+    plugin_id: str,
+    source_run_id: str,
+    shard_count: int,
+    shard_index: int,
+    max_documents: int | None = None,
+) -> dict[str, Any]:
+    if shard_count <= 0:
+        raise ValueError("phase0 slice-corpus requires shard_count > 0")
+    if shard_index < 0 or shard_index >= shard_count:
+        raise ValueError("phase0 slice-corpus requires shard_index within [0, shard_count)")
+    ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
+    source_ctx = RunContext.create(run_id=source_run_id, plugin_id=plugin_id)
+    plugin = get_disease_plugin(plugin_id)
+    source_raw_dir = source_ctx.run_dir / "phase0" / "raw"
+    raw_dir = ensure_dir(ctx.run_dir / "phase0" / "raw")
+    parsed_dir = ensure_dir(ctx.run_dir / "phase0" / "parsed")
+    extracted_dir = ensure_dir(ctx.run_dir / "phase0" / "extracted")
+    index_dir = ensure_dir(ctx.run_dir / "phase0" / "index")
+    if not (source_raw_dir / "source_manifest.json").exists():
+        raise FileNotFoundError(f"Missing source manifest for source run: {source_run_id}")
+
+    slice_payload = build_slice_payload(
+        source_rows=read_json(source_raw_dir / "source_manifest.json", default=[]),
+        document_rows=read_json(source_raw_dir / "document_manifest.json", default=[]),
+        sweep_rows=read_json(source_raw_dir / "harvested_sweep_records.json", default=[]),
+        query_rows=read_json(source_raw_dir / "query_manifest.json", default=[]),
+        shard_count=shard_count,
+        shard_index=shard_index,
+        max_documents=max_documents,
+    )
+
+    source_rows = _ensure_unique_ids(slice_payload["source_rows"], "source_id")
+    document_rows = _ensure_unique_ids(slice_payload["document_rows"], "document_path")
+    sweep_rows = _ensure_unique_ids(slice_payload["sweep_rows"], "source_id")
+    query_rows = _ensure_unique_ids(slice_payload["query_rows"], "query_id")
+
+    source_manifest = raw_dir / "source_manifest.json"
+    document_manifest = raw_dir / "document_manifest.json"
+    sweep_manifest = raw_dir / "harvested_sweep_records.json"
+    query_manifest = raw_dir / "query_manifest.json"
+    adapter_manifest = raw_dir / "structured_source_adapter_manifest.json"
+    collector_manifest = raw_dir / "collector_manifest.json"
+    slice_manifest = raw_dir / "slice_manifest.json"
+
+    _write_rows(source_manifest, source_rows)
+    _write_rows(document_manifest, document_rows)
+    _write_rows(sweep_manifest, sweep_rows)
+    _write_rows(query_manifest, query_rows)
+    write_json(adapter_manifest, [row.to_dict() for row in plugin.structured_source_adapters])
+    write_json(collector_manifest, _collector_manifest_rows(source_rows))
+    write_json(
+        slice_manifest,
+        {
+            "target_run_id": run_id,
+            "plugin_id": plugin_id,
+            "source_run_id": source_run_id,
+            "shard_count": int(shard_count),
+            "shard_index": int(shard_index),
+            "max_documents": None if max_documents is None else int(max_documents),
+            **slice_payload["summary"],
+        },
+    )
+    _persist_duckdb(raw_dir / "phase0.duckdb", "source_manifest", source_rows)
+    _persist_duckdb(raw_dir / "phase0.duckdb", "document_manifest", document_rows)
+    _persist_duckdb(raw_dir / "phase0.duckdb", "harvested_sweep_records", sweep_rows)
+    _persist_duckdb(raw_dir / "phase0.duckdb", "query_manifest", query_rows)
+
+    phase0_manifest = _manifest_for_stage(
+        ctx,
+        raw_dir=raw_dir,
+        parsed_dir=parsed_dir,
+        extracted_dir=extracted_dir,
+        index_dir=index_dir,
+        stage_status={"slice_corpus": "completed"},
+        artifact_paths={
+            "source_manifest": str(source_manifest),
+            "source_manifest_parquet": str(_parquet_sidecar_path(source_manifest)),
+            "document_manifest": str(document_manifest),
+            "document_manifest_parquet": str(_parquet_sidecar_path(document_manifest)),
+            "harvested_sweep_records": str(sweep_manifest),
+            "harvested_sweep_records_parquet": str(_parquet_sidecar_path(sweep_manifest)),
+            "structured_source_adapter_manifest": str(adapter_manifest),
+            "collector_manifest": str(collector_manifest),
+            "query_manifest": str(query_manifest),
+            "query_manifest_parquet": str(_parquet_sidecar_path(query_manifest)),
+            "slice_manifest": str(slice_manifest),
+        },
+        backend_status={
+            "duckdb": Phase0BackendStatus("duckdb", duckdb is not None, duckdb is not None),
+            "faiss": Phase0BackendStatus("faiss", faiss is not None, False),
+        },
+        source_count=len(source_rows),
+        document_count=len(document_rows),
+        notes=[
+            f"source_run_id:{source_run_id}",
+            f"slice_shard:{shard_index + 1}/{shard_count}",
+            f"max_documents:{'none' if max_documents is None else int(max_documents)}",
+        ],
+    )
+    write_json(raw_dir / "phase0_manifest.json", phase0_manifest)
+    write_json(ctx.run_dir / "phase0" / "phase0_manifest.json", phase0_manifest)
+    ctx.update_manifest(phase0=phase0_manifest)
+    ctx.record_stage_outputs(
+        "phase0_slice_corpus",
+        [
+            source_manifest,
+            _parquet_sidecar_path(source_manifest),
+            document_manifest,
+            _parquet_sidecar_path(document_manifest),
+            sweep_manifest,
+            _parquet_sidecar_path(sweep_manifest),
+            query_manifest,
+            _parquet_sidecar_path(query_manifest),
+            adapter_manifest,
+            collector_manifest,
+            slice_manifest,
             raw_dir / "phase0_manifest.json",
         ],
     )

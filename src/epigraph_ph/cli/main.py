@@ -14,6 +14,7 @@ from epigraph_ph.phase0 import (
     run_phase0_parse,
     run_phase0_score_wide_sweep,
     run_phase0_semantic_benchmark,
+    run_phase0_slice_corpus,
 )
 from epigraph_ph.phase1 import run_phase1_build
 from epigraph_ph.phase15 import run_phase15_build
@@ -32,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     phase0 = subparsers.add_parser("phase0")
     phase0_sub = phase0.add_subparsers(dest="phase0_command")
-    for name in ("harvest", "parse", "extract", "index", "build", "score-sweep", "semantic-benchmark", "literature-review", "merge-shards", "pilot-report"):
+    for name in ("harvest", "parse", "extract", "index", "build", "score-sweep", "semantic-benchmark", "literature-review", "merge-shards", "slice-corpus", "pilot-report"):
         cmd = phase0_sub.add_parser(name)
         cmd.add_argument("--run-id", required=True)
         cmd.add_argument("--plugin", default="hiv")
@@ -65,6 +66,11 @@ def build_parser() -> argparse.ArgumentParser:
             cmd.add_argument("--top-k", type=int, default=10)
         if name == "merge-shards":
             cmd.add_argument("--source-run-ids", nargs="+", required=True)
+        if name == "slice-corpus":
+            cmd.add_argument("--source-run-id", required=True)
+            cmd.add_argument("--shard-count", type=int, required=True)
+            cmd.add_argument("--shard-index", type=int, required=True)
+            cmd.add_argument("--max-documents", type=int, default=None)
 
     registry = subparsers.add_parser("registry")
     registry_sub = registry.add_subparsers(dest="registry_command")
@@ -200,6 +206,16 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.phase0_command == "merge-shards":
             run_phase0_merge_shards(run_id=args.run_id, plugin_id=args.plugin, source_run_ids=args.source_run_ids)
+            return 0
+        if args.phase0_command == "slice-corpus":
+            run_phase0_slice_corpus(
+                run_id=args.run_id,
+                plugin_id=args.plugin,
+                source_run_id=args.source_run_id,
+                shard_count=args.shard_count,
+                shard_index=args.shard_index,
+                max_documents=args.max_documents,
+            )
             return 0
     if args.command == "registry" and args.registry_command == "build":
         ctx = RunContext.create(run_id=args.run_id, plugin_id=args.plugin)

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import math
 from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase2.block_graph_builder import build_sharded_block_graph_outputs
 from epigraph_ph.phase15 import PHASE15_PROFILE_ID
 from epigraph_ph.runtime import (
     RunContext,
@@ -1214,6 +1216,39 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
         "rejected_count": sum(1 for item in candidate_profiles if item["curation_status"] == "rejected"),
         "block_counts": {block["block_name"]: block["member_count"] for block in block_registry},
     }
+    phase15_catalog_path = ctx.run_dir / "phase15" / "mesoscopic_factor_catalog.json"
+    phase15_pool_path = ctx.run_dir / "phase15" / "factor_promotion_pool.json"
+    phase15_tensor_path = ctx.run_dir / "phase15" / "mesoscopic_factor_tensor.npz"
+    phase15_factor_catalog = read_json(phase15_catalog_path, default=[]) if phase15_catalog_path.exists() else []
+    phase15_factor_pool = read_json(phase15_pool_path, default=[]) if phase15_pool_path.exists() else []
+    phase15_factor_tensor = load_tensor_artifact(phase15_tensor_path) if phase15_tensor_path.exists() else np.zeros((0, 0, 0), dtype=np.float32)
+    block_graph_outputs = build_sharded_block_graph_outputs(
+        candidate_profiles=candidate_profiles,
+        canonical_axis=canonical_axis,
+        parameter_catalog=parameter_catalog,
+        time_feature_matrix=time_feature_matrix,
+        phase15_factor_catalog=phase15_factor_catalog,
+        phase15_factor_pool=phase15_factor_pool,
+        phase15_factor_tensor=phase15_factor_tensor,
+        skeleton_threshold=skeleton_threshold,
+        edge_threshold=0.03,
+        notears_steps=int(notears_cfg["steps"]),
+        block_cfg=_phase2_required_section("block_graph"),
+        node_tiers_fn=_node_tiers,
+        tier_mask_fn=_tier_mask,
+        lag_mask_fn=_lag_mask,
+        mi_prefilter_fn=_mi_prefilter,
+        pc_skeleton_fn=_pc_skeleton_from_fisher_z,
+        corr_skeleton_fn=_skeleton_from_corr,
+        notears_fn=_notears_optimize,
+        project_dag_fn=_project_to_exact_dag,
+        blanket_fn=_markov_blanket,
+    )
+    block_candidate_banks = block_graph_outputs["block_candidate_banks"]
+    block_graph_bundle = block_graph_outputs["block_graph_bundle"]
+    bridge_graph_bundle = block_graph_outputs["bridge_graph_bundle"]
+    phase3_target_blankets = block_graph_outputs["phase3_target_blankets"]
+    pruning_report = block_graph_outputs["pruning_report"]
 
     backend_map = detect_backends()
     tier_artifact = save_tensor_artifact(
@@ -1261,6 +1296,40 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
         device=choose_torch_device(prefer_gpu=True) if torch is not None else "cpu",
         notes=["phase2_markov_blanket_features"],
     )
+    bridge_adjacency_value = bridge_graph_bundle.get("pruned_adjacency")
+    bridge_tensor_value = bridge_graph_bundle.get("retained_factor_tensor")
+    bridge_adjacency = np.asarray(
+        bridge_adjacency_value if isinstance(bridge_adjacency_value, np.ndarray) else np.zeros((0, 0), dtype=np.float32),
+        dtype=np.float32,
+    )
+    bridge_tensor = np.asarray(
+        bridge_tensor_value if isinstance(bridge_tensor_value, np.ndarray) else np.zeros((0, 0, 0), dtype=np.float32),
+        dtype=np.float32,
+    )
+    bridge_artifact = None
+    bridge_core_artifact = None
+    if bridge_adjacency.size:
+        bridge_artifact = save_tensor_artifact(
+            array=to_torch_tensor(bridge_adjacency, device=choose_torch_device(prefer_gpu=False), dtype=torch.float32) if torch is not None else bridge_adjacency,
+            axis_names=["source_factor", "target_factor"],
+            artifact_dir=phase2_dir,
+            stem="bridge_dag_adjacency",
+            backend="torch" if torch is not None else "numpy",
+            device=choose_torch_device(prefer_gpu=False) if torch is not None else "cpu",
+            notes=["phase2_block_graph_bridge_dag"],
+        )
+    if bridge_tensor.size:
+        bridge_core_indices = list(phase3_target_blankets.get("blanket_indices", []))
+        bridge_core_tensor = bridge_tensor[:, :, bridge_core_indices] if bridge_core_indices else bridge_tensor[:, :, : min(1, bridge_tensor.shape[-1])]
+        bridge_core_artifact = save_tensor_artifact(
+            array=to_torch_tensor(bridge_core_tensor, device=choose_torch_device(prefer_gpu=True), dtype=torch.float32) if torch is not None else bridge_core_tensor,
+            axis_names=["province", "month", "bridge_factor"],
+            artifact_dir=phase2_dir,
+            stem="phase3_bridge_core_tensor",
+            backend="torch" if torch is not None else "numpy",
+            device=choose_torch_device(prefer_gpu=True) if torch is not None else "cpu",
+            notes=["phase2_phase3_target_blanket_bridge_factors"],
+        )
 
     write_json(phase2_dir / "edge_scores.json", edge_scores)
     write_json(phase2_dir / "markov_blanket.json", blanket)
@@ -1280,6 +1349,12 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
     write_json(phase2_dir / "collinearity_report.json", collinearity_report)
     write_json(phase2_dir / "interop_report.json", interop_report)
     write_json(phase2_dir / "feature_matrix_mix_report.json", feature_matrix_mix_report)
+    write_json(phase2_dir / "block_candidate_banks.json", {"rows": block_candidate_banks})
+    write_json(phase2_dir / "block_graph_bundle.json", block_graph_bundle)
+    write_json(phase2_dir / "retained_mesoscopic_factor_catalog.json", {"rows": bridge_graph_bundle.get("retained_factor_rows", [])})
+    write_json(phase2_dir / "bridge_dag_report.json", {key: value for key, value in bridge_graph_bundle.items() if key not in {"pruned_adjacency", "retained_factor_tensor", "retained_factor_rows"}})
+    write_json(phase2_dir / "phase3_target_blankets.json", phase3_target_blankets)
+    write_json(phase2_dir / "pruning_report.json", pruning_report)
 
     manifest = Phase0ManifestArtifact(
         plugin_id=plugin_id,
@@ -1314,6 +1389,12 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             "collinearity_report": str(phase2_dir / "collinearity_report.json"),
             "interop_report": str(phase2_dir / "interop_report.json"),
             "feature_matrix_mix_report": str(phase2_dir / "feature_matrix_mix_report.json"),
+            "block_candidate_banks": str(phase2_dir / "block_candidate_banks.json"),
+            "block_graph_bundle": str(phase2_dir / "block_graph_bundle.json"),
+            "retained_mesoscopic_factor_catalog": str(phase2_dir / "retained_mesoscopic_factor_catalog.json"),
+            "bridge_dag_report": str(phase2_dir / "bridge_dag_report.json"),
+            "phase3_target_blankets": str(phase2_dir / "phase3_target_blankets.json"),
+            "pruning_report": str(phase2_dir / "pruning_report.json"),
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, backend_map["torch"].selected, notes=backend_map["torch"].device),
@@ -1337,6 +1418,8 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             {"name": "pc_skeleton_report_present", "passed": pc_skeleton_report.get("available") is True},
             {"name": "time_stratified_cv_present", "passed": bool(time_stratified_cv.get("available"))},
             {"name": "collinearity_report_present", "passed": bool(collinearity_report.get("available"))},
+            {"name": "block_candidate_banks_present", "passed": bool(block_candidate_banks)},
+            {"name": "block_graph_bundle_present", "passed": bool(block_graph_bundle.get("blocks"))},
         ],
         truth_sources=["prior_truth", "synthetic_truth", "proxy_truth"],
         stage_manifest_path=str(phase2_dir / "phase2_manifest.json"),
@@ -1346,6 +1429,7 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             "blanket_count": len(blanket.get("blanket_nodes", [])),
             "edge_count": len(edge_scores),
             "soft_feature_count": int(feature_matrix_mix_report.get("soft_feature_count", 0)),
+            "block_graph_count": len(block_graph_bundle.get("blocks", [])),
         },
     )
     gold_profile = dict((_HIV_PLUGIN.gold_standard_profiles or {}).get("phase2", {}) or {})
@@ -1364,6 +1448,7 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             {"name": "permutation_or_bootstrap_benchmark_present", "passed": bootstrap_edge_stability.get("available") or permutation_null_report.get("available")},
             {"name": "time_stratified_cv_present", "passed": bool(time_stratified_cv.get("available"))},
             {"name": "collinearity_audited", "passed": bool(collinearity_report.get("available"))},
+            {"name": "block_graph_bundle_present", "passed": bool(block_graph_bundle.get("blocks"))},
         ],
         stage_manifest_path=str(phase2_dir / "phase2_manifest.json"),
         summary={
@@ -1374,6 +1459,7 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             "permutation_draw_count": int(permutation_null_report.get("draw_count", 0)),
             "time_cv_fold_count": int(time_stratified_cv.get("fold_count", 0)),
             "soft_feature_count": int(feature_matrix_mix_report.get("soft_feature_count", 0)),
+            "bridge_factor_count": int(len(bridge_graph_bundle.get("retained_factor_rows", []))),
         },
     )
     manifest["artifact_paths"].update(gold_paths)
@@ -1441,11 +1527,30 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
                 "path": str(phase2_dir / "curation_summary.json"),
                 "expected_keys": ["candidate_profile_count", "promoted_candidate_count", "research_candidate_count", "review_count", "rejected_count", "block_counts"],
             },
+            {
+                "name": "block_candidate_banks",
+                "kind": "json_dict",
+                "path": str(phase2_dir / "block_candidate_banks.json"),
+                "expected_keys": ["rows"],
+            },
+            {
+                "name": "block_graph_bundle",
+                "kind": "json_dict",
+                "path": str(phase2_dir / "block_graph_bundle.json"),
+                "expected_keys": ["blocks"],
+            },
+            {
+                "name": "phase3_target_blankets",
+                "kind": "json_dict",
+                "path": str(phase2_dir / "phase3_target_blankets.json"),
+                "expected_keys": ["target_factor_ids", "blanket_factor_ids", "blanket_indices", "phase3_member_canonical_names"],
+            },
         ],
         summary={
             "candidate_profile_count": len(candidate_profiles),
             "edge_count": len(edge_scores),
             "soft_feature_count": int(feature_matrix_mix_report.get("soft_feature_count", 0)),
+            "block_graph_count": len(block_graph_bundle.get("blocks", [])),
         },
     )
     manifest["artifact_paths"].update(boundary_paths)
@@ -1476,6 +1581,12 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             phase2_dir / "collinearity_report.json",
             phase2_dir / "interop_report.json",
             phase2_dir / "feature_matrix_mix_report.json",
+            phase2_dir / "block_candidate_banks.json",
+            phase2_dir / "block_graph_bundle.json",
+            phase2_dir / "retained_mesoscopic_factor_catalog.json",
+            phase2_dir / "bridge_dag_report.json",
+            phase2_dir / "phase3_target_blankets.json",
+            phase2_dir / "pruning_report.json",
             phase2_dir / "gold_standard_manifest.json",
             phase2_dir / "gold_standard_checks.json",
             phase2_dir / "gold_standard_summary.json",
@@ -1483,6 +1594,8 @@ def _run_phase2_build_base(*, run_id: str, plugin_id: str, profile: str = "legac
             phase2_dir / "boundary_shape_checks.json",
             phase2_dir / "boundary_shape_summary.json",
             phase2_dir / "phase2_manifest.json",
+            *( [Path(bridge_artifact["value_path"])] if bridge_artifact is not None else [] ),
+            *( [Path(bridge_core_artifact["value_path"])] if bridge_core_artifact is not None else [] ),
         ],
     )
     return manifest
