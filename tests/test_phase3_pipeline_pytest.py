@@ -208,7 +208,14 @@ def test_phase3_rescue_v2_factor_and_metapop_contract(rescue_v2_run_dir) -> None
     assert "harp_program_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "linkage_penalty" in fit_artifact.get("loss_breakdown", {})
     assert "suppression_penalty" in fit_artifact.get("loss_breakdown", {})
-    assert determinant_modifiers.get("selected_determinant_modifiers", []) != []
+    selected_modifiers = determinant_modifiers.get("selected_determinant_modifiers", [])
+    retained_pool = read_json(rescue_v2_run_dir / "phase2" / "retained_predictive_factor_set.json", default=[]) + read_json(
+        rescue_v2_run_dir / "phase2" / "retained_context_factor_set.json", default=[]
+    )
+    if retained_pool:
+        assert selected_modifiers != []
+    else:
+        assert selected_modifiers == []
     assert subgroup_coupling.get("metapopulation_engine", {}).get("enabled") is True
     assert set(subgroup_coupling.get("metapopulation_engine", {}).get("operator_names", [])) == {
         "mobility_operator",

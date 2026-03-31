@@ -11,6 +11,7 @@ from epigraph_ph.geography import macro_region_label
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
 from epigraph_ph.phase15.bayesian_survival import optimize_survival_tournament
 from epigraph_ph.phase15.graph_helpers import build_environment_masks, build_network_feature_bundle, compute_factor_stability
+from epigraph_ph.phase15.relationship_explorer import build_relationship_explorer_artifacts
 from epigraph_ph.phase3.rescue_core import build_observation_ladder
 from epigraph_ph.runtime import (
     RunContext,
@@ -309,12 +310,12 @@ def _signature_matrix(profiles: list[CandidateProfile]) -> np.ndarray:
     return matrix / row_norm
 
 
-def _similarity_score(
+def _similarity_components(
     left: CandidateProfile,
     right: CandidateProfile,
     standardized_tensor: np.ndarray,
     signature_cosine: float,
-) -> float:
+) -> dict[str, float]:
     weight_cfg = _phase15_required_section("similarity_weights")
     quality_cfg = _phase15_required_section("similarity_quality")
     left_surface = standardized_tensor[:, :, left.canonical_index].reshape(-1)
@@ -335,7 +336,18 @@ def _similarity_score(
         + float(weight_cfg["lane_sim"]) * lane_sim
     )
     quality = float(quality_cfg["evidence_weight_mix"]) * (left.evidence_weight + right.evidence_weight) + float(quality_cfg["bias_penalty_mix"]) * ((1.0 - left.bias_penalty) + (1.0 - right.bias_penalty)) / 2.0
-    return float(np.clip(base * np.clip(quality, float(quality_cfg["quality_floor"]), 1.0), 0.0, 1.0))
+    similarity_score = float(np.clip(base * np.clip(quality, float(quality_cfg["quality_floor"]), 1.0), 0.0, 1.0))
+    return {
+        "signature_cosine": round(float(signature_cosine), 6),
+        "corr_sim": round(float(corr_sim), 6),
+        "semantic_sim": round(float(semantic_sim), 6),
+        "target_sim": round(float(target_sim), 6),
+        "source_sim": round(float(source_sim), 6),
+        "geo_sim": round(float(geo_sim), 6),
+        "lane_sim": round(float(lane_sim), 6),
+        "quality_mix": round(float(np.clip(quality, float(quality_cfg["quality_floor"]), 1.0)), 6),
+        "similarity_score": round(similarity_score, 6),
+    }
 
 
 def _build_similarity_graph(profiles: list[CandidateProfile], standardized_tensor: np.ndarray) -> tuple[list[dict[str, Any]], list[list[int]]]:
@@ -353,11 +365,12 @@ def _build_similarity_graph(profiles: list[CandidateProfile], standardized_tenso
         for local_idx, idx in enumerate(indices):
             scored: list[tuple[int, float]] = []
             for jdx in indices[local_idx + 1 :]:
-                score = _similarity_score(profiles[idx], profiles[jdx], standardized_tensor, float(cosine[idx, jdx]))
+                components = _similarity_components(profiles[idx], profiles[jdx], standardized_tensor, float(cosine[idx, jdx]))
+                score = float(components["similarity_score"])
                 if score >= float(similarity_cfg["within_block_threshold"]):
-                    scored.append((jdx, score))
+                    scored.append((jdx, score, components))
             scored.sort(key=lambda item: item[1], reverse=True)
-            for jdx, score in scored[: int(similarity_cfg["within_block_top_k"])]:
+            for jdx, score, components in scored[: int(similarity_cfg["within_block_top_k"])]:
                 adjacency[idx].add(jdx)
                 adjacency[jdx].add(idx)
                 edges.append(
@@ -365,7 +378,13 @@ def _build_similarity_graph(profiles: list[CandidateProfile], standardized_tenso
                         "left": profiles[idx].canonical_name,
                         "right": profiles[jdx].canonical_name,
                         "block_name": profiles[idx].block_name,
-                        "similarity_score": round(float(score), 6),
+                        "left_evidence_weight": round(float(profiles[idx].evidence_weight), 6),
+                        "right_evidence_weight": round(float(profiles[jdx].evidence_weight), 6),
+                        "left_numeric_support": int(profiles[idx].numeric_support),
+                        "right_numeric_support": int(profiles[jdx].numeric_support),
+                        "left_anchor_support": int(profiles[idx].anchor_support),
+                        "right_anchor_support": int(profiles[jdx].anchor_support),
+                        **components,
                     }
                 )
     visited: set[int] = set()
@@ -658,6 +677,11 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
     write_json(phase15_dir / "factor_survival_pool.json", promotion_pool)
     write_json(phase15_dir / "factor_stability_report.json", stability_rows)
     write_json(phase15_dir / "factor_promotion_pool.json", promotion_pool)
+    relationship_artifacts = build_relationship_explorer_artifacts(
+        profiles=profiles,
+        similarity_edges=similarity_edges,
+        output_dir=phase15_dir,
+    )
 
     backend_map = detect_backends()
     manifest = Phase0ManifestArtifact(
@@ -692,6 +716,8 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             "factor_survival_pool": str(phase15_dir / "factor_survival_pool.json"),
             "factor_stability_report": str(phase15_dir / "factor_stability_report.json"),
             "factor_promotion_pool": str(phase15_dir / "factor_promotion_pool.json"),
+            "semantic_relationship_index": relationship_artifacts["semantic_relationship_index"],
+            "semantic_relationship_bubble_chart": relationship_artifacts["semantic_relationship_bubble_chart"],
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, False, notes=backend_map["torch"].device),
@@ -700,7 +726,7 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
         source_count=len(normalized_rows),
         canonical_candidate_count=len(profiles),
         numeric_observation_count=int(factor_tensor.shape[-1]),
-        notes=["phase15_mesoscopic_factor_engine", "phase15_network_features:reaction_diffusion_percolation_information_propagation"],
+        notes=["phase15_mesoscopic_factor_engine", "phase15_network_features:reaction_diffusion_percolation_information_propagation", f"relationship_count:{relationship_artifacts['relationship_count']}"],
     ).to_dict()
     manifest["profile_id"] = profile
     truth_paths = write_ground_truth_package(

@@ -349,12 +349,15 @@ def _combined_candidate_text(candidate: Phase0CandidateBoundary) -> str:
     return " ".join(
         part
         for part in (
+            candidate.document_id,
+            candidate.source_id,
             candidate.source_title,
             literature_titles,
             candidate.candidate_text,
             candidate.parameter_text,
             candidate.evidence_span,
             " ".join(candidate.geo_mentions),
+            candidate.query_geo_focus,
             candidate.geo,
             candidate.region,
             candidate.province,

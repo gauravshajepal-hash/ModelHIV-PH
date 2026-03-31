@@ -152,6 +152,7 @@ def _score_factor_rows(
     *,
     score_params: dict[str, float],
     factor_catalog: list[dict[str, Any]],
+    require_holdout_survival: bool,
     primary_per_block: int,
     secondary_per_block: int,
     representation_mix: dict[str, float] | None = None,
@@ -190,6 +191,7 @@ def _score_factor_rows(
         block_rows.sort(
             key=lambda item: (
                 bool(item.get("hard_checks_passed")),
+                bool(item.get("survives_holdout")),
                 float(item.get("survival_score", 0.0)),
                 float(item.get("holdout_mae_improvement", 0.0)),
                 float(item.get("holdout_smape_improvement", 0.0)),
@@ -199,6 +201,8 @@ def _score_factor_rows(
         )
         for rank, row in enumerate(block_rows):
             if not bool(row.get("hard_checks_passed")):
+                survival_class = "discarded"
+            elif require_holdout_survival and not bool(row.get("survives_holdout")):
                 survival_class = "discarded"
             elif rank < primary_per_block:
                 survival_class = "survivor_primary"
@@ -261,6 +265,7 @@ def optimize_survival_tournament(
         stability_rows,
         score_params=default_score_params,
         factor_catalog=factor_catalog,
+        require_holdout_survival=bool(stability_cfg.get("require_holdout_survival_for_promotion", True)),
         primary_per_block=max(1, int(stability_cfg["primary_survivors_per_block"])),
         secondary_per_block=max(0, int(stability_cfg["secondary_survivors_per_block"])),
         representation_mix={"unclumped": 1.0 / 3.0, "clumped": 1.0 / 3.0, "network": 1.0 / 3.0},
@@ -361,6 +366,7 @@ def optimize_survival_tournament(
             stability_rows,
             score_params=params,
             factor_catalog=factor_catalog,
+            require_holdout_survival=bool(stability_cfg.get("require_holdout_survival_for_promotion", True)),
             primary_per_block=int(params["primary_per_block"]),
             secondary_per_block=int(params["secondary_per_block"]),
             representation_mix=dict(params["representation_mix"]),

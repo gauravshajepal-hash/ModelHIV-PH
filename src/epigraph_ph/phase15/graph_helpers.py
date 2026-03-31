@@ -586,6 +586,7 @@ def compute_factor_stability(
         stability_rows.append(row)
     primary_per_block = max(1, int(stability_cfg["primary_survivors_per_block"]))
     secondary_per_block = max(0, int(stability_cfg["secondary_survivors_per_block"]))
+    require_holdout_survival = bool(stability_cfg.get("require_holdout_survival_for_promotion", True))
     by_block: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in stability_rows:
         by_block[str(row["block_name"])].append(row)
@@ -604,6 +605,8 @@ def compute_factor_stability(
         )
         for rank, row in enumerate(block_rows):
             if not bool(row["hard_checks_passed"]):
+                survival_class = "discarded"
+            elif require_holdout_survival and not bool(row["survives_holdout"]):
                 survival_class = "discarded"
             elif rank < primary_per_block:
                 survival_class = "survivor_primary"

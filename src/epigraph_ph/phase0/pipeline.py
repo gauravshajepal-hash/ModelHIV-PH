@@ -720,6 +720,7 @@ def _expand_large_corpus_queries(queries: list[dict[str, str]], *, corpus_mode: 
     if corpus_mode not in set(str(item) for item in cfg.get("variant_modes", [])):
         return _dedupe_queries_preserve_order(queries)
     out = list(queries)
+    geo_variants = [str(item).strip() for item in list(cfg.get("philippines_geo_variants") or []) if str(item).strip()]
     for row in queries:
         if row.get("query_lane") == "anchor":
             continue
@@ -731,6 +732,18 @@ def _expand_large_corpus_queries(queries: list[dict[str, str]], *, corpus_mode: 
                 geo_focus="Philippines" if str(row.get("query_geo_focus") or "") == "philippines" else "global",
             )
             out.append(patched)
+        if str(row.get("query_geo_focus") or "") == "philippines":
+            for geo_variant in geo_variants:
+                patched = dict(row)
+                patched["query"] = f"{str(row.get('query') or '').strip()} {geo_variant}".strip()
+                patched["query_geo_focus"] = "philippines"
+                out.append(patched)
+        elif str(row.get("query_lane") or "") in {"hiv_direct", "upstream_determinant", "mixed"}:
+            for geo_variant in geo_variants:
+                patched = dict(row)
+                patched["query"] = f"{str(row.get('query') or '').strip()} Philippines {geo_variant}".strip()
+                patched["query_geo_focus"] = "philippines"
+                out.append(patched)
     return _dedupe_queries_preserve_order(out)
 
 

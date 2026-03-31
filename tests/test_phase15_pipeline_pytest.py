@@ -19,6 +19,7 @@ def test_phase15_constraint_settings_are_declared_in_plugin_contract() -> None:
     assert phase15_cfg.get("stability", {}).get("score_weights", {}).get("predictive_gain") is not None
     assert phase15_cfg.get("stability", {}).get("tournament_weights", {}).get("mae_improvement") is not None
     assert phase15_cfg.get("stability", {}).get("penalty_weights", {}).get("sparsity") is not None
+    assert phase15_cfg.get("stability", {}).get("require_holdout_survival_for_promotion") is True
     assert phase15_cfg.get("stability", {}).get("bayesian_optimization", {}).get("trials") is not None
     assert phase15_cfg.get("stability", {}).get("bayesian_optimization", {}).get("primary_survivors_range") is not None
     assert phase15_cfg.get("stability", {}).get("bayesian_optimization", {}).get("representation_mix_bonus_scale") is not None
@@ -100,6 +101,31 @@ def test_phase15_bayesian_survival_artifacts(rescue_v2_run_dir) -> None:
         assert "best_secondary_per_block" in bayes_report
         assert "best_representation_mix" in bayes_report
         assert bayes_report["active_variant"] in {"baseline", "optimized"}
+
+
+def test_phase15_relationship_explorer_artifacts(rescue_v2_run_dir) -> None:
+    relationship_index = read_json(rescue_v2_run_dir / "phase15" / "semantic_relationship_index.json", default={})
+    manifest = read_json(rescue_v2_run_dir / "phase15" / "phase15_manifest.json", default={})
+
+    assert relationship_index.get("relationship_count", 0) >= 1
+    assert relationship_index.get("rows")
+    assert manifest.get("artifact_paths", {}).get("semantic_relationship_index")
+    assert "semantic_relationship_bubble_chart" in manifest.get("artifact_paths", {})
+
+
+def test_phase15_survivors_must_pass_holdout(rescue_v2_run_dir) -> None:
+    promotion_pool = read_json(rescue_v2_run_dir / "phase15" / "factor_survival_pool.json", default=[])
+
+    promoted = [
+        row for row in promotion_pool if row.get("promotion_class") in {"survivor_primary", "survivor_secondary"}
+    ]
+    if promoted:
+        assert all(bool(row.get("survives_holdout")) for row in promoted)
+    else:
+        assert all(
+            (not bool(row.get("hard_checks_passed"))) or (not bool(row.get("survives_holdout")))
+            for row in promotion_pool
+        )
 
 
 def test_phase15_network_features_and_operator_contract(rescue_v2_run_dir) -> None:
