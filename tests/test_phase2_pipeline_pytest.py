@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
+from epigraph_ph.phase2 import run_phase2_merge_shard_summaries
 from epigraph_ph.phase2.pipeline import (
     _has_directed_cycle,
     _notears_optimize,
@@ -10,7 +11,7 @@ from epigraph_ph.phase2.pipeline import (
     _safe_feature_corr,
     _skeleton_from_corr,
 )
-from epigraph_ph.runtime import load_tensor_artifact, read_json
+from epigraph_ph.runtime import ROOT_DIR, load_tensor_artifact, read_json, write_json
 
 
 ALLOWED_TRANSITION_HOOKS = {
@@ -225,3 +226,116 @@ def test_phase2_feature_matrix_blends_soft_candidates_without_dropping_shape() -
     assert report["soft_feature_count"] >= 1
     assert report["matrix_rows"] == 6
     assert report["matrix_columns"] == 2
+
+
+def test_phase2_merge_shard_summaries_aggregates_retained_factors() -> None:
+    run_ids = [
+        "pytest-phase2-merge-shard-a",
+        "pytest-phase2-merge-shard-b",
+        "pytest-phase2-merge-merged",
+    ]
+    for run_id in run_ids:
+        run_dir = ROOT_DIR / "artifacts" / "runs" / run_id
+        if run_dir.exists():
+            import shutil
+
+            shutil.rmtree(run_dir, ignore_errors=True)
+
+    shard_a_dir = ROOT_DIR / "artifacts" / "runs" / "pytest-phase2-merge-shard-a" / "phase2"
+    shard_b_dir = ROOT_DIR / "artifacts" / "runs" / "pytest-phase2-merge-shard-b" / "phase2"
+    shard_a_dir.mkdir(parents=True, exist_ok=True)
+    shard_b_dir.mkdir(parents=True, exist_ok=True)
+
+    shared_row = {
+        "factor_id": "f_shared",
+        "factor_class": "network",
+        "block_name": "testing",
+        "factor_name": "testing_uptake",
+        "interpretability_label": "Testing uptake",
+        "best_target": "diagnosed_share",
+        "network_feature_family": "testing",
+        "transition_hooks": ["diagnosis_transitions"],
+        "member_canonical_names": ["testing_uptake", "facility_access"],
+        "promotion_class": "main_predictive",
+        "phase3_target_relevant": True,
+        "predictive_gain": 0.7,
+        "stability_score": 0.8,
+        "region_contrast_score": 0.4,
+        "subnational_anomaly_gain": 0.3,
+        "phase3_target_score": 0.75,
+    }
+    bridge_row_a = {
+        "factor_id": "f_a",
+        "factor_class": "network",
+        "block_name": "mobility",
+        "factor_name": "mobility_network_mixing",
+        "interpretability_label": "Mobility mixing",
+        "best_target": "diagnosed_share",
+        "network_feature_family": "mobility",
+        "transition_hooks": ["diagnosis_transitions"],
+        "member_canonical_names": ["mobility_network_mixing"],
+        "promotion_class": "supporting_context",
+        "phase3_target_relevant": True,
+        "predictive_gain": 0.5,
+        "stability_score": 0.6,
+        "region_contrast_score": 0.4,
+        "subnational_anomaly_gain": 0.2,
+        "phase3_target_score": 0.6,
+    }
+    bridge_row_b = {
+        "factor_id": "f_b",
+        "factor_class": "network",
+        "block_name": "policy",
+        "factor_name": "policy_implementation_weakness",
+        "interpretability_label": "Policy weakness",
+        "best_target": "diagnosed_share",
+        "network_feature_family": "policy",
+        "transition_hooks": ["diagnosis_transitions"],
+        "member_canonical_names": ["policy_implementation_weakness"],
+        "promotion_class": "supporting_context",
+        "phase3_target_relevant": True,
+        "predictive_gain": 0.55,
+        "stability_score": 0.65,
+        "region_contrast_score": 0.35,
+        "subnational_anomaly_gain": 0.25,
+        "phase3_target_score": 0.61,
+    }
+
+    write_json(shard_a_dir / "retained_mesoscopic_factor_catalog.json", {"rows": [shared_row, bridge_row_a, bridge_row_b]})
+    write_json(
+        shard_a_dir / "phase3_target_blankets.json",
+        {
+            "target_factor_ids": ["f_shared"],
+            "blanket_factor_ids": ["f_shared", "f_a", "f_b"],
+            "blanket_indices": [0, 1, 2],
+            "phase3_member_canonical_names": ["testing_uptake", "mobility_network_mixing", "policy_implementation_weakness"],
+        },
+    )
+    write_json(shard_b_dir / "retained_mesoscopic_factor_catalog.json", {"rows": [dict(shared_row, factor_id="f_shared_2"), dict(bridge_row_a, factor_id="f_a_2")]})
+    write_json(
+        shard_b_dir / "phase3_target_blankets.json",
+        {
+            "target_factor_ids": ["f_shared_2"],
+            "blanket_factor_ids": ["f_shared_2", "f_a_2"],
+            "blanket_indices": [0, 1],
+            "phase3_member_canonical_names": ["testing_uptake", "mobility_network_mixing"],
+        },
+    )
+
+    result = run_phase2_merge_shard_summaries(
+        run_id="pytest-phase2-merge-merged",
+        plugin_id="hiv",
+        source_run_ids=["pytest-phase2-merge-shard-a", "pytest-phase2-merge-shard-b"],
+        bridge_edge_budget_per_block_pair=1,
+    )
+
+    merged = read_json(ROOT_DIR / "artifacts" / "runs" / "pytest-phase2-merge-merged" / "phase2" / "merged_retained_factor_summary.json", default={})
+    bridge = read_json(ROOT_DIR / "artifacts" / "runs" / "pytest-phase2-merge-merged" / "phase2" / "merged_bridge_summary.json", default={})
+    blanket = read_json(ROOT_DIR / "artifacts" / "runs" / "pytest-phase2-merge-merged" / "phase2" / "merged_phase3_target_blanket_summary.json", default={})
+
+    assert result["summary"]["merged_factor_count"] == 3
+    shared = next(row for row in merged["rows"] if row["factor_name"] == "testing_uptake")
+    assert shared["shard_count"] == 2
+    assert shared["phase3_blanket_shard_count"] == 2
+    assert bridge["retained_edge_count"] >= 1
+    assert "testing_uptake" in blanket["member_canonical_names"]

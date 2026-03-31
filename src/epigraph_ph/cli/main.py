@@ -18,7 +18,7 @@ from epigraph_ph.phase0 import (
 )
 from epigraph_ph.phase1 import run_phase1_build
 from epigraph_ph.phase15 import run_phase15_build
-from epigraph_ph.phase2 import run_phase2_build
+from epigraph_ph.phase2 import run_phase2_build, run_phase2_merge_shard_summaries
 from epigraph_ph.phase3 import run_phase3_build, run_phase3_frozen_backtest, run_phase3_frozen_backtest_tuning
 from epigraph_ph.phase4 import run_phase4_build, run_phase4_optimize, run_phase4_simulate
 from epigraph_ph.registry.sources import build_source_registry
@@ -94,6 +94,12 @@ def build_parser() -> argparse.ArgumentParser:
         build.add_argument("--run-id", required=True)
         build.add_argument("--plugin", default="hiv")
         build.add_argument("--profile", default="legacy")
+        if phase_name == "phase2":
+            merge = phase_sub.add_parser("merge-shard-summaries")
+            merge.add_argument("--run-id", required=True)
+            merge.add_argument("--plugin", default="hiv")
+            merge.add_argument("--source-run-ids", nargs="+", required=True)
+            merge.add_argument("--bridge-edge-budget-per-block-pair", type=int, default=4)
         if phase_name == "phase3":
             build.add_argument("--top-k-per-block", type=int, default=20)
             build.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
@@ -248,6 +254,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "phase2" and args.phase2_command == "build":
         run_phase2_build(run_id=args.run_id, plugin_id=args.plugin, profile=args.profile)
+        return 0
+    if args.command == "phase2" and args.phase2_command == "merge-shard-summaries":
+        run_phase2_merge_shard_summaries(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            source_run_ids=args.source_run_ids,
+            bridge_edge_budget_per_block_pair=args.bridge_edge_budget_per_block_pair,
+        )
         return 0
     if args.command == "phase3" and args.phase3_command == "build":
         run_phase3_build(
