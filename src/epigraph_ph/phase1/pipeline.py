@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 from collections import Counter, defaultdict
+import re
 from typing import Any
 
 import numpy as np
@@ -9,8 +9,29 @@ import numpy as np
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.geography import geo_resolution_label, infer_philippines_geo, infer_region_code, is_national_geo, normalize_geo_label
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase1.normalization_helpers import (
+    AGE_TOKENS,
+    KP_TOKENS,
+    SEX_TOKENS,
+    bias_fields as _phase1_normalization_bias_fields,
+    evidence_class as _evidence_class,
+    evidence_weight as _phase1_normalization_evidence_weight,
+    geo_resolution as _geo_resolution,
+    infer_domain_family as _infer_domain_family,
+    infer_from_tokens as _infer_from_tokens,
+    infer_region as _infer_region,
+    infer_pathway_family as _infer_pathway_family,
+    is_valid_observation_year as _is_valid_observation_year,
+    normalize_numeric_value as _normalize_numeric_value,
+    normalize_unit as _normalize_unit,
+    safe_float as _safe_float,
+    source_reliability_class as _source_reliability_class,
+    text_blob as _text_blob,
+    time_components as _time_components,
+)
 from epigraph_ph.runtime import (
     RunContext,
+    choose_jax_device,
     choose_torch_device,
     detect_backends,
     ensure_dir,
@@ -18,8 +39,11 @@ from epigraph_ph.runtime import (
     read_json,
     save_tensor_artifact,
     to_numpy,
+    torch_to_jax_handoff,
     to_torch_tensor,
     utc_now_iso,
+    write_boundary_shape_package,
+    write_gold_standard_package,
     write_ground_truth_package,
     write_json,
 )
@@ -28,43 +52,6 @@ try:
     import torch
 except Exception:  # pragma: no cover
     torch = None
-
-SEX_TOKENS = {
-    "male": [" male ", " men ", " man ", " boys ", " msm "],
-    "female": [" female ", " women ", " woman ", " girls ", " fsw "],
-}
-AGE_TOKENS = {
-    "15_24": ["15-24", "15 24", "adolescent", "youth", "young people"],
-    "25_34": ["25-34", "25 34"],
-    "35_49": ["35-49", "35 49"],
-    "50_plus": ["50+", "older adult", "aging"],
-}
-KP_TOKENS = {
-    "msm": [" msm ", "men who have sex with men"],
-    "tgw": [" tgw ", "transgender women", "trans women"],
-    "fsw": [" fsw ", "female sex worker", "sex worker"],
-    "clients_fsw": ["client of sex worker", "clients of female sex workers"],
-    "pwid": [" pwid ", "people who inject drugs", "inject drugs"],
-    "non_kp_partners": ["partner", "spouse", "non-key-population partner"],
-}
-DOMAIN_HINTS = {
-    "economics": ["econom", "poverty", "income", "afford", "cash", "insurance"],
-    "logistics": ["transport", "mobility", "travel", "supply chain", "commute", "remoteness"],
-    "behavior": ["stigma", "behavior", "norm", "risk", "health seeking", "condom"],
-    "population": ["population", "demograph", "urbanization", "migration", "fertility", "age structure"],
-    "biology": ["cd4", "viral", "immune", "drug resistance", "antiviral", "reservoir"],
-    "policy": ["policy", "governance", "implementation", "service delivery", "program"],
-}
-PATHWAY_HINTS = {
-    "prevention_access": ["prevent", "condom", "prophylaxis", "access"],
-    "testing_uptake": ["testing", "screening", "diagnos", "uptake"],
-    "linkage_to_care": ["linkage", "referral", "clinic", "care"],
-    "retention_adherence": ["retention", "adherence", "loss to follow up", "dropout"],
-    "suppression_outcomes": ["suppression", "viral load", "treatment success", "art"],
-    "mobility_network_mixing": ["mobility", "migration", "network", "mixing"],
-    "health_system_reach": ["facility", "telehealth", "coverage", "health system"],
-    "biological_progression": ["cd4", "immune", "viral", "reservoir", "drug resistance"],
-}
 
 _HIV_PLUGIN = get_disease_plugin("hiv")
 
@@ -87,236 +74,404 @@ def _phase1_required_section(key: str) -> dict[str, Any]:
     return dict(value)
 
 
-def _is_valid_observation_year(year: int) -> bool:
-    return 1980 <= year <= 2026
+def _phase1_stabilizer(key: str) -> float:
+    stabilizers = dict((_HIV_PLUGIN.numerical_stabilizers or {}).get("phase1", {}) or {})
+    if key not in stabilizers:
+        raise KeyError(f"Missing HIV phase1 numerical stabilizer: {key}")
+    return float(stabilizers[key])
 
 
-def _safe_float(value: Any) -> float | None:
-    try:
-        return float(str(value).replace(",", ""))
-    except Exception:
-        return None
+def _phase1_preprocessing_cfg() -> dict[str, Any]:
+    return _phase1_required_section("preprocessing")
 
 
-def _normalize_unit(unit: str) -> str:
-    unit = (unit or "").strip().lower()
-    mapping = {
-        "%": "percent",
-        "percent": "percent",
-        "usd": "currency_usd",
-        "php": "currency_php",
-        "peso": "currency_php",
-        "pesos": "currency_php",
-        "people": "count_people",
-        "cases": "count_cases",
-        "deaths": "count_deaths",
-        "million": "count_million",
-        "billion": "count_billion",
-    }
-    return mapping.get(unit, unit or "unitless")
-
-
-def _normalize_numeric_value(value: float | None, normalized_unit: str) -> float | None:
-    if value is None:
-        return None
-    if normalized_unit == "percent":
-        return value / 100.0
-    if normalized_unit == "count_million":
-        return value * 1_000_000.0
-    if normalized_unit == "count_billion":
-        return value * 1_000_000_000.0
-    return value
-
-
-def _geo_resolution(geo: str) -> str:
-    return geo_resolution_label(geo)
-
-
-def _infer_region(geo: str, text: str) -> str:
-    return infer_region_code(geo, text)
-
-
-def _time_components(value: str) -> tuple[str, str, int | None, int | None]:
-    value = (value or "").strip()
-    if len(value) == 4 and value.isdigit():
-        year = int(value)
-        return ("annual", value, year, None) if _is_valid_observation_year(year) else ("unknown", "unknown", None, None)
-    match = re.fullmatch(r"(\d{4})-(\d{2})", value)
-    if match:
-        year = int(match.group(1))
-        month = int(match.group(2))
-        if _is_valid_observation_year(year) and 1 <= month <= 12:
-            return "monthly", value, year, month
-        return "unknown", "unknown", None, None
-    return "unknown", value, None, None
-
-
-def _text_blob(row: dict[str, Any]) -> str:
-    pieces = [
-        row.get("candidate_text"),
-        row.get("parameter_text"),
-        row.get("canonical_name"),
-        row.get("geo"),
-        " ".join(row.get("soft_ontology_tags") or []),
-        " ".join(row.get("soft_subparameter_hints") or []),
-        " ".join(row.get("linkage_targets") or []),
-    ]
-    return f" {' '.join(str(piece or '') for piece in pieces)} ".lower()
-
-
-def _infer_from_tokens(blob: str, token_map: dict[str, list[str]], default: str = "") -> str:
-    for label, tokens in token_map.items():
-        if any(token in blob for token in tokens):
-            return label
-    return default
-
-
-def _infer_domain_family(row: dict[str, Any], blob: str) -> str:
-    explicit = list(row.get("soft_ontology_tags") or [])
-    if explicit:
-        return explicit[0]
-    return _infer_from_tokens(blob, DOMAIN_HINTS, default="mixed")
-
-
-def _infer_pathway_family(row: dict[str, Any], blob: str) -> str:
-    explicit = list(row.get("linkage_targets") or [])
-    if explicit:
-        return explicit[0]
-    return _infer_from_tokens(blob, PATHWAY_HINTS, default="mixed")
-
-
-def _evidence_class(row: dict[str, Any]) -> str:
-    if row.get("source_bank") == "phase0_extracted" and row.get("is_direct_measurement"):
-        return "observed_numeric"
-    if row.get("source_bank") == "phase0_extracted":
-        return "numeric_prior"
-    if row.get("source_bank") == "phase0_wide_sweep_hiv_direct":
-        return "hiv_literature_seed"
-    if row.get("source_bank") == "phase0_wide_sweep_upstream_determinants":
-        return "upstream_literature_seed"
-    return "literature_seed"
+def _phase1_compute_backend() -> str:
+    cfg = _phase1_preprocessing_cfg()
+    preferred = str(cfg.get("compute_backend") or "auto").lower()
+    prefer_gpu = bool(cfg.get("prefer_gpu", True))
+    if preferred == "torch" and torch is not None:
+        return "torch"
+    if preferred == "numpy":
+        return "numpy"
+    if torch is not None and choose_torch_device(prefer_gpu=prefer_gpu) == "cuda":
+        return "torch"
+    return "numpy"
 
 
 def _evidence_weight(row: dict[str, Any], evidence_class: str) -> float:
-    cfg = _phase1_required_section("evidence_class_weights")
-    weight = float(cfg["base"])
-    if evidence_class == "observed_numeric":
-        weight = float(cfg["observed_numeric"])
-    elif evidence_class == "numeric_prior":
-        weight = float(cfg["numeric_prior"])
-    elif evidence_class == "hiv_literature_seed":
-        weight = float(cfg["hiv_literature_seed"])
-    elif evidence_class == "upstream_literature_seed":
-        weight = float(cfg["upstream_literature_seed"])
-    if row.get("is_anchor_eligible"):
-        weight += float(cfg["anchor_bonus"])
-    if row.get("is_direct_measurement"):
-        weight += float(cfg["direct_measurement_bonus"])
-    return min(float(cfg["ceiling"]), round(weight, 4))
-
-
-def _source_reliability_class(row: dict[str, Any], evidence_class: str) -> str:
-    source_bank = str(row.get("source_bank") or "").lower()
-    if row.get("is_anchor_eligible") and source_bank == "phase0_extracted":
-        return "official_routine_anchor"
-    if evidence_class == "observed_numeric":
-        return "official_survey" if any(token in source_bank for token in ("survey", "ndhs", "ihbss")) else "scientific_numeric_study"
-    if evidence_class == "numeric_prior":
-        return "structured_repository" if "repository" in source_bank else "scientific_numeric_study"
-    if source_bank in {"phase0_wide_sweep_hiv_direct", "phase0_wide_sweep_upstream_determinants"}:
-        details = row.get("literature_ref_details") or []
-        if any(str(detail.get("kind") or "").lower() == "quantitative" for detail in details if isinstance(detail, dict)):
-            return "scientific_numeric_study"
-        return "literature_only_seed"
-    if "repository" in source_bank:
-        return "structured_repository"
-    if row.get("is_direct_measurement"):
-        return "scientific_numeric_study"
-    if row.get("is_prior_only"):
-        return "proxy_inferred"
-    return "literature_only_seed"
+    return _phase1_normalization_evidence_weight(row, evidence_class, _phase1_required_section("evidence_class_weights"))
 
 
 def _bias_fields(row: dict[str, Any], reliability_class: str, time_resolution: str, geo_resolution: str) -> dict[str, Any]:
-    profile = _phase1_required_section("reliability_class_rules")[reliability_class]
-    thresholds = _phase1_required_section("bias_class_thresholds")
-    spatial_cfg = _phase1_required_section("spatial_relevance_by_geo")
-    penalty_mix = _phase1_required_section("bias_penalty_mix")
-    measurement_bias_class = "low_bias" if profile["measurement"] >= float(thresholds["measurement_low"]) else ("moderate_bias" if profile["measurement"] >= float(thresholds["measurement_moderate"]) else "high_bias")
-    sampling_bias_class = "low_sampling_bias" if profile["sampling"] >= float(thresholds["sampling_low"]) else ("moderate_sampling_bias" if profile["sampling"] >= float(thresholds["sampling_moderate"]) else "high_sampling_bias")
-    if time_resolution == "monthly":
-        reporting_delay_class = "short_delay"
-    elif time_resolution == "annual":
-        reporting_delay_class = "moderate_delay"
-    else:
-        reporting_delay_class = "unknown_delay"
-    spatial_relevance = float(spatial_cfg.get(geo_resolution, spatial_cfg["unknown"]))
-    temporal_freshness = profile["delay"]
+    return _phase1_normalization_bias_fields(
+        row,
+        reliability_class,
+        time_resolution,
+        geo_resolution,
+        reliability_class_rules=_phase1_required_section("reliability_class_rules"),
+        bias_class_thresholds=_phase1_required_section("bias_class_thresholds"),
+        spatial_relevance_by_geo=_phase1_required_section("spatial_relevance_by_geo"),
+        bias_penalty_mix=_phase1_required_section("bias_penalty_mix"),
+    )
+
+
+def _canonical_unit_index(normalized_rows: list[dict[str, Any]]) -> dict[str, str]:
+    unit_counts: dict[str, Counter[str]] = defaultdict(Counter)
+    for row in normalized_rows:
+        canonical_name = str(row.get("canonical_name") or "")
+        normalized_unit = str(row.get("normalized_unit") or "")
+        if canonical_name and normalized_unit:
+            unit_counts[canonical_name][normalized_unit] += 1
     return {
-        "source_reliability_class": reliability_class,
-        "measurement_bias_class": measurement_bias_class,
-        "sampling_bias_class": sampling_bias_class,
-        "reporting_delay_class": reporting_delay_class,
-        "promotion_eligibility_hint": profile["hint"],
-        "source_tier_weight": round(float(profile["tier"]), 4),
-        "measurement_quality_weight": round(float(profile["measurement"]), 4),
-        "temporal_freshness_weight": round(float(temporal_freshness), 4),
-        "spatial_relevance_weight": round(float(spatial_relevance), 4),
-        "replication_weight": 0.0,
-        "bias_penalty": round(
-            float(
-                max(
-                    0.0,
-                    1.0
-                    - (
-                        float(penalty_mix["measurement"]) * profile["measurement"]
-                        + float(penalty_mix["sampling"]) * profile["sampling"]
-                        + float(penalty_mix["temporal_freshness"]) * temporal_freshness
-                        + float(penalty_mix["spatial_relevance"]) * spatial_relevance
-                    ),
-                )
-            ),
-            4,
-        ),
+        canonical_name: counts.most_common(1)[0][0]
+        for canonical_name, counts in unit_counts.items()
+        if counts
     }
 
 
-def _tensor_preprocess(aligned: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
+def _phase1_tensor_time_key(value: str) -> str:
+    resolution, normalized, year, _month = _time_components(value)
+    if normalized and normalized != "unknown":
+        return normalized
+    if year is not None:
+        return f"{year:04d}-01"
+    return ""
+
+
+def _build_missing_mask(
+    *,
+    aligned_tensor: np.ndarray,
+    normalized_rows: list[dict[str, Any]],
+    province_axis: list[str],
+    month_axis: list[str],
+    canonical_axis: list[str],
+) -> np.ndarray:
+    mask = np.zeros_like(aligned_tensor, dtype=np.float32)
+    province_index = {str(name): idx for idx, name in enumerate(province_axis)}
+    month_index = {str(name): idx for idx, name in enumerate(month_axis)}
+    canonical_index = {str(name): idx for idx, name in enumerate(canonical_axis)}
+    for row in normalized_rows:
+        if row.get("model_numeric_value") is None:
+            continue
+        canonical_name = str(row.get("canonical_name") or "")
+        if canonical_name not in canonical_index:
+            continue
+        geo_candidates = [
+            normalize_geo_label(str(row.get("geo") or ""), default_country_focus=is_national_geo(str(row.get("geo") or ""))),
+            normalize_geo_label(str(row.get("province") or ""), default_country_focus=False),
+            normalize_geo_label(str(row.get("region") or ""), default_country_focus=False),
+        ]
+        province_name = next((candidate for candidate in geo_candidates if candidate and candidate in province_index), "")
+        if not province_name and is_national_geo(str(row.get("geo") or "")) and "Philippines" in province_index:
+            province_name = "Philippines"
+        time_key = _phase1_tensor_time_key(str(row.get("time") or ""))
+        if province_name and time_key in month_index:
+            mask[province_index[province_name], month_index[time_key], canonical_index[canonical_name]] = 1.0
+    return mask.astype(np.float32)
+
+
+def _build_denominator_tensor(
+    *,
+    aligned_tensor: np.ndarray,
+    normalized_rows: list[dict[str, Any]],
+    canonical_axis: list[str],
+) -> tuple[np.ndarray, dict[str, str]]:
+    rules = _phase1_required_section("denominator_rules")
+    min_denominator = _phase1_stabilizer("min_denominator")
+    identity_features = {str(name) for name in rules.get("identity_features", [])}
+    canonical_denominators = {str(key): str(value) for key, value in dict(rules.get("canonical_denominators", {})).items()}
+    default_count_denominator = str(rules.get("default_count_denominator") or "")
+    canonical_index = {str(name): idx for idx, name in enumerate(canonical_axis)}
+    unit_index = _canonical_unit_index(normalized_rows)
+    denominator_tensor = np.ones_like(aligned_tensor, dtype=np.float32)
+    denominator_map: dict[str, str] = {}
+
+    for canonical_name in canonical_axis:
+        unit = unit_index.get(canonical_name, "")
+        denominator_name = ""
+        if canonical_name in identity_features:
+            denominator_name = "identity"
+        elif canonical_name in canonical_denominators:
+            denominator_name = canonical_denominators[canonical_name]
+        elif unit.startswith("count_") and default_count_denominator and canonical_name != default_count_denominator:
+            denominator_name = default_count_denominator
+        elif any(token in canonical_name for token in ("_rate", "_share", "_coverage", "_prevalence", "_index")):
+            denominator_name = "identity"
+        else:
+            denominator_name = "identity"
+
+        denominator_map[canonical_name] = denominator_name
+        feature_idx = canonical_index[canonical_name]
+        if denominator_name == "identity":
+            denominator_tensor[:, :, feature_idx] = 1.0
+            continue
+        if denominator_name not in canonical_index:
+            denominator_tensor[:, :, feature_idx] = 1.0
+            denominator_map[canonical_name] = "identity_missing"
+            continue
+        source_idx = canonical_index[denominator_name]
+        denominator_tensor[:, :, feature_idx] = np.clip(aligned_tensor[:, :, source_idx], a_min=min_denominator, a_max=None)
+    return denominator_tensor.astype(np.float32), denominator_map
+
+
+def _phase1_quality_weights(
+    *,
+    density_tensor: np.ndarray,
+    missing_mask: np.ndarray,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    cfg = _phase1_required_section("missing_data")
+    beta = float(cfg["quality_beta"])
+    gamma = float(cfg["quality_gamma"])
+    rho = float(cfg["temporal_decay_rho"])
+    minimum_weight = float(cfg["minimum_weight"])
+    observed = missing_mask > 0.5
+    province_missing_rate = 1.0 - observed.mean(axis=(1, 2))
+    density_nan = np.where(observed, density_tensor, np.nan)
+    if density_tensor.shape[1] > 1:
+        temporal_delta = np.diff(density_nan, axis=1)
+        abs_delta = np.abs(temporal_delta)
+        valid_delta = np.isfinite(abs_delta)
+        delta_sum = np.where(valid_delta, abs_delta, 0.0).sum(axis=(1, 2))
+        delta_count = valid_delta.sum(axis=(1, 2))
+        province_instability = np.divide(
+            delta_sum,
+            np.clip(delta_count, a_min=1, a_max=None),
+            dtype=np.float32,
+        )
+    else:
+        abs_density = np.abs(density_nan)
+        valid_density = np.isfinite(abs_density)
+        density_sum = np.where(valid_density, abs_density, 0.0).sum(axis=(1, 2))
+        density_count = valid_density.sum(axis=(1, 2))
+        province_instability = np.divide(
+            density_sum,
+            np.clip(density_count, a_min=1, a_max=None),
+            dtype=np.float32,
+        )
+    province_instability = np.nan_to_num(province_instability, nan=0.0, posinf=0.0, neginf=0.0)
+    province_weight = 1.0 / (1.0 + beta * province_missing_rate + gamma * province_instability)
+    province_weight = np.clip(province_weight, a_min=minimum_weight, a_max=1.0)
+    month_distance = np.arange(density_tensor.shape[1] - 1, -1, -1, dtype=np.float32)
+    temporal_decay = np.exp(-rho * month_distance)
+    quality_weight_tensor = province_weight[:, None, None] * temporal_decay[None, :, None]
+    quality_weight_tensor = np.repeat(quality_weight_tensor, density_tensor.shape[2], axis=2)
+    meta = {
+        "province_missing_rate": province_missing_rate.astype(np.float32).round(6).tolist(),
+        "province_instability": province_instability.astype(np.float32).round(6).tolist(),
+        "province_weight": province_weight.astype(np.float32).round(6).tolist(),
+        "temporal_decay": temporal_decay.astype(np.float32).round(6).tolist(),
+    }
+    return quality_weight_tensor.astype(np.float32), meta
+
+
+def _huber_scale_numpy(imputed: np.ndarray, observed: np.ndarray) -> np.ndarray:
+    cfg = _phase1_preprocessing_cfg()
+    eps = _phase1_stabilizer("huber_eps")
+    delta = float(cfg["huber_delta"])
+    steps = int(cfg["huber_steps"])
+    center = np.nanmedian(np.where(observed, imputed, np.nan), axis=(0, 1), keepdims=True)
+    center = np.nan_to_num(center, nan=0.0)
+    scale = np.nanmedian(np.abs(np.where(observed, imputed, np.nan) - center), axis=(0, 1), keepdims=True)
+    scale = np.nan_to_num(scale, nan=0.0)
+    scale = np.clip(scale * 1.4826, a_min=eps, a_max=None)
+    for _ in range(max(1, steps)):
+        residual = imputed - center
+        scaled = residual / scale
+        weights = np.where(np.abs(scaled) <= delta, 1.0, delta / np.clip(np.abs(scaled), a_min=eps, a_max=None))
+        weights = weights * observed.astype(np.float32)
+        weight_sum = np.clip(weights.sum(axis=(0, 1), keepdims=True), a_min=eps, a_max=None)
+        center = (weights * imputed).sum(axis=(0, 1), keepdims=True) / weight_sum
+        abs_residual = np.abs(imputed - center)
+        scale = (weights * abs_residual).sum(axis=(0, 1), keepdims=True) / weight_sum
+        scale = np.clip(scale * 1.4826, a_min=eps, a_max=None)
+    return np.clip((imputed - center) / scale, a_min=-6.0, a_max=6.0).astype(np.float32)
+
+
+def _power_transform_numpy(density_nan: np.ndarray, observed: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
+    cfg = _phase1_preprocessing_cfg()
+    transform_mode = str(cfg.get("transform_mode") or "log1p").lower()
+    if transform_mode != "boxcox":
+        return np.log1p(np.clip(density_nan, a_min=0.0, a_max=None)), {"transform_mode": "log1p"}
+    lam = float(cfg["boxcox_lambda"])
+    shift = float(cfg["boxcox_shift"])
+    eps = _phase1_stabilizer("boxcox_eps")
+    shifted = np.clip(density_nan + shift, a_min=eps, a_max=None)
+    if abs(lam) <= 1e-8:
+        transformed = np.log(shifted)
+    else:
+        transformed = (np.power(shifted, lam) - 1.0) / lam
+    transformed = np.where(observed, transformed, np.nan)
+    return transformed.astype(np.float32), {"transform_mode": "boxcox", "boxcox_lambda": lam, "boxcox_shift": shift}
+
+
+def _power_transform_torch(density: "torch.Tensor", observed: "torch.Tensor") -> tuple["torch.Tensor", dict[str, Any]]:
+    cfg = _phase1_preprocessing_cfg()
+    transform_mode = str(cfg.get("transform_mode") or "log1p").lower()
+    if transform_mode != "boxcox":
+        return torch.log1p(torch.clamp(density, min=0.0)), {"transform_mode": "log1p"}
+    lam = float(cfg["boxcox_lambda"])
+    shift = float(cfg["boxcox_shift"])
+    eps = _phase1_stabilizer("boxcox_eps")
+    shifted = torch.clamp(density + shift, min=eps)
+    if abs(lam) <= 1e-8:
+        transformed = torch.log(shifted)
+    else:
+        transformed = (torch.pow(shifted, lam) - 1.0) / lam
+    nan_fill = torch.full_like(transformed, float("nan"))
+    transformed = torch.where(observed, transformed, nan_fill)
+    return transformed, {"transform_mode": "boxcox", "boxcox_lambda": lam, "boxcox_shift": shift}
+
+
+def _huber_scale_torch(imputed: "torch.Tensor", observed: "torch.Tensor") -> "torch.Tensor":
+    cfg = _phase1_preprocessing_cfg()
+    eps = _phase1_stabilizer("huber_eps")
+    delta = float(cfg["huber_delta"])
+    steps = int(cfg["huber_steps"])
+    nan_fill = torch.full_like(imputed, float("nan"))
+    observed_values = torch.where(observed, imputed, nan_fill)
+    center = torch.nanmedian(observed_values.reshape(-1, observed_values.shape[-1]), dim=0).values.view(1, 1, -1)
+    center = torch.nan_to_num(center, nan=0.0)
+    scale = torch.nanmedian(torch.abs(observed_values - center).reshape(-1, observed_values.shape[-1]), dim=0).values.view(1, 1, -1)
+    scale = torch.nan_to_num(scale, nan=0.0)
+    scale = torch.clamp(scale * 1.4826, min=eps)
+    observed_float = observed.to(imputed.dtype)
+    for _ in range(max(1, steps)):
+        residual = imputed - center
+        scaled = residual / scale
+        weights = torch.where(
+            torch.abs(scaled) <= delta,
+            torch.ones_like(scaled),
+            delta / torch.clamp(torch.abs(scaled), min=eps),
+        )
+        weights = weights * observed_float
+        weight_sum = torch.clamp(weights.sum(dim=(0, 1), keepdim=True), min=eps)
+        center = (weights * imputed).sum(dim=(0, 1), keepdim=True) / weight_sum
+        abs_residual = torch.abs(imputed - center)
+        scale = (weights * abs_residual).sum(dim=(0, 1), keepdim=True) / weight_sum
+        scale = torch.clamp(scale * 1.4826, min=eps)
+    return torch.clamp((imputed - center) / scale, min=-6.0, max=6.0)
+
+
+def _tensor_preprocess(
+    aligned: np.ndarray,
+    *,
+    denominator_tensor: np.ndarray,
+    missing_mask: np.ndarray,
+) -> tuple[Any, Any, Any, Any, dict[str, Any]]:
     if aligned.size == 0:
-        empty = np.zeros_like(aligned)
-        return empty, empty, empty, {"density_scale_default": True}
-    if torch is None:
-        denominator = np.ones_like(aligned, dtype=np.float32)
-        density = aligned / np.where(denominator == 0, 1.0, denominator)
-        log_tensor = np.log1p(np.clip(density, a_min=0.0, a_max=None))
-        median = np.median(log_tensor, axis=(0, 1), keepdims=True)
-        q75 = np.quantile(log_tensor, 0.75, axis=(0, 1), keepdims=True)
-        q25 = np.quantile(log_tensor, 0.25, axis=(0, 1), keepdims=True)
-        iqr = np.where((q75 - q25) == 0, 1.0, q75 - q25)
-        standardized = np.clip((log_tensor - median) / iqr, -6.0, 6.0)
-        return density.astype(np.float32), denominator.astype(np.float32), standardized.astype(np.float32), {"density_scale_default": True}
-    device = choose_torch_device(prefer_gpu=True)
-    tensor = to_torch_tensor(aligned, device=device, dtype=torch.float32)
-    denominator = torch.ones_like(tensor, dtype=torch.float32)
-    density = tensor / torch.clamp(denominator, min=1.0)
-    log_tensor = torch.log1p(torch.clamp(density, min=0.0))
-    flat = log_tensor.reshape(-1, log_tensor.shape[-1])
-    median = torch.quantile(flat, 0.5, dim=0)
-    q75 = torch.quantile(flat, 0.75, dim=0)
-    q25 = torch.quantile(flat, 0.25, dim=0)
-    iqr = torch.clamp(q75 - q25, min=1e-6)
-    standardized = (log_tensor - median.view(1, 1, -1)) / iqr.view(1, 1, -1)
-    standardized = torch.clamp(standardized, min=-6.0, max=6.0)
+        empty = np.zeros_like(aligned, dtype=np.float32)
+        return empty, empty, empty, empty, {"density_scale_default": True}
+
+    backend = _phase1_compute_backend()
+    winsor_cfg = _phase1_required_section("winsorization")
+    min_denominator = _phase1_stabilizer("min_denominator")
+    iqr_eps = _phase1_stabilizer("iqr_eps")
+    preprocess_cfg = _phase1_preprocessing_cfg()
+
+    if backend == "torch" and torch is not None:
+        device = choose_torch_device(prefer_gpu=bool(preprocess_cfg.get("prefer_gpu", True)))
+        aligned_t = to_torch_tensor(aligned, device=device, dtype=torch.float32)
+        denominator_t = to_torch_tensor(denominator_tensor, device=device, dtype=torch.float32)
+        missing_t = to_torch_tensor(missing_mask, device=device, dtype=torch.float32)
+        observed_t = missing_t > 0.5
+        density_t = aligned_t / torch.clamp(denominator_t, min=min_denominator)
+        nan_fill = torch.full_like(density_t, float("nan"))
+        density_nan_t = torch.where(observed_t, density_t, nan_fill)
+        feature_has_observation_t = observed_t.any(dim=(0, 1), keepdim=True)
+        density_nan_t = torch.where(feature_has_observation_t, density_nan_t, torch.zeros_like(density_nan_t))
+        transformed_t, transform_meta = _power_transform_torch(density_nan_t, observed_t)
+        flat_transformed_t = transformed_t.reshape(-1, transformed_t.shape[-1])
+        q_low_t = torch.nanquantile(flat_transformed_t, float(winsor_cfg["lower_quantile"]), dim=0).view(1, 1, -1)
+        q_high_t = torch.nanquantile(flat_transformed_t, float(winsor_cfg["upper_quantile"]), dim=0).view(1, 1, -1)
+        q_low_t = torch.nan_to_num(q_low_t, nan=0.0)
+        q_high_t = torch.nan_to_num(q_high_t, nan=0.0)
+        winsorized_t = torch.minimum(torch.maximum(transformed_t, q_low_t), q_high_t)
+        median_t = torch.nanmedian(winsorized_t.reshape(-1, winsorized_t.shape[-1]), dim=0).values.view(1, 1, -1)
+        median_t = torch.nan_to_num(median_t, nan=0.0)
+        imputed_t = torch.where(torch.isnan(winsorized_t), median_t, winsorized_t)
+        scaling_mode = str(preprocess_cfg.get("scaling_mode") or "iqr").lower()
+        if scaling_mode == "huber":
+            standardized_t = _huber_scale_torch(imputed_t, observed_t)
+            scale_meta = {"scaling_mode": "huber"}
+        else:
+            flat_imputed_t = imputed_t.reshape(-1, imputed_t.shape[-1])
+            q75_t = torch.quantile(flat_imputed_t, 0.75, dim=0).view(1, 1, -1)
+            q25_t = torch.quantile(flat_imputed_t, 0.25, dim=0).view(1, 1, -1)
+            iqr_t = torch.clamp(q75_t - q25_t, min=iqr_eps)
+            standardized_t = torch.clamp((imputed_t - median_t) / iqr_t, min=-6.0, max=6.0)
+            scale_meta = {"scaling_mode": "iqr"}
+        quality_weight_tensor, quality_meta = _phase1_quality_weights(density_tensor=to_numpy(density_t), missing_mask=to_numpy(missing_t))
+        quality_t = to_torch_tensor(quality_weight_tensor, device=device, dtype=torch.float32)
+        standardized_t = standardized_t * quality_t
+        standardized_t = torch.where(observed_t, standardized_t, torch.zeros_like(standardized_t))
+        density = density_t
+        denominator_tensor = denominator_t
+        standardized = standardized_t
+        quality_weight_output = quality_t
+        dlpack_report: dict[str, Any] = {"source": "torch", "target": "jax", "used_dlpack": False, "reason": "not_requested"}
+        if str(preprocess_cfg.get("interop_mode") or "").lower() == "dlpack":
+            try:
+                _jax_view, dlpack_report = torch_to_jax_handoff(standardized_t, prefer_dlpack=True)
+            except Exception as exc:  # pragma: no cover
+                dlpack_report = {"source": "torch", "target": "jax", "used_dlpack": False, "reason": f"error:{type(exc).__name__}"}
+    else:
+        density = np.asarray(aligned, dtype=np.float32) / np.clip(np.asarray(denominator_tensor, dtype=np.float32), a_min=min_denominator, a_max=None)
+        observed = np.asarray(missing_mask, dtype=np.float32) > 0.5
+        density_nan = np.where(observed, density, np.nan)
+        feature_has_observation = np.any(observed, axis=(0, 1), keepdims=True)
+        density_nan = np.where(feature_has_observation, density_nan, 0.0)
+        transformed, transform_meta = _power_transform_numpy(density_nan, observed)
+        q_low = np.nanquantile(transformed, float(winsor_cfg["lower_quantile"]), axis=(0, 1), keepdims=True)
+        q_high = np.nanquantile(transformed, float(winsor_cfg["upper_quantile"]), axis=(0, 1), keepdims=True)
+        q_low = np.nan_to_num(q_low, nan=0.0)
+        q_high = np.nan_to_num(q_high, nan=0.0)
+        winsorized = np.clip(transformed, q_low, q_high)
+        median = np.nanmedian(winsorized, axis=(0, 1), keepdims=True)
+        median = np.nan_to_num(median, nan=0.0)
+        imputed = np.where(np.isnan(winsorized), median, winsorized)
+        scaling_mode = str(preprocess_cfg.get("scaling_mode") or "iqr").lower()
+        if scaling_mode == "huber":
+            standardized = _huber_scale_numpy(imputed, observed)
+            scale_meta = {"scaling_mode": "huber"}
+        else:
+            q75 = np.nanquantile(imputed, 0.75, axis=(0, 1), keepdims=True)
+            q25 = np.nanquantile(imputed, 0.25, axis=(0, 1), keepdims=True)
+            q75 = np.nan_to_num(q75, nan=0.0)
+            q25 = np.nan_to_num(q25, nan=0.0)
+            iqr = np.clip(q75 - q25, a_min=iqr_eps, a_max=None)
+            standardized = np.clip((imputed - median) / iqr, a_min=-6.0, a_max=6.0)
+            scale_meta = {"scaling_mode": "iqr"}
+        quality_weight_tensor, quality_meta = _phase1_quality_weights(density_tensor=density, missing_mask=missing_mask)
+        standardized = standardized * quality_weight_tensor
+        standardized = np.where(observed, standardized, 0.0)
+        quality_weight_output = quality_weight_tensor.astype(np.float32)
+        dlpack_report = {"source": "numpy", "target": "jax", "used_dlpack": False, "reason": "numpy_backend"}
+    preprocess_meta = {
+        "density_scale_default": False,
+        "compute_backend": backend,
+        "device": choose_torch_device(prefer_gpu=bool(preprocess_cfg.get("prefer_gpu", True))) if backend == "torch" and torch is not None else "cpu",
+        "winsorization": {
+            "lower_quantile": float(winsor_cfg["lower_quantile"]),
+            "upper_quantile": float(winsor_cfg["upper_quantile"]),
+        },
+        "missing_imputation": "feature_median",
+        "transform": transform_meta,
+        "scaling": scale_meta,
+        "interop": dlpack_report,
+        "quality_weighting": quality_meta,
+    }
     return (
-        to_numpy(density).astype(np.float32),
-        to_numpy(denominator).astype(np.float32),
-        to_numpy(standardized).astype(np.float32),
-        {"density_scale_default": True, "torch_device": device},
+        density,
+        denominator_tensor,
+        standardized,
+        quality_weight_output,
+        preprocess_meta,
     )
 
 
 def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") -> dict[str, Any]:
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
+    plugin = get_disease_plugin(plugin_id)
     phase1_dir = ensure_dir(ctx.run_dir / "phase1")
     registry_path = ctx.run_dir / "registry" / "subparameter_registry.json"
     registry = read_json(registry_path, default={})
@@ -324,7 +479,6 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     alignment_summary = read_json(ctx.run_dir / "phase0" / "extracted" / "alignment_summary.json", default={})
     aligned_tensor = load_tensor_artifact(ctx.run_dir / "phase0" / "extracted" / "aligned_tensor.npz")
 
-    density_tensor, denominator_tensor, standardized_tensor, preprocess_meta = _tensor_preprocess(aligned_tensor)
     axis_catalogs = {
         "province": alignment_summary.get("province_axis", []),
         "month": alignment_summary.get("month_axis", []),
@@ -463,6 +617,26 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     axis_catalogs["province"] = province_axis
     month_axis = axis_catalogs["month"] or ["unknown"]
     canonical_axis = axis_catalogs["canonical_name"] or ["numeric_observation"]
+    missing_mask = _build_missing_mask(
+        aligned_tensor=aligned_tensor,
+        normalized_rows=normalized_rows,
+        province_axis=province_axis,
+        month_axis=month_axis,
+        canonical_axis=canonical_axis,
+    )
+    denominator_tensor, denominator_map = _build_denominator_tensor(
+        aligned_tensor=aligned_tensor,
+        normalized_rows=normalized_rows,
+        canonical_axis=canonical_axis,
+    )
+    density_tensor, denominator_tensor, standardized_tensor, quality_weight_tensor, preprocess_meta = _tensor_preprocess(
+        aligned_tensor,
+        denominator_tensor=denominator_tensor,
+        missing_mask=missing_mask,
+    )
+    denominator_tensor_np = to_numpy(denominator_tensor)
+    standardized_tensor_np = to_numpy(standardized_tensor)
+    quality_weight_tensor_np = to_numpy(quality_weight_tensor)
     for pi, province in enumerate(province_axis):
         for ti, month in enumerate(month_axis):
             for fi, canonical_name in enumerate(canonical_axis):
@@ -470,7 +644,7 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
                     {
                         "tensor_row_id": f"{province}:{month}:{canonical_name}",
                         "canonical_name": canonical_name,
-                        "model_numeric_value": float(standardized_tensor[pi, ti, fi]),
+                        "model_numeric_value": float(standardized_tensor_np[pi, ti, fi]),
                         "raw_numeric_value": float(aligned_tensor[pi, ti, fi]),
                         "normalized_unit": "standard_score",
                         "geo_resolution": geo_resolution_label(province),
@@ -490,6 +664,8 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
                         "evidence_class": "phase1_standardized_tensor",
                         "evidence_weight": 1.0,
                         "source_bank": "phase1_standardized_tensor",
+                        "missing_mask": float(missing_mask[pi, ti, fi]),
+                        "quality_weight": float(quality_weight_tensor_np[pi, ti, fi]),
                     }
                 )
 
@@ -528,28 +704,51 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         "kp_group_counts": dict(Counter(row["kp_group"] for row in normalized_rows if row["kp_group"])),
         "sex_counts": dict(Counter(row["sex"] for row in normalized_rows if row["sex"])),
         "age_band_counts": dict(Counter(row["age_band"] for row in normalized_rows if row["age_band"])),
+        "missing_mask_fraction": round(float(1.0 - missing_mask.mean()), 6) if missing_mask.size else 0.0,
+        "denominator_map": denominator_map,
         "preprocess_meta": preprocess_meta,
     }
 
     backend_map = detect_backends()
+    preprocess_backend = str(preprocess_meta.get("compute_backend") or "numpy")
+    preprocess_device = str(preprocess_meta.get("device") or "cpu")
     standardized_artifact = save_tensor_artifact(
-        array=to_torch_tensor(standardized_tensor, device=choose_torch_device(prefer_gpu=True), dtype=torch.float32) if torch is not None else standardized_tensor,
+        array=standardized_tensor,
         axis_names=["province", "month", "canonical_name"],
         artifact_dir=phase1_dir,
         stem="standardized_tensor",
-        backend="torch" if torch is not None else "numpy",
-        device=choose_torch_device(prefer_gpu=True) if torch is not None else "cpu",
+        backend=preprocess_backend,
+        device=preprocess_device,
         notes=["phase1_standardized_tensor"],
     )
     denominator_artifact = save_tensor_artifact(
-        array=to_torch_tensor(denominator_tensor, device=choose_torch_device(prefer_gpu=False), dtype=torch.float32) if torch is not None else denominator_tensor,
+        array=denominator_tensor,
         axis_names=["province", "month", "canonical_name"],
         artifact_dir=phase1_dir,
         stem="denominator_tensor",
-        backend="torch" if torch is not None else "numpy",
-        device=choose_torch_device(prefer_gpu=False) if torch is not None else "cpu",
+        backend=preprocess_backend,
+        device=preprocess_device,
         notes=["phase1_denominator_tensor"],
     )
+    missing_mask_artifact = save_tensor_artifact(
+        array=missing_mask,
+        axis_names=["province", "month", "canonical_name"],
+        artifact_dir=phase1_dir,
+        stem="missing_mask",
+        backend=preprocess_backend,
+        device=preprocess_device,
+        notes=["phase1_missing_mask"],
+    )
+    quality_weight_artifact = save_tensor_artifact(
+        array=quality_weight_tensor,
+        axis_names=["province", "month", "canonical_name"],
+        artifact_dir=phase1_dir,
+        stem="quality_weight_tensor",
+        backend=preprocess_backend,
+        device=preprocess_device,
+        notes=["phase1_quality_weight_tensor"],
+    )
+    write_json(phase1_dir / "interop_report.json", dict(preprocess_meta.get("interop", {})))
 
     write_json(phase1_dir / "normalized_subparameters.json", normalized_rows)
     write_json(phase1_dir / "parameter_catalog.json", parameter_catalog)
@@ -561,6 +760,8 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "aligned_tensor": "phase0/aligned_tensor",
             "standardized_tensor": "phase1/standardized_tensor",
             "denominator_tensor": "phase1/denominator_tensor",
+            "missing_mask": "phase1/missing_mask",
+            "quality_weight_tensor": "phase1/quality_weight_tensor",
             "raw_numeric_value": "raw_numeric_value",
             "model_numeric_value": "model_numeric_value",
         },
@@ -581,12 +782,15 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         artifact_paths={
             "standardized_tensor": standardized_artifact["value_path"],
             "denominator_tensor": denominator_artifact["value_path"],
+            "missing_mask": missing_mask_artifact["value_path"],
+            "quality_weight_tensor": quality_weight_artifact["value_path"],
             "normalized_subparameters": str(phase1_dir / "normalized_subparameters.json"),
             "parameter_catalog": str(phase1_dir / "parameter_catalog.json"),
             "axis_catalogs": str(phase1_dir / "axis_catalogs.json"),
             "tensor_rows": str(phase1_dir / "tensor_rows.json"),
             "tensor_schema": str(phase1_dir / "tensor_schema.json"),
             "normalization_report": str(phase1_dir / "normalization_report.json"),
+            "interop_report": str(phase1_dir / "interop_report.json"),
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, backend_map["torch"].selected, notes=backend_map["torch"].device),
@@ -604,8 +808,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         profile_id=profile,
         checks=[
             {"name": "normalized_rows_present", "passed": bool(normalized_rows)},
-            {"name": "standardized_tensor_finite", "passed": bool(np.isfinite(standardized_tensor).all())},
-            {"name": "denominator_tensor_finite", "passed": bool(np.isfinite(denominator_tensor).all())},
+            {"name": "standardized_tensor_finite", "passed": bool(np.isfinite(standardized_tensor_np).all())},
+            {"name": "denominator_tensor_finite", "passed": bool(np.isfinite(denominator_tensor_np).all())},
+            {"name": "missing_mask_present", "passed": bool(np.isfinite(missing_mask).all())},
             {
                 "name": "no_duplicate_national_labels",
                 "passed": not (("Philippines" in province_axis) and any(is_national_geo(name) for name in province_axis if name != "Philippines")),
@@ -626,19 +831,123 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "anchor_eligible_count": int(sum(1 for row in normalized_rows if row.get("is_anchor_eligible"))),
         },
     )
+    gold_profile = dict((plugin.gold_standard_profiles or {}).get("phase1", {}) or {})
+    gold_paths = write_gold_standard_package(
+        phase_dir=phase1_dir,
+        phase_name="phase1",
+        profile_id=profile,
+        gold_profile=gold_profile,
+        checks=[
+            {"name": "gold_standard_profile_declared", "passed": bool(gold_profile)},
+            {"name": "measurement_uncertainty_fields_present", "passed": all("source_reliability_class" in row and "bias_penalty" in row for row in normalized_rows)},
+            {"name": "denominator_alignment_present", "passed": bool(np.isfinite(denominator_tensor_np).all()) and denominator_tensor_np.shape == standardized_tensor_np.shape and bool(np.any(denominator_tensor_np != 1.0))},
+            {"name": "missing_mask_emitted", "passed": missing_mask.shape == standardized_tensor_np.shape},
+            {"name": "robust_scaling_documented", "passed": "phase1_preprocessing:robust_tensor_scaling" in manifest.get("notes", []) and bool(normalization_report)},
+            {
+                "name": "national_label_ambiguity_absent",
+                "passed": not (("Philippines" in province_axis) and any(is_national_geo(name) for name in province_axis if name != "Philippines")),
+            },
+        ],
+        stage_manifest_path=str(phase1_dir / "phase1_manifest.json"),
+        summary={
+            "normalized_row_count": len(normalized_rows),
+            "tensor_row_count": len(tensor_rows),
+            "anchor_eligible_count": int(sum(1 for row in normalized_rows if row.get("is_anchor_eligible"))),
+        },
+    )
+    boundary_paths = write_boundary_shape_package(
+        phase_dir=phase1_dir,
+        phase_name="phase1",
+        profile_id=profile,
+        boundaries=[
+            {
+                "name": "standardized_tensor",
+                "kind": "tensor",
+                "path": str(phase1_dir / "standardized_tensor.npz"),
+                "expected_shape": list(standardized_tensor_np.shape),
+                "expected_axis_names": ["province", "month", "canonical_name"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "denominator_tensor",
+                "kind": "tensor",
+                "path": str(phase1_dir / "denominator_tensor.npz"),
+                "expected_shape": list(denominator_tensor_np.shape),
+                "expected_axis_names": ["province", "month", "canonical_name"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "missing_mask",
+                "kind": "tensor",
+                "path": str(phase1_dir / "missing_mask.npz"),
+                "expected_shape": list(missing_mask.shape),
+                "expected_axis_names": ["province", "month", "canonical_name"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "quality_weight_tensor",
+                "kind": "tensor",
+                "path": str(phase1_dir / "quality_weight_tensor.npz"),
+                "expected_shape": list(quality_weight_tensor_np.shape),
+                "expected_axis_names": ["province", "month", "canonical_name"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "normalized_subparameters",
+                "kind": "json_rows",
+                "path": str(phase1_dir / "normalized_subparameters.json"),
+                "min_rows": 1,
+                "expected_row_count": len(normalized_rows),
+            },
+            {
+                "name": "tensor_rows",
+                "kind": "json_rows",
+                "path": str(phase1_dir / "tensor_rows.json"),
+                "min_rows": 1,
+                "expected_row_count": len(tensor_rows),
+            },
+            {
+                "name": "tensor_schema",
+                "kind": "json_dict",
+                "path": str(phase1_dir / "tensor_schema.json"),
+                "expected_keys": ["axes", "value_fields", "default_value_field"],
+            },
+        ],
+        summary={
+            "normalized_row_count": len(normalized_rows),
+            "tensor_row_count": len(tensor_rows),
+            "province_count": len(province_axis),
+            "month_count": len(month_axis),
+        },
+    )
+    manifest["artifact_paths"].update(gold_paths)
     manifest["artifact_paths"].update(truth_paths)
+    manifest["artifact_paths"].update(boundary_paths)
     write_json(phase1_dir / "phase1_manifest.json", manifest)
     ctx.record_stage_outputs(
         "phase1_build",
         [
             phase1_dir / "standardized_tensor.npz",
             phase1_dir / "denominator_tensor.npz",
+            phase1_dir / "missing_mask.npz",
+            phase1_dir / "quality_weight_tensor.npz",
             phase1_dir / "normalized_subparameters.json",
             phase1_dir / "parameter_catalog.json",
             phase1_dir / "axis_catalogs.json",
             phase1_dir / "tensor_rows.json",
             phase1_dir / "tensor_schema.json",
             phase1_dir / "normalization_report.json",
+            phase1_dir / "interop_report.json",
+            phase1_dir / "gold_standard_manifest.json",
+            phase1_dir / "gold_standard_checks.json",
+            phase1_dir / "gold_standard_summary.json",
+            phase1_dir / "boundary_shape_manifest.json",
+            phase1_dir / "boundary_shape_checks.json",
+            phase1_dir / "boundary_shape_summary.json",
             phase1_dir / "phase1_manifest.json",
         ],
     )

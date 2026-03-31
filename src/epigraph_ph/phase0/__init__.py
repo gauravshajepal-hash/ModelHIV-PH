@@ -6,6 +6,7 @@ from .pipeline import (
     run_phase0_harvest,
     run_phase0_index,
     run_phase0_literature_review,
+    run_phase0_merge_shards,
     run_phase0_parse,
     run_phase0_score_wide_sweep,
 )
@@ -17,6 +18,7 @@ __all__ = [
     "run_phase0_harvest",
     "run_phase0_index",
     "run_phase0_literature_review",
+    "run_phase0_merge_shards",
     "run_phase0_parse",
     "run_phase0_score_wide_sweep",
     "run_phase0_semantic_benchmark",

@@ -3,7 +3,13 @@ from __future__ import annotations
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
-from epigraph_ph.phase2.pipeline import _notears_optimize, _safe_feature_corr, _skeleton_from_corr
+from epigraph_ph.phase2.pipeline import (
+    _has_directed_cycle,
+    _notears_optimize,
+    _phase2_feature_matrix,
+    _safe_feature_corr,
+    _skeleton_from_corr,
+)
 from epigraph_ph.runtime import load_tensor_artifact, read_json
 
 
@@ -21,15 +27,23 @@ def test_phase2_constraint_settings_are_declared_in_plugin_contract() -> None:
     phase2_cfg = (plugin.constraint_settings or {}).get("phase2", {})
 
     assert phase2_cfg.get("skeleton_threshold") is not None
+    assert phase2_cfg.get("mi_prefilter", {}).get("mi_threshold") is not None
+    assert phase2_cfg.get("pc_skeleton", {}).get("alpha") is not None
+    assert phase2_cfg.get("lag_rules", {}).get("blocked_pathway_pairs") is not None
+    assert phase2_cfg.get("execution", {}).get("interop_mode") is not None
     assert phase2_cfg.get("blanket_edge_threshold") is not None
     assert phase2_cfg.get("linkage_support_denominator") is not None
     assert phase2_cfg.get("shortlist_per_block") is not None
     assert phase2_cfg.get("notears", {}).get("optimizer_lr") is not None
+    assert phase2_cfg.get("notears", {}).get("optimizer_kind") is not None
     assert phase2_cfg.get("notears", {}).get("steps") is not None
+    assert phase2_cfg.get("time_stratified_cv", {}).get("folds") is not None
+    assert phase2_cfg.get("collinearity", {}).get("high_corr_threshold") is not None
     assert phase2_cfg.get("stability_score_weights", {}).get("source_diversity") is not None
     assert phase2_cfg.get("stability_denominators", {}).get("source_diversity") is not None
     assert phase2_cfg.get("curation_status_thresholds", {}).get("promoted_candidate") is not None
     assert phase2_cfg.get("factor_diagnostic_weights", {}).get("stability_score") is not None
+    assert phase2_cfg.get("benchmark_artifacts", {}).get("bootstrap_draws") is not None
     assert phase2_cfg.get("budgets", {}).get("main") is not None
 
 
@@ -38,6 +52,13 @@ def test_phase2_legacy_masks_and_dag_contract(legacy_full_run_dir) -> None:
     truth_summary = read_json(legacy_full_run_dir / "phase2" / "ground_truth_summary.json", default={})
     candidate_profiles = read_json(legacy_full_run_dir / "phase2" / "candidate_profiles.json", default=[])
     blanket = read_json(legacy_full_run_dir / "phase2" / "markov_blanket.json", default={})
+    bootstrap = read_json(legacy_full_run_dir / "phase2" / "bootstrap_edge_stability.json", default={})
+    permutation = read_json(legacy_full_run_dir / "phase2" / "permutation_null_report.json", default={})
+    time_cv = read_json(legacy_full_run_dir / "phase2" / "time_stratified_cv_report.json", default={})
+    collinearity = read_json(legacy_full_run_dir / "phase2" / "collinearity_report.json", default={})
+    interop = read_json(legacy_full_run_dir / "phase2" / "interop_report.json", default={})
+    mi_prefilter = read_json(legacy_full_run_dir / "phase2" / "mi_prefilter_report.json", default={})
+    pc_skeleton = read_json(legacy_full_run_dir / "phase2" / "pc_skeleton_report.json", default={})
     tier_mask = load_tensor_artifact(legacy_full_run_dir / "phase2" / "tier_mask.npz")
     lag_mask = load_tensor_artifact(legacy_full_run_dir / "phase2" / "lag_mask.npz")
     skeleton_mask = load_tensor_artifact(legacy_full_run_dir / "phase2" / "skeleton_mask.npz")
@@ -49,8 +70,21 @@ def test_phase2_legacy_masks_and_dag_contract(legacy_full_run_dir) -> None:
     assert tier_mask.shape == lag_mask.shape == skeleton_mask.shape == dag.shape
     assert np.isfinite(dag).all()
     assert np.allclose(np.diag(dag), 0.0, atol=1e-6)
+    assert _has_directed_cycle(dag) is False
     scores = [row["curation_score"] for row in candidate_profiles]
     assert scores == sorted(scores, reverse=True)
+    assert bootstrap.get("available") is True
+    assert permutation.get("available") is True
+    assert mi_prefilter.get("enabled") is True
+    assert mi_prefilter.get("kept_feature_count", 0) > 0
+    assert pc_skeleton.get("available") is True
+    assert "edge_count" in pc_skeleton
+    assert time_cv.get("available") is True
+    assert time_cv.get("fold_count", 0) >= 1
+    assert collinearity.get("available") is True
+    assert "condition_number" in collinearity
+    assert "used_dlpack" in interop
+    assert np.sum(lag_mask == 0.0) > dag.shape[0]
     assert truth_summary.get("phase_name") == "phase2"
 
 
@@ -130,3 +164,51 @@ def test_phase2_notears_single_feature_never_drops_matrix_shape() -> None:
     assert adjacency.shape == (1, 1)
     assert np.isfinite(adjacency).all()
     assert float(adjacency[0, 0]) == 0.0
+
+
+def test_phase2_feature_matrix_blends_soft_candidates_without_dropping_shape() -> None:
+    standardized = np.zeros((2, 3, 2), dtype=np.float32)
+    standardized[:, :, 0] = np.asarray([[0.1, 0.2, 0.3], [0.0, 0.1, 0.2]], dtype=np.float32)
+    normalized_rows = [
+        {
+            "canonical_name": "testing_uptake",
+            "time": "2021-01",
+            "year": 2021,
+            "model_numeric_value": None,
+            "evidence_weight": 0.8,
+            "bias_penalty": 0.1,
+            "replication_weight": 0.6,
+        },
+        {
+            "canonical_name": "testing_uptake",
+            "time": "2022-01",
+            "year": 2022,
+            "model_numeric_value": None,
+            "evidence_weight": 0.9,
+            "bias_penalty": 0.1,
+            "replication_weight": 0.7,
+        },
+        {
+            "canonical_name": "case_count",
+            "time": "2021-01",
+            "year": 2021,
+            "model_numeric_value": 0.4,
+            "evidence_weight": 1.0,
+            "bias_penalty": 0.0,
+            "replication_weight": 1.0,
+        },
+    ]
+    matrix, report = _phase2_feature_matrix(
+        standardized_tensor=standardized,
+        normalized_rows=normalized_rows,
+        canonical_axis=["case_count", "testing_uptake"],
+        month_axis=["2021-01", "2022-01", "2023-01"],
+        province_axis=["Region I", "Region II"],
+    )
+
+    assert matrix.shape == (6, 2)
+    assert np.isfinite(matrix).all()
+    assert report["used_soft_candidates"] is True
+    assert report["soft_feature_count"] >= 1
+    assert report["matrix_rows"] == 6
+    assert report["matrix_columns"] == 2

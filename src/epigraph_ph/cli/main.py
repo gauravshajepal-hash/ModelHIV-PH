@@ -10,6 +10,7 @@ from epigraph_ph.phase0 import (
     run_phase0_harvest,
     run_phase0_index,
     run_phase0_literature_review,
+    run_phase0_merge_shards,
     run_phase0_parse,
     run_phase0_score_wide_sweep,
     run_phase0_semantic_benchmark,
@@ -22,6 +23,7 @@ from epigraph_ph.phase4 import run_phase4_build, run_phase4_optimize, run_phase4
 from epigraph_ph.registry.sources import build_source_registry
 from epigraph_ph.registry.subparameters import build_subparameter_registry
 from epigraph_ph.runtime import RunContext
+from epigraph_ph.validate.phase0_pilot_report import run_phase0_pilot_report
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     phase0 = subparsers.add_parser("phase0")
     phase0_sub = phase0.add_subparsers(dest="phase0_command")
-    for name in ("harvest", "parse", "extract", "index", "build", "score-sweep", "semantic-benchmark", "literature-review"):
+    for name in ("harvest", "parse", "extract", "index", "build", "score-sweep", "semantic-benchmark", "literature-review", "merge-shards", "pilot-report"):
         cmd = phase0_sub.add_parser(name)
         cmd.add_argument("--run-id", required=True)
         cmd.add_argument("--plugin", default="hiv")
@@ -42,10 +44,14 @@ def build_parser() -> argparse.ArgumentParser:
             cmd.add_argument("--relevance-mode", default="auto")
             cmd.add_argument("--download-budget", type=int, default=25)
             cmd.add_argument("--embed-metadata-payload", action="store_true")
+            cmd.add_argument("--metadata-only", action="store_true")
+            cmd.add_argument("--query-shard-count", type=int, default=1)
+            cmd.add_argument("--query-shard-index", type=int, default=0)
         if name in {"parse", "build"}:
             cmd.add_argument("--enable-chart-extraction", action="store_true")
             cmd.add_argument("--enable-ocr-sidecar", action="store_true")
             cmd.add_argument("--ocr-backend", default="auto", choices=["auto", "disabled", "lighton_local", "lighton_vllm"])
+            cmd.add_argument("--force-ocr-sidecar", action="store_true")
             cmd.add_argument("--working-set-size", type=int, default=250)
         if name in {"extract", "build"}:
             cmd.add_argument("--skip-live-normalizer", action="store_true")
@@ -55,6 +61,10 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "semantic-benchmark":
             cmd.add_argument("--candidate-json-path", default=None)
             cmd.add_argument("--top-k", type=int, default=10)
+        if name == "pilot-report":
+            cmd.add_argument("--top-k", type=int, default=10)
+        if name == "merge-shards":
+            cmd.add_argument("--source-run-ids", nargs="+", required=True)
 
     registry = subparsers.add_parser("registry")
     registry_sub = registry.add_subparsers(dest="registry_command")
@@ -80,17 +90,21 @@ def build_parser() -> argparse.ArgumentParser:
         build.add_argument("--profile", default="legacy")
         if phase_name == "phase3":
             build.add_argument("--top-k-per-block", type=int, default=20)
-            build.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi"])
+            build.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
             backtest = phase_sub.add_parser("frozen-backtest")
             backtest.add_argument("--run-id", required=True)
             backtest.add_argument("--plugin", default="hiv")
             backtest.add_argument("--profile", default="hiv_rescue_v2")
-            backtest.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi"])
+            backtest.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
+            backtest.add_argument("--train-years", nargs="+", type=int, default=None)
+            backtest.add_argument("--holdout-years", nargs="+", type=int, default=None)
             tune_backtest = phase_sub.add_parser("tune-frozen-backtest")
             tune_backtest.add_argument("--run-id", required=True)
             tune_backtest.add_argument("--plugin", default="hiv")
             tune_backtest.add_argument("--profile", default="hiv_rescue_v2")
             tune_backtest.add_argument("--phase3-inference", default="torch_map", choices=["torch_map"])
+            tune_backtest.add_argument("--train-years", nargs="+", type=int, default=None)
+            tune_backtest.add_argument("--holdout-years", nargs="+", type=int, default=None)
     phase4 = subparsers.add_parser("phase4")
     phase4_sub = phase4.add_subparsers(dest="phase4_command")
     for name in ("build", "simulate", "optimize"):
@@ -117,6 +131,9 @@ def main(argv: list[str] | None = None) -> int:
                 relevance_mode=args.relevance_mode,
                 download_budget=args.download_budget,
                 embed_metadata_payload=args.embed_metadata_payload,
+                metadata_only=args.metadata_only,
+                query_shard_count=args.query_shard_count,
+                query_shard_index=args.query_shard_index,
             )
             return 0
         if args.phase0_command == "score-sweep":
@@ -135,6 +152,7 @@ def main(argv: list[str] | None = None) -> int:
                 enable_chart_extraction=args.enable_chart_extraction,
                 enable_ocr_sidecar=args.enable_ocr_sidecar,
                 ocr_backend=args.ocr_backend,
+                force_ocr_sidecar=args.force_ocr_sidecar,
             )
             return 0
         if args.phase0_command == "extract":
@@ -154,9 +172,13 @@ def main(argv: list[str] | None = None) -> int:
                 relevance_mode=args.relevance_mode,
                 download_budget=args.download_budget,
                 embed_metadata_payload=args.embed_metadata_payload,
+                metadata_only=args.metadata_only,
+                query_shard_count=args.query_shard_count,
+                query_shard_index=args.query_shard_index,
                 enable_chart_extraction=args.enable_chart_extraction,
                 enable_ocr_sidecar=args.enable_ocr_sidecar,
                 ocr_backend=args.ocr_backend,
+                force_ocr_sidecar=args.force_ocr_sidecar,
                 working_set_size=args.working_set_size,
                 skip_live_normalizer=args.skip_live_normalizer,
                 min_domain_quality=args.min_domain_quality,
@@ -172,6 +194,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.phase0_command == "literature-review":
             run_phase0_literature_review(run_id=args.run_id, plugin_id=args.plugin)
+            return 0
+        if args.phase0_command == "pilot-report":
+            run_phase0_pilot_report(run_id=args.run_id, plugin_id=args.plugin, top_k=args.top_k)
+            return 0
+        if args.phase0_command == "merge-shards":
+            run_phase0_merge_shards(run_id=args.run_id, plugin_id=args.plugin, source_run_ids=args.source_run_ids)
             return 0
     if args.command == "registry" and args.registry_command == "build":
         ctx = RunContext.create(run_id=args.run_id, plugin_id=args.plugin)
@@ -220,6 +248,8 @@ def main(argv: list[str] | None = None) -> int:
             plugin_id=args.plugin,
             profile=args.profile,
             inference_family=args.phase3_inference,
+            train_years=args.train_years,
+            holdout_years=args.holdout_years,
         )
         return 0
     if args.command == "phase3" and args.phase3_command == "tune-frozen-backtest":
@@ -228,6 +258,8 @@ def main(argv: list[str] | None = None) -> int:
             plugin_id=args.plugin,
             profile=args.profile,
             inference_family=args.phase3_inference,
+            train_years=args.train_years,
+            holdout_years=args.holdout_years,
         )
         return 0
     if args.command == "phase4" and args.phase4_command == "build":

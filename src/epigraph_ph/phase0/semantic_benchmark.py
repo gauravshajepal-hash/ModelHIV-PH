@@ -210,7 +210,7 @@ def _candidate_relevance(
     source_row: dict[str, Any] | None,
     query_spec: dict[str, Any],
 ) -> float:
-    text = _candidate_index_text(row).lower()
+    text = str(row.get("candidate_text") or row.get("text") or _candidate_index_text(row)).lower()
     linkage_targets = set(_score_linkage_targets(text))
     soft_tags = set(_soft_ontology_tags(text))
     hints = set(_soft_subparameter_hints(text))
@@ -336,8 +336,8 @@ def run_phase0_semantic_benchmark(
     source_path = phase0_dir / "raw" / "source_manifest.json"
     candidates = read_json(candidate_path, default=[])
     source_rows = {str(row.get("source_id") or ""): row for row in read_json(source_path, default=[])}
-    candidate_texts = [_candidate_index_text(row) for row in candidates]
-    candidate_ids = [str(row.get("candidate_id") or f"candidate-{idx}") for idx, row in enumerate(candidates)]
+    candidate_texts = [str(row.get("candidate_text") or row.get("text") or _candidate_index_text(row)) for row in candidates]
+    candidate_ids = [str(row.get("candidate_id") or row.get("chunk_id") or row.get("block_id") or f"candidate-{idx}") for idx, row in enumerate(candidates)]
     metadatas = [
         {
             "query_silo": str(source_rows.get(str(row.get("source_id") or ""), {}).get("query_silo") or "unknown"),
@@ -416,6 +416,7 @@ def run_phase0_semantic_benchmark(
                         "candidate_id": candidate_ids[idx],
                         "canonical_name": candidates[idx].get("canonical_name"),
                         "parameter_text": candidates[idx].get("parameter_text"),
+                        "text_excerpt": str(candidate_texts[idx])[:200],
                         "source_tier": source_rows.get(str(candidates[idx].get("source_id") or ""), {}).get("source_tier"),
                         "query_silo": source_rows.get(str(candidates[idx].get("source_id") or ""), {}).get("query_silo"),
                         "relevance": relevance_scores[idx],

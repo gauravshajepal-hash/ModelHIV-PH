@@ -19,6 +19,8 @@ def test_phase4_legacy_frontier_contract(legacy_full_run_dir) -> None:
     regional_risk = read_json(legacy_full_run_dir / "phase4" / "regional_risk_scores.json", default={})
     regional_surface = read_json(legacy_full_run_dir / "phase4" / "regional_allocation_surface.json", default={})
     regional_selected = read_json(legacy_full_run_dir / "phase4" / "regional_selected_policy.json", default={})
+    policy_comparator_report = read_json(legacy_full_run_dir / "phase4" / "policy_comparator_report.json", default={})
+    sensitivity_analysis = read_json(legacy_full_run_dir / "phase4" / "sensitivity_analysis.json", default={})
     mpc_plan = read_json(legacy_full_run_dir / "phase4" / "mpc_plan.json", default={})
     node_bundle = read_json(legacy_full_run_dir / "phase4" / "node_graph_bundle.json", default={})
     node_adjustment = read_json(legacy_full_run_dir / "phase4" / "node_graph_adjustment.json", default={})
@@ -40,6 +42,10 @@ def test_phase4_legacy_frontier_contract(legacy_full_run_dir) -> None:
     assert regional_risk.get("rows", [])
     assert regional_surface.get("rows", [])
     assert regional_selected.get("regional_allocations", {})
+    assert policy_comparator_report.get("available") is True
+    assert policy_comparator_report.get("comparators", [])
+    assert sensitivity_analysis.get("available") is True
+    assert sensitivity_analysis.get("perturbations", [])
     assert node_adjustment.get("enabled") is False
     assert int(rollout_diagnostics.get("trajectory_count", 0)) >= 1
 
@@ -81,6 +87,8 @@ def test_phase4_rescue_profiles_are_blocked(rescue_v1_run_dir, rescue_v2_run_dir
         manifest = read_json(run_dir / "phase4" / "phase4_manifest.json", default={})
         blocked = read_json(run_dir / "phase4" / "phase4_blocked.json", default={})
         node_bundle = read_json(run_dir / "phase4" / "node_graph_bundle.json", default={})
+        policy_comparator_report = read_json(run_dir / "phase4" / "policy_comparator_report.json", default={})
+        sensitivity_analysis = read_json(run_dir / "phase4" / "sensitivity_analysis.json", default={})
         truth_summary = read_json(run_dir / "phase4" / "ground_truth_summary.json", default={})
         assert manifest.get("stage_status", {}).get("phase4") == "blocked"
         assert blocked.get("phase4_ready") is False
@@ -88,6 +96,8 @@ def test_phase4_rescue_profiles_are_blocked(rescue_v1_run_dir, rescue_v2_run_dir
         assert blocked.get("blocking_gates", [])
         assert truth_summary.get("phase_name") == "phase4"
         assert node_bundle.get("region_node_states", [])
+        assert policy_comparator_report.get("available") is False
+        assert sensitivity_analysis.get("available") is False
 
 
 def test_regional_allocation_surface_respects_veto_zero_weight() -> None:

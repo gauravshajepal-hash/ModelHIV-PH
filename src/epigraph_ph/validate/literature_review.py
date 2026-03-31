@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from epigraph_ph.core.disease_plugin import DiseasePlugin
+from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows
 from epigraph_ph.runtime import ensure_dir, read_json, utc_now_iso, write_json
 
 
@@ -84,6 +85,19 @@ def build_phase0_literature_review(*, run_dir: str | Path, plugin: DiseasePlugin
     by_source_candidates: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in candidates:
         by_source_candidates[str(row.get("source_id") or "")].append(row)
+    for record in scored_records.values():
+        source_id = str(record.get("record_id") or "")
+        source_rows = wide_sweep_candidate_rows(record, bank_name="phase0_wide_sweep_literature")
+        for row in source_rows:
+            by_source_candidates[source_id].append(
+                {
+                    "canonical_name": row.get("canonical_name"),
+                    "candidate_text": row.get("candidate_text"),
+                    "confidence": float(record.get("domain_quality_score") or 0.0),
+                    "is_direct_measurement": False,
+                    "is_anchor_eligible": False,
+                }
+            )
 
     source_rows_by_silo: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in source_manifest:

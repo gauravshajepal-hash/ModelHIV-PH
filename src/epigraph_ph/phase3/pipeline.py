@@ -29,6 +29,8 @@ from epigraph_ph.runtime import (
     set_global_seed,
     to_numpy,
     utc_now_iso,
+    write_boundary_shape_package,
+    write_gold_standard_package,
     write_ground_truth_package,
     write_json,
 )
@@ -43,12 +45,16 @@ except Exception:  # pragma: no cover
 try:
     import numpyro
     import numpyro.distributions as dist
-    from numpyro.infer import Predictive, SVI, Trace_ELBO
+    from numpyro.diagnostics import summary as numpyro_summary
+    from numpyro.infer import MCMC, NUTS, Predictive, SVI, Trace_ELBO
     from numpyro.infer.autoguide import AutoNormal
     from numpyro.optim import Adam
 except Exception:  # pragma: no cover
     numpyro = None
     dist = None
+    numpyro_summary = None
+    MCMC = None
+    NUTS = None
     Predictive = None
     SVI = None
     Trace_ELBO = None
@@ -61,6 +67,7 @@ TRANSITION_NAMES = ["U_to_D", "D_to_A", "A_to_V", "A_to_L", "L_to_A"]
 _HIV_PLUGIN = get_disease_plugin("hiv")
 _PHASE3_PRIOR_CFG = dict((_HIV_PLUGIN.prior_hyperparameters or {}).get("phase3", {}) or {})
 _FROZEN_BACKTEST_CFG = dict(_PHASE3_PRIOR_CFG.get("frozen_backtest", {}) or {})
+_PHASE3_CONSTRAINT_CFG = dict((_HIV_PLUGIN.constraint_settings or {}).get("phase3", {}) or {})
 
 
 def _phase3_required_prior(key: str) -> Any:
@@ -86,6 +93,19 @@ def _phase3_required_frozen_section(key: str) -> dict[str, Any]:
     value = _phase3_required_frozen(key)
     if not isinstance(value, dict):
         raise TypeError(f"HIV phase3 frozen-backtest prior '{key}' must be a mapping")
+    return dict(value)
+
+
+def _phase3_required_constraint(key: str) -> Any:
+    if key not in _PHASE3_CONSTRAINT_CFG:
+        raise KeyError(f"Missing HIV phase3 constraint setting: {key}")
+    return _PHASE3_CONSTRAINT_CFG[key]
+
+
+def _phase3_required_constraint_section(key: str) -> dict[str, Any]:
+    value = _phase3_required_constraint(key)
+    if not isinstance(value, dict):
+        raise TypeError(f"HIV phase3 constraint setting '{key}' must be a mapping")
     return dict(value)
 
 
@@ -250,11 +270,163 @@ def _empirical_transition_targets(core_tensor: np.ndarray) -> np.ndarray:
     return np.clip(targets.astype(np.float32), float(cfg["clip_floor"]), float(cfg["clip_ceiling"]))
 
 
-def _semi_markov_model(features: Any, region_index: Any, empirical_targets: Any, region_count: int) -> None:
+def _legacy_profile_lookup(candidate_profiles: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {str(row.get("canonical_name") or ""): dict(row) for row in candidate_profiles}
+
+
+def _legacy_transition_hook_mask(profile: dict[str, Any]) -> np.ndarray:
+    linkage_targets = {str(item).strip().lower() for item in list(profile.get("linkage_targets") or []) if str(item).strip()}
+    block_name = str(profile.get("primary_block") or "").strip().lower()
+    mask = np.zeros((len(TRANSITION_NAMES),), dtype=np.float32)
+    if "diagnosed_stock" in linkage_targets or "testing_uptake" in linkage_targets or block_name in {"behavior", "population"}:
+        mask[0] = 1.0
+    if "art_stock" in linkage_targets or "linkage_to_care" in linkage_targets or block_name in {"logistics", "economics", "policy"}:
+        mask[1] = 1.0
+    if "documented_suppression" in linkage_targets or "suppression_outcomes" in linkage_targets or block_name == "biology":
+        mask[2] = 1.0
+    if "testing_coverage" in linkage_targets or "retention_adherence" in linkage_targets or block_name in {"policy", "logistics"}:
+        mask[1] = max(mask[1], 0.4)
+        mask[3] = 1.0
+        mask[4] = 1.0
+    if not np.any(mask):
+        mask[:] = 0.25
+    return mask
+
+
+def _legacy_intervention_tensor(
+    core_tensor: np.ndarray,
+    blanket_nodes: list[str],
+    candidate_profiles: list[dict[str, Any]],
+) -> tuple[np.ndarray, dict[str, Any]]:
+    cfg = dict(_phase3_required_constraint_section("intervention_tensor") or {})
+    channel_rows = list(cfg.get("channels") or [])
+    if core_tensor.size == 0 or not blanket_nodes or not channel_rows:
+        empty = np.zeros((*core_tensor.shape[:2], 0), dtype=np.float32)
+        return empty, {"channel_names": [], "channel_sources": {}, "hook_masks": [], "available": False}
+    profile_lookup = _legacy_profile_lookup(candidate_profiles)
+    channel_names = [str(row.get("name") or f"channel_{idx}") for idx, row in enumerate(channel_rows)]
+    channel_masks = [set(int(index) for index in list(row.get("transition_indices") or [])) for row in channel_rows]
+    base_floor = float(cfg["base_covariate_floor"])
+    tensor_parts: list[np.ndarray] = []
+    channel_sources: dict[str, list[str]] = {}
+    hook_masks: list[list[float]] = []
+    for channel_name, transition_mask in zip(channel_names, channel_masks):
+        weighted_surfaces: list[np.ndarray] = []
+        source_names: list[str] = []
+        combined_mask = np.zeros((len(TRANSITION_NAMES),), dtype=np.float32)
+        for feature_idx, feature_name in enumerate(blanket_nodes):
+            profile = profile_lookup.get(str(feature_name), {})
+            feature_hook = _legacy_transition_hook_mask(profile)
+            if not any(idx in transition_mask for idx in np.nonzero(feature_hook > 0.0)[0].tolist()):
+                continue
+            weighted_surfaces.append(core_tensor[:, :, feature_idx])
+            source_names.append(str(feature_name))
+            combined_mask = np.maximum(combined_mask, feature_hook)
+        if weighted_surfaces:
+            stacked = np.stack(weighted_surfaces, axis=-1).astype(np.float32)
+            score = 1.0 / (1.0 + np.exp(-stacked))
+            surface = score.mean(axis=-1).astype(np.float32)
+        else:
+            surface = np.full(core_tensor.shape[:2], base_floor, dtype=np.float32)
+        tensor_parts.append(surface[..., None])
+        channel_sources[channel_name] = source_names
+        hook_masks.append(combined_mask.round(6).tolist())
+    intervention_tensor = np.concatenate(tensor_parts, axis=-1).astype(np.float32) if tensor_parts else np.zeros((*core_tensor.shape[:2], 0), dtype=np.float32)
+    return intervention_tensor, {
+        "channel_names": channel_names,
+        "channel_sources": channel_sources,
+        "hook_masks": hook_masks,
+        "available": bool(channel_names),
+    }
+
+
+def _categorical_rollout_summary(
+    transition_probs: np.ndarray,
+    *,
+    seed: int,
+    particle_count: int,
+    initial_state: np.ndarray | None = None,
+) -> dict[str, Any]:
+    cfg = _phase3_required_frozen_section("evolution")
+    if transition_probs.size == 0:
+        return {"available": False, "reason": "transition_probs_empty"}
+    province_count, month_count, _ = transition_probs.shape
+    base_state = np.asarray(initial_state if initial_state is not None else DEFAULT_INITIAL_STATE, dtype=np.float32)
+    rng = np.random.default_rng(seed)
+    state_catalog = list(range(len(STATE_NAMES)))
+    shares = np.zeros((province_count, month_count, len(STATE_NAMES)), dtype=np.float32)
+    sample_rows: list[dict[str, Any]] = []
+    for province_idx in range(province_count):
+        current = rng.choice(state_catalog, size=particle_count, p=np.clip(base_state, float(cfg["state_mass_eps"]), 1.0) / np.sum(np.clip(base_state, float(cfg["state_mass_eps"]), 1.0)))
+        for month_idx in range(month_count):
+            probs_t = transition_probs[province_idx, month_idx]
+            p_ud, p_da, p_av, p_al, p_la = [float(np.clip(probs_t[idx], float(cfg["transition_floor"]), float(cfg["transition_ceiling"]))) for idx in range(len(TRANSITION_NAMES))]
+            next_particles = np.empty_like(current)
+            for particle_idx, state in enumerate(current):
+                if state == 0:
+                    probs_row = [1.0 - p_ud, p_ud, 0.0, 0.0, 0.0]
+                elif state == 1:
+                    probs_row = [0.0, 1.0 - p_da, p_da, 0.0, 0.0]
+                elif state == 2:
+                    stay = max(1.0 - p_av - p_al, 0.0)
+                    probs_row = [0.0, 0.0, stay, p_av, p_al]
+                elif state == 3:
+                    probs_row = [0.0, 0.0, 0.0, 1.0, 0.0]
+                else:
+                    probs_row = [0.0, 0.0, p_la, 0.0, max(1.0 - p_la, 0.0)]
+                row = np.asarray(probs_row, dtype=np.float64)
+                row = row / np.clip(row.sum(), float(cfg["state_mass_eps"]), None)
+                next_particles[particle_idx] = int(rng.choice(state_catalog, p=row))
+            current = next_particles
+            counts = np.bincount(current, minlength=len(STATE_NAMES)).astype(np.float32)
+            shares[province_idx, month_idx] = counts / float(particle_count)
+        sample_rows.append(
+            {
+                "province_index": province_idx,
+                "particle_count": int(particle_count),
+                "terminal_distribution": shares[province_idx, -1].round(6).tolist(),
+            }
+        )
+    return {
+        "available": True,
+        "particle_count": int(particle_count),
+        "state_names": list(STATE_NAMES),
+        "sample_rows": sample_rows,
+        "sampled_state_shares": shares.round(6).tolist(),
+    }
+
+
+def _picp_and_rank_histogram(
+    sample_stack: np.ndarray,
+    observed: np.ndarray,
+    *,
+    interval: tuple[float, float],
+) -> dict[str, Any]:
+    if sample_stack.size == 0 or observed.size == 0:
+        return {"available": False, "reason": "empty_samples_or_observations"}
+    lower_q, upper_q = interval
+    lower = np.quantile(sample_stack, lower_q, axis=0)
+    upper = np.quantile(sample_stack, upper_q, axis=0)
+    coverage = ((observed >= lower) & (observed <= upper)).astype(np.float32)
+    expanded = np.broadcast_to(observed, sample_stack.shape)
+    ranks = np.sum(sample_stack < expanded, axis=0).astype(np.int32)
+    rank_counts = np.bincount(ranks.ravel(), minlength=sample_stack.shape[0] + 1).astype(np.int32)
+    return {
+        "available": True,
+        "interval": [round(float(lower_q), 4), round(float(upper_q), 4)],
+        "picp": round(float(np.mean(coverage)), 6),
+        "sample_count": int(sample_stack.shape[0]),
+        "rank_histogram": rank_counts.tolist(),
+        "mean_interval_width": round(float(np.mean(upper - lower)), 6),
+    }
+
+
+def _semi_markov_model(features: Any, intervention_tensor: Any, region_index: Any, empirical_targets: Any, region_count: int) -> None:
     if numpyro is None or jnp is None:
         raise RuntimeError("NumPyro/JAX backend is unavailable")
     cfg = _phase3_required_frozen_section("semi_markov_hyperpriors")
     province_count, month_count, feature_count = features.shape
+    intervention_count = intervention_tensor.shape[-1]
     transition_count = empirical_targets.shape[-1]
     base_rate = jnp.clip(jnp.mean(empirical_targets, axis=(0, 1)), float(cfg["base_rate_floor"]), float(cfg["base_rate_ceiling"]))
     national_logit = numpyro.sample(
@@ -272,9 +444,24 @@ def _semi_markov_model(features: Any, region_index: Any, empirical_targets: Any,
         "province_offset",
         dist.Normal(jnp.zeros((province_count, transition_count)), sigma_province).to_event(2),
     )
+    horseshoe_global = numpyro.sample(
+        "horseshoe_global",
+        dist.HalfCauchy(jnp.ones((transition_count,)) * float(cfg["horseshoe_global_scale"])).to_event(1),
+    )
+    horseshoe_local = numpyro.sample(
+        "horseshoe_local",
+        dist.HalfCauchy(jnp.ones((feature_count, transition_count)) * float(cfg["horseshoe_local_scale"])).to_event(2),
+    )
     feature_weights = numpyro.sample(
         "feature_weights",
-        dist.Normal(jnp.zeros((feature_count, transition_count)), sigma_feature).to_event(2),
+        dist.Normal(
+            jnp.zeros((feature_count, transition_count)),
+            jnp.clip(horseshoe_local * horseshoe_global.reshape(1, transition_count) * sigma_feature.reshape(1, transition_count), 1e-6, None),
+        ).to_event(2),
+    )
+    intervention_weights = numpyro.sample(
+        "intervention_weights",
+        dist.Normal(jnp.zeros((intervention_count, transition_count)), float(cfg["sigma_intervention"])).to_event(2),
     )
     duration_weight = numpyro.sample(
         "duration_weight",
@@ -285,6 +472,7 @@ def _semi_markov_model(features: Any, region_index: Any, empirical_targets: Any,
         + region_offset[region_index][:, None, :]
         + province_offset[:, None, :]
         + jnp.einsum("ptf,fk->ptk", features, feature_weights)
+        + jnp.einsum("ptu,uk->ptk", intervention_tensor, intervention_weights)
     )
     probs = jax.nn.sigmoid(logits)
     numpyro.deterministic("transition_probs", probs)
@@ -296,30 +484,112 @@ def _semi_markov_model(features: Any, region_index: Any, empirical_targets: Any,
 
 def _posterior_draws(
     features_np: np.ndarray,
+    intervention_tensor_np: np.ndarray,
     region_index_np: np.ndarray,
     empirical_targets_np: np.ndarray,
     *,
     seed: int,
+    inference_method: str | None = None,
     svi_steps: int | None = None,
     posterior_samples: int | None = None,
+    nuts_warmup: int | None = None,
+    nuts_samples: int | None = None,
+    nuts_chains: int | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
-    if jax is None or numpyro is None or SVI is None or AutoNormal is None or Predictive is None or Trace_ELBO is None or Adam is None:
+    if (
+        jax is None
+        or numpyro is None
+        or SVI is None
+        or AutoNormal is None
+        or Predictive is None
+        or Trace_ELBO is None
+        or Adam is None
+    ):
         raise RuntimeError("JAX/NumPyro backend is unavailable")
     infer_cfg = _phase3_required_frozen_section("posterior_inference")
+    inference_method = str(infer_cfg.get("inference_method") or "svi").strip().lower() if inference_method is None else str(inference_method).strip().lower()
     svi_steps = int(infer_cfg["svi_steps"]) if svi_steps is None else int(svi_steps)
     posterior_samples = int(infer_cfg["posterior_samples"]) if posterior_samples is None else int(posterior_samples)
+    nuts_warmup = int(infer_cfg["nuts_warmup"]) if nuts_warmup is None else int(nuts_warmup)
+    nuts_samples = int(infer_cfg["nuts_samples"]) if nuts_samples is None else int(nuts_samples)
+    nuts_chains = int(infer_cfg["nuts_chains"]) if nuts_chains is None else int(nuts_chains)
     set_global_seed(seed)
     features = numpy_to_jax_handoff(features_np).astype(jnp.float32)
+    intervention_tensor = numpy_to_jax_handoff(intervention_tensor_np).astype(jnp.float32)
     region_index = numpy_to_jax_handoff(region_index_np).astype(jnp.int32)
     empirical_targets = numpy_to_jax_handoff(empirical_targets_np).astype(jnp.float32)
-    guide = AutoNormal(_semi_markov_model)
-    svi = SVI(_semi_markov_model, guide, Adam(float(infer_cfg["optimizer_lr"])), Trace_ELBO())
     rng_key = jax.random.PRNGKey(seed)
     region_count = int(region_index_np.max()) + 1 if region_index_np.size else 1
+    if inference_method == "nuts":
+        if MCMC is None or NUTS is None or numpyro_summary is None:
+            raise RuntimeError("NumPyro MCMC backend is unavailable")
+        kernel = NUTS(
+            _semi_markov_model,
+            target_accept_prob=float(infer_cfg["nuts_target_accept_prob"]),
+            max_tree_depth=int(infer_cfg["nuts_max_tree_depth"]),
+        )
+        mcmc = MCMC(
+            kernel,
+            num_warmup=nuts_warmup,
+            num_samples=nuts_samples,
+            num_chains=nuts_chains,
+            progress_bar=False,
+            chain_method="sequential",
+        )
+        mcmc.run(
+            rng_key,
+            features=features,
+            intervention_tensor=intervention_tensor,
+            region_index=region_index,
+            empirical_targets=empirical_targets,
+            region_count=region_count,
+        )
+        grouped_samples = mcmc.get_samples(group_by_chain=True)
+        flat_samples = mcmc.get_samples(group_by_chain=False)
+        diagnostics_summary = numpyro_summary(grouped_samples, group_by_chain=True)
+        extra_fields = mcmc.get_extra_fields()
+        sample_keys = [
+            "national_logit",
+            "region_offset",
+            "province_offset",
+            "horseshoe_global",
+            "horseshoe_local",
+            "feature_weights",
+            "intervention_weights",
+            "duration_weight",
+            "transition_probs",
+        ]
+        np_samples = {key: to_numpy(flat_samples[key]) for key in sample_keys if key in flat_samples}
+        rhat_rows = {
+            key: float(np.nanmax(np.asarray(value.get("r_hat"), dtype=np.float32)))
+            for key, value in diagnostics_summary.items()
+            if isinstance(value, dict) and value.get("r_hat") is not None
+        }
+        diagnostics = {
+            "inference_method": "nuts",
+            "posterior_samples": int(nuts_samples),
+            "nuts_warmup": int(nuts_warmup),
+            "nuts_chains": int(nuts_chains),
+            "target_accept_prob": float(infer_cfg["nuts_target_accept_prob"]),
+            "max_tree_depth": int(infer_cfg["nuts_max_tree_depth"]),
+            "jax_device": choose_jax_device(prefer_gpu=True),
+            "divergence_count": int(np.sum(np.asarray(extra_fields.get("diverging", []), dtype=np.int32))),
+            "rhat_by_site": {key: round(value, 6) for key, value in rhat_rows.items()},
+            "rhat_max": round(max(rhat_rows.values()) if rhat_rows else 1.0, 6),
+            "chain_diagnostics": {
+                "sample_field_count": len(np_samples),
+                "chain_method": "sequential",
+            },
+        }
+        return np_samples, diagnostics
+
+    guide = AutoNormal(_semi_markov_model)
+    svi = SVI(_semi_markov_model, guide, Adam(float(infer_cfg["optimizer_lr"])), Trace_ELBO())
     svi_result = svi.run(
         rng_key,
         svi_steps,
         features=features,
+        intervention_tensor=intervention_tensor,
         region_index=region_index,
         empirical_targets=empirical_targets,
         region_count=region_count,
@@ -330,17 +600,29 @@ def _posterior_draws(
         guide=guide,
         params=svi_result.params,
         num_samples=posterior_samples,
-        return_sites=["national_logit", "region_offset", "province_offset", "feature_weights", "duration_weight", "transition_probs"],
+        return_sites=[
+            "national_logit",
+            "region_offset",
+            "province_offset",
+            "horseshoe_global",
+            "horseshoe_local",
+            "feature_weights",
+            "intervention_weights",
+            "duration_weight",
+            "transition_probs",
+        ],
     )
     samples = predictive(
         jax.random.PRNGKey(seed + 1),
         features=features,
+        intervention_tensor=intervention_tensor,
         region_index=region_index,
         empirical_targets=empirical_targets,
         region_count=region_count,
     )
     np_samples = {key: to_numpy(value) for key, value in samples.items()}
     diagnostics = {
+        "inference_method": "svi",
         "svi_steps": svi_steps,
         "posterior_samples": posterior_samples,
         "final_loss": float(svi_result.losses[-1]) if len(svi_result.losses) else None,
@@ -377,11 +659,14 @@ def _fallback_posterior_draws(
         "national_logit": rng.normal(loc=national_logit, scale=float(cfg["national_logit_scale"]), size=(posterior_samples, transition_count)).astype(np.float32),
         "region_offset": rng.normal(loc=0.0, scale=float(cfg["region_offset_scale"]), size=(posterior_samples, region_count, transition_count)).astype(np.float32),
         "province_offset": rng.normal(loc=0.0, scale=float(cfg["province_offset_scale"]), size=(posterior_samples, province_count, transition_count)).astype(np.float32),
+        "horseshoe_global": np.full((posterior_samples, transition_count), float(_phase3_required_frozen_section("semi_markov_hyperpriors")["horseshoe_global_scale"]), dtype=np.float32),
         "feature_weights": rng.normal(loc=0.0, scale=float(cfg["feature_weight_scale"]), size=(posterior_samples, feature_count, transition_count)).astype(np.float32),
+        "intervention_weights": np.zeros((posterior_samples, 0, transition_count), dtype=np.float32),
         "duration_weight": rng.normal(loc=np.asarray(cfg["duration_mean"]), scale=float(cfg["duration_scale"]), size=(posterior_samples, transition_count)).astype(np.float32),
         "transition_probs": transition_probs,
     }
     diagnostics = {
+        "inference_method": "fallback",
         "svi_steps": 0,
         "posterior_samples": posterior_samples,
         "final_loss": None,
@@ -504,7 +789,13 @@ def _fit_rows(state_tensor: np.ndarray, transition_probs: np.ndarray, province_a
     return rows
 
 
-def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: int | None = None) -> dict[str, Any]:
+def _run_phase3_build_legacy(
+    *,
+    run_id: str,
+    plugin_id: str,
+    top_k_per_block: int | None = None,
+    inference_family: str = "jax_svi",
+) -> dict[str, Any]:
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
     phase3_dir = ensure_dir(ctx.run_dir / "phase3")
     legacy_cfg = _phase3_required_frozen_section("legacy_selection")
@@ -523,13 +814,25 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
 
     region_axis, region_index = _region_assignments(province_axis, normalized_rows)
     empirical_targets = _empirical_transition_targets(core_tensor)
+    blanket_nodes = list(markov_blanket.get("blanket_nodes") or [])
+    intervention_tensor, intervention_summary = _legacy_intervention_tensor(core_tensor, blanket_nodes, candidate_profiles)
 
     backend_map = detect_backends()
     use_jax = backend_map["jax"].available and numpyro is not None and core_tensor.size > 0
+    requested_method = "svi"
     if use_jax:
-        posterior_samples, posterior_diag = _posterior_draws(core_tensor, region_index, empirical_targets, seed=int(inference_cfg["seed"]))
+        requested_method = "nuts" if inference_family == "jax_nuts" else "svi"
+        posterior_samples, posterior_diag = _posterior_draws(
+            core_tensor,
+            intervention_tensor,
+            region_index,
+            empirical_targets,
+            seed=int(inference_cfg["seed"]),
+            inference_method=requested_method,
+        )
     else:
         posterior_samples, posterior_diag = _fallback_posterior_draws(core_tensor, region_index, empirical_targets, seed=int(inference_cfg["seed"]))
+    resolved_inference_family = "jax_nuts" if (use_jax and requested_method == "nuts") else ("jax_svi" if use_jax else "numpy_fallback")
 
     transition_probs = posterior_samples["transition_probs"].mean(axis=0).astype(np.float32)
     duration_weight = posterior_samples["duration_weight"].mean(axis=0).astype(np.float32)
@@ -542,6 +845,12 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
 
     state_rows = _state_rows(state_estimates, province_axis, month_axis)
     fit_rows = _fit_rows(state_estimates, transition_probs, province_axis, month_axis)
+    categorical_rollout = _categorical_rollout_summary(
+        transition_probs,
+        seed=int(inference_cfg["seed"]) + 5,
+        particle_count=int(inference_cfg["categorical_particle_count"]),
+        initial_state=DEFAULT_INITIAL_STATE,
+    )
     forecast_month_labels = [f"forecast_h{idx + 1}" for idx in range(forecast_states.shape[1])]
     forecast_rows = _state_rows(forecast_states, province_axis, forecast_month_labels)
 
@@ -584,12 +893,34 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
         "region_axis": region_axis,
         "province_axis": province_axis,
     }
+    intervention_weights = posterior_samples.get("intervention_weights")
+    horseshoe_global = posterior_samples.get("horseshoe_global")
     posterior_summaries = {
         "transition_prob_mean": posterior_samples["transition_probs"].mean(axis=(0, 1)).round(6).tolist(),
         "transition_prob_sd": posterior_samples["transition_probs"].std(axis=(0, 1)).round(6).tolist(),
         "feature_weight_mean": posterior_samples["feature_weights"].mean(axis=0).round(6).tolist(),
         "feature_weight_sd": posterior_samples["feature_weights"].std(axis=0).round(6).tolist(),
+        "intervention_weight_mean": intervention_weights.mean(axis=0).round(6).tolist() if isinstance(intervention_weights, np.ndarray) and intervention_weights.size else [],
+        "intervention_weight_sd": intervention_weights.std(axis=0).round(6).tolist() if isinstance(intervention_weights, np.ndarray) and intervention_weights.size else [],
+        "horseshoe_global_mean": horseshoe_global.mean(axis=0).round(6).tolist() if isinstance(horseshoe_global, np.ndarray) and horseshoe_global.size else [],
         "posterior_diagnostics": posterior_diag,
+    }
+    calibration_cfg = _phase3_required_frozen_section("posterior_inference")
+    calibration_interval = tuple(float(value) for value in calibration_cfg["calibration_interval"])
+    calibration_targets = {
+        "U_to_D": empirical_targets[..., 0],
+        "D_to_A": empirical_targets[..., 1],
+        "A_to_V": empirical_targets[..., 2],
+        "A_to_L": empirical_targets[..., 3],
+        "L_to_A": empirical_targets[..., 4],
+    }
+    calibration_checks = {
+        target_name: _picp_and_rank_histogram(
+            posterior_samples["transition_probs"][..., transition_idx],
+            calibration_targets[target_name],
+            interval=calibration_interval,
+        )
+        for transition_idx, target_name in enumerate(calibration_targets)
     }
 
     mass_error = float(np.max(np.abs(state_estimates.sum(axis=-1) - 1.0))) if state_estimates.size else 0.0
@@ -608,18 +939,20 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
 
     model_artifact = {
         "model_family": "hierarchical_causal_semi_markov",
-        "backend": "jax_numpyro" if use_jax else "numpy_fallback",
+        "backend": resolved_inference_family,
         "state_names": STATE_NAMES,
         "transition_names": TRANSITION_NAMES,
         "province_axis": province_axis,
         "region_axis": region_axis,
         "month_axis": month_axis,
         "core_feature_shape": list(core_tensor.shape),
+        "intervention_tensor_shape": list(intervention_tensor.shape),
         "markov_blanket": markov_blanket,
         "notes": [
             "phase3_state_space:U_D_A_V_L",
             "phase3_runtime_split:explicit_numpy_to_jax_handoff",
             "phase3_transition_kernel:feature_conditioned_duration_sensitive",
+            "phase3_transition_kernel:horseshoe_shrunk_feature_weights",
         ],
     }
     fit_artifact = {
@@ -627,6 +960,10 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
         "transition_parameters": transition_parameters,
         "posterior_summaries": posterior_summaries,
         "region_assignments": {province_axis[idx]: region_axis[region_index[idx]] for idx in range(len(province_axis))},
+        "inference_family": resolved_inference_family,
+        "intervention_summary": intervention_summary,
+        "categorical_rollout": categorical_rollout,
+        "calibration_diagnostics": calibration_checks,
     }
     forecast_bundle = {
         "forecast_horizon": forecast_states.shape[1],
@@ -643,6 +980,8 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
         "state_mass_error_max": round(mass_error, 8),
         "direct_signal_count": len(direct_signal_names),
         "structural_prior_count": len(structural_prior_names),
+        "chain_diagnostics": posterior_diag,
+        "calibration_diagnostics": calibration_checks,
     }
 
     state_estimates_artifact = save_tensor_artifact(
@@ -665,6 +1004,16 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
         notes=["phase3_forecast_states"],
         save_pt=False,
     )
+    intervention_artifact = save_tensor_artifact(
+        array=intervention_tensor,
+        axis_names=["province", "month", "intervention_channel"],
+        artifact_dir=phase3_dir,
+        stem="intervention_tensor",
+        backend="jax" if use_jax else "numpy",
+        device=choose_jax_device(prefer_gpu=True) if use_jax else "cpu",
+        notes=["phase3_explicit_intervention_tensor"],
+        save_pt=False,
+    )
 
     write_json(phase3_dir / "inference_ready_candidates.json", inference_ready_candidates)
     write_json(phase3_dir / "state_rows.json", state_rows)
@@ -674,6 +1023,9 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
     write_json(phase3_dir / "fit_artifact.json", fit_artifact)
     write_json(phase3_dir / "forecast_bundle.json", forecast_bundle)
     write_json(phase3_dir / "validation_artifact.json", validation_artifact)
+    write_json(phase3_dir / "intervention_tensor_summary.json", intervention_summary)
+    write_json(phase3_dir / "categorical_rollout.json", categorical_rollout)
+    write_json(phase3_dir / "calibration_diagnostics.json", calibration_checks)
 
     manifest = Phase0ManifestArtifact(
         plugin_id=plugin_id,
@@ -687,6 +1039,7 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
         artifact_paths={
             "state_estimates": state_estimates_artifact["value_path"],
             "forecast_states": forecast_states_artifact["value_path"],
+            "intervention_tensor": intervention_artifact["value_path"],
             "inference_ready_candidates": str(phase3_dir / "inference_ready_candidates.json"),
             "transition_parameters": str(phase3_dir / "transition_parameters.json"),
             "posterior_summaries": str(phase3_dir / "posterior_summaries.json"),
@@ -694,6 +1047,9 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
             "fit_artifact": str(phase3_dir / "fit_artifact.json"),
             "forecast_bundle": str(phase3_dir / "forecast_bundle.json"),
             "validation_artifact": str(phase3_dir / "validation_artifact.json"),
+            "intervention_tensor_summary": str(phase3_dir / "intervention_tensor_summary.json"),
+            "categorical_rollout": str(phase3_dir / "categorical_rollout.json"),
+            "calibration_diagnostics": str(phase3_dir / "calibration_diagnostics.json"),
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, False, notes=backend_map["torch"].device),
@@ -723,7 +1079,114 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
             "structural_prior_count": len(structural_prior_names),
         },
     )
+    gold_profile = dict((_HIV_PLUGIN.gold_standard_profiles or {}).get("phase3", {}) or {})
+    gold_paths = write_gold_standard_package(
+        phase_dir=phase3_dir,
+        phase_name="phase3",
+        profile_id="legacy",
+        gold_profile=gold_profile,
+        checks=[
+            {"name": "gold_standard_profile_declared", "passed": bool(gold_profile)},
+            {"name": "official_reference_points_declared", "passed": bool((_HIV_PLUGIN.reference_data or {}).get("phase3", {}).get("official_reference_points"))},
+            {"name": "official_indicator_validation_present", "passed": bool(validation_gates)},
+            {"name": "hierarchy_consistency_check_present", "passed": mass_error < (10 * mass_error_tolerance)},
+            {"name": "historical_harp_backtest_present", "passed": (ctx.run_dir / "harp_archive" / "backtest_assessment.json").exists()},
+            {"name": "incumbent_comparator_present", "passed": (phase3_dir / "reference_check_official.json").exists()},
+        ],
+        stage_manifest_path=str(phase3_dir / "phase3_manifest.json"),
+        summary={
+            "fit_row_count": len(fit_rows),
+            "validation_gate_count": len(validation_gates),
+            "official_reference_point_count": len((_HIV_PLUGIN.reference_data or {}).get("phase3", {}).get("official_reference_points", [])),
+        },
+    )
+    manifest["artifact_paths"].update(gold_paths)
     manifest["artifact_paths"].update(truth_paths)
+    boundary_paths = write_boundary_shape_package(
+        phase_dir=phase3_dir,
+        phase_name="phase3",
+        profile_id="legacy",
+        boundaries=[
+            {
+                "name": "state_estimates",
+                "kind": "tensor",
+                "path": str(phase3_dir / "state_estimates.npz"),
+                "expected_shape": list(state_estimates.shape),
+                "expected_axis_names": ["province", "month", "state"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "forecast_states",
+                "kind": "tensor",
+                "path": str(phase3_dir / "forecast_states.npz"),
+                "expected_shape": list(forecast_states.shape),
+                "expected_axis_names": ["province", "forecast_step", "state"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "inference_ready_candidates",
+                "kind": "json_rows",
+                "path": str(phase3_dir / "inference_ready_candidates.json"),
+                "min_rows": 1,
+                "expected_row_count": len(inference_ready_candidates),
+            },
+            {
+                "name": "state_rows",
+                "kind": "json_rows",
+                "path": str(phase3_dir / "state_rows.json"),
+                "min_rows": 1,
+                "expected_row_count": len(state_rows),
+            },
+            {
+                "name": "fit_artifact",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "fit_artifact.json"),
+                "expected_keys": ["fit_rows", "transition_parameters", "posterior_summaries", "region_assignments"],
+            },
+            {
+                "name": "validation_artifact",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "validation_artifact.json"),
+                "expected_keys": ["validation_gates", "claim_eligible", "state_mass_error_max", "direct_signal_count", "structural_prior_count"],
+            },
+            {
+                "name": "intervention_tensor",
+                "kind": "tensor",
+                "path": str(phase3_dir / "intervention_tensor.npz"),
+                "expected_shape": list(intervention_tensor.shape),
+                "expected_axis_names": ["province", "month", "intervention_channel"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "intervention_tensor_summary",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "intervention_tensor_summary.json"),
+                "expected_keys": ["channel_names", "channel_sources", "hook_masks", "available"],
+            },
+            {
+                "name": "categorical_rollout",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "categorical_rollout.json"),
+                "expected_keys": ["available"],
+            },
+            {
+                "name": "calibration_diagnostics",
+                "kind": "json_dict",
+                "path": str(phase3_dir / "calibration_diagnostics.json"),
+                "expected_keys": ["U_to_D", "D_to_A", "A_to_V", "A_to_L", "L_to_A"],
+            },
+        ],
+        summary={
+            "fit_row_count": len(fit_rows),
+            "state_row_count": len(state_rows),
+            "province_count": len(province_axis),
+            "forecast_horizon": int(forecast_states.shape[1]) if forecast_states.ndim >= 2 else 0,
+        },
+    )
+    manifest["artifact_paths"].update(boundary_paths)
     write_json(phase3_dir / "phase3_manifest.json", manifest)
     ctx.record_stage_outputs(
         "phase3_build",
@@ -738,6 +1201,16 @@ def _run_phase3_build_legacy(*, run_id: str, plugin_id: str, top_k_per_block: in
             phase3_dir / "fit_artifact.json",
             phase3_dir / "forecast_bundle.json",
             phase3_dir / "validation_artifact.json",
+            phase3_dir / "intervention_tensor.npz",
+            phase3_dir / "intervention_tensor_summary.json",
+            phase3_dir / "categorical_rollout.json",
+            phase3_dir / "calibration_diagnostics.json",
+            phase3_dir / "gold_standard_manifest.json",
+            phase3_dir / "gold_standard_checks.json",
+            phase3_dir / "gold_standard_summary.json",
+            phase3_dir / "boundary_shape_manifest.json",
+            phase3_dir / "boundary_shape_checks.json",
+            phase3_dir / "boundary_shape_summary.json",
             phase3_dir / "phase3_manifest.json",
         ],
     )
@@ -753,13 +1226,19 @@ def run_phase3_build(
     inference_family: str = RESCUE_INFERENCE_FAMILY,
 ) -> dict[str, Any]:
     if profile in {RESCUE_PROFILE_ID, RESCUE_V2_PROFILE_ID}:
+        run_harp_archive_build(run_id=run_id, plugin_id=plugin_id)
         return run_phase3_rescue_core(
             run_id=run_id,
             plugin_id=plugin_id,
             profile_id=profile,
             requested_inference_family=inference_family,
         )
-    return _run_phase3_build_legacy(run_id=run_id, plugin_id=plugin_id, top_k_per_block=top_k_per_block)
+    return _run_phase3_build_legacy(
+        run_id=run_id,
+        plugin_id=plugin_id,
+        top_k_per_block=top_k_per_block,
+        inference_family=inference_family,
+    )
 
 
 def run_phase3_frozen_backtest(
@@ -832,7 +1311,7 @@ def run_phase3_frozen_backtest(
         "train_harp_points": train_harp_points,
         "holdout_harp_points": holdout_harp_points,
     }
-    return run_phase3_rescue_core(
+    manifest = run_phase3_rescue_core(
         run_id=run_id,
         plugin_id=plugin_id,
         profile_id=profile,
@@ -845,11 +1324,24 @@ def run_phase3_frozen_backtest(
         reference_overrides={"official_points": official_points, "harp_points": train_harp_points},
         backtest_config=backtest_config,
     )
+    _require_requested_inference_family(manifest, inference_family, context="phase3 frozen backtest")
+    return manifest
 
 
 def _frozen_tuning_candidates() -> list[dict[str, Any]]:
     rows = list(_phase3_required_frozen_section("tuning")["initial_candidates"] or [])
     return [dict(row) for row in rows]
+
+
+def _require_requested_inference_family(manifest: dict[str, Any], requested_inference_family: str, *, context: str) -> dict[str, Any]:
+    fit_artifact = read_json(Path(manifest["artifact_paths"]["fit_artifact"]), default={})
+    resolved_inference_family = str(fit_artifact.get("inference_family") or "")
+    if resolved_inference_family != requested_inference_family:
+        raise RuntimeError(
+            f"{context} requested inference family '{requested_inference_family}' but resolved '{resolved_inference_family}'. "
+            "A calibrated frozen-history run requires the requested backend to be available; silent numpy fallbacks are not acceptable here."
+        )
+    return fit_artifact
 
 
 def _trial_calibration_overrides(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -870,7 +1362,7 @@ def _trial_calibration_overrides(candidate: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any]) -> list[dict[str, Any]]:
+def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any], round_index: int = 1) -> list[dict[str, Any]]:
     rules = dict(_phase3_required_frozen_section("tuning")["adaptive_rules"])
     torch_cfg = _phase3_required_prior_section("torch_map_loss_scales")
     base = dict(best_trial.get("calibration_overrides") or {})
@@ -882,9 +1374,22 @@ def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any]) -> list[dict[
     national_penalty = float(base.get("national_anchor_penalty_scale", torch_cfg["national_anchor_penalty_scale"]))
     harp_penalty = float(base.get("harp_program_penalty_scale", torch_cfg["harp_program_penalty_scale"]))
     linkage_penalty = float(base.get("linkage_penalty_scale", torch_cfg["linkage_penalty_scale"]))
+    suppression_penalty = float(base.get("suppression_penalty_scale", torch_cfg["suppression_penalty_scale"]))
+    soft_suppression_penalty = max(
+        float(rules["suppression_penalty_floor_soft"]),
+        suppression_penalty + float(rules["suppression_penalty_increment_soft"]),
+    )
+    hard_suppression_penalty = max(
+        float(rules["suppression_penalty_floor_hard"]),
+        suppression_penalty + float(rules["suppression_penalty_increment_hard"]),
+    )
+    balanced_suppression_penalty = max(
+        float(rules["suppression_penalty_floor_balanced"]),
+        suppression_penalty + float(rules["suppression_penalty_increment_balanced"]),
+    )
     return [
         {
-            "label": "adaptive_dx_floor_link_push",
+            "label": f"adaptive_r{round_index}_dx_floor_link_push",
             "u_to_d_prior": max(float(rules["u_to_d_floor_soft"]), round(u_to_d * float(rules["u_to_d_scale_soft"]), 4)),
             "d_to_a_prior": min(float(rules["d_to_a_ceiling_soft"]), round(d_to_a + float(rules["d_to_a_increment_soft"]), 4)),
             "diagnosed_penalty_scale": diagnosed_penalty + float(rules["diagnosed_penalty_soft"]),
@@ -892,10 +1397,11 @@ def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any]) -> list[dict[
             "national_anchor_penalty_scale": max(float(rules["national_penalty_floor_soft"]), national_penalty - float(rules["national_penalty_reduction_soft"])),
             "harp_program_penalty_scale": harp_penalty + float(rules["harp_penalty_add_soft"]),
             "linkage_penalty_scale": linkage_penalty + float(rules["linkage_penalty_add_soft"]),
+            "suppression_penalty_scale": soft_suppression_penalty,
             "fit_steps": int(rules["adaptive_fit_steps"]),
         },
         {
-            "label": "adaptive_dx_floor_link_hard",
+            "label": f"adaptive_r{round_index}_dx_floor_link_hard",
             "u_to_d_prior": max(float(rules["u_to_d_floor_hard"]), round(u_to_d * float(rules["u_to_d_scale_hard"]), 4)),
             "d_to_a_prior": min(float(rules["d_to_a_ceiling_hard"]), round(d_to_a + float(rules["d_to_a_increment_hard"]), 4)),
             "diagnosed_penalty_scale": diagnosed_penalty + float(rules["diagnosed_penalty_hard"]),
@@ -903,10 +1409,11 @@ def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any]) -> list[dict[
             "national_anchor_penalty_scale": max(float(rules["national_penalty_floor_hard"]), national_penalty - float(rules["national_penalty_reduction_hard"])),
             "harp_program_penalty_scale": harp_penalty + float(rules["harp_penalty_add_hard"]),
             "linkage_penalty_scale": linkage_penalty + float(rules["linkage_penalty_add_hard"]),
+            "suppression_penalty_scale": hard_suppression_penalty,
             "fit_steps": int(rules["adaptive_fit_steps"]),
         },
         {
-            "label": "adaptive_dx_floor_link_hard_supp",
+            "label": f"adaptive_r{round_index}_dx_floor_link_hard_supp",
             "u_to_d_prior": max(float(rules["u_to_d_floor_hard"]), round(u_to_d * float(rules["u_to_d_scale_hard"]), 4)),
             "d_to_a_prior": min(float(rules["d_to_a_ceiling_supp"]), round(d_to_a + float(rules["d_to_a_increment_supp"]), 4)),
             "diagnosed_penalty_scale": diagnosed_penalty + float(rules["diagnosed_penalty_hard"]),
@@ -914,11 +1421,11 @@ def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any]) -> list[dict[
             "national_anchor_penalty_scale": max(float(rules["national_penalty_floor_hard"]), national_penalty - float(rules["national_penalty_reduction_hard"])),
             "harp_program_penalty_scale": harp_penalty + float(rules["harp_penalty_add_supp"]),
             "linkage_penalty_scale": linkage_penalty + float(rules["linkage_penalty_add_supp"]),
-            "suppression_penalty_scale": float(rules["suppression_penalty_trial"]),
+            "suppression_penalty_scale": max(float(rules["suppression_penalty_trial"]), hard_suppression_penalty),
             "fit_steps": int(rules["adaptive_fit_steps"]),
         },
         {
-            "label": "adaptive_dx_micro_link_balanced",
+            "label": f"adaptive_r{round_index}_dx_micro_link_balanced",
             "u_to_d_prior": max(float(rules["u_to_d_floor_balanced"]), round(u_to_d * float(rules["u_to_d_scale_soft"]), 4)),
             "d_to_a_prior": min(float(rules["d_to_a_ceiling_balanced"]), round(d_to_a + float(rules["d_to_a_increment_balanced"]), 4)),
             "diagnosed_penalty_scale": diagnosed_penalty + float(rules["diagnosed_penalty_balanced"]),
@@ -926,6 +1433,19 @@ def _adaptive_frozen_tuning_candidates(best_trial: dict[str, Any]) -> list[dict[
             "national_anchor_penalty_scale": max(float(rules["national_penalty_floor_soft"]), national_penalty - float(rules["national_penalty_reduction_balanced"])),
             "harp_program_penalty_scale": harp_penalty + float(rules["harp_penalty_add_balanced"]),
             "linkage_penalty_scale": linkage_penalty + float(rules["linkage_penalty_add_balanced"]),
+            "suppression_penalty_scale": max(float(rules["suppression_penalty_trial_balanced"]), balanced_suppression_penalty),
+            "fit_steps": int(rules["adaptive_fit_steps"]),
+        },
+        {
+            "label": f"adaptive_r{round_index}_suppression_focus",
+            "u_to_d_prior": max(float(rules["u_to_d_floor_soft"]), round(u_to_d * float(rules["u_to_d_scale_soft"]), 4)),
+            "d_to_a_prior": min(float(rules["d_to_a_ceiling_supp"]), round(d_to_a + float(rules["d_to_a_increment_supp"]), 4)),
+            "diagnosed_penalty_scale": diagnosed_penalty + float(rules["diagnosed_penalty_balanced"]),
+            "official_reference_penalty_scale": max(float(rules["official_penalty_floor_soft"]), official_penalty - float(rules["official_penalty_reduction_balanced"])),
+            "national_anchor_penalty_scale": max(float(rules["national_penalty_floor_soft"]), national_penalty - float(rules["national_penalty_reduction_balanced"])),
+            "harp_program_penalty_scale": harp_penalty + float(rules["harp_penalty_add_supp"]),
+            "linkage_penalty_scale": linkage_penalty + float(rules["linkage_penalty_add_balanced"]),
+            "suppression_penalty_scale": max(float(rules["suppression_penalty_trial_hard"]), hard_suppression_penalty),
             "fit_steps": int(rules["adaptive_fit_steps"]),
         },
     ]
@@ -937,6 +1457,8 @@ def run_phase3_frozen_backtest_tuning(
     plugin_id: str,
     profile: str = RESCUE_V2_PROFILE_ID,
     inference_family: str = RESCUE_INFERENCE_FAMILY,
+    train_years: list[int] | None = None,
+    holdout_years: list[int] | None = None,
 ) -> dict[str, Any]:
     if inference_family != "torch_map":
         raise ValueError("phase3 frozen backtest tuning is only implemented for torch_map")
@@ -952,8 +1474,10 @@ def run_phase3_frozen_backtest_tuning(
     if not archive_spec.get("ready_for_model_backtest"):
         raise RuntimeError("historical HARP archive is not ready for frozen-history tuning")
 
-    train_years = [int(year) for year in (archive_spec.get("train_years") or [])]
-    holdout_years = [int(year) for year in (archive_spec.get("holdout_years") or [])]
+    train_years = [int(year) for year in (train_years or archive_spec.get("train_years") or [])]
+    holdout_years = [int(year) for year in (holdout_years or archive_spec.get("holdout_years") or [])]
+    if not train_years or not holdout_years:
+        raise RuntimeError("phase3 frozen backtest tuning requires non-empty train and holdout years")
     axis_catalogs = read_json(ctx.run_dir / "phase1" / "axis_catalogs.json", default={})
     normalized_rows = read_json(ctx.run_dir / "phase1" / "normalized_subparameters.json", default=[])
     parameter_catalog = read_json(ctx.run_dir / "phase1" / "parameter_catalog.json", default=[])
@@ -1021,7 +1545,11 @@ def run_phase3_frozen_backtest_tuning(
                 backtest_config=backtest_config,
                 calibration_overrides=calibration_overrides,
             )
-            fit_artifact = read_json(Path(manifest["artifact_paths"]["fit_artifact"]), default={})
+            fit_artifact = _require_requested_inference_family(
+                manifest,
+                inference_family,
+                context=f"phase3 frozen backtest tuning trial '{label}'",
+            )
             frozen_summary = fit_artifact.get("frozen_history_backtest", {})
             model_mae = float(frozen_summary.get("model_mean_absolute_error") or 0.0)
             carry_forward_mae = float(frozen_summary.get("carry_forward_mean_absolute_error") or 0.0)
@@ -1042,8 +1570,11 @@ def run_phase3_frozen_backtest_tuning(
         return False
 
     beat_baseline = _run_candidates(_frozen_tuning_candidates())
-    if not beat_baseline and best_trial is not None:
-        _run_candidates(_adaptive_frozen_tuning_candidates(best_trial))
+    max_adaptive_rounds = int(dict(_phase3_required_frozen_section("tuning")["adaptive_rules"]).get("max_adaptive_rounds") or 1)
+    adaptive_round = 1
+    while not beat_baseline and best_trial is not None and adaptive_round <= max_adaptive_rounds:
+        beat_baseline = _run_candidates(_adaptive_frozen_tuning_candidates(best_trial, round_index=adaptive_round))
+        adaptive_round += 1
 
     if best_trial is None:
         raise RuntimeError("phase3 frozen backtest tuning produced no trial results")
@@ -1064,7 +1595,11 @@ def run_phase3_frozen_backtest_tuning(
         backtest_config=backtest_config,
         calibration_overrides=selected_overrides,
     )
-    final_fit = read_json(Path(final_manifest["artifact_paths"]["fit_artifact"]), default={})
+    final_fit = _require_requested_inference_family(
+        final_manifest,
+        inference_family,
+        context="phase3 tuned frozen backtest final run",
+    )
     final_summary = final_fit.get("frozen_history_backtest", {})
     tuning_summary = {
         "train_years": train_years,
