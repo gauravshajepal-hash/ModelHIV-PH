@@ -9,6 +9,7 @@ from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.core.node_graph import build_node_graph_bundle
 from epigraph_ph.geography import infer_region_code
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase3.shared.phase2_inputs import load_phase2_compatibility_payload
 from epigraph_ph.phase4.policy_analysis import (
     build_policy_comparator_report as _policy_build_policy_comparator_report,
     build_sensitivity_analysis as _policy_build_sensitivity_analysis,
@@ -51,12 +52,15 @@ def _phase4_setting(key: str, default: Any) -> Any:
 
 
 def _load_phase4_inputs(run_dir) -> dict[str, Any]:
-    phase2_dir = run_dir / "phase2"
+    phase2_payload = load_phase2_compatibility_payload(run_dir)
     phase3_dir = run_dir / "phase3"
     return {
-        "candidate_profiles": read_json(phase2_dir / "candidate_profiles.json", default=[]),
-        "edge_scores": read_json(phase2_dir / "edge_scores.json", default=[]),
-        "ranked_linkages": read_json(phase2_dir / "ranked_linkages.json", default=[]),
+        "candidate_profiles": list(phase2_payload.get("candidate_profiles") or []),
+        "edge_scores": list(phase2_payload.get("edge_scores") or []),
+        "hidden_driver_edge_scores": list(phase2_payload.get("hidden_driver_edge_scores") or []),
+        "multiscale_edge_scores": list(phase2_payload.get("multiscale_edge_scores") or []),
+        "ranked_linkages": list(phase2_payload.get("ranked_linkages") or []),
+        "eligibility_surfaces": dict(phase2_payload.get("eligibility_surfaces") or {}),
         "state_estimates": load_tensor_artifact(phase3_dir / "state_estimates.npz"),
         "forecast_states": load_tensor_artifact(phase3_dir / "forecast_states.npz"),
         "transition_parameters": read_json(phase3_dir / "transition_parameters.json", default={}),

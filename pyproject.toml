@@ -53,3 +53,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "slow: long-running tests that are not intended for the default fast suite",
+  "integration: artifact-backed integration tests that require explicit opt-in",
+]

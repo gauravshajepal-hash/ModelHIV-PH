@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -76,6 +77,27 @@ def _phase15_required_section(key: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise TypeError(f"HIV phase15 constraint setting '{key}' must be a mapping")
     return dict(value)
+
+
+def _phase15_indicator_names_by_block(phase15_dir: Path) -> dict[str, list[str]]:
+    parameter_payload = read_json(phase15_dir / "phase15_v2_indicator_parameters.json", default={})
+    rows = list(parameter_payload.get("rows") or []) if isinstance(parameter_payload, dict) else []
+    mapping: dict[str, list[str]] = defaultdict(list)
+    for row in rows:
+        block_id = str(row.get("block_id") or "")
+        canonical_name = str(row.get("canonical_name") or "")
+        if block_id and canonical_name and canonical_name not in mapping[block_id]:
+            mapping[block_id].append(canonical_name)
+    if mapping:
+        return {block_id: sorted(names) for block_id, names in mapping.items()}
+    latent_blocks = list((((_HIV_PLUGIN.constraint_settings or {}).get("phase15", {}) or {}).get("latent_blocks", {}) or {}).get("blocks", []))
+    fallback: dict[str, list[str]] = {}
+    for row in latent_blocks:
+        block_id = str(row.get("block_id") or "")
+        indicators = dict(row.get("indicators") or {})
+        if block_id:
+            fallback[block_id] = sorted(str(name) for name in indicators)
+    return fallback
 
 
 @dataclass(slots=True)
@@ -831,6 +853,8 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
         month_axis=month_axis,
         relationship_rows=list(relationship_artifacts.get("rows", [])),
         cfg=multiscale_cfg,
+        block_uncertainty_rows=list(read_json(phase15_dir / "phase15_v2_uncertainty.json", default={}).get("rows") or []),
+        indicator_names_by_block=_phase15_indicator_names_by_block(phase15_dir),
     )
     multiscale_province_artifact = save_tensor_artifact(
         array=multiscale_artifacts["province_tensor"],
@@ -860,6 +884,36 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
         backend="numpy",
         device="cpu",
         notes=["phase15_multiscale_national_factor_tensor"],
+        save_pt=False,
+    )
+    multiscale_province_uncertainty_artifact = save_tensor_artifact(
+        array=multiscale_artifacts["province_uncertainty_tensor"],
+        axis_names=["province", "month", "factor"],
+        artifact_dir=phase15_dir,
+        stem="multiscale_province_factor_uncertainty_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_multiscale_province_factor_uncertainty_tensor"],
+        save_pt=False,
+    )
+    multiscale_region_uncertainty_artifact = save_tensor_artifact(
+        array=multiscale_artifacts["region_uncertainty_tensor"],
+        axis_names=["region", "month", "factor"],
+        artifact_dir=phase15_dir,
+        stem="multiscale_region_factor_uncertainty_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_multiscale_region_factor_uncertainty_tensor"],
+        save_pt=False,
+    )
+    multiscale_national_uncertainty_artifact = save_tensor_artifact(
+        array=multiscale_artifacts["national_uncertainty_tensor"],
+        axis_names=["national", "month", "factor"],
+        artifact_dir=phase15_dir,
+        stem="multiscale_national_factor_uncertainty_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_multiscale_national_factor_uncertainty_tensor"],
         save_pt=False,
     )
     write_json(phase15_dir / "multiscale_factor_catalog.json", multiscale_artifacts["catalog_rows"])
@@ -944,6 +998,9 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             "multiscale_province_factor_tensor": multiscale_province_artifact["value_path"],
             "multiscale_region_factor_tensor": multiscale_region_artifact["value_path"],
             "multiscale_national_factor_tensor": multiscale_national_artifact["value_path"],
+            "multiscale_province_factor_uncertainty_tensor": multiscale_province_uncertainty_artifact["value_path"],
+            "multiscale_region_factor_uncertainty_tensor": multiscale_region_uncertainty_artifact["value_path"],
+            "multiscale_national_factor_uncertainty_tensor": multiscale_national_uncertainty_artifact["value_path"],
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, False, notes=backend_map["torch"].device),

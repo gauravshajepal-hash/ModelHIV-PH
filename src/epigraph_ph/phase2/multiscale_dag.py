@@ -160,6 +160,18 @@ def _scale_tensor(path: Path, factor_ids: list[str], factor_index: dict[str, int
     return values[:, :, indices].astype(np.float32)
 
 
+def _scale_uncertainty_tensor(path: Path, factor_ids: list[str], factor_index: dict[str, int]) -> np.ndarray | None:
+    if not path.exists():
+        return None
+    values = np.asarray(load_tensor_artifact(path), dtype=np.float32)
+    if values.ndim == 2:
+        values = values[None, :, :]
+    indices = [int(factor_index[factor_id]) for factor_id in factor_ids if factor_id in factor_index]
+    if not indices:
+        return None
+    return values[:, :, indices].astype(np.float32)
+
+
 def build_multiscale_dag_outputs(
     *,
     phase15_dir: Path,
@@ -170,6 +182,8 @@ def build_multiscale_dag_outputs(
     bundle = {
         "enabled": enabled,
         "model_family": "multiscale_temporal_factor_graph",
+        "support_surface_kind": "multiscale_factor_support",
+        "scientific_role": "support_only",
         "factor_count": len(retained_factor_rows),
         "scales": {},
     }
@@ -190,6 +204,7 @@ def build_multiscale_dag_outputs(
 
     axes = read_json(phase15_dir / "multiscale_factor_axes.json", default={})
     factor_axis = [str(value) for value in list(axes.get("factor") or [])]
+    month_axis = [str(value) for value in list(axes.get("month") or [])]
     factor_index = {factor_id: idx for idx, factor_id in enumerate(factor_axis)}
     factor_catalog = list(read_json(phase15_dir / "multiscale_factor_catalog.json", default=[]))
     factor_lookup = _factor_lookup(factor_catalog)
@@ -213,6 +228,11 @@ def build_multiscale_dag_outputs(
         "region": phase15_dir / "multiscale_region_factor_tensor.npz",
         "national": phase15_dir / "multiscale_national_factor_tensor.npz",
     }
+    uncertainty_paths = {
+        "province": phase15_dir / "multiscale_province_factor_uncertainty_tensor.npz",
+        "region": phase15_dir / "multiscale_region_factor_uncertainty_tensor.npz",
+        "national": phase15_dir / "multiscale_national_factor_uncertainty_tensor.npz",
+    }
     factor_support = Counter()
     edge_support = Counter()
     hidden_support = Counter()
@@ -224,10 +244,10 @@ def build_multiscale_dag_outputs(
     if not temporal_cfg:
         temporal_cfg = {
             "candidate_max_lags": [1, 2],
-            "candidate_ridge_penalties": [0.05, 0.1, 0.2],
-            "candidate_sparse_penalties": [0.01, 0.02, 0.04],
-            "candidate_low_rank_penalties": [0.05, 0.1, 0.2],
-            "decomposition_steps": 120,
+            "lambda_s_fractions": [0.1, 0.2, 0.4],
+            "lambda_l_fractions": [0.1, 0.2, 0.4],
+            "selection_metric": "weighted_bic",
+            "decomposition_steps": 160,
             "convergence_tol": 1e-5,
             "bootstrap_draws": 12,
             "bootstrap_block_length": 6,
@@ -245,6 +265,7 @@ def build_multiscale_dag_outputs(
             scale_blanket = {"target_factor_ids": [], "blanket_factor_ids": [], "blanket_indices": [], "phase3_member_canonical_names": []}
         else:
             scale_tensor = _scale_tensor(path, factor_ids, factor_index)
+            uncertainty_tensor = _scale_uncertainty_tensor(uncertainty_paths[scale_name], factor_ids, factor_index)
             if scale_tensor.size == 0 or scale_tensor.shape[-1] < int(cfg.get("min_factor_count", 2)):
                 scale_bundle = {
                     "scale_name": scale_name,
@@ -259,7 +280,7 @@ def build_multiscale_dag_outputs(
                     "status": "unavailable",
                     "reason": "missing_target_factors",
                     "factor_count": int(scale_tensor.shape[-1]) if scale_tensor.ndim == 3 else 0,
-                    "uncertainty_available": False,
+                    "uncertainty_available": uncertainty_tensor is not None,
                 }
                 scale_blanket = {"target_factor_ids": [], "blanket_factor_ids": [], "blanket_indices": [], "phase3_member_canonical_names": []}
             else:
@@ -273,12 +294,14 @@ def build_multiscale_dag_outputs(
                     indicator_names_by_block=indicator_names,
                     cfg=temporal_cfg,
                     phi_by_block=phi_by_factor,
-                    uncertainty_tensor=None,
+                    uncertainty_tensor=uncertainty_tensor,
+                    month_axis=month_axis,
                 )
                 scale_bundle["graph_family"] = "temporal_factor_graph"
                 scale_bundle["factor_count"] = len(local_factor_ids)
-                scale_bundle["uncertainty_available"] = False
+                scale_bundle["uncertainty_available"] = uncertainty_tensor is not None
                 scale_bundle["support_surface_kind"] = "multiscale_factor_support"
+                scale_bundle["scientific_role"] = "support_only"
         bundle["scales"][scale_name] = scale_bundle
         blankets["scales"][scale_name] = scale_blanket
         if scale_bundle.get("status") != "completed":
