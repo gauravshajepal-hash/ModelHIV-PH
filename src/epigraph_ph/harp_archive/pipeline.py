@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 import shutil
@@ -10,7 +11,20 @@ from statistics import mean
 from typing import Any
 
 from epigraph_ph.geography import infer_philippines_geo, infer_region_code, normalize_geo_label
-from epigraph_ph.runtime import RunContext, ensure_dir, utc_now_iso, write_ground_truth_package, write_json
+from epigraph_ph.harp_archive.doh_hiv_sti_archive import (
+    archive_seed_path,
+    archive_ocr_cache_settings,
+    archive_ocr_settings,
+    build_diagnosis_flow_points,
+    build_harp_program_points,
+    download_archive_pdfs,
+    extract_archive_metric_rows,
+    extract_archive_pdf_pages,
+    load_archive_seed_rows,
+    materialize_archive_ocr_payload,
+    promote_archive_ocr_artifact_to_shared,
+)
+from epigraph_ph.runtime import RunContext, ensure_dir, read_json, sha256_file, utc_now_iso, write_ground_truth_package, write_json
 
 try:
     from pypdf import PdfReader
@@ -23,6 +37,12 @@ DEFAULT_LOCAL_SEED_SPECS = [
         "source_id": "curated_historical_harp_2017_2024",
         "label": "Curated Historical HARP Panel 2017-2024",
         "path": Path(__file__).resolve().with_name("seeds") / "historical_harp_panel_curated.csv",
+        "source_kind": "packaged_csv",
+    },
+    {
+        "source_id": "doh_official_cascade_ground_truth_2018_2025",
+        "label": "DOH 95-95-95 Ground Truth 2018-2025 From User-Supplied Official Slide",
+        "path": Path(__file__).resolve().with_name("seeds") / "doh_official_cascade_ground_truth_2018_2025.csv",
         "source_kind": "packaged_csv",
     },
     {
@@ -40,6 +60,8 @@ DEFAULT_LOCAL_SEED_SPECS = [
 ]
 
 YEAR_RANGE = list(range(2010, 2026))
+_HARP_ARCHIVE_BUILD_VERSION = "harp_archive_cache_v1"
+_HARP_ARCHIVE_SEMANTICS_VERSION = "2026-04-03_harp_panel_priority_v1"
 MANUAL_SEED_PATTERNS = [
     "*PNAC*Annual*Report*.pdf",
     "*HARP*.pdf",
@@ -54,6 +76,79 @@ MANUAL_SEED_PATTERNS = [
 def _safe_ascii_label(value: str) -> str:
     cleaned = re.sub(r"[^A-Za-z0-9]+", "_", value.strip()).strip("_").lower()
     return cleaned or "document"
+
+
+def _archive_source_identity_rows(source_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized_rows: list[dict[str, Any]] = []
+    for row in source_rows:
+        source_kind = str(row.get("source_kind") or "")
+        identity_row: dict[str, Any] = {
+            "source_id": str(row.get("source_id") or ""),
+            "source_kind": source_kind,
+            "label": str(row.get("label") or row.get("source_label") or ""),
+        }
+        if source_kind == "doh_hiv_sti_archive_pdf":
+            for key in (
+                "source_label",
+                "source_year",
+                "source_url",
+                "file_id",
+                "temporal_precision",
+                "effective_month",
+                "start_month",
+                "end_month",
+            ):
+                value = row.get(key)
+                if value not in (None, ""):
+                    identity_row[key] = value
+        else:
+            checksum = str(row.get("checksum") or "")
+            local_path = Path(str(row.get("local_path") or ""))
+            if not checksum and local_path.exists() and local_path.is_file():
+                checksum = sha256_file(local_path)
+            if checksum:
+                identity_row["checksum"] = checksum
+            source_url = str(row.get("source_url") or "")
+            if source_url:
+                identity_row["source_url"] = source_url
+        normalized_rows.append(identity_row)
+    normalized_rows.sort(key=lambda item: json.dumps(item, sort_keys=True))
+    return normalized_rows
+
+
+def _archive_source_manifest_rows(source_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return _archive_source_identity_rows(source_rows)
+
+
+def _archive_build_cache_key(source_rows: list[dict[str, Any]]) -> str:
+    ocr_cfg = _archive_ocr_cache_settings()
+    stable_payload = {
+        "build_version": _HARP_ARCHIVE_BUILD_VERSION,
+        "semantics_version": _HARP_ARCHIVE_SEMANTICS_VERSION,
+        "ocr_settings": ocr_cfg,
+        "sources": _archive_source_manifest_rows(source_rows),
+    }
+    return hashlib.sha256(json.dumps(stable_payload, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _archive_ocr_cache_settings() -> dict[str, Any]:
+    return dict(archive_ocr_cache_settings())
+
+
+def _archive_manifest_is_reusable(archive_dir: Path, *, cache_key: str) -> dict[str, Any] | None:
+    manifest_path = archive_dir / "harp_archive_manifest.json"
+    manifest = read_json(manifest_path, default={})
+    if not isinstance(manifest, dict):
+        return None
+    if str(manifest.get("build_cache_key") or "") != str(cache_key):
+        return None
+    artifact_paths = dict(manifest.get("artifact_paths") or {})
+    if not artifact_paths:
+        return None
+    for path_str in artifact_paths.values():
+        if not path_str or not Path(str(path_str)).exists():
+            return None
+    return manifest
 
 
 def _read_pdf_pages(path: Path) -> list[dict[str, Any]]:
@@ -201,7 +296,7 @@ def _extract_core_team_cascade(page_text: str, source_id: str, source_label: str
         rows.append(
             {
                 "year": 2024,
-                "time": "2025-01",
+                "time": "2024-12",
                 "metric_name": metric_name,
                 "value": float(value),
                 "unit": unit,
@@ -384,9 +479,154 @@ def _materialize_local_sources(run_dir: Path, desktop_seed_dir: Path | None = No
                 "source_kind": spec["source_kind"],
                 "local_path": str(copied_path),
                 "origin_path": str(path),
+                "checksum": sha256_file(copied_path),
             }
         )
     return source_rows
+
+
+def _archive_source_signature_rows(source_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    signature_rows: list[dict[str, Any]] = []
+    for row in source_rows:
+        local_path = Path(str(row.get("local_path") or ""))
+        checksum = str(row.get("checksum") or "")
+        if not checksum and local_path.exists() and local_path.is_file():
+            checksum = sha256_file(local_path)
+        signature_rows.append(
+            {
+                "source_id": str(row.get("source_id") or ""),
+                "source_kind": str(row.get("source_kind") or ""),
+                "local_path": str(local_path),
+                "origin_path": str(row.get("origin_path") or ""),
+                "checksum": checksum,
+            }
+        )
+    signature_rows.sort(key=lambda item: (item["source_id"], item["local_path"], item["checksum"]))
+    return signature_rows
+
+
+def _archive_build_signature(source_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    pipeline_path = Path(__file__).resolve()
+    extractor_path = Path(materialize_archive_ocr_payload.__code__.co_filename).resolve()
+    return {
+        "pipeline_sha256": sha256_file(pipeline_path),
+        "extractor_sha256": sha256_file(extractor_path),
+        "ocr_settings": archive_ocr_settings(),
+        "sources": _archive_source_signature_rows(source_rows),
+    }
+
+
+def _expected_archive_artifact_paths(archive_dir: Path) -> list[Path]:
+    return [
+        archive_dir / "archive_source_manifest.json",
+        archive_dir / "ocr_corpus_manifest.json",
+        archive_dir / "page_catalog.json",
+        archive_dir / "historical_metric_rows.json",
+        archive_dir / "historical_harp_panel.json",
+        archive_dir / "historical_harp_panel.csv",
+        archive_dir / "harp_program_points.json",
+        archive_dir / "diagnosis_flow_points.json",
+        archive_dir / "observed_program_panel.json",
+        archive_dir / "subgroup_anchor_pack.json",
+        archive_dir / "backtest_assessment.json",
+        archive_dir / "frozen_backtest_spec.json",
+        archive_dir / "frozen_backtest_summary.json",
+        archive_dir / "ground_truth_summary.json",
+        archive_dir / "ground_truth_manifest.json",
+        archive_dir / "ground_truth_checks.json",
+        archive_dir / "harp_archive_manifest.json",
+    ]
+
+
+def _try_reuse_archive_build(
+    archive_dir: Path,
+    *,
+    build_signature: dict[str, Any],
+) -> dict[str, Any] | None:
+    manifest_path = archive_dir / "harp_archive_manifest.json"
+    manifest = read_json(manifest_path, default={})
+    if not isinstance(manifest, dict) or not manifest:
+        return None
+    if dict(manifest.get("build_signature") or {}) != build_signature:
+        return None
+    if not all(path.exists() for path in _expected_archive_artifact_paths(archive_dir)):
+        return None
+    payload = dict(manifest)
+    payload["reuse_status"] = "reused_existing_build"
+    return payload
+
+
+def _archive_required_artifact_paths(archive_dir: Path) -> dict[str, Path]:
+    return {
+        "archive_source_manifest": archive_dir / "archive_source_manifest.json",
+        "ocr_corpus_manifest": archive_dir / "ocr_corpus_manifest.json",
+        "page_catalog": archive_dir / "page_catalog.json",
+        "historical_metric_rows": archive_dir / "historical_metric_rows.json",
+        "historical_harp_panel": archive_dir / "historical_harp_panel.json",
+        "historical_harp_panel_csv": archive_dir / "historical_harp_panel.csv",
+        "harp_program_points": archive_dir / "harp_program_points.json",
+        "diagnosis_flow_points": archive_dir / "diagnosis_flow_points.json",
+        "observed_program_panel": archive_dir / "observed_program_panel.json",
+        "subgroup_anchor_pack": archive_dir / "subgroup_anchor_pack.json",
+        "backtest_assessment": archive_dir / "backtest_assessment.json",
+        "frozen_backtest_spec": archive_dir / "frozen_backtest_spec.json",
+        "frozen_backtest_summary": archive_dir / "frozen_backtest_summary.json",
+        "harp_archive_manifest": archive_dir / "harp_archive_manifest.json",
+    }
+
+
+def _archive_build_fingerprint(source_rows: list[dict[str, Any]]) -> str:
+    source_payload: list[dict[str, Any]] = []
+    for row in source_rows:
+        local_path = Path(str(row.get("local_path") or ""))
+        source_payload.append(
+            {
+                "source_id": str(row.get("source_id") or ""),
+                "source_kind": str(row.get("source_kind") or ""),
+                "label": str(row.get("label") or ""),
+                "local_path": str(local_path),
+                "checksum": str(row.get("checksum") or (sha256_file(local_path) if local_path.exists() and local_path.is_file() else "")),
+                "source_url": str(row.get("source_url") or ""),
+                "effective_month": str(row.get("effective_month") or ""),
+                "temporal_precision": str(row.get("temporal_precision") or ""),
+            }
+        )
+    source_payload.sort(key=lambda item: (item["source_kind"], item["source_id"], item["checksum"], item["effective_month"]))
+    code_paths = [
+        Path(__file__).resolve(),
+        Path(__file__).resolve().with_name("doh_hiv_sti_archive.py"),
+        archive_seed_path(),
+    ]
+    code_payload = [
+        {
+            "path": str(path),
+            "checksum": sha256_file(path) if path.exists() and path.is_file() else "",
+        }
+        for path in code_paths
+    ]
+    fingerprint_payload = {
+        "ocr_settings": archive_ocr_settings(),
+        "sources": source_payload,
+        "code_inputs": code_payload,
+    }
+    canonical = json.dumps(fingerprint_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _load_reusable_archive_manifest_by_fingerprint(archive_dir: Path, build_fingerprint: str) -> dict[str, Any] | None:
+    manifest_path = archive_dir / "harp_archive_manifest.json"
+    manifest = read_json(manifest_path, default={})
+    if not isinstance(manifest, dict):
+        return None
+    if str(manifest.get("build_fingerprint") or "") != str(build_fingerprint):
+        return None
+    required = _archive_required_artifact_paths(archive_dir)
+    if not all(path.exists() for path in required.values()):
+        return None
+    artifact_paths = dict(manifest.get("artifact_paths") or {})
+    if any(not Path(str(path)).exists() for path in artifact_paths.values() if isinstance(path, str) and path):
+        return None
+    return manifest
 
 
 def _read_tabular_seed_rows(path: Path, *, source_id: str, source_label: str) -> list[dict[str, Any]]:
@@ -447,14 +687,50 @@ def _read_tabular_seed_rows(path: Path, *, source_id: str, source_label: str) ->
     return rows
 
 
+def _time_ordinal(time_label: str) -> int:
+    value = str(time_label or "")
+    if len(value) >= 7 and value[:4].isdigit() and value[5:7].isdigit():
+        return int(value[:4]) * 12 + int(value[5:7]) - 1
+    if len(value) >= 4 and value[:4].isdigit():
+        return int(value[:4]) * 12
+    return -1
+
+
 def _panel_from_metric_rows(metric_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    point_metrics = {
+        "estimated_plhiv",
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+    }
     panel: dict[str, dict[str, Any]] = {str(year): {"year": year} for year in YEAR_RANGE}
+    selected: dict[tuple[int, str], dict[str, Any]] = {}
     for row in metric_rows:
-        year_key = str(int(row["year"]))
-        panel.setdefault(year_key, {"year": int(row["year"])})
-        metric_name = str(row["metric_name"])
-        if metric_name not in panel[year_key]:
-            panel[year_key][metric_name] = row["value"]
+        year = int(row.get("year") or 0)
+        metric_name = str(row.get("metric_name") or "")
+        if year not in YEAR_RANGE or metric_name not in point_metrics:
+            continue
+        key = (year, metric_name)
+        previous = selected.get(key)
+        row_priority = _metric_row_priority(row)
+        row_rank = (row_priority[0], _time_ordinal(str(row.get("time") or "")), row_priority[1])
+        prev_rank = (
+            (
+                _metric_row_priority(previous)[0],
+                _time_ordinal(str(previous.get("time") or "")),
+                _metric_row_priority(previous)[1],
+            )
+            if previous
+            else None
+        )
+        if previous is None or row_rank >= prev_rank:
+            selected[key] = row
+    for (year, metric_name), row in selected.items():
+        year_key = str(year)
+        panel.setdefault(year_key, {"year": year})
+        panel[year_key][metric_name] = row["value"]
+        panel[year_key]["time"] = str(row.get("time") or panel[year_key].get("time") or f"{year:04d}-01")
     return {"rows": [panel[str(year)] for year in YEAR_RANGE]}
 
 
@@ -468,6 +744,7 @@ def _write_panel_csv(path: Path, panel_rows: list[dict[str, Any]]) -> None:
 
 
 def _backtest_assessment(metric_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    locked_metrics = {"diagnosed_plhiv", "alive_on_art", "tested_for_viral_load", "virally_suppressed"}
     by_metric: dict[str, set[int]] = defaultdict(set)
     for row in metric_rows:
         by_metric[str(row["metric_name"])].add(int(row["year"]))
@@ -476,6 +753,7 @@ def _backtest_assessment(metric_rows: list[dict[str, Any]]) -> dict[str, Any]:
             int(row["year"])
             for row in metric_rows
             if str(row.get("measurement_class") or "").startswith("program_observed_harp")
+            and str(row.get("metric_name") or "") in locked_metrics
         }
     )
     return {
@@ -499,6 +777,8 @@ def _metric_row_priority(row: dict[str, Any]) -> tuple[float, float]:
     source_id = str(row.get("source_id") or "")
     year = int(row.get("year") or 0)
     curated_bonus = 0.0
+    if source_id == "doh_official_cascade_ground_truth_2018_2025" and 2018 <= year <= 2025:
+        curated_bonus = 2.0
     if metric_name == "estimated_plhiv" and source_id == "curated_historical_harp_2017_2024" and 2017 <= year <= 2024:
         curated_bonus = 1.0
     return curated_bonus, float(row.get("evidence_confidence") or 0.0)
@@ -509,6 +789,7 @@ def _deduplicate_metric_rows(metric_rows: list[dict[str, Any]]) -> list[dict[str
     for row in metric_rows:
         key = (
             int(row.get("year") or 0),
+            str(row.get("time") or ""),
             str(row.get("metric_name") or ""),
             str(row.get("measurement_class") or ""),
             str(row.get("geo") or ""),
@@ -517,7 +798,14 @@ def _deduplicate_metric_rows(metric_rows: list[dict[str, Any]]) -> list[dict[str
         if previous is None or _metric_row_priority(row) >= _metric_row_priority(previous):
             deduped[key] = row
     rows = list(deduped.values())
-    rows.sort(key=lambda item: (int(item.get("year") or 0), str(item.get("metric_name") or ""), str(item.get("geo") or "")))
+    rows.sort(
+        key=lambda item: (
+            int(item.get("year") or 0),
+            _time_ordinal(str(item.get("time") or "")),
+            str(item.get("metric_name") or ""),
+            str(item.get("geo") or ""),
+        )
+    )
     return rows
 
 
@@ -581,23 +869,238 @@ def _build_frozen_backtest_artifacts(metric_rows: list[dict[str, Any]]) -> tuple
     return spec, summary
 
 
+def _archive_source_signature(source_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return _archive_source_identity_rows(source_rows)
+
+
+def _manifest_artifact_paths_present(artifact_paths: dict[str, Any]) -> bool:
+    if not artifact_paths:
+        return False
+    for path in artifact_paths.values():
+        if not str(path or "").strip():
+            return False
+        if not Path(str(path)).exists():
+            return False
+    return True
+
+
+def _saved_archive_ocr_cache_settings(ocr_manifest: dict[str, Any]) -> dict[str, Any]:
+    saved_ocr_cache_settings = dict(ocr_manifest).get("cache_settings") or {}
+    if not saved_ocr_cache_settings and isinstance(dict(ocr_manifest).get("ocr_settings"), dict):
+        ocr_settings = dict(dict(ocr_manifest).get("ocr_settings") or {})
+        saved_ocr_cache_settings = {
+            "render_dpi": ocr_settings.get("render_dpi"),
+            "pdf_requires_ocr_avg_chars": ocr_settings.get("pdf_requires_ocr_avg_chars"),
+            "force_ocr_every_page": ocr_settings.get("force_ocr_every_page"),
+            "max_pages_per_document": ocr_settings.get("max_pages_per_document"),
+        }
+    return dict(saved_ocr_cache_settings)
+
+
+def _saved_archive_source_identity_rows(source_manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    candidate_rows = source_manifest.get("source_manifest_rows")
+    if not isinstance(candidate_rows, list) or not candidate_rows:
+        candidate_rows = source_manifest.get("sources")
+    if not isinstance(candidate_rows, list) or not candidate_rows:
+        candidate_rows = source_manifest.get("source_signature")
+    if not isinstance(candidate_rows, list):
+        return []
+    return _archive_source_identity_rows([dict(row) for row in candidate_rows if isinstance(row, dict)])
+
+
+def _load_reusable_archive_manifest(
+    *,
+    archive_dir: Path,
+    source_rows: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    manifest_path = archive_dir / "harp_archive_manifest.json"
+    source_manifest_path = archive_dir / "archive_source_manifest.json"
+    ocr_manifest_path = archive_dir / "ocr_corpus_manifest.json"
+    if not (manifest_path.exists() and source_manifest_path.exists() and ocr_manifest_path.exists()):
+        return None
+    manifest = read_json(manifest_path, default={})
+    source_manifest = read_json(source_manifest_path, default={})
+    ocr_manifest = read_json(ocr_manifest_path, default={})
+    if str(dict(manifest).get("build_version") or "") != _HARP_ARCHIVE_BUILD_VERSION:
+        return None
+    if str(dict(source_manifest).get("build_version") or "") != _HARP_ARCHIVE_BUILD_VERSION:
+        return None
+    expected_cache_key = _archive_build_cache_key(source_rows)
+    expected_source_signature = _archive_source_identity_rows(source_rows)
+    manifest_cache_key = str(dict(manifest).get("build_cache_key") or "")
+    saved_source_signature = _saved_archive_source_identity_rows(dict(source_manifest))
+    saved_ocr_cache_settings = _saved_archive_ocr_cache_settings(dict(ocr_manifest))
+    if manifest_cache_key:
+        if manifest_cache_key != expected_cache_key:
+            if dict(saved_ocr_cache_settings) != _archive_ocr_cache_settings():
+                return None
+            if saved_source_signature != expected_source_signature:
+                return None
+    else:
+        if dict(saved_ocr_cache_settings) != _archive_ocr_cache_settings():
+            return None
+        if saved_source_signature != expected_source_signature:
+            return None
+    artifact_paths = dict(manifest.get("artifact_paths") or {})
+    if not _manifest_artifact_paths_present(artifact_paths):
+        return None
+    return dict(manifest)
+
+
+def _reuse_cached_archive_build_if_current(
+    *,
+    archive_dir: Path,
+    source_rows: list[dict[str, Any]],
+    force_refresh: bool,
+) -> dict[str, Any] | None:
+    if force_refresh:
+        return None
+    manifest = _load_reusable_archive_manifest(archive_dir=archive_dir, source_rows=source_rows)
+    if manifest is None:
+        return None
+    reused_manifest = dict(manifest)
+    reused_manifest["reused_existing_build"] = True
+    return reused_manifest
+
+
+def _materialize_reused_archive_build(
+    *,
+    source_archive_dir: Path,
+    target_archive_dir: Path,
+) -> dict[str, Any] | None:
+    expected_paths = _archive_required_artifact_paths(target_archive_dir)
+    copied_paths: dict[str, str] = {}
+    for key, target_path in expected_paths.items():
+        source_path = source_archive_dir / target_path.name
+        if not source_path.exists():
+            return None
+        ensure_dir(target_path.parent)
+        shutil.copy2(source_path, target_path)
+        copied_paths[key] = str(target_path)
+    manifest_path = target_archive_dir / "harp_archive_manifest.json"
+    manifest = read_json(manifest_path, default={})
+    if not isinstance(manifest, dict):
+        return None
+    reused_from_run_id = str(manifest.get("run_id") or source_archive_dir.parent.name)
+    manifest["artifact_paths"] = copied_paths
+    manifest["run_id"] = target_archive_dir.parent.name
+    manifest["generated_at"] = utc_now_iso()
+    manifest["reused_existing_build"] = True
+    manifest["reused_from_run_id"] = reused_from_run_id
+    write_json(manifest_path, manifest)
+    return manifest
+
+
+def _reuse_cached_archive_build_from_prior_runs(
+    *,
+    archive_dir: Path,
+    source_rows: list[dict[str, Any]],
+    force_refresh: bool,
+) -> dict[str, Any] | None:
+    if force_refresh:
+        return None
+    runs_dir = archive_dir.parent.parent
+    if not runs_dir.exists():
+        return None
+    manifest_paths = sorted(
+        runs_dir.rglob("harp_archive_manifest.json"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for manifest_path in manifest_paths:
+        candidate_archive_dir = manifest_path.parent
+        if candidate_archive_dir == archive_dir:
+            continue
+        manifest = _load_reusable_archive_manifest(archive_dir=candidate_archive_dir, source_rows=source_rows)
+        if manifest is None:
+            continue
+        materialized_manifest = _materialize_reused_archive_build(
+            source_archive_dir=candidate_archive_dir,
+            target_archive_dir=archive_dir,
+        )
+        if materialized_manifest is None:
+            continue
+        materialized_manifest["reused_existing_build"] = True
+        materialized_manifest["reused_from_archive_dir"] = str(candidate_archive_dir)
+        return materialized_manifest
+    return None
+
+
+def _promote_reused_archive_ocr_manifest_to_shared(archive_dir: Path) -> None:
+    ocr_manifest_path = archive_dir / "ocr_corpus_manifest.json"
+    ocr_manifest = read_json(ocr_manifest_path, default={})
+    if not isinstance(ocr_manifest, dict):
+        return
+    for document in list(ocr_manifest.get("documents", []) or []):
+        if not isinstance(document, dict):
+            continue
+        candidate_path_values = [
+            str(document.get("run_artifact_path") or "").strip(),
+            str(document.get("ocr_artifact_path") or "").strip(),
+        ]
+        for candidate_value in candidate_path_values:
+            if not candidate_value:
+                continue
+            candidate_path = Path(candidate_value)
+            if not candidate_path.exists():
+                continue
+            promote_archive_ocr_artifact_to_shared(candidate_path)
+            break
+
+
 def run_harp_archive_build(
     *,
     run_id: str,
     plugin_id: str = "hiv",
     desktop_seed_dir: str | None = None,
     manual_seed_dir: str | None = None,
+    force_refresh: bool = False,
 ) -> dict[str, Any]:
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
     archive_dir = ensure_dir(ctx.run_dir / "harp_archive")
+    raw_dir = ensure_dir(archive_dir / "raw")
+    ocr_dir = ensure_dir(archive_dir / "ocr_corpus")
     desktop_path = Path(manual_seed_dir or desktop_seed_dir) if (manual_seed_dir or desktop_seed_dir) else None
-    source_rows = _materialize_local_sources(ctx.run_dir, desktop_seed_dir=desktop_path)
+    local_source_rows = _materialize_local_sources(ctx.run_dir, desktop_seed_dir=desktop_path)
+    archive_seed_rows = [dict(row) for row in load_archive_seed_rows(archive_seed_path())]
+    predownload_source_rows = list(local_source_rows) + [dict(row) for row in archive_seed_rows]
+    reused_manifest = _reuse_cached_archive_build_if_current(
+        archive_dir=archive_dir,
+        source_rows=predownload_source_rows,
+        force_refresh=force_refresh,
+    )
+    if reused_manifest is None:
+        reused_manifest = _reuse_cached_archive_build_from_prior_runs(
+            archive_dir=archive_dir,
+            source_rows=predownload_source_rows,
+            force_refresh=force_refresh,
+        )
+    if reused_manifest is not None:
+        _promote_reused_archive_ocr_manifest_to_shared(archive_dir)
+        artifact_paths = dict(reused_manifest.get("artifact_paths") or {})
+        ctx.record_stage_outputs(
+            "harp_archive_build",
+            [Path(str(path)) for path in artifact_paths.values() if str(path or "").strip()],
+        )
+        print(f"[harp-archive] reusing cached build at {archive_dir}")
+        return reused_manifest
+
+    source_rows = list(local_source_rows)
+    source_rows.extend(download_archive_pdfs(archive_rows=archive_seed_rows, raw_dir=raw_dir))
+    build_cache_key = _archive_build_cache_key(source_rows)
 
     page_catalog: list[dict[str, Any]] = []
     metric_rows: list[dict[str, Any]] = []
     subgroup_anchor_rows: list[dict[str, Any]] = []
+    archive_ocr_manifest_rows: list[dict[str, Any]] = []
+    archive_pdf_total = sum(1 for row in source_rows if str(row.get("source_kind") or "") == "doh_hiv_sti_archive_pdf")
+    archive_pdf_index = 0
     for source in source_rows:
         local_path = Path(source["local_path"])
+        if not local_path.exists() or not local_path.is_file():
+            source["page_count"] = 0
+            source["tabular_row_count"] = 0
+            continue
         suffix = local_path.suffix.lower()
         if suffix in {".csv", ".json"}:
             tabular_rows = _read_tabular_seed_rows(local_path, source_id=str(source["source_id"]), source_label=str(source["label"]))
@@ -605,7 +1108,35 @@ def run_harp_archive_build(
             source["page_count"] = 0
             source["tabular_row_count"] = len(tabular_rows)
             continue
-        pages = _read_pdf_pages(local_path)
+        if str(source.get("source_kind") or "") == "doh_hiv_sti_archive_pdf":
+            archive_pdf_index += 1
+            ocr_payload = materialize_archive_ocr_payload(source, ocr_dir=ocr_dir, force_refresh=force_refresh)
+            if not bool(ocr_payload.get("from_cache")):
+                print(f"[harp-archive] OCR {archive_pdf_index}/{archive_pdf_total}: {source['source_id']}")
+            pages = [dict(page) for page in list(ocr_payload.get("pages", []) or [])]
+            source["ocr_artifact_path"] = str(ocr_payload.get("artifact_path") or "")
+            source["ocr_page_count"] = int(ocr_payload.get("page_count") or len(pages))
+            source["ocr_runtime"] = dict(ocr_payload.get("runtime") or {})
+            archive_ocr_manifest_rows.append(
+                {
+                    "source_id": source["source_id"],
+                    "source_label": source["label"],
+                    "local_path": str(local_path),
+                    "ocr_artifact_path": str(ocr_payload.get("artifact_path") or ""),
+                    "run_artifact_path": str(ocr_payload.get("run_artifact_path") or ""),
+                    "shared_artifact_path": str(ocr_payload.get("shared_artifact_path") or ""),
+                    "shared_cache_key": str(ocr_payload.get("shared_cache_key") or ""),
+                    "page_count": int(ocr_payload.get("page_count") or len(pages)),
+                    "checksum": str(ocr_payload.get("checksum") or ""),
+                    "force_ocr_every_page": bool(ocr_payload.get("force_ocr_every_page")),
+                    "cache_settings": dict(ocr_payload.get("cache_settings") or {}),
+                    "from_shared_cache": bool(ocr_payload.get("from_shared_cache")),
+                    "runtime": dict(ocr_payload.get("runtime") or {}),
+                }
+            )
+            metric_rows.extend(extract_archive_metric_rows(source, pages))
+        else:
+            pages = _read_pdf_pages(local_path)
         source["page_count"] = len(pages)
         for page in pages:
             page_catalog.append(
@@ -613,7 +1144,16 @@ def run_harp_archive_build(
                     "source_id": source["source_id"],
                     "source_label": source["label"],
                     "page_number": page["page_number"],
+                    "parser_used": page.get("parser_used") or "pdf_text",
+                    "text_source": page.get("text_source") or page.get("parser_used") or "pdf_text",
+                    "ocr_performed": bool(page.get("ocr_performed")),
+                    "direct_char_count": int(page.get("direct_char_count") or 0),
+                    "ocr_char_count": int(page.get("ocr_char_count") or 0),
+                    "markers": dict(page.get("markers") or {}),
+                    "text": page["text"],
                     "text_excerpt": page["text"][:800],
+                    "direct_text_excerpt": str(page.get("direct_text") or "")[:400],
+                    "ocr_text_excerpt": str(page.get("ocr_text") or "")[:400],
                 }
             )
             if source["source_id"] == "core_team_2025":
@@ -639,6 +1179,8 @@ def run_harp_archive_build(
     panel = _panel_from_metric_rows(metric_rows)
     assessment = _backtest_assessment(metric_rows)
     frozen_backtest_spec, frozen_backtest_summary = _build_frozen_backtest_artifacts(metric_rows)
+    harp_program_points = build_harp_program_points(metric_rows)
+    diagnosis_flow_points = build_diagnosis_flow_points(metric_rows)
     subgroup_anchor_pack = {
         "anchors": subgroup_anchor_rows,
         "national_kp_profile": next((row for row in subgroup_anchor_rows if row.get("anchor_id") == "national_kp_profile_2021"), None),
@@ -652,11 +1194,33 @@ def run_harp_archive_build(
         ]
     }
 
-    write_json(archive_dir / "archive_source_manifest.json", {"generated_at": utc_now_iso(), "sources": source_rows})
+    write_json(
+        archive_dir / "archive_source_manifest.json",
+        {
+            "generated_at": utc_now_iso(),
+            "build_version": _HARP_ARCHIVE_BUILD_VERSION,
+            "source_signature": _archive_source_signature(source_rows),
+            "source_manifest_rows": _archive_source_manifest_rows(source_rows),
+            "build_cache_key": build_cache_key,
+            "sources": source_rows,
+        },
+    )
+    write_json(
+        archive_dir / "ocr_corpus_manifest.json",
+        {
+            "generated_at": utc_now_iso(),
+            "build_version": _HARP_ARCHIVE_BUILD_VERSION,
+            "cache_settings": _archive_ocr_cache_settings(),
+            "ocr_settings": archive_ocr_settings(),
+            "documents": archive_ocr_manifest_rows,
+        },
+    )
     write_json(archive_dir / "page_catalog.json", page_catalog)
     write_json(archive_dir / "historical_metric_rows.json", metric_rows)
     write_json(archive_dir / "historical_harp_panel.json", panel)
     _write_panel_csv(archive_dir / "historical_harp_panel.csv", panel["rows"])
+    write_json(archive_dir / "harp_program_points.json", {"points": harp_program_points})
+    write_json(archive_dir / "diagnosis_flow_points.json", {"points": diagnosis_flow_points})
     write_json(archive_dir / "observed_program_panel.json", observed_program_panel)
     write_json(archive_dir / "subgroup_anchor_pack.json", subgroup_anchor_pack)
     write_json(archive_dir / "backtest_assessment.json", assessment)
@@ -685,7 +1249,10 @@ def run_harp_archive_build(
         stage_manifest_path=str(archive_dir / "harp_archive_manifest.json"),
         summary={
             "source_count": len(source_rows),
+            "ocr_document_count": len(archive_ocr_manifest_rows),
             "historical_metric_row_count": len(metric_rows),
+            "harp_program_point_count": len(harp_program_points),
+            "diagnosis_flow_point_count": len(diagnosis_flow_points),
             "subgroup_anchor_count": len(subgroup_anchor_rows),
             "backtest_ready": assessment["backtest_ready"],
             "frozen_backtest_ready": frozen_backtest_spec["ready_for_model_backtest"],
@@ -695,12 +1262,17 @@ def run_harp_archive_build(
         "run_id": run_id,
         "plugin_id": plugin_id,
         "generated_at": utc_now_iso(),
+        "build_version": _HARP_ARCHIVE_BUILD_VERSION,
+        "build_cache_key": build_cache_key,
         "artifact_paths": {
             "archive_source_manifest": str(archive_dir / "archive_source_manifest.json"),
+            "ocr_corpus_manifest": str(archive_dir / "ocr_corpus_manifest.json"),
             "page_catalog": str(archive_dir / "page_catalog.json"),
             "historical_metric_rows": str(archive_dir / "historical_metric_rows.json"),
             "historical_harp_panel": str(archive_dir / "historical_harp_panel.json"),
             "historical_harp_panel_csv": str(archive_dir / "historical_harp_panel.csv"),
+            "harp_program_points": str(archive_dir / "harp_program_points.json"),
+            "diagnosis_flow_points": str(archive_dir / "diagnosis_flow_points.json"),
             "observed_program_panel": str(archive_dir / "observed_program_panel.json"),
             "subgroup_anchor_pack": str(archive_dir / "subgroup_anchor_pack.json"),
             "backtest_assessment": str(archive_dir / "backtest_assessment.json"),
@@ -724,6 +1296,8 @@ def run_harp_archive_build(
             archive_dir / "historical_metric_rows.json",
             archive_dir / "historical_harp_panel.json",
             archive_dir / "historical_harp_panel.csv",
+            archive_dir / "harp_program_points.json",
+            archive_dir / "diagnosis_flow_points.json",
             archive_dir / "observed_program_panel.json",
             archive_dir / "subgroup_anchor_pack.json",
             archive_dir / "backtest_assessment.json",

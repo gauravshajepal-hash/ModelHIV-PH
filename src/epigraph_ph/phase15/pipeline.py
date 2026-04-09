@@ -8,10 +8,19 @@ import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.geography import macro_region_label
+from epigraph_ph.harp_archive import run_harp_archive_build
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase1.latent_observability import build_latent_observability_audit
 from epigraph_ph.phase15.bayesian_survival import optimize_survival_tournament
 from epigraph_ph.phase15.graph_helpers import build_environment_masks, build_network_feature_bundle, compute_factor_stability
-from epigraph_ph.phase3.rescue_core import build_observation_ladder
+from epigraph_ph.phase15.latent_measurements import build_archive_derived_indicator_rows
+from epigraph_ph.phase15.multiscale_factors import build_multiscale_factor_artifacts
+from epigraph_ph.phase15.national_factor_model import build_national_measurement_spec, fit_national_factor_model_scaffold
+from epigraph_ph.phase15.province_factor_graph import build_province_factor_graph_scaffold
+from epigraph_ph.phase15.relationship_explorer import build_relationship_explorer_artifacts
+from epigraph_ph.phase15.v2_engine import fit_phase15_v2_map_engine
+from epigraph_ph.phase15.v2_spec import write_phase15_v2_artifacts
+from epigraph_ph.phase3._lineage.rescue_core import build_archive_aware_observation_targets
 from epigraph_ph.runtime import (
     RunContext,
     choose_torch_device,
@@ -309,12 +318,12 @@ def _signature_matrix(profiles: list[CandidateProfile]) -> np.ndarray:
     return matrix / row_norm
 
 
-def _similarity_score(
+def _similarity_components(
     left: CandidateProfile,
     right: CandidateProfile,
     standardized_tensor: np.ndarray,
     signature_cosine: float,
-) -> float:
+) -> dict[str, float]:
     weight_cfg = _phase15_required_section("similarity_weights")
     quality_cfg = _phase15_required_section("similarity_quality")
     left_surface = standardized_tensor[:, :, left.canonical_index].reshape(-1)
@@ -335,7 +344,18 @@ def _similarity_score(
         + float(weight_cfg["lane_sim"]) * lane_sim
     )
     quality = float(quality_cfg["evidence_weight_mix"]) * (left.evidence_weight + right.evidence_weight) + float(quality_cfg["bias_penalty_mix"]) * ((1.0 - left.bias_penalty) + (1.0 - right.bias_penalty)) / 2.0
-    return float(np.clip(base * np.clip(quality, float(quality_cfg["quality_floor"]), 1.0), 0.0, 1.0))
+    similarity_score = float(np.clip(base * np.clip(quality, float(quality_cfg["quality_floor"]), 1.0), 0.0, 1.0))
+    return {
+        "signature_cosine": round(float(signature_cosine), 6),
+        "corr_sim": round(float(corr_sim), 6),
+        "semantic_sim": round(float(semantic_sim), 6),
+        "target_sim": round(float(target_sim), 6),
+        "source_sim": round(float(source_sim), 6),
+        "geo_sim": round(float(geo_sim), 6),
+        "lane_sim": round(float(lane_sim), 6),
+        "quality_mix": round(float(np.clip(quality, float(quality_cfg["quality_floor"]), 1.0)), 6),
+        "similarity_score": round(similarity_score, 6),
+    }
 
 
 def _build_similarity_graph(profiles: list[CandidateProfile], standardized_tensor: np.ndarray) -> tuple[list[dict[str, Any]], list[list[int]]]:
@@ -353,11 +373,12 @@ def _build_similarity_graph(profiles: list[CandidateProfile], standardized_tenso
         for local_idx, idx in enumerate(indices):
             scored: list[tuple[int, float]] = []
             for jdx in indices[local_idx + 1 :]:
-                score = _similarity_score(profiles[idx], profiles[jdx], standardized_tensor, float(cosine[idx, jdx]))
+                components = _similarity_components(profiles[idx], profiles[jdx], standardized_tensor, float(cosine[idx, jdx]))
+                score = float(components["similarity_score"])
                 if score >= float(similarity_cfg["within_block_threshold"]):
-                    scored.append((jdx, score))
+                    scored.append((jdx, score, components))
             scored.sort(key=lambda item: item[1], reverse=True)
-            for jdx, score in scored[: int(similarity_cfg["within_block_top_k"])]:
+            for jdx, score, components in scored[: int(similarity_cfg["within_block_top_k"])]:
                 adjacency[idx].add(jdx)
                 adjacency[jdx].add(idx)
                 edges.append(
@@ -365,7 +386,13 @@ def _build_similarity_graph(profiles: list[CandidateProfile], standardized_tenso
                         "left": profiles[idx].canonical_name,
                         "right": profiles[jdx].canonical_name,
                         "block_name": profiles[idx].block_name,
-                        "similarity_score": round(float(score), 6),
+                        "left_evidence_weight": round(float(profiles[idx].evidence_weight), 6),
+                        "right_evidence_weight": round(float(profiles[jdx].evidence_weight), 6),
+                        "left_numeric_support": int(profiles[idx].numeric_support),
+                        "right_numeric_support": int(profiles[jdx].numeric_support),
+                        "left_anchor_support": int(profiles[idx].anchor_support),
+                        "right_anchor_support": int(profiles[jdx].anchor_support),
+                        **components,
                     }
                 )
     visited: set[int] = set()
@@ -448,17 +475,60 @@ def _factor_surface_from_cluster(
 
 
 def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PROFILE_ID) -> dict[str, Any]:
+    run_harp_archive_build(run_id=run_id, plugin_id=plugin_id)
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
     phase15_dir = ensure_dir(ctx.run_dir / "phase15")
     normalized_rows = read_json(ctx.run_dir / "phase1" / "normalized_subparameters.json", default=[])
     parameter_catalog = read_json(ctx.run_dir / "phase1" / "parameter_catalog.json", default=[])
+    latent_observability_audit = read_json(ctx.run_dir / "phase1" / "latent_observability_audit.json", default={})
     axis_catalogs = read_json(ctx.run_dir / "phase1" / "axis_catalogs.json", default={})
     tensor_rows = read_json(ctx.run_dir / "phase1" / "tensor_rows.json", default=[])
     standardized_tensor = load_tensor_artifact(ctx.run_dir / "phase1" / "standardized_tensor.npz")
+    archive_derived_indicator_rows = build_archive_derived_indicator_rows(run_dir=ctx.run_dir, plugin_id=plugin_id)
+    latent_measurement_rows = list(normalized_rows) + list(archive_derived_indicator_rows)
+    latent_observability_audit_augmented = build_latent_observability_audit(
+        normalized_rows=latent_measurement_rows,
+        parameter_catalog=parameter_catalog,
+        plugin_id=plugin_id,
+    )
 
     province_axis = list(axis_catalogs.get("province", [])) or ["national"]
     month_axis = list(axis_catalogs.get("month", [])) or ["unknown"]
     canonical_axis = list(axis_catalogs.get("canonical_name", []))
+    region_labels = [_region_label(name) for name in province_axis]
+    national_measurement_spec = build_national_measurement_spec(
+        normalized_rows=latent_measurement_rows,
+        observability_audit=latent_observability_audit_augmented,
+        month_axis=month_axis,
+        plugin_id=plugin_id,
+    )
+    national_scaffold = fit_national_factor_model_scaffold(
+        standardized_tensor=np.asarray(standardized_tensor, dtype=np.float32),
+        axis_catalogs=axis_catalogs,
+        normalized_rows=latent_measurement_rows,
+        measurement_spec=national_measurement_spec,
+        plugin_id=plugin_id,
+    )
+    phase15_v2_artifacts = write_phase15_v2_artifacts(
+        output_dir=phase15_dir,
+        plugin_id=plugin_id,
+        normalized_rows=latent_measurement_rows,
+        observability_audit=latent_observability_audit_augmented,
+        measurement_spec=national_measurement_spec,
+        province_axis=province_axis,
+        month_axis=month_axis,
+        region_labels=region_labels,
+    )
+    phase15_v2_model_spec = phase15_v2_artifacts["spec"]
+    phase15_v2_engine = fit_phase15_v2_map_engine(
+        normalized_rows=latent_measurement_rows,
+        observation_support=phase15_v2_artifacts["observation_support"],
+        measurement_spec=national_measurement_spec,
+        province_axis=province_axis,
+        month_axis=month_axis,
+        region_labels=region_labels,
+        plugin_id=plugin_id,
+    )
 
     source_reliability = _source_summary(normalized_rows)
     profiles, block_catalog = _profile_rows(normalized_rows, standardized_tensor, canonical_axis)
@@ -502,7 +572,14 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
                 loading_matrix[factor_idx, canonical_axis.index(canonical_name)] = float(loading)
 
     graph_cfg = _phase15_required_section("network_graph")
-    region_labels = [_region_label(name) for name in province_axis]
+    province_graph = build_province_factor_graph_scaffold(
+        standardized_tensor=np.asarray(standardized_tensor, dtype=np.float32),
+        axis_catalogs=axis_catalogs,
+        normalized_rows=latent_measurement_rows,
+        national_scaffold=national_scaffold,
+        region_labels=region_labels,
+        plugin_id=plugin_id,
+    )
     network_tensor, network_factors, graph_bundle, operator_tensor, operator_catalog = build_network_feature_bundle(
         standardized_tensor,
         profiles,
@@ -530,14 +607,94 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
         factor_tensor = np.concatenate([factor_tensor, network_tensor], axis=-1) if factor_tensor.size else network_tensor
         loading_matrix = np.pad(loading_matrix, ((0, network_tensor.shape[-1]), (0, 0)), mode="constant")
 
-    _observation_ladder, observation_targets, _target_rows = build_observation_ladder(
+    observation_ladder, observation_targets, observation_target_rows, observation_target_support = build_archive_aware_observation_targets(
         standardized_tensor=standardized_tensor,
         normalized_rows=normalized_rows,
         parameter_catalog=parameter_catalog,
         canonical_axis=canonical_axis,
         province_axis=province_axis,
         month_axis=month_axis,
+        run_dir=ctx.run_dir,
     )
+    write_json(phase15_dir / "archive_observation_ladder.json", observation_ladder)
+    write_json(phase15_dir / "archive_observation_target_rows.json", observation_target_rows)
+    write_json(phase15_dir / "archive_observation_target_support.json", observation_target_support)
+    write_json(phase15_dir / "archive_derived_indicator_rows.json", archive_derived_indicator_rows)
+    write_json(phase15_dir / "augmented_latent_observability_audit.json", latent_observability_audit_augmented)
+    write_json(phase15_dir / "phase15_v2_model_spec.json", phase15_v2_model_spec)
+    write_json(phase15_dir / "phase15_v2_aggregation_weights.json", phase15_v2_engine["aggregation"])
+    write_json(phase15_dir / "phase15_v2_measurement_rows.json", phase15_v2_engine["measurement_rows"])
+    write_json(phase15_dir / "phase15_v2_indicator_parameters.json", phase15_v2_engine["indicator_parameters"])
+    write_json(phase15_dir / "phase15_v2_precision_models.json", phase15_v2_engine["precision_models"])
+    write_json(phase15_dir / "phase15_v2_measurement_fit_rows.json", phase15_v2_engine["measurement_fit"])
+    write_json(phase15_dir / "phase15_v2_missing_information.json", phase15_v2_engine["missing_information"])
+    write_json(phase15_dir / "phase15_v2_numerical_adequacy.json", phase15_v2_engine["numerical_adequacy"])
+    write_json(phase15_dir / "phase15_v2_calibration_diagnostics.json", phase15_v2_engine["calibration"])
+    write_json(phase15_dir / "phase15_v2_pooling_sensitivity.json", phase15_v2_engine["pooling_sensitivity"])
+    write_json(phase15_dir / "phase15_v2_fit_summary.json", phase15_v2_engine["fit_summary"])
+    write_json(phase15_dir / "phase15_v2_province_states.json", phase15_v2_engine["province_states"])
+    write_json(phase15_dir / "phase15_v2_region_states.json", phase15_v2_engine["region_states"])
+    write_json(phase15_dir / "phase15_v2_national_states.json", phase15_v2_engine["national_states"])
+    write_json(phase15_dir / "phase15_v2_uncertainty.json", phase15_v2_engine["uncertainty"])
+    write_json(phase15_dir / "national_block_measurement_spec.json", national_scaffold["measurement_spec"])
+    write_json(phase15_dir / "national_block_loadings.json", national_scaffold["loadings"])
+    write_json(phase15_dir / "national_block_states.json", national_scaffold["states"])
+    write_json(phase15_dir / "national_block_ppc.json", national_scaffold["ppc"])
+    write_json(phase15_dir / "national_block_identification_report.json", national_scaffold["identification_report"])
+    v2_province_artifact = save_tensor_artifact(
+        array=np.asarray(phase15_v2_engine["province_state_tensor"], dtype=np.float32),
+        axis_names=["province", "month", "latent_block"],
+        artifact_dir=phase15_dir,
+        stem="phase15_v2_province_state_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_v2_province_state_tensor"],
+        save_pt=False,
+    )
+    v2_region_artifact = save_tensor_artifact(
+        array=np.asarray(phase15_v2_engine["region_state_tensor"], dtype=np.float32),
+        axis_names=["region", "month", "latent_block"],
+        artifact_dir=phase15_dir,
+        stem="phase15_v2_region_state_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_v2_region_state_tensor"],
+        save_pt=False,
+    )
+    v2_national_artifact = save_tensor_artifact(
+        array=np.asarray(phase15_v2_engine["national_state_tensor"], dtype=np.float32),
+        axis_names=["national", "month", "latent_block"],
+        artifact_dir=phase15_dir,
+        stem="phase15_v2_national_state_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_v2_national_state_tensor"],
+        save_pt=False,
+    )
+    province_block_artifact = save_tensor_artifact(
+        array=np.asarray(province_graph["state_tensor"], dtype=np.float32),
+        axis_names=["province", "month", "latent_block"],
+        artifact_dir=phase15_dir,
+        stem="province_block_state_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_province_factor_graph_state_tensor"],
+        save_pt=False,
+    )
+    region_block_artifact = save_tensor_artifact(
+        array=np.asarray(province_graph["region_state_tensor"], dtype=np.float32),
+        axis_names=["region", "month", "latent_block"],
+        artifact_dir=phase15_dir,
+        stem="region_block_state_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_region_factor_graph_state_tensor"],
+        save_pt=False,
+    )
+    write_json(phase15_dir / "province_block_states.json", province_graph["states"])
+    write_json(phase15_dir / "province_block_uncertainty.json", province_graph["uncertainty"])
+    write_json(phase15_dir / "province_loading_deviations.json", province_graph["loading_deviations"])
+    write_json(phase15_dir / "province_block_identification_report.json", province_graph["identification_report"])
     environments = build_environment_masks(
         province_axis,
         month_axis,
@@ -658,6 +815,56 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
     write_json(phase15_dir / "factor_survival_pool.json", promotion_pool)
     write_json(phase15_dir / "factor_stability_report.json", stability_rows)
     write_json(phase15_dir / "factor_promotion_pool.json", promotion_pool)
+    relationship_artifacts = build_relationship_explorer_artifacts(
+        profiles=profiles,
+        similarity_edges=similarity_edges,
+        output_dir=phase15_dir,
+    )
+    multiscale_cfg = _phase15_required_section("multiscale")
+    multiscale_artifacts = build_multiscale_factor_artifacts(
+        standardized_tensor=np.asarray(standardized_tensor, dtype=np.float32),
+        base_factor_tensor=np.asarray(factor_tensor, dtype=np.float32),
+        factor_catalog=factor_catalog,
+        loading_matrix=np.asarray(loading_matrix, dtype=np.float32),
+        canonical_axis=canonical_axis,
+        province_axis=province_axis,
+        month_axis=month_axis,
+        relationship_rows=list(relationship_artifacts.get("rows", [])),
+        cfg=multiscale_cfg,
+    )
+    multiscale_province_artifact = save_tensor_artifact(
+        array=multiscale_artifacts["province_tensor"],
+        axis_names=["province", "month", "factor"],
+        artifact_dir=phase15_dir,
+        stem="multiscale_province_factor_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_multiscale_province_factor_tensor"],
+        save_pt=False,
+    )
+    multiscale_region_artifact = save_tensor_artifact(
+        array=multiscale_artifacts["region_tensor"],
+        axis_names=["region", "month", "factor"],
+        artifact_dir=phase15_dir,
+        stem="multiscale_region_factor_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_multiscale_region_factor_tensor"],
+        save_pt=False,
+    )
+    multiscale_national_artifact = save_tensor_artifact(
+        array=multiscale_artifacts["national_tensor"],
+        axis_names=["national", "month", "factor"],
+        artifact_dir=phase15_dir,
+        stem="multiscale_national_factor_tensor",
+        backend="numpy",
+        device="cpu",
+        notes=["phase15_multiscale_national_factor_tensor"],
+        save_pt=False,
+    )
+    write_json(phase15_dir / "multiscale_factor_catalog.json", multiscale_artifacts["catalog_rows"])
+    write_json(phase15_dir / "multiscale_factor_axes.json", multiscale_artifacts["axes"])
+    write_json(phase15_dir / "multiscale_factor_summary.json", multiscale_artifacts["summary"])
 
     backend_map = detect_backends()
     manifest = Phase0ManifestArtifact(
@@ -683,6 +890,43 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             "network_feature_tensor": network_artifact["value_path"],
             "network_operator_catalog": str(phase15_dir / "network_operator_catalog.json"),
             "network_operator_tensor": operator_artifact["value_path"],
+            "archive_observation_ladder": str(phase15_dir / "archive_observation_ladder.json"),
+            "archive_observation_target_rows": str(phase15_dir / "archive_observation_target_rows.json"),
+            "archive_observation_target_support": str(phase15_dir / "archive_observation_target_support.json"),
+            "archive_derived_indicator_rows": str(phase15_dir / "archive_derived_indicator_rows.json"),
+            "augmented_latent_observability_audit": str(phase15_dir / "augmented_latent_observability_audit.json"),
+            "phase15_v2_model_spec": str(phase15_dir / "phase15_v2_model_spec.json"),
+            "phase15_v2_observation_support": phase15_v2_artifacts["paths"]["phase15_v2_observation_support"],
+            "phase15_v2_mathematical_spec_json": phase15_v2_artifacts["paths"]["phase15_v2_mathematical_spec_json"],
+            "phase15_v2_mathematical_spec_md": phase15_v2_artifacts["paths"]["phase15_v2_mathematical_spec_md"],
+            "phase15_v2_aggregation_weights": str(phase15_dir / "phase15_v2_aggregation_weights.json"),
+            "phase15_v2_measurement_rows": str(phase15_dir / "phase15_v2_measurement_rows.json"),
+            "phase15_v2_indicator_parameters": str(phase15_dir / "phase15_v2_indicator_parameters.json"),
+            "phase15_v2_precision_models": str(phase15_dir / "phase15_v2_precision_models.json"),
+            "phase15_v2_measurement_fit_rows": str(phase15_dir / "phase15_v2_measurement_fit_rows.json"),
+            "phase15_v2_missing_information": str(phase15_dir / "phase15_v2_missing_information.json"),
+            "phase15_v2_numerical_adequacy": str(phase15_dir / "phase15_v2_numerical_adequacy.json"),
+            "phase15_v2_calibration_diagnostics": str(phase15_dir / "phase15_v2_calibration_diagnostics.json"),
+            "phase15_v2_pooling_sensitivity": str(phase15_dir / "phase15_v2_pooling_sensitivity.json"),
+            "phase15_v2_fit_summary": str(phase15_dir / "phase15_v2_fit_summary.json"),
+            "phase15_v2_province_states": str(phase15_dir / "phase15_v2_province_states.json"),
+            "phase15_v2_region_states": str(phase15_dir / "phase15_v2_region_states.json"),
+            "phase15_v2_national_states": str(phase15_dir / "phase15_v2_national_states.json"),
+            "phase15_v2_uncertainty": str(phase15_dir / "phase15_v2_uncertainty.json"),
+            "phase15_v2_province_state_tensor": v2_province_artifact["value_path"],
+            "phase15_v2_region_state_tensor": v2_region_artifact["value_path"],
+            "phase15_v2_national_state_tensor": v2_national_artifact["value_path"],
+            "national_block_measurement_spec": str(phase15_dir / "national_block_measurement_spec.json"),
+            "national_block_loadings": str(phase15_dir / "national_block_loadings.json"),
+            "national_block_states": str(phase15_dir / "national_block_states.json"),
+            "national_block_ppc": str(phase15_dir / "national_block_ppc.json"),
+            "national_block_identification_report": str(phase15_dir / "national_block_identification_report.json"),
+            "province_block_state_tensor": province_block_artifact["value_path"],
+            "region_block_state_tensor": region_block_artifact["value_path"],
+            "province_block_states": str(phase15_dir / "province_block_states.json"),
+            "province_block_uncertainty": str(phase15_dir / "province_block_uncertainty.json"),
+            "province_loading_deviations": str(phase15_dir / "province_loading_deviations.json"),
+            "province_block_identification_report": str(phase15_dir / "province_block_identification_report.json"),
             "factor_survival_tournament_baseline": str(phase15_dir / "factor_survival_tournament_baseline.json"),
             "factor_survival_pool_baseline": str(phase15_dir / "factor_survival_pool_baseline.json"),
             "factor_survival_tournament_optimized": str(phase15_dir / "factor_survival_tournament_optimized.json"),
@@ -692,6 +936,14 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             "factor_survival_pool": str(phase15_dir / "factor_survival_pool.json"),
             "factor_stability_report": str(phase15_dir / "factor_stability_report.json"),
             "factor_promotion_pool": str(phase15_dir / "factor_promotion_pool.json"),
+            "semantic_relationship_index": relationship_artifacts["semantic_relationship_index"],
+            "semantic_relationship_bubble_chart": relationship_artifacts["semantic_relationship_bubble_chart"],
+            "multiscale_factor_catalog": str(phase15_dir / "multiscale_factor_catalog.json"),
+            "multiscale_factor_axes": str(phase15_dir / "multiscale_factor_axes.json"),
+            "multiscale_factor_summary": str(phase15_dir / "multiscale_factor_summary.json"),
+            "multiscale_province_factor_tensor": multiscale_province_artifact["value_path"],
+            "multiscale_region_factor_tensor": multiscale_region_artifact["value_path"],
+            "multiscale_national_factor_tensor": multiscale_national_artifact["value_path"],
         },
         backend_status={
             "torch": Phase0BackendStatus("torch", backend_map["torch"].available, False, notes=backend_map["torch"].device),
@@ -700,7 +952,7 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
         source_count=len(normalized_rows),
         canonical_candidate_count=len(profiles),
         numeric_observation_count=int(factor_tensor.shape[-1]),
-        notes=["phase15_mesoscopic_factor_engine", "phase15_network_features:reaction_diffusion_percolation_information_propagation"],
+        notes=["phase15_mesoscopic_factor_engine", "phase15_network_features:reaction_diffusion_percolation_information_propagation", f"relationship_count:{relationship_artifacts['relationship_count']}"],
     ).to_dict()
     manifest["profile_id"] = profile
     truth_paths = write_ground_truth_package(
@@ -712,8 +964,16 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             {"name": "factor_tensor_finite", "passed": bool(np.isfinite(factor_tensor).all())},
             {"name": "network_tensor_finite", "passed": bool(np.isfinite(network_tensor).all())},
             {"name": "operator_tensor_finite", "passed": bool(np.isfinite(operator_tensor).all())},
+            {"name": "province_block_tensor_finite", "passed": bool(np.isfinite(np.asarray(province_graph["state_tensor"], dtype=np.float32)).all())},
+            {"name": "region_block_tensor_finite", "passed": bool(np.isfinite(np.asarray(province_graph["region_state_tensor"], dtype=np.float32)).all())},
+            {"name": "phase15_v2_province_tensor_finite", "passed": bool(np.isfinite(np.asarray(phase15_v2_engine["province_state_tensor"], dtype=np.float32)).all())},
+            {"name": "phase15_v2_region_tensor_finite", "passed": bool(np.isfinite(np.asarray(phase15_v2_engine["region_state_tensor"], dtype=np.float32)).all())},
+            {"name": "phase15_v2_national_tensor_finite", "passed": bool(np.isfinite(np.asarray(phase15_v2_engine["national_state_tensor"], dtype=np.float32)).all())},
             {"name": "factor_count_matches_tensor", "passed": int(factor_tensor.shape[-1]) == len(factor_catalog)},
             {"name": "stability_report_matches_catalog", "passed": len(stability_rows) == len(factor_catalog)},
+            {"name": "multiscale_factor_count_matches_catalog", "passed": len(multiscale_artifacts["catalog_rows"]) == len(factor_catalog)},
+            {"name": "multiscale_region_tensor_finite", "passed": bool(np.isfinite(multiscale_artifacts["region_tensor"]).all())},
+            {"name": "multiscale_national_tensor_finite", "passed": bool(np.isfinite(multiscale_artifacts["national_tensor"]).all())},
         ],
         truth_sources=NETWORK_FEATURE_FAMILIES[:],
         stage_manifest_path=str(phase15_dir / "phase15_manifest.json"),
@@ -722,6 +982,9 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             "network_feature_count": int(network_tensor.shape[-1]) if network_tensor.ndim == 3 else 0,
             "cluster_count": len(clusters),
             "similarity_edge_count": len(similarity_edges),
+            "multiscale_region_count": len(multiscale_artifacts["axes"].get("region", [])),
+            "latent_block_count": int(np.asarray(province_graph["state_tensor"], dtype=np.float32).shape[-1]),
+            "phase15_v2_block_count": int(np.asarray(phase15_v2_engine["province_state_tensor"], dtype=np.float32).shape[-1]),
         },
     )
     gold_profile = dict((_HIV_PLUGIN.gold_standard_profiles or {}).get("phase15", {}) or {})
@@ -789,6 +1052,51 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
                 "finite_required": True,
             },
             {
+                "name": "province_block_state_tensor",
+                "kind": "tensor",
+                "path": str(phase15_dir / "province_block_state_tensor.npz"),
+                "expected_shape": list(np.asarray(province_graph["state_tensor"], dtype=np.float32).shape),
+                "expected_axis_names": ["province", "month", "latent_block"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "region_block_state_tensor",
+                "kind": "tensor",
+                "path": str(phase15_dir / "region_block_state_tensor.npz"),
+                "expected_shape": list(np.asarray(province_graph["region_state_tensor"], dtype=np.float32).shape),
+                "expected_axis_names": ["region", "month", "latent_block"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "phase15_v2_province_state_tensor",
+                "kind": "tensor",
+                "path": str(phase15_dir / "phase15_v2_province_state_tensor.npz"),
+                "expected_shape": list(np.asarray(phase15_v2_engine["province_state_tensor"], dtype=np.float32).shape),
+                "expected_axis_names": ["province", "month", "latent_block"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "phase15_v2_region_state_tensor",
+                "kind": "tensor",
+                "path": str(phase15_dir / "phase15_v2_region_state_tensor.npz"),
+                "expected_shape": list(np.asarray(phase15_v2_engine["region_state_tensor"], dtype=np.float32).shape),
+                "expected_axis_names": ["region", "month", "latent_block"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
+                "name": "phase15_v2_national_state_tensor",
+                "kind": "tensor",
+                "path": str(phase15_dir / "phase15_v2_national_state_tensor.npz"),
+                "expected_shape": list(np.asarray(phase15_v2_engine["national_state_tensor"], dtype=np.float32).shape),
+                "expected_axis_names": ["national", "month", "latent_block"],
+                "min_rank": 3,
+                "finite_required": True,
+            },
+            {
                 "name": "factor_rows",
                 "kind": "json_rows",
                 "path": str(phase15_dir / "factor_rows.json"),
@@ -827,6 +1135,40 @@ def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PRO
             phase15_dir / "network_feature_tensor.npz",
             phase15_dir / "network_operator_catalog.json",
             phase15_dir / "network_operator_tensor.npz",
+            phase15_dir / "archive_derived_indicator_rows.json",
+            phase15_dir / "augmented_latent_observability_audit.json",
+            phase15_dir / "phase15_v2_model_spec.json",
+            phase15_dir / "phase15_v2_observation_support.json",
+            phase15_dir / "phase15_v2_mathematical_spec.json",
+            phase15_dir / "phase15_v2_mathematical_spec.md",
+            phase15_dir / "phase15_v2_aggregation_weights.json",
+            phase15_dir / "phase15_v2_measurement_rows.json",
+            phase15_dir / "phase15_v2_indicator_parameters.json",
+            phase15_dir / "phase15_v2_precision_models.json",
+            phase15_dir / "phase15_v2_measurement_fit_rows.json",
+            phase15_dir / "phase15_v2_missing_information.json",
+            phase15_dir / "phase15_v2_numerical_adequacy.json",
+            phase15_dir / "phase15_v2_calibration_diagnostics.json",
+            phase15_dir / "phase15_v2_pooling_sensitivity.json",
+            phase15_dir / "phase15_v2_fit_summary.json",
+            phase15_dir / "phase15_v2_province_states.json",
+            phase15_dir / "phase15_v2_region_states.json",
+            phase15_dir / "phase15_v2_national_states.json",
+            phase15_dir / "phase15_v2_uncertainty.json",
+            phase15_dir / "phase15_v2_province_state_tensor.npz",
+            phase15_dir / "phase15_v2_region_state_tensor.npz",
+            phase15_dir / "phase15_v2_national_state_tensor.npz",
+            phase15_dir / "national_block_measurement_spec.json",
+            phase15_dir / "national_block_loadings.json",
+            phase15_dir / "national_block_states.json",
+            phase15_dir / "national_block_ppc.json",
+            phase15_dir / "national_block_identification_report.json",
+            phase15_dir / "province_block_state_tensor.npz",
+            phase15_dir / "region_block_state_tensor.npz",
+            phase15_dir / "province_block_states.json",
+            phase15_dir / "province_block_uncertainty.json",
+            phase15_dir / "province_loading_deviations.json",
+            phase15_dir / "province_block_identification_report.json",
             phase15_dir / "factor_survival_tournament_baseline.json",
             phase15_dir / "factor_survival_pool_baseline.json",
             phase15_dir / "factor_survival_tournament_optimized.json",

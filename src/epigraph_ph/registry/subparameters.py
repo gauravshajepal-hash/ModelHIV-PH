@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Any
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
+from epigraph_ph.latent_blocks import annotate_latent_indicator_fields
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows
 from epigraph_ph.registry.models import LiteratureRefDetail, has_verifiable_locator
 from epigraph_ph.runtime import read_json, write_json
 
 
-def _wide_sweep_bank_rows(records: list[dict[str, Any]], *, bank_name: str) -> list[dict[str, Any]]:
+def _wide_sweep_bank_rows(records: list[dict[str, Any]], *, bank_name: str, plugin_id: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for record in records:
         expanded = []
@@ -26,6 +27,7 @@ def _wide_sweep_bank_rows(records: list[dict[str, Any]], *, bank_name: str) -> l
             ).to_dict()
             patched = dict(row)
             patched["literature_ref_details"] = [detail] if has_verifiable_locator(detail) else []
+            patched.update(annotate_latent_indicator_fields(patched, plugin_id))
             expanded.append(patched)
         rows.extend(expanded)
     return rows
@@ -44,10 +46,11 @@ def build_subparameter_registry(*, plugin_id: str, output_path: str | Path, phas
         patched = dict(row)
         patched["source_bank"] = row.get("source_bank") or "phase0_extracted"
         patched["subparameter_id"] = row.get("candidate_id")
+        patched.update(annotate_latent_indicator_fields(patched, plugin_id))
         registry_rows.append(patched)
-    registry_rows.extend(_wide_sweep_bank_rows(union_records, bank_name="phase0_wide_sweep_literature"))
-    registry_rows.extend(_wide_sweep_bank_rows(hiv_records, bank_name="phase0_wide_sweep_hiv_direct"))
-    registry_rows.extend(_wide_sweep_bank_rows(upstream_records, bank_name="phase0_wide_sweep_upstream_determinants"))
+    registry_rows.extend(_wide_sweep_bank_rows(union_records, bank_name="phase0_wide_sweep_literature", plugin_id=plugin_id))
+    registry_rows.extend(_wide_sweep_bank_rows(hiv_records, bank_name="phase0_wide_sweep_hiv_direct", plugin_id=plugin_id))
+    registry_rows.extend(_wide_sweep_bank_rows(upstream_records, bank_name="phase0_wide_sweep_upstream_determinants", plugin_id=plugin_id))
     by_source_bank: dict[str, int] = {}
     for row in registry_rows:
         bank = str(row.get("source_bank") or "unknown")

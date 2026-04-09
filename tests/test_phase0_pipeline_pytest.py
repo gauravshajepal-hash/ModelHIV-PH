@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from epigraph_ph.cli.main import build_parser
-from epigraph_ph.phase0.boundary_models import build_phase0_family_candidate_banks, validate_phase0_candidate_rows
+from epigraph_ph.phase0.boundary_models import Phase0CandidateBoundary, build_phase0_family_candidate_banks, validate_phase0_candidate_rows
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows, wide_sweep_record_canonical_names
 from epigraph_ph.phase0.pipeline import (
     _phase0_alignment_bundle,
@@ -75,6 +75,43 @@ def test_wide_sweep_candidate_rows_expand_into_real_canonical_names() -> None:
     assert {row["canonical_name"] for row in rows} == set(canonical_names)
 
 
+def test_phase0_boundary_preserves_subprovincial_geo_when_parent_province_is_present() -> None:
+    row = Phase0CandidateBoundary.model_validate(
+        {
+            "candidate_id": "cand-1",
+            "document_id": "doc-1",
+            "source_id": "src-1",
+            "canonical_name": "poverty_rate",
+            "candidate_text": "poverty_rate TondoII 2009",
+            "parameter_text": "city or municipal poverty incidence from PSA small-area estimate table",
+            "evidence_span": "PSA city or municipal poverty incidence (TondoII, 2009): 2.9; CV=27.5",
+            "extraction_method": "structured_local_psa_city_municipal_poverty_csv",
+            "confidence": 0.8,
+            "source_bank": "phase0_structured_numeric",
+            "source_tier": "tier1_official_anchor",
+            "source_title": "PSA City and Municipal Poverty Statistics 2009 2012 2015",
+            "platform": "psa_poverty",
+            "query_geo_focus": "philippines",
+            "geo": "TondoII",
+            "region": "ncr",
+            "province": "Metro Manila",
+            "time": "2009",
+            "measurement_type": "rate",
+            "denominator_type": "population",
+            "normalization_basis": "percent",
+            "value_semantics": "direct_observed",
+            "value": 2.9,
+            "unit": "percent",
+            "is_direct_measurement": True,
+        }
+    )
+    assert row.geo == "TondoII"
+    assert row.province == "Metro Manila"
+    assert row.geo_scope == "city"
+    assert row.geo_id == "city:metro_manila:tondoii"
+    assert row.geo_binding_class == "explicit_geo_subprovince"
+
+
 def test_openalex_abstract_reconstruction() -> None:
     abstract = _openalex_abstract_from_inverted_index({"HIV": [0], "care": [1], "cascade": [2]})
     assert abstract == "HIV care cascade"
@@ -89,6 +126,41 @@ def test_phase0_filters_literature_before_2010() -> None:
     ]
     filtered = _filter_min_literature_year(rows)
     assert {row["source_id"] for row in filtered} == {"pubmed-new", "arxiv-new", "kaggle-seed"}
+
+
+def test_extract_who_core_team_anchors_keeps_care_cascade_metrics_semantically_distinct() -> None:
+    block = {
+        "block_id": "block-1",
+        "document_id": "doc-1",
+        "source_id": "manual-seed",
+        "page_number": 13,
+        "text": (
+            "Philippine HIV Care Cascade Estimated PLHIV 216,900 Diagnosed PLHIV 135,026 "
+            "Alive on ART 90,854 Tested for Viral Load 43,534 Virally Suppressed 41,164 "
+            "62% 67% 48% 95%"
+        ),
+    }
+    source = {
+        "source_id": "manual-seed",
+        "platform": "manual_seed",
+        "title": "2025 PH HIV Estimates Core Team for WHO",
+        "source_tier": "tier1_official_anchor",
+        "query_geo_focus": "philippines",
+        "url": "C:/tmp/core-team.pdf",
+    }
+    _, candidate_rows = _extract_who_core_team_anchors(block, source)
+    canonical_names = [row["canonical_name"] for row in candidate_rows]
+    assert canonical_names == [
+        "estimated_plhiv",
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "diagnosed_share",
+        "art_share",
+        "tested_share",
+        "suppressed_share",
+    ]
 
 
 def test_phase0_chunk_text_builds_overlapping_chunks() -> None:
@@ -296,8 +368,40 @@ def test_offline_build_and_registry_smoke(phase0_registry_run_dir: Path) -> None
     assert family_bank_manifest.get("family_bank_count", 0) >= 1
     assert family_bank_manifest.get("paths", {})
     assert (run_dir / "phase0" / "boundary_shape_manifest.json").exists()
+    numeric_rows = read_json(run_dir / "phase0" / "extracted" / "numeric_observations.json", default=[])
+    assert int(phase0_manifest.get("source_count", 0)) == len(read_json(run_dir / "phase0" / "raw" / "source_manifest.json", default=[]))
+    assert int(phase0_manifest.get("canonical_candidate_count", 0)) == len(candidates)
+    assert int(phase0_manifest.get("numeric_observation_count", 0)) == len(numeric_rows)
+
+
+def test_phase0_emits_latent_evidence_artifacts(phase0_registry_run_dir: Path) -> None:
+    run_dir = phase0_registry_run_dir
+    evidence_rows = read_json(run_dir / "phase0" / "extracted" / "evidence_indicator_rows.json", default=[])
+    block_sign_priors = read_json(run_dir / "phase0" / "extracted" / "block_sign_priors.json", default={})
+    measurement_manifest = read_json(run_dir / "phase0" / "extracted" / "measurement_manifest.json", default={})
+
+    assert evidence_rows
+    assert block_sign_priors.get("rows")
+    assert measurement_manifest.get("measurement_role_counts")
+    first = evidence_rows[0]
+    assert "measurement_role" in first
+    assert "candidate_block" in first
+    assert "expected_sign" in first
+    assert measurement_manifest["measurement_role_counts"].get("context_only", 0) >= 1
     assert (run_dir / "phase0" / "boundary_shape_checks.json").exists()
     assert (run_dir / "phase0" / "boundary_shape_summary.json").exists()
+
+
+def test_phase0_emits_dedicated_philhealth_portal_artifacts(phase0_registry_run_dir: Path) -> None:
+    run_dir = phase0_registry_run_dir
+    portal_rows = read_json(run_dir / "phase0" / "extracted" / "philhealth_portal_candidate_rows.json", default=[])
+    portal_summary = read_json(run_dir / "phase0" / "extracted" / "philhealth_portal_metric_summary.json", default={})
+
+    assert portal_rows
+    assert portal_summary.get("platform") == "philhealth_open_portal"
+    assert portal_summary.get("candidate_count") == len(portal_rows)
+    assert any(row.get("source_title") == "PhilHealth Open Portal Financial Data" for row in portal_summary.get("sources", []))
+    assert any(row.get("year") == "2025" for row in portal_summary.get("years", []))
 
 
 def test_phase0_candidate_boundary_validation_accepts_numeric_and_soft_rows() -> None:

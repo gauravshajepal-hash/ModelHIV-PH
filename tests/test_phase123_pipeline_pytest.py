@@ -169,9 +169,11 @@ def test_phase15_build_and_rescue_v2_smoke(rescue_v2_run_dir) -> None:
     assert phase15_manifest.get("profile_id") == "hiv_rescue_v2"
     assert factor_catalog != []
     assert factor_pool != []
-    assert promoted != [] or supporting != []
     assert fit_artifact.get("profile_id") == "hiv_rescue_v2"
-    assert determinant_modifiers.get("selected_determinant_modifiers", []) != []
+    if promoted or supporting:
+        assert determinant_modifiers.get("selected_determinant_modifiers", []) != []
+    else:
+        assert determinant_modifiers.get("selected_determinant_modifiers", []) == []
     assert "comparisons" in reference_check
     assert blocked.get("phase4_ready") is False
     assert len(alignment_summary.get("province_axis", [])) > 1

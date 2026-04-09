@@ -261,6 +261,8 @@ def _infer_geo_scope(geo: str, region: str, province: str) -> str:
     province_text = str(province or "").strip()
     region_text = str(region or "").strip().lower()
     geo_text = str(geo or "").strip().lower()
+    if province_text and geo_text and _slug(geo_text) != _slug(province_text):
+        return "city"
     if province_text:
         return "province"
     if region_text and region_text != "national":
@@ -276,6 +278,8 @@ def _infer_geo_id(geo: str, region: str, province: str) -> str:
     province_text = str(province or "").strip()
     region_text = str(region or "").strip()
     geo_text = str(geo or "").strip()
+    if province_text and geo_text and _slug(geo_text) != _slug(province_text):
+        return f"city:{_slug(province_text)}:{_slug(geo_text)}"
     if province_text:
         return f"province:{_slug(province_text)}"
     if region_text and region_text.lower() != "national":
@@ -349,12 +353,15 @@ def _combined_candidate_text(candidate: Phase0CandidateBoundary) -> str:
     return " ".join(
         part
         for part in (
+            candidate.document_id,
+            candidate.source_id,
             candidate.source_title,
             literature_titles,
             candidate.candidate_text,
             candidate.parameter_text,
             candidate.evidence_span,
             " ".join(candidate.geo_mentions),
+            candidate.query_geo_focus,
             candidate.geo,
             candidate.region,
             candidate.province,
@@ -376,12 +383,26 @@ def _infer_boundary_geo(candidate: Phase0CandidateBoundary) -> tuple[str, str, s
             "philippines" in str(ref.title or "").lower() for ref in candidate.literature_ref_details
         ),
     )
+    def _normalized_or_explicit(value: str) -> str:
+        raw_value = str(value or "").strip()
+        normalized_value = normalize_geo_label(raw_value, default_country_focus=explicit_country_focus) or raw_value
+        if (
+            raw_value
+            and raw_value.lower() not in {"philippines", "national"}
+            and str(normalized_value).strip().lower() in {"philippines", "national", ""}
+        ):
+            return raw_value
+        return normalized_value
     if province:
-        resolved_geo = normalize_geo_label(province, default_country_focus=explicit_country_focus) or province
+        if geo and _slug(geo) != _slug(province):
+            resolved_geo = _normalized_or_explicit(geo)
+            resolved_region = region or (match.region_display if match.region_display and match.region != "national" else "")
+            return resolved_geo, resolved_region, province, "explicit_geo_subprovince"
+        resolved_geo = _normalized_or_explicit(province)
         resolved_region = region or (match.region_display if match.region_display and match.region != "national" else "")
         return resolved_geo, resolved_region, province, "explicit_geo"
     if geo:
-        resolved_geo = normalize_geo_label(geo, default_country_focus=explicit_country_focus) or geo
+        resolved_geo = _normalized_or_explicit(geo)
         resolved_region = region or (match.region_display if match.region_display and match.region != "national" else ("national" if match.region == "national" else ""))
         resolved_province = province or match.province
         binding_class = "explicit_geo" if explicit_geo_present else "text_inferred"

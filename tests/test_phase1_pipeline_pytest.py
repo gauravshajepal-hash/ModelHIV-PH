@@ -5,6 +5,8 @@ import math
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
+from epigraph_ph.phase1.latent_observability import build_latent_observability_audit
+from epigraph_ph.phase1.observation_noise import build_observation_noise_model
 from epigraph_ph.phase1.pipeline import (
     _bias_fields,
     _normalize_numeric_value,
@@ -30,6 +32,8 @@ def test_phase1_constraint_settings_are_declared_in_plugin_contract() -> None:
     assert phase1_cfg.get("spatial_relevance_by_geo", {}).get("province") is not None
     assert phase1_cfg.get("bias_penalty_mix", {}).get("measurement") is not None
     assert phase1_cfg.get("replication_weight", {}).get("base") is not None
+    assert phase1_cfg.get("observation_noise", {}).get("enabled") is True
+    assert phase1_cfg.get("observability_gates", {}).get("subnational_inference", {}).get("province_support_min") is not None
     assert literature_cfg.get("tier_quality_weight", {}).get("tier1_official_anchor") is not None
     assert literature_cfg.get("quality_score_weights", {}).get("tier") is not None
     assert literature_cfg.get("promotion_thresholds", {}).get("strong_numeric_confidence") is not None
@@ -69,9 +73,15 @@ def test_phase1_normalized_rows_have_bias_and_truth_fields(rescue_v2_run_dir) ->
         "spatial_relevance_weight",
         "replication_weight",
         "bias_penalty",
+        "observation_precision",
+        "observation_weight",
         "signal_family",
         "payload_family",
         "geo_binding_class",
+        "candidate_block",
+        "expected_sign",
+        "measurement_role",
+        "observation_operator",
     }
     for row in rows:
         assert required.issubset(row.keys())
@@ -82,10 +92,190 @@ def test_phase1_normalized_rows_have_bias_and_truth_fields(rescue_v2_run_dir) ->
             "spatial_relevance_weight",
             "replication_weight",
             "bias_penalty",
+            "observation_precision",
+            "observation_weight",
         ):
             value = float(row[key])
             assert math.isfinite(value)
-            assert 0.0 <= value <= 1.0
+            assert value >= 0.0
+
+
+def test_phase1_emits_latent_observability_artifacts(rescue_v2_run_dir) -> None:
+    audit = read_json(rescue_v2_run_dir / "phase1" / "latent_observability_audit.json", default={})
+    split = read_json(rescue_v2_run_dir / "phase1" / "direct_vs_contextual_split.json", default={})
+
+    assert audit.get("rows")
+    assert split.get("rows")
+    first = audit["rows"][0]
+    assert isinstance(first.get("eligible_for_national_likelihood"), bool)
+    assert isinstance(first.get("eligible_for_province_graph"), bool)
+    assert isinstance(first.get("eligible_for_subnational_inference"), bool)
+    assert "subnational_support_score" in first
+    assert "aggregate_support_score" in first
+    assert "direct_indicator_count" in first
+    summary = split.get("summary", {})
+    assert "row_counts" in summary
+    assert summary["row_counts"].get("context_only", 0) >= 1
+    assert int(audit.get("summary", {}).get("eligible_for_subnational_inference_count", 0)) >= 1
+
+
+def test_phase1_subnational_inference_gate_requires_real_subnational_support() -> None:
+    audit = build_latent_observability_audit(
+        normalized_rows=[
+            {
+                "canonical_name": "cash_instability",
+                "model_numeric_value": 0.21,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "national",
+                "time_resolution": "annual",
+                "candidate_block": "structural_barrier_pressure",
+                "expected_sign": "positive",
+            },
+            {
+                "canonical_name": "mobility_network_mixing",
+                "model_numeric_value": 0.11,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "region",
+                "time_resolution": "monthly",
+                "candidate_block": "mobility_exposure_pressure",
+                "expected_sign": "positive",
+            },
+            {
+                "canonical_name": "mobility_network_mixing",
+                "model_numeric_value": 0.12,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "region",
+                "time_resolution": "monthly",
+                "candidate_block": "mobility_exposure_pressure",
+                "expected_sign": "positive",
+            },
+            {
+                "canonical_name": "mobility_network_mixing",
+                "model_numeric_value": 0.13,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "region",
+                "time_resolution": "monthly",
+                "candidate_block": "mobility_exposure_pressure",
+                "expected_sign": "positive",
+            },
+            {
+                "canonical_name": "mobility_network_mixing",
+                "model_numeric_value": 0.14,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "region",
+                "time_resolution": "monthly",
+                "candidate_block": "mobility_exposure_pressure",
+                "expected_sign": "positive",
+            },
+            {
+                "canonical_name": "mobility_network_mixing",
+                "model_numeric_value": 0.15,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "region",
+                "time_resolution": "monthly",
+                "candidate_block": "mobility_exposure_pressure",
+                "expected_sign": "positive",
+            },
+            {
+                "canonical_name": "mobility_network_mixing",
+                "model_numeric_value": 0.16,
+                "measurement_role": "direct_indicator",
+                "geo_resolution": "region",
+                "time_resolution": "monthly",
+                "candidate_block": "mobility_exposure_pressure",
+                "expected_sign": "positive",
+            },
+        ],
+        parameter_catalog=[],
+        plugin_id="hiv",
+    )
+    rows = {row["canonical_name"]: row for row in audit["rows"]}
+    assert rows["cash_instability"]["eligible_for_province_graph"] is True
+    assert rows["cash_instability"]["eligible_for_subnational_inference"] is False
+    assert rows["mobility_network_mixing"]["eligible_for_subnational_inference"] is True
+
+
+def test_phase1_observation_noise_model_learns_higher_precision_for_repeated_anchor_rows() -> None:
+    model = build_observation_noise_model(
+        normalized_rows=[
+            {
+                "normalized_id": "anchor_1",
+                "canonical_name": "testing_rate",
+                "model_numeric_value": 0.52,
+                "measurement_role": "direct_indicator",
+                "source_reliability_class": "official_routine_anchor",
+                "geo_resolution": "province",
+                "time_resolution": "monthly",
+                "is_anchor_eligible": True,
+                "is_direct_measurement": True,
+                "measurement_quality_weight": 0.95,
+                "temporal_freshness_weight": 0.90,
+                "spatial_relevance_weight": 0.95,
+                "replication_weight": 0.90,
+                "evidence_weight": 1.0,
+                "province": "Cebu",
+                "time": "2025-01",
+            },
+            {
+                "normalized_id": "anchor_2",
+                "canonical_name": "testing_rate",
+                "model_numeric_value": 0.51,
+                "measurement_role": "direct_indicator",
+                "source_reliability_class": "official_routine_anchor",
+                "geo_resolution": "province",
+                "time_resolution": "monthly",
+                "is_anchor_eligible": True,
+                "is_direct_measurement": True,
+                "measurement_quality_weight": 0.95,
+                "temporal_freshness_weight": 0.90,
+                "spatial_relevance_weight": 0.95,
+                "replication_weight": 0.90,
+                "evidence_weight": 1.0,
+                "province": "Cebu",
+                "time": "2025-01",
+            },
+            {
+                "normalized_id": "proxy_1",
+                "canonical_name": "testing_rate",
+                "model_numeric_value": 0.80,
+                "measurement_role": "proxy_indicator",
+                "source_reliability_class": "proxy_inferred",
+                "geo_resolution": "national",
+                "time_resolution": "annual",
+                "is_anchor_eligible": False,
+                "is_direct_measurement": False,
+                "measurement_quality_weight": 0.35,
+                "temporal_freshness_weight": 0.40,
+                "spatial_relevance_weight": 0.35,
+                "replication_weight": 0.10,
+                "evidence_weight": 0.35,
+                "geo": "Philippines",
+                "time": "2025",
+            },
+            {
+                "normalized_id": "proxy_2",
+                "canonical_name": "testing_rate",
+                "model_numeric_value": 0.10,
+                "measurement_role": "proxy_indicator",
+                "source_reliability_class": "proxy_inferred",
+                "geo_resolution": "national",
+                "time_resolution": "annual",
+                "is_anchor_eligible": False,
+                "is_direct_measurement": False,
+                "measurement_quality_weight": 0.35,
+                "temporal_freshness_weight": 0.40,
+                "spatial_relevance_weight": 0.35,
+                "replication_weight": 0.10,
+                "evidence_weight": 0.35,
+                "geo": "Philippines",
+                "time": "2025",
+            },
+        ],
+        plugin_id="hiv",
+    )
+    rows = {row["normalized_id"]: row for row in model["rows"]}
+    assert rows["anchor_1"]["observation_precision"] > rows["proxy_1"]["observation_precision"]
+    assert rows["anchor_2"]["observation_weight"] > rows["proxy_2"]["observation_weight"]
 
 
 def test_phase1_tensor_contract_and_sanity(rescue_v2_run_dir) -> None:

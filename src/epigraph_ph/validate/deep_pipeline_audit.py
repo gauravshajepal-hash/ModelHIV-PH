@@ -228,29 +228,37 @@ def _phase1_audit(run_dir: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
 
 def _phase2_audit(run_dir: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     phase_dir = run_dir / "phase2"
-    dag = load_tensor_artifact(phase_dir / "dag_adjacency.npz")
-    tier_mask = load_tensor_artifact(phase_dir / "tier_mask.npz")
-    lag_mask = load_tensor_artifact(phase_dir / "lag_mask.npz")
-    mix_report = read_json(phase_dir / "feature_matrix_mix_report.json", default={})
-    time_cv = read_json(phase_dir / "time_stratified_cv_report.json", default={})
-    collinearity = read_json(phase_dir / "collinearity_report.json", default={})
-    blanket = read_json(phase_dir / "markov_blanket.json", default={})
+    latent_bundle = read_json(phase_dir / "latent_temporal_graph_bundle.json", default={})
+    latent_blankets = read_json(phase_dir / "latent_temporal_phase3_target_blankets.json", default={})
+    multiscale_bundle = read_json(phase_dir / "multiscale_dag_bundle.json", default={})
+    multiscale_blankets = read_json(phase_dir / "multiscale_phase3_target_blankets.json", default={})
+    validation = read_json(phase_dir / "latent_temporal_graph_validation.json", default={})
+    retained_predictive = read_json(phase_dir / "retained_predictive_factor_set.json", default=[])
+    retained_context = read_json(phase_dir / "retained_context_factor_set.json", default=[])
+    latent_scales = dict(latent_bundle.get("scales") or {})
+    multiscale_scales = dict(multiscale_bundle.get("scales") or {})
+    latent_completed = [row for row in latent_scales.values() if str(row.get("status") or "") == "completed"]
+    multiscale_completed = [row for row in multiscale_scales.values() if str(row.get("status") or "") == "completed"]
+    latent_edge_count = int(sum(len(list(row.get("edges") or [])) for row in latent_completed))
+    multiscale_edge_count = int(sum(len(list(row.get("edges") or [])) for row in multiscale_completed))
     issues = [
-        {"name": "phase2_adjacency_square", "passed": dag.ndim == 2 and dag.shape[0] == dag.shape[1]},
-        {"name": "phase2_cycle_free", "passed": not _has_cycle(dag)},
-        {"name": "phase2_tier_mask_respected", "passed": bool(np.all(np.abs(dag[tier_mask == 0]) <= 1e-6))},
-        {"name": "phase2_lag_mask_respected", "passed": bool(np.all(np.abs(dag[lag_mask == 0]) <= 1e-6))},
-        {"name": "phase2_markov_blanket_nonempty", "passed": bool(blanket.get("blanket_nodes", []))},
-        {"name": "phase2_time_cv_available", "passed": bool(time_cv.get("available"))},
-        {"name": "phase2_collinearity_available", "passed": bool(collinearity.get("available"))},
+        {"name": "phase2_latent_bundle_available", "passed": bool(latent_bundle.get("enabled"))},
+        {"name": "phase2_multiscale_bundle_available", "passed": bool(multiscale_bundle.get("enabled"))},
+        {"name": "phase2_latent_completed_scale_present", "passed": bool(latent_completed)},
+        {"name": "phase2_multiscale_completed_scale_present", "passed": bool(multiscale_completed)},
+        {"name": "phase2_blanket_nonempty", "passed": bool(latent_blankets.get("phase3_member_canonical_names") or multiscale_blankets.get("phase3_member_canonical_names"))},
+        {"name": "phase2_latent_validation_available", "passed": bool(validation.get("available"))},
+        {"name": "phase2_retained_factor_pool_available", "passed": bool(retained_predictive or retained_context)},
     ]
     summary = {
-        "dag_shape": list(dag.shape),
-        "edge_count": int(np.sum(np.abs(dag) > 1e-6)),
-        "soft_feature_count": int(mix_report.get("soft_feature_count", 0)),
-        "numeric_feature_count": int(mix_report.get("numeric_feature_count", 0)),
-        "mean_test_reconstruction_mse": float(time_cv.get("mean_test_reconstruction_mse", np.nan)),
-        "condition_number": float(collinearity.get("condition_number", np.nan)),
+        "latent_completed_scales": len(latent_completed),
+        "multiscale_completed_scales": len(multiscale_completed),
+        "latent_edge_count": latent_edge_count,
+        "multiscale_edge_count": multiscale_edge_count,
+        "latent_hidden_driver_count": int(sum(len(list(row.get("hidden_driver_rows") or [])) for row in latent_completed)),
+        "latent_validation_case_count": int(validation.get("summary", {}).get("case_count", 0)),
+        "retained_predictive_count": len(retained_predictive),
+        "retained_context_count": len(retained_context),
     }
     return issues, summary
 
