@@ -18,9 +18,11 @@ At a high level, the repository:
 - parses metadata, PDFs, OCR text, and chunked document spans
 - extracts candidate subparameters with provenance, geography, time, and typed payloads
 - normalizes those candidates into Province x Month x Feature tensors
-- clusters similar signals into mesoscopic factors
-- learns a sparse, exact-acyclic DAG over retained factors
-- feeds the retained factor sets into a hierarchical semi-Markov HIV cascade model
+- learns latent province / region / national block states with uncertainty-aware reconciliation
+- builds multiscale factor surfaces and propagated factor uncertainty
+- learns temporal sparse-plus-low-rank structure over latent block innovations
+- freezes structural Phase 2 payloads for reproducible downstream use
+- feeds those structural payloads into the transition-research frontier and keeps broad rescue-core as a benchmark
 - backtests that model against frozen historical reference trajectories
 - emits policy-facing outputs downstream
 
@@ -30,9 +32,9 @@ At a high level, the repository:
 flowchart LR
     A["Phase 0\nHarvest, parse, OCR, extract"] --> B["Registry\nAccepted subparameters"]
     B --> C["Phase 1\nNormalization and tensors"]
-    C --> D["Phase 1.5\nSimilarity, clumping, survival tournament"]
-    D --> E["Phase 2\nSharded block DAGs and bridge graph"]
-    E --> F["Phase 3\nSemi-Markov HIV cascade"]
+    C --> D["Phase 15\nLatent block states,\nreconciliation, factor tournament"]
+    D --> E["Phase 2\nLatent temporal structure learning\nplus multiscale support"]
+    E --> F["Phase 3\nTR-V2 frontier and\nbroad rescue-core benchmark"]
     F --> G["Phase 4\nPolicy simulation and runtime assurance"]
 ```
 
@@ -40,15 +42,18 @@ flowchart LR
 
 The repository is not trying to learn one giant graph over every mined variable at once.
 
-Instead, it uses a layered graph strategy:
+Instead, it uses a layered latent-to-structure strategy:
 
 ```mermaid
 flowchart TD
     A["Accepted subparameters"] --> B["Within-block candidate banks"]
-    B --> C["Per-block DAG discovery"]
-    C --> D["Retained mesoscopic factors"]
-    D --> E["Small cross-block bridge DAG"]
-    E --> F["Target-relevant blankets for Phase 3"]
+    B --> C["Phase 15 latent block states\nwith posterior uncertainty"]
+    C --> D["Multiscale factor construction\nand uncertainty propagation"]
+    C --> E["Phase 2 latent temporal graph\n(sparse direct + low-rank hidden)"]
+    D --> F["Phase 2 multiscale support graph"]
+    E --> G["Frozen structural payload"]
+    F --> G
+    G --> H["TR-V2 hazard priors,\nhidden shock channels,\nsupport modulation"]
 ```
 
 This is deliberate.
@@ -73,11 +78,11 @@ This is deliberate.
 - `src/epigraph_ph/phase1`
   Measurement normalization and tensor construction.
 - `src/epigraph_ph/phase15`
-  Similarity graphs, mesoscopic factor construction, survival tournament, and Bayesian tuning on top of the tournament.
+  Latent block-state estimation, missing-information reconciliation, multiscale factor construction, and survival-tournament selection.
 - `src/epigraph_ph/phase2`
-  Sharded block-graph builder, exact DAG projection, bootstrap/permutation diagnostics, and retained blankets.
+  Latent temporal graph estimation, exact sparse-plus-low-rank optimization, multiscale temporal support, frozen structural payloads, and benchmark compatibility artifacts.
 - `src/epigraph_ph/phase3`
-  Hierarchical semi-Markov HIV cascade inference, frozen backtests, and representation tournaments.
+  Broad rescue-core benchmark lineage plus the transition-research frontier, including `TR-V2` structural Phase 2 consumption.
 - `src/epigraph_ph/phase4`
   Policy evaluation and runtime assurance outputs.
 - `tests`
@@ -309,43 +314,46 @@ as if they were all the same kind of number.
 
 They are not.
 
-## Phase 1.5: Mesoscopic Factors And Survival Tournament
+## Phase 15: Latent States, Reconciliation, And Factor Selection
 
 Main modules:
 
 - [D:\EpiGraph_PH\src\epigraph_ph\phase15\pipeline.py](/D:/EpiGraph_PH/src/epigraph_ph/phase15/pipeline.py)
-- [D:\EpiGraph_PH\src\epigraph_ph\phase15\graph_helpers.py](/D:/EpiGraph_PH/src/epigraph_ph/phase15/graph_helpers.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase15\v2_engine.py](/D:/EpiGraph_PH/src/epigraph_ph/phase15/v2_engine.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase15\multiscale_factors.py](/D:/EpiGraph_PH/src/epigraph_ph/phase15/multiscale_factors.py)
 - [D:\EpiGraph_PH\src\epigraph_ph\phase15\bayesian_survival.py](/D:/EpiGraph_PH/src/epigraph_ph/phase15/bayesian_survival.py)
 
-### What Phase 1.5 does
+### What Phase 15 does
 
-Phase 1.5 groups similar subparameters into broader factor surfaces.
+Phase 15 is the latent-state bridge between normalized evidence and temporal structure learning.
 
 It:
 
-- computes similarity across accepted normalized rows
-- clusters related signals
-- builds mesoscopic factor surfaces
-- builds network-style features
-- runs a holdout-based survival tournament
+- estimates latent province, region, and national block states
+- propagates posterior uncertainty for those latent states
+- solves missing-information reconciliation problems against stronger aggregate evidence
+- builds multiscale factor surfaces and factor-level uncertainty tensors
+- runs the mesoscopic survival tournament
 - optionally tunes the tournament with Bayesian optimization on top of the same objective
 
-### What changed conceptually
+### Why this phase exists now
 
-Phase 1.5 no longer uses subjective "scientific eligibility" language as the deciding rule.
+The repo no longer jumps directly from normalized tensors to Phase 2 graph structure.
 
-The survival rule is now:
+Instead, it first estimates:
 
-1. hard validity checks
-2. tournament scoring on holdout performance
-3. stability and sparsity penalties measured from resampling
+- a latent block trajectory
+- uncertainty around that trajectory
+- a reconciled correction field when stronger national or regional evidence disagrees with weak provincial support
 
-So the decision rule is:
+In plain English:
 
-- if a factor helps out-of-sample prediction and remains stable, it survives
-- if it does not, it dies
+- Phase 15 says what the hidden HIV system probably looks like
+- and how sure we are about each latent estimate
 
-### Bayesian optimization in Phase 1.5
+That is what Phase 2 now learns temporal structure over.
+
+### Survival tournament in Phase 15
 
 Bayesian optimization now tunes the survival tournament; it does not replace it.
 
@@ -357,52 +365,59 @@ The search space includes:
 
 If the optimized tournament beats the baseline objective, the optimized pool becomes active. If not, the system keeps the baseline pool.
 
-## Phase 2: Sharded Causal Structure Discovery
+## Phase 2: Latent Temporal Structure Learning
 
 Main modules:
 
 - [D:\EpiGraph_PH\src\epigraph_ph\phase2\pipeline.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/pipeline.py)
-- [D:\EpiGraph_PH\src\epigraph_ph\phase2\block_graph_builder.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/block_graph_builder.py)
-- [D:\EpiGraph_PH\src\epigraph_ph\phase2\shard_summary.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/shard_summary.py)
-- [D:\EpiGraph_PH\src\epigraph_ph\phase2\rescue_profile.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/rescue_profile.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase2\latent_temporal_graph.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/latent_temporal_graph.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase2\temporal_optimizer.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/temporal_optimizer.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase2\multiscale_dag.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/multiscale_dag.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase2\structural_payload.py](/D:/EpiGraph_PH/src/epigraph_ph/phase2/structural_payload.py)
 
 ### What Phase 2 does
 
-Phase 2 learns sparse causal structure over retained factors.
+Phase 2 is now a latent, temporal, uncertainty-aware structure-learning layer.
 
 It does:
 
-- mutual-information prefiltering
-- bounded Fisher-Z PC-style pruning
-- tier and lag masking
-- NOTEARS-style DAG optimization
-- exact DAG projection to remove cycles
-- bootstrap edge stability
-- permutation null benchmarking
-- time-stratified validation
-- collinearity reporting
-- target blanket extraction for Phase 3
+- removes self-persistence from latent block trajectories
+- builds multi-lag temporal designs over those latent trajectories
+- fits an exact joint sparse-plus-low-rank temporal operator
+- keeps direct temporal effects and hidden shared structure separate
+- propagates Phase 15 uncertainty into the fitting and selection objective
+- runs multiscale temporal support estimation as a support-only corroboration layer
+- freezes a structural payload for reproducible downstream use
+- keeps a separate compatibility payload for benchmark consumers
 
-### Why not one giant graph?
+### What the three Phase 2 surfaces mean
 
-Because one giant graph is a bad idea on this machine and a bad scientific structure for this problem.
+- `direct temporal surface`
+  The lagged block-to-block temporal hypotheses that Phase 3 is allowed to use structurally.
+- `hidden-driver surface`
+  Shared low-rank structure that becomes hidden shock channels, not direct mechanistic edges.
+- `multiscale support surface`
+  Factor-level corroboration that can strengthen or weaken prior confidence, but does not create new direct hazard terms.
 
-Phase 2 now works shard-by-shard and block-by-block:
+### What changed scientifically
 
-- per-block candidate banks
-- per-block DAGs
-- retained mesoscopic factors
-- small bridge DAG
-- Phase 3 target blankets only
+Phase 2 is no longer a same-time NOTEARS / block-DAG layer.
 
-This keeps the structure sparse and auditable.
+It now learns temporal hypotheses from latent innovations. That makes the output closer to:
 
-## Phase 3: Hierarchical Semi-Markov HIV Cascade
+- direct lagged predictive structure
+- hidden shared-driver structure
+- uncertainty-aware support summaries
+
+instead of one mixed graph over observed factor snapshots.
+
+## Phase 3: Broad Benchmark Plus Structural Frontier
 
 Main modules:
 
 - [D:\EpiGraph_PH\src\epigraph_ph\phase3\pipeline.py](/D:/EpiGraph_PH/src/epigraph_ph/phase3/pipeline.py)
-- [D:\EpiGraph_PH\src\epigraph_ph\phase3\rescue_core.py](/D:/EpiGraph_PH/src/epigraph_ph/phase3/rescue_core.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase3\_lineage\rescue_core.py](/D:/EpiGraph_PH/src/epigraph_ph/phase3/_lineage/rescue_core.py)
+- [D:\EpiGraph_PH\src\epigraph_ph\phase3\frontier\tr_v2.py](/D:/EpiGraph_PH/src/epigraph_ph/phase3/frontier/tr_v2.py)
 
 ### States
 
@@ -414,32 +429,42 @@ The model uses explicit HIV cascade states:
 - `V` virally suppressed / documented suppression
 - `L` lost or disengaged from care
 
-### What Phase 3 does
+### What Phase 3 does now
 
 Phase 3:
 
 - builds observation ladders from official and HARP-aligned sources
-- uses retained determinants from Phase 2
-- fits a hierarchical semi-Markov cascade model
-- allows province, region, and national structure
-- supports interventions and covariate modifiers
+- keeps the broad rescue-core path as a benchmark lineage
+- runs the transition-research frontier as the main structural consumer of Phase 2
+- fits quarter-level transition-hazard branches on top of the HIV cascade states
+- lets direct Phase 2 edges become priors on hazard transitions
+- lets hidden Phase 2 structure become separate hidden shock channels
+- keeps multiscale Phase 2 outputs as support-only prior modulation
 - runs frozen-history backtests
 - compares against simple baselines
-- runs a representation tournament over unclumped, clumped, and hybrid determinant sets
+- keeps explicit experiment families such as `MECH`, `DECOMP`, `PEAK`, `AGE`, and `TR-V2`
 
-### Representation tournament
+### Broad benchmark vs frontier
 
-The repo now compares multiple determinant representations on the same frozen HARP backtest:
+- `rescue_core`
+  The broad multiyear benchmark and compatibility consumer.
+- `transition_research`
+  The winning branch family for quarter-level transition experiments.
+- `TR-V2`
+  The new structural frontier that consumes frozen Phase 2 structural payloads directly.
 
-- `unclumped`
-- `clumped_baseline`
-- `clumped_optimized`
-- `hybrid_baseline`
-- `hybrid_optimized`
+This split is deliberate. The repo no longer treats broad rescue-core as the main place where new Phase 2 semantics live.
 
-That lets the pipeline ask a concrete question:
+## Testing Strategy
 
-"Does the optimized survivor set that won in Phase 1.5 also improve actual cascade backtest error?"
+The repository now keeps two useful regression layers for the structural frontier:
+
+- fast checked-in synthetic tests for interface semantics and failure modes
+- slower artifact-backed integration tests against the frozen `smoke-latent-blocks` run
+
+The slow frontier benchmark is intentionally opt-in and can be enabled with:
+
+`EPIGRAPH_RUN_SLOW_INTEGRATION=1`
 
 ### Inference engines
 

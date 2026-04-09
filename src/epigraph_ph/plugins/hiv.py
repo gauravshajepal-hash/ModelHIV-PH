@@ -1208,14 +1208,13 @@ HIV_CONSTRAINT_SETTINGS = {
         "multiscale_dag": {
             "enabled": True,
             "min_factor_count": 2,
-            "fallback_factor_budget": 12,
-            "target_factor_budget": 6,
+            "uncertainty_mode": "parent_block_propagation",
             "temporal_graph": {
                 "candidate_max_lags": [1, 2],
-                "candidate_ridge_penalties": [0.05, 0.1, 0.2],
-                "candidate_sparse_penalties": [0.01, 0.02, 0.04],
-                "candidate_low_rank_penalties": [0.05, 0.1, 0.2],
-                "decomposition_steps": 120,
+                "lambda_s_fractions": [0.08, 0.12, 0.2, 0.35],
+                "lambda_l_fractions": [0.08, 0.12, 0.2, 0.35],
+                "selection_metric": "weighted_bic",
+                "decomposition_steps": 180,
                 "convergence_tol": 1e-5,
                 "bootstrap_draws": 12,
                 "bootstrap_block_length": 6,
@@ -1230,10 +1229,10 @@ HIV_CONSTRAINT_SETTINGS = {
         "latent_temporal_graph": {
             "enabled": True,
             "candidate_max_lags": [1, 2, 3],
-            "candidate_ridge_penalties": [0.05, 0.1, 0.2],
-            "candidate_sparse_penalties": [0.01, 0.02, 0.04],
-            "candidate_low_rank_penalties": [0.05, 0.1, 0.2],
-            "decomposition_steps": 160,
+            "lambda_s_fractions": [0.05, 0.08, 0.12, 0.2, 0.35],
+            "lambda_l_fractions": [0.05, 0.08, 0.12, 0.2, 0.35],
+            "selection_metric": "weighted_bic",
+            "decomposition_steps": 220,
             "convergence_tol": 1e-5,
             "bootstrap_draws": 24,
             "bootstrap_block_length": 6,
@@ -1655,6 +1654,75 @@ HIV_CONSTRAINT_SETTINGS = {
         },
     },
         "phase3": {
+        "replay": {
+            "require_frozen_phase2_payload": True,
+        },
+        "frontier": {
+            "phase2_hidden_shock": {"rank_cap": 3},
+            "phase2_transition_prior_map": {
+                "U_to_D": {
+                    "target_blocks": {
+                        "structural_barrier_pressure": {
+                            "source_blocks": {
+                                "mobility_exposure_pressure": {"lags": [1], "prior_scale": 0.2},
+                            }
+                        },
+                        "mobility_exposure_pressure": {
+                            "source_blocks": {
+                                "structural_barrier_pressure": {"lags": [1, 2], "prior_scale": 0.35},
+                            }
+                        },
+                    }
+                },
+                "D_to_A": {
+                    "target_blocks": {
+                        "mobility_exposure_pressure": {
+                            "source_blocks": {
+                                "care_access_continuity": {"lags": [1], "prior_scale": 0.6},
+                                "structural_barrier_pressure": {"lags": [1], "prior_scale": 0.25},
+                            }
+                        },
+                        "care_access_continuity": {
+                            "source_blocks": {
+                                "mobility_exposure_pressure": {"lags": [1], "prior_scale": 0.2},
+                            }
+                        },
+                    }
+                },
+                "A_to_V": {
+                    "target_blocks": {
+                        "suppression_capacity": {
+                            "source_blocks": {
+                                "care_access_continuity": {"lags": [1], "prior_scale": 0.25},
+                            }
+                        },
+                    }
+                },
+                "A_to_L": {
+                    "target_blocks": {
+                        "mobility_exposure_pressure": {
+                            "source_blocks": {
+                                "structural_barrier_pressure": {"lags": [1, 2], "prior_scale": 0.55},
+                            }
+                        },
+                        "structural_barrier_pressure": {
+                            "source_blocks": {
+                                "mobility_exposure_pressure": {"lags": [1], "prior_scale": 0.2},
+                            }
+                        },
+                    }
+                },
+                "L_to_A": {
+                    "target_blocks": {
+                        "suppression_capacity": {
+                            "source_blocks": {
+                                "care_access_continuity": {"lags": [1], "prior_scale": 0.55},
+                            }
+                        },
+                    }
+                },
+            },
+        },
         "testing_semantics": "viral_load_tested_stock",
         "testing_upper_target": "art_stock",
         "suppression_upper_target": "testing_coverage",

@@ -13,9 +13,15 @@ def test_phase2_constraint_settings_are_declared_in_plugin_contract() -> None:
 
     assert phase2_cfg.get("multiscale_dag", {}).get("enabled") is True
     assert phase2_cfg.get("multiscale_dag", {}).get("temporal_graph", {}).get("candidate_max_lags") is not None
+    assert phase2_cfg.get("multiscale_dag", {}).get("temporal_graph", {}).get("lambda_s_fractions") is not None
+    assert phase2_cfg.get("multiscale_dag", {}).get("temporal_graph", {}).get("lambda_l_fractions") is not None
+    assert phase2_cfg.get("multiscale_dag", {}).get("temporal_graph", {}).get("selection_metric") == "weighted_bic"
+    assert phase2_cfg.get("multiscale_dag", {}).get("uncertainty_mode") == "parent_block_propagation"
     assert phase2_cfg.get("latent_temporal_graph", {}).get("enabled") is True
     assert max(phase2_cfg.get("latent_temporal_graph", {}).get("candidate_max_lags", [0])) >= 2
-    assert phase2_cfg.get("latent_temporal_graph", {}).get("candidate_ridge_penalties") is not None
+    assert phase2_cfg.get("latent_temporal_graph", {}).get("lambda_s_fractions") is not None
+    assert phase2_cfg.get("latent_temporal_graph", {}).get("lambda_l_fractions") is not None
+    assert phase2_cfg.get("latent_temporal_graph", {}).get("selection_metric") == "weighted_bic"
     assert phase2_cfg.get("latent_temporal_graph", {}).get("bootstrap_draws") is not None
     assert phase2_cfg.get("latent_temporal_graph", {}).get("null_permutations") is not None
     assert phase2_cfg.get("phase3_compatibility", {}).get("predictive_budget") is not None

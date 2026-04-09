@@ -18,8 +18,23 @@ from epigraph_ph.phase0 import (
 )
 from epigraph_ph.phase1 import run_phase1_build
 from epigraph_ph.phase15 import run_phase15_build
-from epigraph_ph.phase2 import run_phase2_build, run_phase2_merge_shard_summaries
-from epigraph_ph.phase3 import run_phase3_build, run_phase3_frozen_backtest, run_phase3_frozen_backtest_tournament, run_phase3_frozen_backtest_tuning
+from epigraph_ph.phase2 import run_phase2_build
+from epigraph_ph.phase3 import (
+    run_phase3_build,
+    run_phase3_frozen_backtest,
+    run_phase3_frozen_backtest_tournament,
+    run_phase3_frozen_backtest_tuning,
+    run_phase3_incidence_research,
+    run_phase3_national_reset_baseline,
+    run_phase3_national_reset_deferred_complexity_scan,
+    run_phase3_national_reset_delay_aux,
+    run_phase3_national_reset_observation_table,
+    run_phase3_national_reset_vl_observation_process,
+    run_phase3_peak_search,
+    run_phase3_transition_research,
+)
+from epigraph_ph.phase3.incidence import list_cli_names as list_incidence_cli_names
+from epigraph_ph.phase3.frontier import list_cli_names as list_transition_research_cli_names
 from epigraph_ph.phase4 import run_phase4_build, run_phase4_optimize, run_phase4_simulate
 from epigraph_ph.registry.sources import build_source_registry
 from epigraph_ph.registry.subparameters import build_subparameter_registry
@@ -86,23 +101,33 @@ def build_parser() -> argparse.ArgumentParser:
     harp_archive_build.add_argument("--plugin", default="hiv")
     harp_archive_build.add_argument("--desktop-seed-dir", default=None)
     harp_archive_build.add_argument("--manual-seed-dir", default=None)
+    harp_archive_build.add_argument("--force-refresh", action="store_true")
 
-    for phase_name in ("phase1", "phase15", "phase2", "phase3"):
+    for phase_name in ("phase1", "phase15", "phase2", "phase3", "phase1_5"):
         phase = subparsers.add_parser(phase_name)
         phase_sub = phase.add_subparsers(dest=f"{phase_name}_command")
         build = phase_sub.add_parser("build")
         build.add_argument("--run-id", required=True)
         build.add_argument("--plugin", default="hiv")
         build.add_argument("--profile", default="legacy")
-        if phase_name == "phase2":
-            merge = phase_sub.add_parser("merge-shard-summaries")
-            merge.add_argument("--run-id", required=True)
-            merge.add_argument("--plugin", default="hiv")
-            merge.add_argument("--source-run-ids", nargs="+", required=True)
-            merge.add_argument("--bridge-edge-budget-per-block-pair", type=int, default=4)
         if phase_name == "phase3":
             build.add_argument("--top-k-per-block", type=int, default=20)
             build.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
+            incidence_research = phase_sub.add_parser("incidence-research")
+            incidence_research_sub = incidence_research.add_subparsers(dest="phase3_incidence_research_command")
+            for cli_name in list_incidence_cli_names():
+                experiment = incidence_research_sub.add_parser(cli_name)
+                experiment.add_argument("--run-id", required=True)
+                experiment.add_argument("--plugin", default="hiv")
+                experiment.add_argument("--source-run-id", required=True)
+            transition_research = phase_sub.add_parser("transition-research")
+            transition_research_sub = transition_research.add_subparsers(dest="phase3_transition_research_command")
+            for cli_name in list_transition_research_cli_names():
+                experiment = transition_research_sub.add_parser(cli_name)
+                experiment.add_argument("--run-id", required=True)
+                experiment.add_argument("--plugin", default="hiv")
+                experiment.add_argument("--source-run-id", required=True)
+                experiment.add_argument("--phase3-result-dir-name", default=None)
             backtest = phase_sub.add_parser("frozen-backtest")
             backtest.add_argument("--run-id", required=True)
             backtest.add_argument("--plugin", default="hiv")
@@ -124,6 +149,42 @@ def build_parser() -> argparse.ArgumentParser:
             tune_backtest.add_argument("--phase3-inference", default="torch_map", choices=["torch_map"])
             tune_backtest.add_argument("--train-years", nargs="+", type=int, default=None)
             tune_backtest.add_argument("--holdout-years", nargs="+", type=int, default=None)
+            national_reset_table = phase_sub.add_parser("national-reset-observation-table")
+            national_reset_table.add_argument("--run-id", required=True)
+            national_reset_table.add_argument("--plugin", default="hiv")
+            national_reset_table.add_argument("--archive-run-id", default=None)
+            national_reset_table.add_argument("--start-quarter", default=None)
+            national_reset_baseline = phase_sub.add_parser("national-reset-baseline")
+            national_reset_baseline.add_argument("--run-id", required=True)
+            national_reset_baseline.add_argument("--plugin", default="hiv")
+            national_reset_baseline.add_argument("--archive-run-id", default=None)
+            national_reset_baseline.add_argument("--start-quarter", default=None)
+            national_reset_baseline.add_argument("--holdout-years", nargs="+", type=int, default=None)
+            national_reset_delay_aux = phase_sub.add_parser("national-reset-delay-aux")
+            national_reset_delay_aux.add_argument("--run-id", required=True)
+            national_reset_delay_aux.add_argument("--plugin", default="hiv")
+            national_reset_delay_aux.add_argument("--archive-run-id", default=None)
+            national_reset_delay_aux.add_argument("--start-quarter", default=None)
+            national_reset_delay_aux.add_argument("--holdout-years", nargs="+", type=int, default=None)
+            national_reset_vl = phase_sub.add_parser("national-reset-vl-observation-process")
+            national_reset_vl.add_argument("--run-id", required=True)
+            national_reset_vl.add_argument("--plugin", default="hiv")
+            national_reset_vl.add_argument("--archive-run-id", default=None)
+            national_reset_vl.add_argument("--start-quarter", default=None)
+            national_reset_vl.add_argument("--holdout-years", nargs="+", type=int, default=None)
+            national_reset_deferred = phase_sub.add_parser("national-reset-deferred-complexity-scan")
+            national_reset_deferred.add_argument("--run-id", required=True)
+            national_reset_deferred.add_argument("--plugin", default="hiv")
+            national_reset_deferred.add_argument("--archive-run-id", default=None)
+            national_reset_deferred.add_argument("--start-quarter", default=None)
+            peak_search = phase_sub.add_parser("peak-search")
+            peak_search.add_argument("--run-id", required=True)
+            peak_search.add_argument("--plugin", default="hiv")
+            peak_search.add_argument("--profile", default="hiv_rescue_v2")
+            peak_search.add_argument("--phase3-inference", default="torch_map", choices=["torch_map", "jax_svi", "jax_nuts"])
+            peak_search.add_argument("--representation", default="hybrid_temporal_multiscale")
+            peak_search.add_argument("--target", required=True)
+            peak_search.add_argument("--horizon-months", type=int, default=60)
     phase4 = subparsers.add_parser("phase4")
     phase4_sub = phase4.add_subparsers(dest="phase4_command")
     for name in ("build", "simulate", "optimize"):
@@ -251,6 +312,7 @@ def main(argv: list[str] | None = None) -> int:
             plugin_id=args.plugin,
             desktop_seed_dir=args.desktop_seed_dir,
             manual_seed_dir=args.manual_seed_dir,
+            force_refresh=args.force_refresh,
         )
         return 0
     if args.command == "phase1" and args.phase1_command == "build":
@@ -259,16 +321,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "phase15" and args.phase15_command == "build":
         run_phase15_build(run_id=args.run_id, plugin_id=args.plugin, profile=args.profile)
         return 0
+    if args.command == "phase1_5" and args.phase1_5_command == "build":
+        run_phase15_build(run_id=args.run_id, plugin_id=args.plugin, profile=args.profile)
+        return 0
     if args.command == "phase2" and args.phase2_command == "build":
         run_phase2_build(run_id=args.run_id, plugin_id=args.plugin, profile=args.profile)
-        return 0
-    if args.command == "phase2" and args.phase2_command == "merge-shard-summaries":
-        run_phase2_merge_shard_summaries(
-            run_id=args.run_id,
-            plugin_id=args.plugin,
-            source_run_ids=args.source_run_ids,
-            bridge_edge_budget_per_block_pair=args.bridge_edge_budget_per_block_pair,
-        )
         return 0
     if args.command == "phase3" and args.phase3_command == "build":
         run_phase3_build(
@@ -277,6 +334,23 @@ def main(argv: list[str] | None = None) -> int:
             top_k_per_block=args.top_k_per_block,
             profile=args.profile,
             inference_family=args.phase3_inference,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "transition-research":
+        run_phase3_transition_research(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            source_run_id=args.source_run_id,
+            cli_experiment_name=args.phase3_transition_research_command,
+            phase3_result_dir_name=args.phase3_result_dir_name,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "incidence-research":
+        run_phase3_incidence_research(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            source_run_id=args.source_run_id,
+            cli_experiment_name=args.phase3_incidence_research_command,
         )
         return 0
     if args.command == "phase3" and args.phase3_command == "frozen-backtest":
@@ -307,6 +381,60 @@ def main(argv: list[str] | None = None) -> int:
             inference_family=args.phase3_inference,
             train_years=args.train_years,
             holdout_years=args.holdout_years,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "national-reset-observation-table":
+        run_phase3_national_reset_observation_table(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            archive_run_id=args.archive_run_id,
+            start_quarter=args.start_quarter,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "national-reset-baseline":
+        run_phase3_national_reset_baseline(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            archive_run_id=args.archive_run_id,
+            start_quarter=args.start_quarter,
+            holdout_years=args.holdout_years,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "national-reset-delay-aux":
+        run_phase3_national_reset_delay_aux(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            archive_run_id=args.archive_run_id,
+            start_quarter=args.start_quarter,
+            holdout_years=args.holdout_years,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "national-reset-vl-observation-process":
+        run_phase3_national_reset_vl_observation_process(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            archive_run_id=args.archive_run_id,
+            start_quarter=args.start_quarter,
+            holdout_years=args.holdout_years,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "national-reset-deferred-complexity-scan":
+        run_phase3_national_reset_deferred_complexity_scan(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            archive_run_id=args.archive_run_id,
+            start_quarter=args.start_quarter,
+        )
+        return 0
+    if args.command == "phase3" and args.phase3_command == "peak-search":
+        run_phase3_peak_search(
+            run_id=args.run_id,
+            plugin_id=args.plugin,
+            profile=args.profile,
+            inference_family=args.phase3_inference,
+            representation=args.representation,
+            target=args.target,
+            horizon_months=args.horizon_months,
         )
         return 0
     if args.command == "phase4" and args.phase4_command == "build":

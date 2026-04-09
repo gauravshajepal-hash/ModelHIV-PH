@@ -10,6 +10,7 @@ from epigraph_ph.phase15 import PHASE15_PROFILE_ID
 from epigraph_ph.phase2.latent_temporal_graph import build_latent_temporal_graph_outputs
 from epigraph_ph.phase2.multiscale_dag import build_multiscale_dag_outputs
 from epigraph_ph.phase2.phase3_compat import build_phase3_compatibility_artifacts, select_retained_factor_rows
+from epigraph_ph.phase2.structural_payload import build_phase2_structural_artifacts
 from epigraph_ph.runtime import RunContext, detect_backends, ensure_dir, read_json, utc_now_iso, write_boundary_shape_package, write_gold_standard_package, write_ground_truth_package, write_json
 from epigraph_ph.validate.phase_trust_audit import build_phase_trust_audit
 
@@ -159,6 +160,14 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         multiscale_bundle=multiscale_bundle,
         latent_bundle=latent_bundle,
     )
+    structural_paths = build_phase2_structural_artifacts(
+        phase2_dir=phase2_dir,
+        phase15_dir=phase15_dir,
+        latent_bundle=latent_bundle,
+        latent_blankets=latent_blankets,
+        multiscale_bundle=multiscale_bundle,
+        multiscale_blankets=multiscale_blankets,
+    )
 
     artifact_paths = {
         "multiscale_dag_bundle": str(phase2_dir / "multiscale_dag_bundle.json"),
@@ -170,6 +179,7 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         "phase_trust_audit_md": str(ctx.run_dir / "analysis" / "phase_trust_audit.md"),
     }
     artifact_paths.update(compat_paths)
+    artifact_paths.update(structural_paths)
     compatibility_manifest = {
         "family": "legacy_phase3_phase4_compatibility_bridge",
         "scientific_role": "non_core_compatibility_only",
@@ -178,6 +188,14 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     }
     write_json(phase2_dir / "phase2_compatibility_manifest.json", compatibility_manifest)
     artifact_paths["phase2_compatibility_manifest"] = str(phase2_dir / "phase2_compatibility_manifest.json")
+    structural_manifest = {
+        "family": "phase2_structural_frontier_payload",
+        "scientific_role": "core_structural_frontier_input",
+        "derivation": "direct_temporal_hidden_driver_multiscale_support_split",
+        "artifacts": structural_paths,
+    }
+    write_json(phase2_dir / "phase2_structural_manifest.json", structural_manifest)
+    artifact_paths["phase2_structural_manifest"] = str(phase2_dir / "phase2_structural_manifest.json")
     manifest = {
         "phase_name": "phase2",
         "profile_id": profile,
@@ -202,6 +220,7 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         {"name": "core_feature_tensor_present", "passed": bool(Path(compat_paths["core_feature_tensor"]).exists())},
         {"name": "latent_temporal_bundle_present", "passed": bool(Path(artifact_paths["latent_temporal_graph_bundle"]).exists())},
         {"name": "multiscale_bundle_present", "passed": bool(Path(artifact_paths["multiscale_dag_bundle"]).exists())},
+        {"name": "structural_payload_present", "passed": bool(Path(artifact_paths["phase2_structural_payload"]).exists())},
     ]
     boundary_paths = [{"name": name, "kind": "json_or_tensor", "path": path} for name, path in artifact_paths.items()]
     ground_truth_paths = write_ground_truth_package(
@@ -210,7 +229,7 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         checks=truth_checks,
         summary={"phase_name": "phase2", "profile_id": profile},
         profile_id=profile,
-        truth_sources=["phase1", "phase15", "phase3_compatibility"],
+        truth_sources=["phase1", "phase15", "phase3_compatibility", "phase2_structural_payload"],
         stage_manifest_path=str(manifest_path),
     )
     gold_paths = write_gold_standard_package(

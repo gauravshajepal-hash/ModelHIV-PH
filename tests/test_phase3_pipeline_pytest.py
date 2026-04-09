@@ -7,14 +7,14 @@ from pathlib import Path
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
-from epigraph_ph.phase3.pipeline import (
+from epigraph_ph.phase3._lineage.pipeline import (
     _holdout_reference_smape,
     _adaptive_frozen_tuning_candidates,
     _posterior_draws,
     _require_requested_inference_family,
     _trial_calibration_overrides,
 )
-from epigraph_ph.phase3.rescue_core import (
+from epigraph_ph.phase3._lineage.rescue_core import (
     _enforce_cascade_ordering,
     _fallback_observation_targets,
     _build_intervention_tensor_from_covariates,
@@ -257,8 +257,8 @@ def test_phase3_frozen_history_backtest_contract(rescue_v2_backtest_run_dir) -> 
 
     assert manifest.get("artifact_paths", {}).get("frozen_history_backtest_spec")
     assert manifest.get("artifact_paths", {}).get("frozen_history_backtest_evaluation")
-    assert spec.get("train_years") == [2017, 2018, 2019, 2020, 2021, 2022, 2023]
-    assert spec.get("holdout_years") == [2024]
+    assert spec.get("train_years") == [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+    assert spec.get("holdout_years") == [2025]
     assert spec.get("forecast_horizon", 0) >= 1
     assert evaluation.get("summary", {}).get("comparison_count", 0) >= 1
     assert evaluation.get("holdout_reference_check", {}).get("comparisons", []) != []
@@ -395,6 +395,7 @@ def test_phase3_legacy_posterior_draws_support_nuts_when_jax_available() -> None
 
 def test_phase3_no_silent_fallback_and_truth_surfaces(rescue_v2_run_dir) -> None:
     manifest = read_json(rescue_v2_run_dir / "phase3" / "phase3_manifest.json", default={})
+    model_artifact = read_json(rescue_v2_run_dir / "phase3" / "model_artifact.json", default={})
     reference_check = read_json(rescue_v2_run_dir / "phase3" / "reference_check_official.json", default={})
     harp_check = read_json(rescue_v2_run_dir / "phase3" / "reference_check_harp.json", default={})
     observation_targets = read_json(rescue_v2_run_dir / "phase3" / "observation_targets.json", default=[])
@@ -411,6 +412,7 @@ def test_phase3_no_silent_fallback_and_truth_surfaces(rescue_v2_run_dir) -> None
     assert manifest.get("artifact_paths", {}).get("cd4_prior_learning_summary")
     assert observation_targets
     assert residuals
+    assert isinstance(model_artifact.get("phase2_eligibility_surfaces", {}), dict)
     assert reference_check.get("verdict")
     assert reference_check.get("comparisons", []) != []
     assert harp_check.get("verdict")

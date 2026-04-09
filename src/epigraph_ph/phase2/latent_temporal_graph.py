@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
+from epigraph_ph.phase2.temporal_optimizer import (
+    enforce_no_self_edges as _optimizer_enforce_no_self_edges,
+    fit_weighted_sparse_plus_low_rank,
+    regularization_maxima,
+    sparse_plus_low_rank_objective as _optimizer_sparse_plus_low_rank_objective,
+)
 from epigraph_ph.runtime import load_tensor_artifact, read_json
 
 
@@ -80,27 +87,25 @@ def _sparse_plus_low_rank_objective(
     sparse_penalty: float,
     low_rank_penalty: float,
 ) -> dict[str, float]:
-    weighted_design = design_matrix * np.sqrt(sample_weights)[:, None]
-    weighted_response = response_matrix * np.sqrt(sample_weights)[:, None]
-    residual = weighted_response - weighted_design @ (sparse_matrix + low_rank_matrix)
-    mse = 0.5 * float(np.mean(residual * residual)) if residual.size else 0.0
-    sparse_norm = float(np.sum(np.abs(sparse_matrix)))
-    nuclear_norm = float(np.sum(np.linalg.svd(low_rank_matrix, compute_uv=False, full_matrices=False))) if low_rank_matrix.size else 0.0
-    total = mse + float(sparse_penalty) * sparse_norm + float(low_rank_penalty) * nuclear_norm
+    objective = _optimizer_sparse_plus_low_rank_objective(
+        response_matrix=response_matrix,
+        design_matrix=design_matrix,
+        sample_weights=sample_weights,
+        sparse_matrix=sparse_matrix,
+        low_rank_matrix=low_rank_matrix,
+        lambda_sparse=sparse_penalty,
+        lambda_low_rank=low_rank_penalty,
+    )
     return {
-        "mse": round(mse, 6),
-        "sparse_norm": round(sparse_norm, 6),
-        "nuclear_norm": round(nuclear_norm, 6),
-        "total": round(total, 6),
+        "mse": float(objective["weighted_loss"]),
+        "sparse_norm": float(objective["sparse_norm"]),
+        "nuclear_norm": float(objective["nuclear_norm"]),
+        "total": float(objective["total"]),
     }
 
 
 def _enforce_no_self_edges(matrix: np.ndarray, block_count: int, max_lag: int) -> np.ndarray:
-    values = np.asarray(matrix, dtype=np.float32).copy()
-    for lag_idx in range(max_lag):
-        for block_idx in range(block_count):
-            values[lag_idx * block_count + block_idx, block_idx] = 0.0
-    return values
+    return _optimizer_enforce_no_self_edges(matrix, block_count=block_count, max_lag=max_lag)
 
 
 def _fit_sparse_plus_low_rank_matrix(
@@ -116,39 +121,19 @@ def _fit_sparse_plus_low_rank_matrix(
     block_count: int,
     max_lag: int,
 ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
-    feature_count = int(design_matrix.shape[1]) if design_matrix.ndim == 2 else 0
-    target_count = int(response_matrix.shape[1]) if response_matrix.ndim == 2 else 0
-    if feature_count == 0 or target_count == 0:
-        zeros = np.zeros((feature_count, target_count), dtype=np.float32)
-        return zeros, zeros, {"mse": 0.0, "sparse_norm": 0.0, "nuclear_norm": 0.0, "total": 0.0}
-    sqrt_weights = np.sqrt(np.asarray(sample_weights, dtype=np.float32).reshape(-1, 1))
-    weighted_design = np.asarray(design_matrix, dtype=np.float32) * sqrt_weights
-    weighted_response = np.asarray(response_matrix, dtype=np.float32) * sqrt_weights
-    gram = weighted_design.T @ weighted_design
-    gram += float(ridge_penalty) * np.eye(feature_count, dtype=np.float32)
-    rhs = weighted_design.T @ weighted_response
-    try:
-        coefficient_matrix = np.linalg.solve(gram, rhs).astype(np.float32)
-    except np.linalg.LinAlgError:
-        coefficient_matrix = (np.linalg.pinv(gram) @ rhs).astype(np.float32)
-    coefficient_matrix = _enforce_no_self_edges(coefficient_matrix, block_count, max_lag)
-    sparse_matrix = _soft_threshold(
-        coefficient_matrix,
-        float(sparse_penalty) + float(low_rank_penalty),
-    )
-    sparse_matrix = _enforce_no_self_edges(sparse_matrix, block_count, max_lag)
-    low_rank_matrix = _svd_threshold(coefficient_matrix - sparse_matrix, float(low_rank_penalty))
-    low_rank_matrix = _enforce_no_self_edges(low_rank_matrix, block_count, max_lag)
-    objective = _sparse_plus_low_rank_objective(
+    del ridge_penalty
+    sparse_matrix, low_rank_matrix, diagnostics = fit_weighted_sparse_plus_low_rank(
         response_matrix=response_matrix,
         design_matrix=design_matrix,
-        sparse_matrix=sparse_matrix,
-        low_rank_matrix=low_rank_matrix,
         sample_weights=sample_weights,
-        sparse_penalty=sparse_penalty,
-        low_rank_penalty=low_rank_penalty,
+        lambda_sparse=float(sparse_penalty),
+        lambda_low_rank=float(low_rank_penalty),
+        max_iterations=max(1, int(decomposition_steps)),
+        convergence_tol=float(convergence_tol),
+        block_count=block_count,
+        max_lag=max_lag,
     )
-    return sparse_matrix.astype(np.float32), low_rank_matrix.astype(np.float32), objective
+    return sparse_matrix.astype(np.float32), low_rank_matrix.astype(np.float32), diagnostics
 
 
 def _temporal_block_permutation_indices(
@@ -208,6 +193,27 @@ def _sample_weight_vector(
     return np.clip(weights, 0.1, 10.0).astype(np.float32)
 
 
+def _parse_month_ordinal(month_label: str) -> int | None:
+    try:
+        parsed = datetime.strptime(str(month_label), "%Y-%m")
+    except ValueError:
+        return None
+    return int(parsed.year) * 12 + int(parsed.month) - 1
+
+
+def _calendar_lag_is_valid(month_axis: list[str] | None, current_idx: int, lag: int) -> bool:
+    if not month_axis:
+        return True
+    previous_idx = current_idx - int(lag)
+    if previous_idx < 0 or current_idx >= len(month_axis):
+        return False
+    current_ordinal = _parse_month_ordinal(str(month_axis[current_idx]))
+    previous_ordinal = _parse_month_ordinal(str(month_axis[previous_idx]))
+    if current_ordinal is None or previous_ordinal is None:
+        return False
+    return (current_ordinal - previous_ordinal) == int(lag)
+
+
 def _build_sample_arrays(
     *,
     state_tensor: np.ndarray,
@@ -215,6 +221,7 @@ def _build_sample_arrays(
     phi_by_block: dict[str, float],
     max_lag: int,
     uncertainty_tensor: np.ndarray | None = None,
+    month_axis: list[str] | None = None,
 ) -> dict[str, Any]:
     tensor = np.asarray(state_tensor, dtype=np.float32)
     if tensor.ndim == 2:
@@ -226,6 +233,10 @@ def _build_sample_arrays(
     phi = np.asarray([float(phi_by_block.get(block_id, 0.0)) for block_id in block_axis], dtype=np.float32)
     for unit_idx in range(unit_count):
         for month_idx in range(max_lag, month_count):
+            if not _calendar_lag_is_valid(month_axis, month_idx, 1):
+                continue
+            if not all(_calendar_lag_is_valid(month_axis, month_idx, lag) for lag in range(1, max_lag + 1)):
+                continue
             current = tensor[unit_idx, month_idx, :]
             prev = tensor[unit_idx, month_idx - 1, :]
             innovation = current - phi * prev
@@ -323,49 +334,75 @@ def _estimate_phi_by_series_tensor(state_tensor: np.ndarray, axis_ids: list[str]
 def _forecast_validation_score(
     *,
     state_tensor: np.ndarray,
-    sample_weights: np.ndarray,
+    uncertainty_tensor: np.ndarray | None,
     phi_by_block: dict[str, float],
     block_axis: list[str],
     max_lag: int,
-    ridge_penalty: float,
     sparse_penalty: float,
     low_rank_penalty: float,
-) -> tuple[float, int]:
+    month_axis: list[str] | None = None,
+) -> tuple[float, int, dict[str, Any]]:
     sample_arrays = _build_sample_arrays(
         state_tensor=state_tensor,
         block_axis=block_axis,
         phi_by_block=phi_by_block,
         max_lag=max_lag,
-        uncertainty_tensor=None,
+        uncertainty_tensor=uncertainty_tensor,
+        month_axis=month_axis,
     )
     design_matrix = np.asarray(sample_arrays["design_matrix"], dtype=np.float32)
     response_matrix = np.asarray(sample_arrays["response_matrix"], dtype=np.float32)
     weights = np.asarray(sample_arrays["sample_weights"], dtype=np.float32)
     sample_count = int(design_matrix.shape[0])
     if sample_count <= max(12, 3 * design_matrix.shape[1]):
-        return float("inf"), sample_count
-    split = max(max_lag + 8, int(np.floor(sample_count * 0.75)))
-    split = min(split, sample_count - max(8, design_matrix.shape[1]))
-    if split <= max_lag or split >= sample_count:
-        return float("inf"), sample_count
-    train_design = design_matrix[:split]
-    train_response = response_matrix[:split]
-    train_weights = weights[:split]
-    valid_design = design_matrix[split:]
-    valid_response = response_matrix[split:]
-    valid_weights = weights[split:]
+        return float("inf"), sample_count, {}
+    unique_months = sorted({int(month_idx) for _unit_idx, month_idx in list(sample_arrays["sample_pairs"])})
+    if len(unique_months) < max(6, max_lag + 3):
+        return float("inf"), sample_count, {}
+    holdout_month_count = max(2, int(np.ceil(len(unique_months) * 0.25)))
+    if holdout_month_count >= len(unique_months):
+        holdout_month_count = max(1, len(unique_months) - 1)
+    train_months = set(unique_months[:-holdout_month_count])
+    valid_months = set(unique_months[-holdout_month_count:])
+    if not train_months or not valid_months:
+        return float("inf"), sample_count, {}
+    train_indices = np.asarray(
+        [idx for idx, (_unit_idx, month_idx) in enumerate(list(sample_arrays["sample_pairs"])) if int(month_idx) in train_months],
+        dtype=np.int64,
+    )
+    valid_indices = np.asarray(
+        [idx for idx, (_unit_idx, month_idx) in enumerate(list(sample_arrays["sample_pairs"])) if int(month_idx) in valid_months],
+        dtype=np.int64,
+    )
+    if train_indices.size == 0 or valid_indices.size == 0:
+        return float("inf"), sample_count, {}
+    train_design = design_matrix[train_indices]
+    train_response = response_matrix[train_indices]
+    train_weights = weights[train_indices]
+    valid_design = design_matrix[valid_indices]
+    valid_response = response_matrix[valid_indices]
+    valid_weights = weights[valid_indices]
     if train_design.size == 0 or valid_design.size == 0:
-        return float("inf"), sample_count
+        return float("inf"), sample_count, {}
     standardized_train_design, design_mean, design_scale = _weighted_standardize(train_design, train_weights)
     standardized_train_response, response_mean, response_scale = _weighted_standardize(train_response, train_weights)
+    maxima = regularization_maxima(
+        response_matrix=standardized_train_response,
+        design_matrix=standardized_train_design,
+        sample_weights=train_weights,
+        block_count=len(block_axis),
+        max_lag=max_lag,
+    )
+    if maxima["lambda_sparse_max"] <= 0.0 or maxima["lambda_low_rank_max"] <= 0.0:
+        return float("inf"), sample_count, {}
     sparse_matrix, low_rank_matrix, _ = _fit_sparse_plus_low_rank_matrix(
         response_matrix=standardized_train_response,
         design_matrix=standardized_train_design,
         sample_weights=train_weights,
-        ridge_penalty=ridge_penalty,
         sparse_penalty=sparse_penalty,
         low_rank_penalty=low_rank_penalty,
-        decomposition_steps=96,
+        ridge_penalty=0.0,
+        decomposition_steps=160,
         convergence_tol=1e-5,
         block_count=len(block_axis),
         max_lag=max_lag,
@@ -376,15 +413,24 @@ def _forecast_validation_score(
     valid_standardized_response = np.nan_to_num(valid_standardized_response, nan=0.0, posinf=0.0, neginf=0.0)
     residual = valid_standardized_response - valid_standardized_design @ (sparse_matrix + low_rank_matrix)
     weighted_residual = residual * np.sqrt(valid_weights)[:, None]
-    mse = float(np.mean(weighted_residual * weighted_residual)) if weighted_residual.size else float("inf")
+    weighted_loss = 0.5 * float(np.mean(weighted_residual * weighted_residual)) if weighted_residual.size else float("inf")
+    nnz_sparse = int(np.sum(np.abs(sparse_matrix) > 1e-6))
     singular_values = np.linalg.svd(low_rank_matrix, compute_uv=False, full_matrices=False) if low_rank_matrix.size else np.zeros((0,), dtype=np.float32)
     hidden_rank = int(np.sum(singular_values > 1e-6))
-    complexity = (
-        0.01 * float(np.mean(np.abs(sparse_matrix) > 1e-6))
-        + 0.01 * float(hidden_rank)
-        + 0.005 * float(max_lag)
-    )
-    return mse + complexity, sample_count
+    complexity = nnz_sparse + hidden_rank * max(int(low_rank_matrix.shape[0] + low_rank_matrix.shape[1] - hidden_rank), 0)
+    train_sample_count = max(int(train_indices.size), 1)
+    bic_penalty = float(np.log(max(train_sample_count, 2)) * complexity / max(train_sample_count, 1))
+    score = weighted_loss + bic_penalty
+    return score, sample_count, {
+        "selection_metric": "weighted_bic",
+        "weighted_validation_loss": round(float(weighted_loss), 6),
+        "bic_penalty": round(float(bic_penalty), 6),
+        "complexity": int(complexity),
+        "nnz_sparse": nnz_sparse,
+        "hidden_rank": hidden_rank,
+        "train_month_count": int(len(train_months)),
+        "valid_month_count": int(len(valid_months)),
+    }
 
 
 def _candidate_list(cfg: dict[str, Any], key: str, default: list[float]) -> list[float]:
@@ -397,63 +443,119 @@ def _candidate_list(cfg: dict[str, Any], key: str, default: list[float]) -> list
 def _select_temporal_hyperparameters(
     *,
     state_tensor: np.ndarray,
+    uncertainty_tensor: np.ndarray | None,
     block_axis: list[str],
     phi_by_block: dict[str, float],
     cfg: dict[str, Any],
+    month_axis: list[str] | None = None,
 ) -> dict[str, Any]:
     lag_candidates = [int(value) for value in cfg.get("candidate_max_lags", [cfg.get("max_lag", 1)])]
-    ridge_candidates = _candidate_list(cfg, "candidate_ridge_penalties", [float(cfg.get("ridge_penalty", 0.1))])
-    sparse_candidates = _candidate_list(cfg, "candidate_sparse_penalties", [float(cfg.get("sparse_penalty", 0.05))])
-    low_rank_candidates = _candidate_list(cfg, "candidate_low_rank_penalties", [float(cfg.get("low_rank_penalty", 0.05))])
+    use_absolute_penalties = "lambda_s_fractions" not in cfg and "lambda_l_fractions" not in cfg and (
+        "candidate_sparse_penalties" in cfg or "candidate_low_rank_penalties" in cfg or "sparse_penalty" in cfg or "low_rank_penalty" in cfg
+    )
+    sparse_fractions = _candidate_list(cfg, "lambda_s_fractions", [0.1, 0.2, 0.4]) if not use_absolute_penalties else [1.0]
+    low_rank_fractions = _candidate_list(cfg, "lambda_l_fractions", [0.1, 0.2, 0.4]) if not use_absolute_penalties else [1.0]
+    absolute_sparse_candidates = _candidate_list(cfg, "candidate_sparse_penalties", [float(cfg.get("sparse_penalty", 0.05))])
+    absolute_low_rank_candidates = _candidate_list(cfg, "candidate_low_rank_penalties", [float(cfg.get("low_rank_penalty", 0.05))])
     best = {
         "score": float("inf"),
         "max_lag": int(cfg.get("max_lag", 1)),
-        "ridge_penalty": float(cfg.get("ridge_penalty", 0.1)),
-        "sparse_penalty": float(cfg.get("sparse_penalty", 0.05)),
-        "low_rank_penalty": float(cfg.get("low_rank_penalty", 0.05)),
+        "sparse_penalty": 0.0,
+        "low_rank_penalty": 0.0,
+        "lambda_s_fraction": 0.0,
+        "lambda_l_fraction": 0.0,
         "effective_sample_count": 0,
+        "selection_metric": str(cfg.get("selection_metric", "weighted_bic")),
     }
     for lag in lag_candidates:
-        for ridge_penalty in ridge_candidates:
-            for sparse_penalty in sparse_candidates:
-                for low_rank_penalty in low_rank_candidates:
-                    score, sample_count = _forecast_validation_score(
-                        state_tensor=state_tensor,
-                        sample_weights=np.ones((1,), dtype=np.float32),
-                        phi_by_block=phi_by_block,
-                        block_axis=block_axis,
-                        max_lag=int(lag),
-                        ridge_penalty=float(ridge_penalty),
-                        sparse_penalty=float(sparse_penalty),
-                        low_rank_penalty=float(low_rank_penalty),
-                    )
-                    candidate = {
-                        "score": score,
-                        "max_lag": int(lag),
-                        "ridge_penalty": float(ridge_penalty),
-                        "sparse_penalty": float(sparse_penalty),
-                        "low_rank_penalty": float(low_rank_penalty),
-                        "effective_sample_count": int(sample_count),
-                    }
-                    if (
-                        candidate["score"] < best["score"]
-                        or (
-                            candidate["score"] == best["score"]
-                            and (
-                                candidate["max_lag"],
-                                candidate["ridge_penalty"],
-                                candidate["sparse_penalty"],
-                                candidate["low_rank_penalty"],
-                            )
-                            < (
-                                best["max_lag"],
-                                best["ridge_penalty"],
-                                best["sparse_penalty"],
-                                best["low_rank_penalty"],
-                            )
+        sample_arrays = _build_sample_arrays(
+            state_tensor=state_tensor,
+            block_axis=block_axis,
+            phi_by_block=phi_by_block,
+            max_lag=int(lag),
+            uncertainty_tensor=uncertainty_tensor,
+            month_axis=month_axis,
+        )
+        design_matrix = np.asarray(sample_arrays["design_matrix"], dtype=np.float32)
+        response_matrix = np.asarray(sample_arrays["response_matrix"], dtype=np.float32)
+        weights = np.asarray(sample_arrays["sample_weights"], dtype=np.float32)
+        if design_matrix.shape[0] <= max(12, 3 * design_matrix.shape[1]):
+            continue
+        standardized_design, _, _ = _weighted_standardize(design_matrix, weights)
+        standardized_response, _, _ = _weighted_standardize(response_matrix, weights)
+        maxima = regularization_maxima(
+            response_matrix=standardized_response,
+            design_matrix=standardized_design,
+            sample_weights=weights,
+            block_count=len(block_axis),
+            max_lag=int(lag),
+        )
+        for sparse_fraction in sparse_fractions:
+            candidate_sparse_values = (
+                absolute_sparse_candidates
+                if use_absolute_penalties
+                else [float(maxima["lambda_sparse_max"]) * float(sparse_fraction)]
+            )
+            for low_rank_fraction in low_rank_fractions:
+                candidate_low_rank_values = (
+                    absolute_low_rank_candidates
+                    if use_absolute_penalties
+                    else [float(maxima["lambda_low_rank_max"]) * float(low_rank_fraction)]
+                )
+                for sparse_penalty in candidate_sparse_values:
+                    for low_rank_penalty in candidate_low_rank_values:
+                        lambda_s_fraction = float(sparse_penalty) / max(float(maxima["lambda_sparse_max"]), 1e-6)
+                        lambda_l_fraction = float(low_rank_penalty) / max(float(maxima["lambda_low_rank_max"]), 1e-6)
+                        score, sample_count, score_details = _forecast_validation_score(
+                            state_tensor=state_tensor,
+                            uncertainty_tensor=uncertainty_tensor,
+                            phi_by_block=phi_by_block,
+                            block_axis=block_axis,
+                            max_lag=int(lag),
+                            sparse_penalty=sparse_penalty,
+                            low_rank_penalty=low_rank_penalty,
+                            month_axis=month_axis,
                         )
-                    ):
-                        best = candidate
+                        candidate = {
+                            "score": score,
+                            "max_lag": int(lag),
+                            "sparse_penalty": float(sparse_penalty),
+                            "low_rank_penalty": float(low_rank_penalty),
+                            "lambda_s_fraction": float(lambda_s_fraction),
+                            "lambda_l_fraction": float(lambda_l_fraction),
+                            "effective_sample_count": int(sample_count),
+                            **score_details,
+                        }
+                        if (
+                            candidate["score"] < best["score"]
+                            or (
+                                candidate["score"] == best["score"]
+                                and (
+                                    candidate["max_lag"],
+                                    candidate["lambda_s_fraction"],
+                                    candidate["lambda_l_fraction"],
+                                    candidate["sparse_penalty"],
+                                    candidate["low_rank_penalty"],
+                                )
+                                < (
+                                    best["max_lag"],
+                                    best["lambda_s_fraction"],
+                                    best["lambda_l_fraction"],
+                                    best["sparse_penalty"],
+                                    best["low_rank_penalty"],
+                                )
+                            )
+                        ):
+                            best = candidate
+    if not np.isfinite(float(best.get("score", float("inf")))):
+        return {
+            "selection_failed": True,
+            "reason": "no_finite_weighted_bic_candidate",
+            "score": float("inf"),
+            "max_lag": int(cfg.get("max_lag", 1)),
+            "selection_metric": str(cfg.get("selection_metric", "weighted_bic")),
+        }
+    best["selection_failed"] = False
     return best
 
 
@@ -474,6 +576,7 @@ def _permutation_null_thresholds(
     quantile = float(cfg.get("null_quantile", 0.95))
     rng = np.random.default_rng(int(cfg.get("rng_seed", 0)) + 911)
     sparse_abs: list[float] = []
+    combined_abs: list[float] = []
     low_rank_abs: list[float] = []
     singular_values: list[float] = []
     null_block_length = max(1, int(cfg.get("null_block_length", cfg.get("bootstrap_block_length", 6))))
@@ -497,14 +600,17 @@ def _permutation_null_thresholds(
             max_lag=max_lag,
         )
         sparse_abs.extend(np.abs(null_sparse).reshape(-1).tolist())
+        combined_abs.extend(np.abs(null_sparse + null_low_rank).reshape(-1).tolist())
         low_rank_abs.extend(np.abs(null_low_rank).reshape(-1).tolist())
         if null_low_rank.size:
             singular_values.extend(np.linalg.svd(null_low_rank, compute_uv=False, full_matrices=False).tolist())
     sparse_threshold = float(np.quantile(np.asarray(sparse_abs or [0.0], dtype=np.float32), quantile))
+    combined_threshold = float(np.quantile(np.asarray(combined_abs or [0.0], dtype=np.float32), quantile))
     low_rank_threshold = float(np.quantile(np.asarray(low_rank_abs or [0.0], dtype=np.float32), quantile))
     rank_threshold = float(np.quantile(np.asarray(singular_values or [0.0], dtype=np.float32), quantile))
     return {
         "direct_edge_threshold": max(sparse_threshold, 1e-6),
+        "combined_edge_threshold": max(combined_threshold, 1e-6),
         "hidden_edge_threshold": max(low_rank_threshold, 1e-6),
         "rank_threshold": max(rank_threshold, 1e-6),
         "permutation_count": permutation_count,
@@ -561,18 +667,19 @@ def _stability_from_bootstrap(
     response_matrix: np.ndarray,
     sample_weights: np.ndarray,
     sample_pairs: list[tuple[int, int]],
-    sparse_matrix: np.ndarray,
+    reference_matrix: np.ndarray,
     cfg: dict[str, Any],
     unit_count: int,
     month_count: int,
     block_count: int,
     max_lag: int,
+    reference_component: str = "combined",
 ) -> tuple[np.ndarray, float]:
     draws = max(0, int(cfg.get("bootstrap_draws", 0)))
     if draws <= 0 or design_matrix.size == 0:
-        return np.ones_like(sparse_matrix, dtype=np.float32), 0.0
+        return np.ones_like(reference_matrix, dtype=np.float32), 0.0
     edge_threshold = float(cfg.get("edge_threshold", 0.05))
-    stability = np.zeros_like(sparse_matrix, dtype=np.float32)
+    stability = np.zeros_like(reference_matrix, dtype=np.float32)
     hidden_ranks: list[float] = []
     rng = np.random.default_rng(int(cfg.get("rng_seed", 0)))
     accepted_draws = 0
@@ -605,8 +712,9 @@ def _stability_from_bootstrap(
             block_count=block_count,
             max_lag=max_lag,
         )
-        same_sign = np.sign(draw_sparse) == np.sign(sparse_matrix)
-        active = np.abs(draw_sparse) >= edge_threshold
+        draw_matrix = draw_sparse if str(reference_component) == "sparse" else (draw_sparse + draw_low_rank)
+        same_sign = np.sign(draw_matrix) == np.sign(reference_matrix)
+        active = np.abs(draw_matrix) >= edge_threshold
         stability += (same_sign & active).astype(np.float32)
         if draw_low_rank.size:
             singular_values = np.linalg.svd(draw_low_rank, compute_uv=False, full_matrices=False)
@@ -655,6 +763,7 @@ def estimate_latent_temporal_scale_graph(
     cfg: dict[str, Any],
     phi_by_block: dict[str, float],
     uncertainty_tensor: np.ndarray | None = None,
+    month_axis: list[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     tensor = np.asarray(state_tensor, dtype=np.float32)
     if tensor.ndim == 2:
@@ -676,12 +785,63 @@ def estimate_latent_temporal_scale_graph(
             "selected_hyperparameters": {},
         }
         return bundle, {"target_block_ids": [], "blanket_block_ids": [], "blanket_indices": [], "phase3_member_canonical_names": []}
-    selected_cfg = _select_temporal_hyperparameters(
+    candidate_lags = [int(value) for value in list(cfg.get("candidate_max_lags") or [cfg.get("max_lag", 1)])]
+    sample_check = _build_sample_arrays(
         state_tensor=tensor,
         block_axis=block_axis,
         phi_by_block=phi_by_block,
-        cfg=cfg,
+        max_lag=max(1, min(candidate_lags) if candidate_lags else int(cfg.get("max_lag", 1))),
+        uncertainty_tensor=uncertainty_tensor,
+        month_axis=month_axis,
     )
+    if int(sample_check["effective_sample_count"]) < int(cfg.get("min_effective_samples", 16)):
+        bundle = {
+            "scale_name": scale_name,
+            "status": "unavailable",
+            "reason": "insufficient_samples",
+            "block_count": len(block_axis),
+            "max_lag": int(cfg.get("max_lag", 1)),
+            "edge_count": 0,
+            "hidden_driver_count": 0,
+            "edges": [],
+            "hidden_driver_rows": [],
+            "innovation_variance_rows": _innovation_variance_rows(tensor, block_axis, phi_by_block),
+            "feature_rows": _feature_rows(block_axis, int(cfg.get("max_lag", 1))),
+            "effective_sample_count": int(sample_check["effective_sample_count"]),
+            "uncertainty_available": uncertainty_tensor is not None,
+            "sample_weight_summary": {"min": 1.0, "median": 1.0, "max": 1.0},
+        }
+        return bundle, {"target_block_ids": [], "blanket_block_ids": [], "blanket_indices": [], "phase3_member_canonical_names": []}
+    selected_cfg = _select_temporal_hyperparameters(
+        state_tensor=tensor,
+        uncertainty_tensor=uncertainty_tensor,
+        block_axis=block_axis,
+        phi_by_block=phi_by_block,
+        cfg=cfg,
+        month_axis=month_axis,
+    )
+    if bool(selected_cfg.get("selection_failed", False)):
+        bundle = {
+            "scale_name": scale_name,
+            "status": "unavailable",
+            "reason": str(selected_cfg.get("reason") or "selection_failed"),
+            "block_count": len(block_axis),
+            "max_lag": int(cfg.get("max_lag", 1)),
+            "edge_count": 0,
+            "hidden_driver_count": 0,
+            "edges": [],
+            "hidden_driver_rows": [],
+            "innovation_variance_rows": _innovation_variance_rows(tensor, block_axis, phi_by_block),
+            "feature_rows": _feature_rows(block_axis, int(cfg.get("max_lag", 1))),
+            "effective_sample_count": 0,
+            "uncertainty_available": uncertainty_tensor is not None,
+            "selected_hyperparameters": {
+                "selection_metric": str(selected_cfg.get("selection_metric", cfg.get("selection_metric", "weighted_bic"))),
+                "selection_score": float("inf"),
+                "selection_failed": True,
+            },
+        }
+        return bundle, {"target_block_ids": [], "blanket_block_ids": [], "blanket_indices": [], "phase3_member_canonical_names": []}
 
     max_lag = int(selected_cfg.get("max_lag", cfg.get("max_lag", 1)))
     sample_arrays = _build_sample_arrays(
@@ -690,6 +850,7 @@ def estimate_latent_temporal_scale_graph(
         phi_by_block=phi_by_block,
         max_lag=max_lag,
         uncertainty_tensor=uncertainty_tensor,
+        month_axis=month_axis,
     )
     effective_samples = int(sample_arrays["effective_sample_count"])
     if effective_samples < int(cfg.get("min_effective_samples", 16)):
@@ -717,10 +878,10 @@ def estimate_latent_temporal_scale_graph(
         response_matrix=standardized_response,
         design_matrix=standardized_design,
         sample_weights=sample_arrays["sample_weights"],
-        ridge_penalty=float(selected_cfg.get("ridge_penalty", cfg.get("ridge_penalty", 0.1))),
+        ridge_penalty=0.0,
         sparse_penalty=float(selected_cfg.get("sparse_penalty", cfg.get("sparse_penalty", 0.05))),
         low_rank_penalty=float(selected_cfg.get("low_rank_penalty", cfg.get("low_rank_penalty", 0.05))),
-        decomposition_steps=int(cfg.get("decomposition_steps", 120)),
+        decomposition_steps=int(cfg.get("decomposition_steps", 160)),
         convergence_tol=float(cfg.get("convergence_tol", 1e-5)),
         block_count=len(block_axis),
         max_lag=max_lag,
@@ -732,42 +893,57 @@ def estimate_latent_temporal_scale_graph(
         sample_pairs=list(sample_arrays["sample_pairs"]),
         block_count=len(block_axis),
         max_lag=max_lag,
-        ridge_penalty=float(selected_cfg.get("ridge_penalty", cfg.get("ridge_penalty", 0.1))),
+        ridge_penalty=0.0,
         sparse_penalty=float(selected_cfg.get("sparse_penalty", cfg.get("sparse_penalty", 0.05))),
         low_rank_penalty=float(selected_cfg.get("low_rank_penalty", cfg.get("low_rank_penalty", 0.05))),
         cfg=cfg,
     )
+    sparse_edge_threshold = min(float(null_thresholds["direct_edge_threshold"]), float(cfg.get("edge_threshold", null_thresholds["direct_edge_threshold"])))
+    direct_edge_threshold = min(float(null_thresholds["combined_edge_threshold"]), float(cfg.get("edge_threshold", null_thresholds["combined_edge_threshold"])))
+    hidden_edge_threshold = min(
+        float(null_thresholds["hidden_edge_threshold"]),
+        float(cfg.get("hidden_driver_threshold", null_thresholds["hidden_edge_threshold"])),
+    )
+    rank_threshold = min(float(null_thresholds["rank_threshold"]), float(cfg.get("rank_threshold", null_thresholds["rank_threshold"])))
+    combined_matrix = sparse_matrix + low_rank_matrix
     stability_matrix, hidden_rank_mean = _stability_from_bootstrap(
         design_matrix=standardized_design,
         response_matrix=standardized_response,
         sample_weights=sample_arrays["sample_weights"],
         sample_pairs=sample_arrays["sample_pairs"],
-        sparse_matrix=sparse_matrix,
-        cfg={**cfg, **selected_cfg, "edge_threshold": float(null_thresholds["direct_edge_threshold"])},
+        reference_matrix=combined_matrix,
+        cfg={
+            **cfg,
+            **selected_cfg,
+            "edge_threshold": float(direct_edge_threshold),
+            "rank_threshold": float(rank_threshold),
+        },
         unit_count=int(tensor.shape[0]),
         month_count=int(tensor.shape[1]),
         block_count=len(block_axis),
         max_lag=max_lag,
+        reference_component="combined",
     )
-    sparse_rows = _matrix_rows(
-        sparse_matrix,
+    direct_edges = _matrix_rows(
+        combined_matrix,
         block_axis=block_axis,
         max_lag=max_lag,
-        threshold=float(null_thresholds["direct_edge_threshold"]),
+        threshold=float(direct_edge_threshold),
         stability_matrix=stability_matrix,
     )
-    direct_edges = list(sparse_rows)
     hidden_rows = _matrix_rows(
         low_rank_matrix,
         block_axis=block_axis,
         max_lag=max_lag,
-        threshold=float(null_thresholds["hidden_edge_threshold"]),
+        threshold=float(hidden_edge_threshold),
         stability_matrix=None,
     )
+    direct_edge_keys = {(str(row["source"]), str(row["target"]), int(row["lag"])) for row in direct_edges}
+    hidden_rows = [
+        row for row in hidden_rows if (str(row["source"]), str(row["target"]), int(row["lag"])) not in direct_edge_keys
+    ]
     singular_values = np.linalg.svd(low_rank_matrix, compute_uv=False, full_matrices=False) if low_rank_matrix.size else np.zeros((0,), dtype=np.float32)
-    estimated_hidden_rank = int(np.sum(singular_values >= float(null_thresholds["rank_threshold"])))
-    if estimated_hidden_rank == 0 and (hidden_rows or float(np.max(np.abs(low_rank_matrix))) > 1e-6):
-        estimated_hidden_rank = 1
+    estimated_hidden_rank = int(np.sum(singular_values >= float(rank_threshold)))
     hidden_driver_fallback_rows: list[dict[str, Any]] = []
     if not hidden_rows and estimated_hidden_rank > 0:
         hidden_driver_fallback_rows = _matrix_rows(
@@ -819,26 +995,43 @@ def estimate_latent_temporal_scale_graph(
         "feature_rows": _feature_rows(block_axis, max_lag),
         "effective_sample_count": effective_samples,
         "decomposition_objective": objective,
+        "direct_surface_kind": "combined_temporal_operator_nonoverlapping_hidden",
+        "sparse_adjacency": np.round(sparse_matrix.astype(np.float32), 6).tolist(),
         "combined_adjacency": np.round((sparse_matrix + low_rank_matrix).astype(np.float32), 6).tolist(),
         "low_rank_adjacency": np.round(low_rank_matrix.astype(np.float32), 6).tolist(),
         "estimated_hidden_rank": estimated_hidden_rank,
         "bootstrap_draws": int(cfg.get("bootstrap_draws", 0)),
         "bootstrap_hidden_rank_mean": round(hidden_rank_mean, 6),
-        "edge_threshold": float(null_thresholds["direct_edge_threshold"]),
-        "hidden_edge_threshold": float(null_thresholds["hidden_edge_threshold"]),
-        "rank_threshold": float(null_thresholds["rank_threshold"]),
+        "edge_threshold": float(direct_edge_threshold),
+        "hidden_edge_threshold": float(hidden_edge_threshold),
+        "rank_threshold": float(rank_threshold),
         "selected_hyperparameters": {
             "max_lag": int(selected_cfg["max_lag"]),
-            "ridge_penalty": round(float(selected_cfg["ridge_penalty"]), 6),
             "sparse_penalty": round(float(selected_cfg["sparse_penalty"]), 6),
             "low_rank_penalty": round(float(selected_cfg["low_rank_penalty"]), 6),
+            "lambda_s_fraction": round(float(selected_cfg.get("lambda_s_fraction", 0.0)), 6),
+            "lambda_l_fraction": round(float(selected_cfg.get("lambda_l_fraction", 0.0)), 6),
             "selection_score": round(float(selected_cfg["score"]), 6),
+            "selection_metric": str(selected_cfg.get("selection_metric", cfg.get("selection_metric", "weighted_bic"))),
+            "weighted_validation_loss": round(float(selected_cfg.get("weighted_validation_loss", 0.0)), 6),
+            "bic_penalty": round(float(selected_cfg.get("bic_penalty", 0.0)), 6),
+            "complexity": int(selected_cfg.get("complexity", 0)),
+            "nnz_sparse": int(selected_cfg.get("nnz_sparse", 0)),
+            "selected_hidden_rank": int(selected_cfg.get("hidden_rank", 0)),
+            "train_month_count": int(selected_cfg.get("train_month_count", 0)),
+            "valid_month_count": int(selected_cfg.get("valid_month_count", 0)),
         },
-        "selection_method": "blocked_forecast_fit_plus_unit_respecting_temporal_block_null",
+        "selection_method": "uncertainty_weighted_blocked_bic_plus_unit_respecting_temporal_block_null",
         "null_thresholds": {
             "direct_edge_threshold": round(float(null_thresholds["direct_edge_threshold"]), 6),
+            "sparse_edge_threshold": round(float(null_thresholds["direct_edge_threshold"]), 6),
+            "combined_edge_threshold": round(float(null_thresholds["combined_edge_threshold"]), 6),
             "hidden_edge_threshold": round(float(null_thresholds["hidden_edge_threshold"]), 6),
             "rank_threshold": round(float(null_thresholds["rank_threshold"]), 6),
+            "applied_sparse_edge_threshold": round(float(sparse_edge_threshold), 6),
+            "applied_direct_edge_threshold": round(float(direct_edge_threshold), 6),
+            "applied_hidden_edge_threshold": round(float(hidden_edge_threshold), 6),
+            "applied_rank_threshold": round(float(rank_threshold), 6),
             "null_quantile": round(float(null_thresholds["null_quantile"]), 6),
             "permutation_count": int(null_thresholds["permutation_count"]),
             "null_block_length": int(null_thresholds["null_block_length"]),
@@ -1072,6 +1265,8 @@ def build_latent_temporal_graph_outputs(*, phase15_dir: Path, cfg: dict[str, Any
     bundle["block_axis"] = list(block_axis)
     indicator_names_by_block = _indicator_names_by_block(phase15_dir, block_axis)
     uncertainty_tensors = _load_uncertainty_tensors(phase15_dir, block_axis)
+    month_axis = [str(value) for value in list(read_json(phase15_dir / "phase15_v2_uncertainty.json", default={}).get("month_axis") or [])]
+    bundle["month_axis"] = list(month_axis)
     target_block_ids = [block_id for block_id in list(cfg.get("phase3_target_block_ids") or []) if block_id in set(block_axis)] or list(block_axis)
     state_paths = {
         "province": phase15_dir / "phase15_v2_province_state_tensor.npz",
@@ -1101,6 +1296,7 @@ def build_latent_temporal_graph_outputs(*, phase15_dir: Path, cfg: dict[str, Any
                 indicator_names_by_block=indicator_names_by_block,
                 cfg=cfg,
                 phi_by_block=phi_by_block,
+                month_axis=month_axis,
             )
             if scale_bundle.get("status") == "completed":
                 merged_target_blocks.update(scale_blanket.get("direct_target_block_ids") or scale_blanket["target_block_ids"])
