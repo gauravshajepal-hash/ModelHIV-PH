@@ -4,6 +4,7 @@ from typing import Any
 
 __all__ = [
     "build_deep_pipeline_audit",
+    "build_extraction_quality_audit",
     "build_phase0_literature_review",
     "build_gold_standard_report",
     "run_module_test_report",
@@ -12,6 +13,12 @@ __all__ = [
 
 def build_deep_pipeline_audit(*args: Any, **kwargs: Any):
     from .deep_pipeline_audit import build_deep_pipeline_audit as _impl
+
+    return _impl(*args, **kwargs)
+
+
+def build_extraction_quality_audit(*args: Any, **kwargs: Any):
+    from .extraction_quality_audit import build_extraction_quality_audit as _impl
 
     return _impl(*args, **kwargs)
 

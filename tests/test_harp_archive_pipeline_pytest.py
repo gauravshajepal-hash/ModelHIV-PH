@@ -1,19 +1,41 @@
 from __future__ import annotations
 
+import json
+import shutil
+from pathlib import Path
+
+import epigraph_ph.harp_archive.doh_hiv_sti_archive as archive_module
+import epigraph_ph.harp_archive.pipeline as pipeline_module
+import requests
 from epigraph_ph.harp_archive.pipeline import (
     YEAR_RANGE,
     _backtest_assessment,
     _build_frozen_backtest_artifacts,
+    _promote_reused_archive_ocr_manifest_to_shared,
     _deduplicate_metric_rows,
+    _archive_source_signature,
+    _reuse_cached_archive_build_if_current,
     _extract_core_team_cascade,
     _extract_core_team_series,
     _extract_core_team_subnational_kp,
     _extract_generic_harp_snapshot,
     _read_tabular_seed_rows,
     _extract_surveillance_kp_profile,
+    _panel_from_metric_rows,
     run_harp_archive_build,
 )
-from epigraph_ph.runtime import ROOT_DIR, read_json
+from epigraph_ph.harp_archive.doh_hiv_sti_archive import (
+    archive_ocr_settings,
+    archive_seed_path,
+    build_diagnosis_flow_points,
+    build_harp_program_points,
+    download_archive_pdfs,
+    extract_diagnosis_summary_rows,
+    extract_continuum_metric_rows,
+    load_archive_seed_rows,
+    materialize_archive_ocr_payload,
+)
+from epigraph_ph.runtime import ROOT_DIR, read_json, write_json
 
 
 def test_extract_core_team_series_from_sample_page() -> None:
@@ -44,6 +66,7 @@ def test_extract_core_team_cascade_snapshot() -> None:
     metrics = {row["metric_name"]: row["value"] for row in rows}
     assert metrics["diagnosed_plhiv"] == 135026.0
     assert metrics["virally_suppressed"] == 41164.0
+    assert {row["time"] for row in rows} == {"2024-12"}
 
 
 def test_extract_surveillance_national_kp_profile() -> None:
@@ -151,9 +174,9 @@ def test_packaged_curated_seed_makes_archive_backtest_ready() -> None:
     assert assessment.get("backtest_ready") is True
     assert assessment.get("coverage_summary", {}).get("program_observed_year_count", 0) >= 5
     assert spec.get("ready_for_model_backtest") is True
-    assert spec.get("holdout_years") == [2024]
+    assert spec.get("holdout_years") == [2025]
     assert summary.get("comparison_count", 0) >= 4
-    assert any(int(row.get("year") or 0) == 2024 for row in panel.get("rows", []))
+    assert any(int(row.get("year") or 0) == 2025 for row in panel.get("rows", []))
 
 
 def test_packaged_seed_survives_manual_seed_dir_override(tmp_path) -> None:
@@ -166,6 +189,84 @@ def test_packaged_seed_survives_manual_seed_dir_override(tmp_path) -> None:
 
     assert any(row.get("source_id") == "curated_historical_harp_2017_2024" for row in manifest.get("sources", []))
     assert assessment.get("backtest_ready") is True
+
+
+def test_run_harp_archive_build_reuses_matching_prior_run_without_download(monkeypatch) -> None:
+    prior_run_id = "pytest-harp-archive-prior-reuse-source"
+    current_run_id = "pytest-harp-archive-prior-reuse-target"
+    prior_run_dir = ROOT_DIR / "artifacts" / "runs" / prior_run_id
+    current_run_dir = ROOT_DIR / "artifacts" / "runs" / current_run_id
+    shutil.rmtree(prior_run_dir, ignore_errors=True)
+    shutil.rmtree(current_run_dir, ignore_errors=True)
+
+    fake_archive_seed_rows = [
+        {
+            "source_id": "doh_hiv_sti_2024_2024_october_december",
+            "label": "2024 October - December",
+            "source_kind": "doh_hiv_sti_archive_pdf",
+            "source_label": "DOH HIV/STI Archive",
+            "source_year": 2024,
+            "source_url": "https://drive.google.com/file/d/test-file/view",
+            "file_id": "test-file",
+            "temporal_precision": "quarterly_snapshot",
+            "effective_month": "2024-12",
+            "start_month": "2024-10",
+            "end_month": "2024-12",
+        }
+    ]
+    prior_archive_dir = prior_run_dir / "harp_archive"
+    prior_artifact_paths = pipeline_module._archive_required_artifact_paths(prior_archive_dir)
+    for path in prior_artifact_paths.values():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.suffix.lower() == ".csv":
+            path.write_text("year,metric_name,value\n", encoding="utf-8")
+        else:
+            write_json(path, {})
+
+    build_cache_key = pipeline_module._archive_build_cache_key(fake_archive_seed_rows)
+    write_json(
+        prior_archive_dir / "archive_source_manifest.json",
+        {
+            "build_version": pipeline_module._HARP_ARCHIVE_BUILD_VERSION,
+            "build_cache_key": build_cache_key,
+            "source_manifest_rows": pipeline_module._archive_source_manifest_rows(fake_archive_seed_rows),
+            "sources": fake_archive_seed_rows,
+        },
+    )
+    write_json(
+        prior_archive_dir / "ocr_corpus_manifest.json",
+        {
+            "cache_settings": pipeline_module._archive_ocr_cache_settings(),
+            "documents": [],
+        },
+    )
+    write_json(
+        prior_archive_dir / "harp_archive_manifest.json",
+        {
+            "run_id": prior_run_id,
+            "plugin_id": "hiv",
+            "build_version": pipeline_module._HARP_ARCHIVE_BUILD_VERSION,
+            "build_cache_key": build_cache_key,
+            "artifact_paths": {key: str(path) for key, path in prior_artifact_paths.items()},
+        },
+    )
+    write_json(prior_archive_dir / "historical_harp_panel.json", {"rows": [{"year": 2024, "metric_name": "diagnosed_plhiv"}]})
+
+    monkeypatch.setattr(pipeline_module, "_materialize_local_sources", lambda *args, **kwargs: [])
+    monkeypatch.setattr(pipeline_module, "load_archive_seed_rows", lambda *args, **kwargs: list(fake_archive_seed_rows))
+
+    def _unexpected_download(*args, **kwargs):
+        raise AssertionError("download_archive_pdfs should not run when a matching prior build exists")
+
+    monkeypatch.setattr(pipeline_module, "download_archive_pdfs", _unexpected_download)
+
+    manifest = run_harp_archive_build(run_id=current_run_id, plugin_id="hiv")
+    current_archive_dir = current_run_dir / "harp_archive"
+    current_manifest = read_json(current_archive_dir / "harp_archive_manifest.json", default={})
+
+    assert manifest.get("reused_existing_build") is True
+    assert current_manifest.get("reused_from_run_id") == prior_run_id
+    assert (current_archive_dir / "historical_harp_panel.json").exists()
 
 
 def test_curated_estimated_plhiv_wins_dedup_for_historical_panel() -> None:
@@ -194,3 +295,658 @@ def test_curated_estimated_plhiv_wins_dedup_for_historical_panel() -> None:
 
     assert len(deduped) == 1
     assert deduped[0]["value"] == 189000
+
+
+def test_doh_ground_truth_overlay_wins_dedup_for_overlap_years() -> None:
+    rows = [
+        {
+            "year": 2024,
+            "metric_name": "alive_on_art",
+            "measurement_class": "program_observed_harp",
+            "geo": "Philippines",
+            "value": 90854,
+            "source_id": "core_team_2025",
+            "evidence_confidence": 0.99,
+        },
+        {
+            "year": 2024,
+            "metric_name": "alive_on_art",
+            "measurement_class": "program_observed_harp",
+            "geo": "Philippines",
+            "value": 90568,
+            "source_id": "doh_official_cascade_ground_truth_2018_2025",
+            "evidence_confidence": 1.0,
+        },
+    ]
+
+    deduped = _deduplicate_metric_rows(rows)
+
+    assert len(deduped) == 1
+    assert deduped[0]["value"] == 90568
+
+
+def test_doh_archive_seed_loads_and_preserves_quarter_ranges() -> None:
+    rows = load_archive_seed_rows(archive_seed_path())
+
+    assert len(rows) >= 150
+    q4_2024 = next(row for row in rows if row["label"] == "2024 October - December")
+    assert q4_2024["temporal_precision"] == "quarterly_snapshot"
+    assert q4_2024["effective_month"] == "2024-12"
+
+
+def test_build_diagnosis_flow_points_dedupes_and_normalizes_against_estimated_plhiv() -> None:
+    rows = [
+        {
+            "metric_name": "estimated_plhiv",
+            "time": "2023-01",
+            "value": 1000.0,
+            "source_id": "estimate_jan",
+            "source_label": "Estimate Jan",
+        },
+        {
+            "metric_name": "estimated_plhiv",
+            "time": "2023-02",
+            "value": 1100.0,
+            "source_id": "estimate_feb",
+            "source_label": "Estimate Feb",
+        },
+        {
+            "metric_name": "estimated_plhiv",
+            "time": "2023-03",
+            "value": 1200.0,
+            "source_id": "estimate_mar",
+            "source_label": "Estimate Mar",
+        },
+        {
+            "metric_name": "new_diagnosed_cases_monthly",
+            "time": "2023-01",
+            "value": 10.0,
+            "source_id": "old_jan",
+            "source_label": "Old January report",
+            "evidence_confidence": 0.4,
+            "temporal_precision": "monthly_snapshot",
+        },
+        {
+            "metric_name": "new_diagnosed_cases_monthly",
+            "time": "2023-01",
+            "value": 12.0,
+            "source_id": "new_jan",
+            "source_label": "New January report",
+            "evidence_confidence": 0.9,
+            "temporal_precision": "monthly_snapshot",
+        },
+        {
+            "metric_name": "new_diagnosed_cases_period",
+            "time": "2023-03",
+            "period_start": "2023-02",
+            "period_end": "2023-03",
+            "value": 33.0,
+            "source_id": "quarter_q1",
+            "source_label": "February to March report",
+            "evidence_confidence": 0.8,
+            "temporal_precision": "quarterly_snapshot",
+            "series_kind": "quarterly_snapshot",
+        },
+        {
+            "metric_name": "advanced_hiv_cases_period",
+            "time": "2023-03",
+            "period_start": "2023-02",
+            "period_end": "2023-03",
+            "value": 9.0,
+            "source_id": "advanced_q1",
+            "source_label": "Advanced cases February to March",
+            "evidence_confidence": 0.7,
+        },
+    ]
+
+    points = build_diagnosis_flow_points(rows)
+
+    assert len(points) == 2
+    january = next(point for point in points if point["period_start"] == "2023-01")
+    quarter = next(point for point in points if point["period_start"] == "2023-02")
+    assert january["source_id"] == "new_jan"
+    assert january["diagnosed_count"] == 12.0
+    assert january["estimated_plhiv"] == 1000.0
+    assert january["diagnosed_share"] == 0.012
+    assert quarter["estimated_plhiv"] == 1150.0
+    assert round(float(quarter["diagnosed_share"]), 6) == round(33.0 / 1150.0, 6)
+    assert quarter["advanced_hiv_cases"] == 9.0
+    assert round(float(quarter["advanced_hiv_share"]), 6) == round(9.0 / 33.0, 6)
+
+
+def test_download_archive_pdfs_tolerates_request_timeouts(tmp_path, monkeypatch) -> None:
+    class _TimeoutSession:
+        def get(self, *_args, **_kwargs):
+            raise requests.Timeout("simulated timeout")
+
+    monkeypatch.setattr(archive_module, "_download_session", lambda: _TimeoutSession())
+    rows = [
+        {
+            "source_id": "timeout_case",
+            "label": "2024 January",
+            "file_id": "fake-file-id",
+        }
+    ]
+
+    hydrated = download_archive_pdfs(archive_rows=rows, raw_dir=tmp_path, request_timeout_seconds=0.01, pause_seconds=0.0)
+
+    assert len(hydrated) == 1
+    assert hydrated[0]["download_status"] == "failed"
+    assert hydrated[0]["local_path"] == ""
+    assert "Timeout" in str(hydrated[0]["download_error"])
+
+
+def test_reuse_cached_archive_build_accepts_legacy_ocr_settings_manifest(tmp_path) -> None:
+    artifact_path = tmp_path / "historical_metric_rows.json"
+    artifact_path.write_text("{}", encoding="utf-8")
+    source_rows = [
+        {
+            "source_id": "archive_2024_q4",
+            "source_kind": "doh_hiv_sti_archive_pdf",
+            "label": "2024 October - December",
+            "local_path": "D:\\archive\\2024_q4.pdf",
+            "checksum": "abc123",
+            "download_status": "downloaded",
+        }
+    ]
+    write_json(
+        tmp_path / "harp_archive_manifest.json",
+        {
+            "build_version": "harp_archive_cache_v1",
+            "artifact_paths": {"historical_metric_rows": str(artifact_path)},
+        },
+    )
+    write_json(
+        tmp_path / "archive_source_manifest.json",
+        {
+            "build_version": "harp_archive_cache_v1",
+            "source_signature": _archive_source_signature(source_rows),
+        },
+    )
+    write_json(
+        tmp_path / "ocr_corpus_manifest.json",
+        {
+            "build_version": "harp_archive_cache_v1",
+            "ocr_settings": archive_ocr_settings(),
+        },
+    )
+
+    reused = _reuse_cached_archive_build_if_current(
+        archive_dir=tmp_path,
+        source_rows=source_rows,
+        force_refresh=False,
+    )
+
+    assert reused is not None
+    assert reused["reused_existing_build"] is True
+
+
+def test_shared_archive_ocr_cache_reuses_payload_across_run_dirs(tmp_path, monkeypatch) -> None:
+    shared_dir = tmp_path / "shared_ocr"
+    monkeypatch.setenv("EPIGRAPH_SHARED_OCR_DIR", str(shared_dir))
+
+    source_bytes = b"%PDF-1.4\nshared test payload\n"
+    run1_pdf = tmp_path / "run1" / "raw" / "report.pdf"
+    run2_pdf = tmp_path / "run2" / "raw" / "report.pdf"
+    run1_pdf.parent.mkdir(parents=True, exist_ok=True)
+    run2_pdf.parent.mkdir(parents=True, exist_ok=True)
+    run1_pdf.write_bytes(source_bytes)
+    run2_pdf.write_bytes(source_bytes)
+
+    call_counter = {"count": 0}
+
+    def fake_ocr(local_path: Path, *, force_ocr_every_page=None, max_pages=None):
+        call_counter["count"] += 1
+        return {
+            "local_path": str(local_path),
+            "checksum": archive_module.sha256_file(local_path),
+            "page_count": 1,
+            "pages": [{"page_number": 1, "text": "shared page text"}],
+            "runtime": archive_ocr_settings(),
+            "force_ocr_every_page": bool(force_ocr_every_page),
+            "max_pages": int(max_pages or 0),
+            "generated_at": "2026-04-01T00:00:00+00:00",
+        }
+
+    monkeypatch.setattr(archive_module, "ocr_archive_pdf_payload", fake_ocr)
+
+    first = materialize_archive_ocr_payload(
+        {"source_id": "report_run1", "label": "Run 1", "source_year": 2024, "source_url": "", "local_path": str(run1_pdf)},
+        ocr_dir=tmp_path / "run1" / "ocr_corpus",
+    )
+    second = materialize_archive_ocr_payload(
+        {"source_id": "report_run2", "label": "Run 2", "source_year": 2024, "source_url": "", "local_path": str(run2_pdf)},
+        ocr_dir=tmp_path / "run2" / "ocr_corpus",
+    )
+
+    assert call_counter["count"] == 1
+    assert first["from_cache"] is False
+    assert first["from_shared_cache"] is False
+    assert second["from_cache"] is True
+    assert second["from_shared_cache"] is True
+    assert first["shared_cache_key"] == second["shared_cache_key"]
+    assert first["shared_artifact_path"] == second["shared_artifact_path"]
+    assert Path(second["shared_artifact_path"]).exists()
+    assert Path(second["run_artifact_path"]).exists()
+    assert second["pages"][0]["text"] == "shared page text"
+
+
+def test_shared_archive_ocr_cache_invalidates_on_cache_settings_change(tmp_path, monkeypatch) -> None:
+    shared_dir = tmp_path / "shared_ocr"
+    monkeypatch.setenv("EPIGRAPH_SHARED_OCR_DIR", str(shared_dir))
+
+    pdf_path = tmp_path / "raw" / "report.pdf"
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    pdf_path.write_bytes(b"%PDF-1.4\nsettings invalidation\n")
+
+    call_counter = {"count": 0}
+
+    def fake_ocr(local_path: Path, *, force_ocr_every_page=None, max_pages=None):
+        call_counter["count"] += 1
+        return {
+            "local_path": str(local_path),
+            "checksum": archive_module.sha256_file(local_path),
+            "page_count": 1,
+            "pages": [{"page_number": 1, "text": f"cache-settings-{max_pages}"}],
+            "runtime": archive_ocr_settings(),
+            "force_ocr_every_page": bool(force_ocr_every_page),
+            "max_pages": int(max_pages or 0),
+            "generated_at": "2026-04-01T00:00:00+00:00",
+        }
+
+    monkeypatch.setattr(archive_module, "ocr_archive_pdf_payload", fake_ocr)
+
+    first = materialize_archive_ocr_payload(
+        {"source_id": "report_one", "label": "Report", "source_year": 2024, "source_url": "", "local_path": str(pdf_path)},
+        ocr_dir=tmp_path / "run1" / "ocr_corpus",
+        max_pages=1,
+    )
+    second = materialize_archive_ocr_payload(
+        {"source_id": "report_two", "label": "Report", "source_year": 2024, "source_url": "", "local_path": str(pdf_path)},
+        ocr_dir=tmp_path / "run2" / "ocr_corpus",
+        max_pages=2,
+    )
+
+    assert call_counter["count"] == 2
+    assert first["shared_cache_key"] != second["shared_cache_key"]
+    assert first["from_shared_cache"] is False
+    assert second["from_shared_cache"] is False
+
+
+def test_reused_archive_manifest_promotes_legacy_local_ocr_sidecars_to_shared(tmp_path, monkeypatch) -> None:
+    shared_dir = tmp_path / "shared_ocr"
+    monkeypatch.setenv("EPIGRAPH_SHARED_OCR_DIR", str(shared_dir))
+
+    archive_dir = tmp_path / "harp_archive"
+    run_artifact_path = archive_dir / "ocr_corpus" / "legacy_report.json"
+    run_artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_payload = {
+        "local_path": str(tmp_path / "raw" / "legacy_report.pdf"),
+        "checksum": "legacy-checksum",
+        "page_count": 1,
+        "pages": [{"page_number": 1, "text": "legacy cached text"}],
+        "runtime": archive_ocr_settings(),
+        "force_ocr_every_page": True,
+        "max_pages": 0,
+        "generated_at": "2026-04-01T00:00:00+00:00",
+    }
+    write_json(run_artifact_path, legacy_payload)
+    write_json(
+        archive_dir / "ocr_corpus_manifest.json",
+        {
+            "documents": [
+                {
+                    "source_id": "legacy_report",
+                    "ocr_artifact_path": str(run_artifact_path),
+                }
+            ]
+        },
+    )
+
+    _promote_reused_archive_ocr_manifest_to_shared(archive_dir)
+
+    expected_cache_settings = archive_module.archive_ocr_cache_settings(
+        force_ocr_every_page=True,
+        max_pages=0,
+    )
+    expected_key = archive_module.shared_archive_ocr_cache_key(
+        checksum="legacy-checksum",
+        cache_settings=expected_cache_settings,
+    )
+    expected_shared_path = archive_module.shared_archive_ocr_artifact_path(expected_key)
+
+    assert expected_shared_path.exists()
+
+
+def test_extract_continuum_metric_rows_from_recent_quarter_text() -> None:
+    report = {
+        "source_id": "probe_2024_q4",
+        "label": "2024 October - December",
+        "source_year": 2024,
+        "source_url": "",
+        "effective_month": "2024-12",
+        "start_month": "2024-10",
+        "end_month": "2024-12",
+        "temporal_precision": "quarterly_snapshot",
+    }
+    sample = (
+        "HIV & AIDS CONTINUUM OF CARE "
+        "there will be 215,400 estimated People Living with HIV (PLHIV) in the country. "
+        "As of December 2024, of the estimated PLHIV, 135,026 (63%) of the estimated PLHIV have been diagnosed. "
+        "Further, 90,854 (67%) PLHIV are currently on life-saving Antiretroviral Therapy (ART), "
+        "of which, 41,860 (46%) PLHIV have been tested for viral load (VL) in the past 12 months. "
+        "Among those tested for VL, 36,723 (88%) were virally suppressed."
+    )
+
+    rows = extract_continuum_metric_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["estimated_plhiv"] == 215400.0
+    assert by_metric["diagnosed_plhiv"] == 135026.0
+    assert by_metric["alive_on_art"] == 90854.0
+    assert by_metric["tested_for_viral_load"] == 41860.0
+    assert by_metric["virally_suppressed"] == 36723.0
+
+
+def test_extract_continuum_metric_rows_accepts_qualified_percent_phrasing() -> None:
+    report = {
+        "source_id": "probe_2025_q1",
+        "label": "2025 January - March",
+        "source_year": 2025,
+        "source_url": "",
+        "effective_month": "2025-03",
+        "start_month": "2025-01",
+        "end_month": "2025-03",
+        "temporal_precision": "quarterly_snapshot",
+    }
+    sample = (
+        "HIV & AIDS CONTINUUM OF CARE "
+        "The latest Philippine HIV estimates show that by the end of 2025, there will be 252,800 estimated People Living with HIV (PLHIV) in the country. "
+        "As of March 2025, 139,610 (55% of the estimated) PLHIV have been diagnosed or laboratory-confirmed. "
+        "Further, 92,712 (66% of the diagnosed) PLHIV are currently on life-saving Antiretroviral Therapy (ART), "
+        "of which, 41,786 (45%) PLHIV have been tested for viral load (VL) in the past 12 months. "
+        "Among those tested for VL, 36,630 (88%) were virally suppressed."
+    )
+
+    rows = extract_continuum_metric_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["estimated_plhiv"] == 252800.0
+    assert by_metric["diagnosed_plhiv"] == 139610.0
+    assert by_metric["alive_on_art"] == 92712.0
+    assert by_metric["tested_for_viral_load"] == 41786.0
+    assert by_metric["virally_suppressed"] == 36630.0
+
+
+def test_extract_diagnosis_summary_rows_captures_youth_quick_facts_table() -> None:
+    report = {
+        "source_id": "probe_2010_dec",
+        "label": "2010 December",
+        "source_year": 2010,
+        "source_url": "",
+        "effective_month": "2010-12",
+        "start_month": "2010-12",
+        "end_month": "2010-12",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "In December 2010, there were 174 confirmed HIV-positive individuals reported.\n"
+        "Table 1. Quick Facts\n"
+        "Demographic Data\n"
+        "Dec\n2010\n"
+        "Total Reported Cases\n174\n"
+        "Youth 15-24yo\n59\n1,213\n"
+        "Children <15yo\n0\n55\n"
+    )
+
+    rows = extract_diagnosis_summary_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["youth_cases_15_24_period"] == 59.0
+
+
+def test_extract_diagnosis_summary_rows_captures_post_2014_youth_narrative_layout() -> None:
+    report = {
+        "source_id": "sample_2019_q1",
+        "label": "2019 Q1 HARP",
+        "source_label": "2019 Q1 HARP",
+        "source_year": 2019,
+        "year": 2019,
+        "time": "2019-03",
+        "effective_month": "2019-03",
+        "start_month": "2019-01",
+        "end_month": "2019-03",
+        "period_start": "2019-01",
+        "period_end": "2019-03",
+        "temporal_precision": "quarter",
+        "geo": "Philippines",
+        "region": "national",
+        "province": "Philippines",
+        "evidence_confidence": 0.92,
+        "measurement_class": "surveillance_report",
+        "series_kind": "period_total",
+    }
+    sample = (
+        "HIV/AIDS & ART Registry of the Philippines\n"
+        "From January to March 2019, there were 2,946 newly diagnosed HIV-positive individuals reported.\n"
+        "Of the reported cases, 31% (926) were 15-24 years old.\n"
+    )
+
+    rows = extract_diagnosis_summary_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["youth_cases_15_24_period"] == 926.0
+
+
+def test_build_harp_program_points_uses_latest_time_and_estimate_rows() -> None:
+    metric_rows = [
+        {
+            "year": 2024,
+            "time": "2024-03",
+            "metric_name": "estimated_plhiv",
+            "value": 210000.0,
+            "measurement_class": "model_estimate",
+            "source_id": "seed_a",
+            "source_label": "Seed A",
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "estimated_plhiv",
+            "value": 215400.0,
+            "measurement_class": "model_estimate",
+            "source_id": "seed_b",
+            "source_label": "Seed B",
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "diagnosed_plhiv",
+            "value": 135026.0,
+            "measurement_class": "program_observed_harp",
+            "source_id": "seed_b",
+            "source_label": "Q4 2024",
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "alive_on_art",
+            "value": 90854.0,
+            "measurement_class": "program_observed_harp",
+            "source_id": "seed_b",
+            "source_label": "Q4 2024",
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "tested_for_viral_load",
+            "value": 41860.0,
+            "measurement_class": "program_observed_harp",
+            "source_id": "seed_b",
+            "source_label": "Q4 2024",
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "virally_suppressed",
+            "value": 36723.0,
+            "measurement_class": "program_observed_harp",
+            "source_id": "seed_b",
+            "source_label": "Q4 2024",
+        },
+    ]
+
+    points = build_harp_program_points(metric_rows)
+
+    assert len(points) == 1
+    assert points[0]["month"] == "2024-12"
+    assert points[0]["estimated_plhiv"] == 215400.0
+
+
+def test_panel_from_metric_rows_prefers_latest_time_within_year() -> None:
+    metric_rows = [
+        {
+            "year": 2024,
+            "time": "2024-03",
+            "metric_name": "diagnosed_plhiv",
+            "value": 120000.0,
+            "measurement_class": "program_observed_harp",
+            "geo": "Philippines",
+            "source_id": "older",
+            "evidence_confidence": 0.8,
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "diagnosed_plhiv",
+            "value": 135026.0,
+            "measurement_class": "program_observed_harp",
+            "geo": "Philippines",
+            "source_id": "newer",
+            "evidence_confidence": 0.7,
+        },
+    ]
+
+    panel = _panel_from_metric_rows(metric_rows)
+    row_2024 = next(row for row in panel["rows"] if row["year"] == 2024)
+
+    assert row_2024["diagnosed_plhiv"] == 135026.0
+    assert row_2024["time"] == "2024-12"
+
+
+def test_panel_from_metric_rows_prefers_official_seed_over_later_lower_priority_row() -> None:
+    metric_rows = [
+        {
+            "year": 2024,
+            "time": "2024-01",
+            "metric_name": "estimated_plhiv",
+            "value": 215400.0,
+            "measurement_class": "model_estimate",
+            "geo": "Philippines",
+            "source_id": "doh_official_cascade_ground_truth_2018_2025",
+            "evidence_confidence": 1.0,
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "estimated_plhiv",
+            "value": 216900.0,
+            "measurement_class": "model_estimate",
+            "geo": "Philippines",
+            "source_id": "core_team_2025",
+            "evidence_confidence": 0.99,
+        },
+    ]
+
+    panel = _panel_from_metric_rows(metric_rows)
+    row_2024 = next(row for row in panel["rows"] if row["year"] == 2024)
+
+    assert row_2024["estimated_plhiv"] == 215400.0
+    assert row_2024["time"] == "2024-01"
+
+
+def test_deduplicate_metric_rows_preserves_distinct_months() -> None:
+    rows = [
+        {
+            "year": 2024,
+            "time": "2024-03",
+            "metric_name": "diagnosed_plhiv",
+            "measurement_class": "program_observed_harp",
+            "geo": "Philippines",
+            "value": 120000.0,
+            "source_id": "q1",
+            "evidence_confidence": 0.8,
+        },
+        {
+            "year": 2024,
+            "time": "2024-12",
+            "metric_name": "diagnosed_plhiv",
+            "measurement_class": "program_observed_harp",
+            "geo": "Philippines",
+            "value": 135026.0,
+            "source_id": "q4",
+            "evidence_confidence": 0.8,
+        },
+    ]
+
+    deduped = _deduplicate_metric_rows(rows)
+
+    assert len(deduped) == 2
+
+
+def test_reuse_cached_archive_build_if_current_accepts_matching_manifest(tmp_path) -> None:
+    archive_dir = tmp_path / "harp_archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    artifact = archive_dir / "historical_metric_rows.json"
+    artifact.write_text("[]", encoding="utf-8")
+    source_rows = [
+        {
+            "source_id": "seed_a",
+            "source_kind": "packaged_csv",
+            "label": "Seed A",
+            "local_path": str(tmp_path / "seed_a.csv"),
+            "checksum": "abc123",
+            "download_status": "downloaded",
+        }
+    ]
+    source_manifest = {
+        "generated_at": "2026-04-01T00:00:00Z",
+        "build_version": "harp_archive_cache_v1",
+        "source_signature": [
+            {
+                "source_id": "seed_a",
+                "source_kind": "packaged_csv",
+                "label": "Seed A",
+                "local_path": str(tmp_path / "seed_a.csv"),
+                "checksum": "abc123",
+                "download_status": "downloaded",
+            }
+        ],
+        "sources": source_rows,
+    }
+    ocr_manifest = {
+        "generated_at": "2026-04-01T00:00:00Z",
+        "build_version": "harp_archive_cache_v1",
+        "ocr_settings": archive_ocr_settings(),
+        "documents": [],
+    }
+    manifest = {
+        "build_version": "harp_archive_cache_v1",
+        "artifact_paths": {
+            "historical_metric_rows": str(artifact),
+            "archive_source_manifest": str(archive_dir / "archive_source_manifest.json"),
+            "ocr_corpus_manifest": str(archive_dir / "ocr_corpus_manifest.json"),
+        },
+    }
+    (archive_dir / "archive_source_manifest.json").write_text(json.dumps(source_manifest), encoding="utf-8")
+    (archive_dir / "ocr_corpus_manifest.json").write_text(json.dumps(ocr_manifest), encoding="utf-8")
+    (archive_dir / "harp_archive_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    reused = _reuse_cached_archive_build_if_current(
+        archive_dir=archive_dir,
+        source_rows=source_rows,
+        force_refresh=False,
+    )
+
+    assert reused is not None
+    assert reused["reused_existing_build"] is True

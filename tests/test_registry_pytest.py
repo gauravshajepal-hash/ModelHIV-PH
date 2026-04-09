@@ -53,6 +53,10 @@ def test_subparameter_registry_contract(phase0_registry_run_dir) -> None:
     for row in rows:
         assert row.get("subparameter_id")
         assert row.get("source_bank") in allowed_banks
+        assert row.get("candidate_block") is not None
+        assert row.get("expected_sign") in {"positive", "negative", "neutral"}
+        assert row.get("measurement_role") in {"direct_indicator", "proxy_indicator", "context_only"}
+        assert row.get("observation_operator")
         details = row.get("literature_ref_details") or []
         if row.get("source_bank") != "phase0_extracted" and details:
             assert all(has_verifiable_locator(detail) for detail in details)

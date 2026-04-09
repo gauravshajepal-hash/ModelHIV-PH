@@ -16,7 +16,7 @@ from epigraph_ph.phase0.pipeline import run_phase0_build
 from epigraph_ph.phase1.pipeline import run_phase1_build
 from epigraph_ph.phase15.pipeline import run_phase15_build
 from epigraph_ph.phase2.pipeline import run_phase2_build
-from epigraph_ph.phase3.pipeline import run_phase3_build, run_phase3_frozen_backtest
+from epigraph_ph.phase3._lineage.pipeline import run_phase3_build, run_phase3_frozen_backtest
 from epigraph_ph.phase4.pipeline import run_phase4_build
 from epigraph_ph.registry.sources import build_source_registry
 from epigraph_ph.registry.subparameters import build_subparameter_registry

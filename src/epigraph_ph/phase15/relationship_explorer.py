@@ -7,6 +7,8 @@ from typing import Any
 from epigraph_ph.runtime import ensure_dir, write_json
 
 try:
+    import matplotlib
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 except Exception:  # pragma: no cover
     plt = None
@@ -123,4 +125,5 @@ def build_relationship_explorer_artifacts(
         "semantic_relationship_index": str(index_path),
         "semantic_relationship_bubble_chart": chart_path,
         "relationship_count": len(relationship_rows),
+        "rows": relationship_rows,
     }

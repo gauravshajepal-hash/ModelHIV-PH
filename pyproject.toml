@@ -42,6 +42,9 @@ gpu_optional = [
   "cudf-cu12>=25.0; platform_system != 'Windows'",
 ]
 
+[project.scripts]
+epigraph = "epigraph_ph.cli.main:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 

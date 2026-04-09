@@ -25,15 +25,26 @@ from epigraph_ph.adapters.structured_sources import get_structured_source_adapte
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.geography import (
     geo_resolution_label,
+    infer_region_code,
     infer_philippines_geo,
     is_national_geo,
     normalize_geo_label,
     philippines_modeling_geos,
 )
 from epigraph_ph.phase0.boundary_models import build_phase0_family_candidate_banks, validate_phase0_candidate_rows
+from epigraph_ph.phase0.evidence_artifacts import (
+    build_block_sign_priors,
+    build_candidate_evidence_rows,
+    build_literature_context_rows,
+    build_measurement_manifest,
+)
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows
 from epigraph_ph.phase0.prompts import build_phase0_prompt_library
 from epigraph_ph.phase0.shard_materializer import build_slice_payload
+from epigraph_ph.phase0.structured_numeric_sources import (
+    build_philhealth_portal_artifacts,
+    build_structured_numeric_candidates,
+)
 from epigraph_ph.validate.literature_review import build_phase0_literature_review
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
 from epigraph_ph.registry.models import LiteratureRefDetail, has_verifiable_locator
@@ -2671,7 +2682,16 @@ def _official_anchor_observation(
         f"{geo_text} {parameter_text}",
         default_country_focus=True,
     )
-    canonical_geo = normalize_geo_label(geo_match.geo or "Philippines", default_country_focus=True)
+    raw_geo = str(geo_text or "").strip()
+    canonical_geo = normalize_geo_label(geo_match.geo or raw_geo or "Philippines", default_country_focus=True)
+    if raw_geo and raw_geo.lower() not in {"philippines", "national"} and str(canonical_geo).strip().lower() in {"philippines", "national", ""}:
+        canonical_geo = raw_geo
+    region_value = geo_match.region
+    province_value = geo_match.province
+    if canonical_geo == raw_geo and raw_geo:
+        inferred_region = infer_region_code(raw_geo, raw_geo)
+        if inferred_region:
+            region_value = inferred_region
     semantics = _infer_measurement_semantics(parameter_text, parameter_text, unit)
     return {
         "observation_id": f"obs-{block['block_id']}-{observation_suffix}",
@@ -2684,8 +2704,8 @@ def _official_anchor_observation(
         "unit": unit,
         "population": "",
         "geo": canonical_geo,
-        "region": geo_match.region,
-        "province": geo_match.province,
+        "region": region_value,
+        "province": province_value,
         "geo_mentions": geo_match.mentions or [geo_text],
         "time": time,
         **semantics,
@@ -2710,11 +2730,11 @@ def _extract_who_core_team_anchors(block: dict[str, Any], source: dict[str, Any]
         if len(counts) >= 5:
             values = [float(item.replace(",", "")) for item in counts[:5]]
             labels = [
-                ("estimated_plhiv", "Estimated PLHIV", "population_count"),
-                ("diagnosed", "Diagnosed PLHIV", "case_count"),
-                ("alive_on_art", "Alive on ART", "case_count"),
-                ("tested_for_viral_load", "Tested for Viral Load", "viral_load"),
-                ("virally_suppressed", "Virally Suppressed", "viral_load"),
+                ("estimated_plhiv", "Estimated PLHIV", "estimated_plhiv"),
+                ("diagnosed", "Diagnosed PLHIV", "diagnosed_plhiv"),
+                ("alive_on_art", "Alive on ART", "alive_on_art"),
+                ("tested_for_viral_load", "Tested for Viral Load", "tested_for_viral_load"),
+                ("virally_suppressed", "Virally Suppressed", "virally_suppressed"),
             ]
             for (suffix, label, canonical_name), value in zip(labels, values, strict=False):
                 observations.append(
@@ -2732,10 +2752,10 @@ def _extract_who_core_team_anchors(block: dict[str, Any], source: dict[str, Any]
                 )
         shares = re.findall(r"(?<!\d)(\d{1,2})%", text)
         share_labels = [
-            ("diagnosed_share", "Diagnosed among estimated PLHIV", "testing_rate"),
-            ("art_share", "Alive on ART among diagnosed PLHIV", "testing_rate"),
-            ("tested_share", "Tested for Viral Load among alive on ART", "testing_rate"),
-            ("suppressed_share", "Virally Suppressed among tested for Viral Load", "testing_rate"),
+            ("diagnosed_share", "Diagnosed among estimated PLHIV", "diagnosed_share"),
+            ("art_share", "Alive on ART among diagnosed PLHIV", "art_share"),
+            ("tested_share", "Tested for Viral Load among alive on ART", "tested_share"),
+            ("suppressed_share", "Virally Suppressed among tested for Viral Load", "suppressed_share"),
         ]
         for (suffix, label, canonical_name), raw_value in zip(share_labels, shares[:4], strict=False):
             observations.append(
@@ -2841,7 +2861,7 @@ def _extract_surveillance_anchors(block: dict[str, Any], source: dict[str, Any])
                         source=source,
                         observation_suffix=f"age_share_{age_band}",
                         parameter_text=f"Share of new infections among age band {age_band}",
-                        canonical_name="testing_rate",
+                        canonical_name="incident_age_share",
                         value=pct,
                         unit="percent",
                         geo_text="Philippines",
@@ -2864,7 +2884,7 @@ def _extract_surveillance_anchors(block: dict[str, Any], source: dict[str, Any])
                             source=source,
                             observation_suffix=f"kp_share_{kp_group}",
                             parameter_text=f"Share of PLHIV among key population {kp_group}",
-                            canonical_name="testing_rate",
+                            canonical_name="kp_share",
                             value=float(pct_match.group(1)),
                             unit="percent",
                             geo_text="Philippines",
@@ -3218,15 +3238,36 @@ def _phase0_alignment_bundle(
     else:
         semantic_scores = np.zeros((0,), dtype=np.float32)
     canonical_names = sorted({str(row.get("canonical_name") or "numeric_observation") for row in candidate_rows}) or ["numeric_observation"]
+    def _alignment_province_label(row: dict[str, Any]) -> str:
+        source = source_rows.get(str(row.get("source_id") or ""), {})
+        province_text = str(row.get("province") or "").strip()
+        if province_text:
+            return (
+                normalize_geo_label(
+                    province_text,
+                    default_country_focus=bool(source.get("query_geo_focus") == "philippines"),
+                )
+                or province_text
+            )
+        geo_text = str(row.get("geo") or "").strip()
+        return (
+            normalize_geo_label(
+                geo_text,
+                default_country_focus=bool(source.get("query_geo_focus") == "philippines"),
+            )
+            or "unknown"
+        )
     province_values: set[str] = set()
     for row in candidate_rows:
-        normalized_geo = normalize_geo_label(
-            str(row.get("geo") or ""),
-            default_country_focus=bool(source_rows.get(str(row.get("source_id") or ""), {}).get("query_geo_focus") == "philippines"),
-        ) or "unknown"
-        geo_resolution = geo_resolution_label(normalized_geo)
-        if geo_resolution in {"province", "city", "national"} or normalized_geo == "unknown":
-            province_values.add(normalized_geo)
+        province_label = _alignment_province_label(row)
+        if not province_label:
+            continue
+        if (
+            str(row.get("province") or "").strip() == ""
+            and geo_resolution_label(province_label) == "region"
+        ):
+            continue
+        province_values.add(province_label)
     if plugin_id == "hiv":
         province_values.update(philippines_modeling_geos(include_national=True))
     provinces = sorted(province_values) or ["unknown"]
@@ -3252,10 +3293,7 @@ def _phase0_alignment_bundle(
     for idx, row in enumerate(candidate_rows):
         canonical_name = str(row.get("canonical_name") or "numeric_observation")
         source = source_rows.get(str(row.get("source_id") or ""), {})
-        province = normalize_geo_label(
-            str(row.get("geo") or ""),
-            default_country_focus=bool(source.get("query_geo_focus") == "philippines"),
-        ) or "unknown"
+        province = _alignment_province_label(row)
         if geo_resolution_label(province) == "region":
             continue
         month = _alignment_month_for_row(row)
@@ -4480,6 +4518,13 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
                 }
             )
     chunk_soft_candidates = _extract_chunk_soft_candidates(parsed_chunks, source_rows)
+    structured_numeric_payload = build_structured_numeric_candidates(
+        raw_dir=raw_dir,
+        source_rows=source_rows,
+        plugin_id=plugin_id,
+    )
+    numeric_rows.extend(list(structured_numeric_payload.get("numeric_rows") or []))
+    candidate_rows.extend(list(structured_numeric_payload.get("candidate_rows") or []))
     numeric_rows = _ensure_unique_ids(numeric_rows, "observation_id")
     candidate_rows.extend(chunk_soft_candidates)
     candidate_rows = _ensure_unique_ids(candidate_rows, "candidate_id")
@@ -4500,12 +4545,31 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
     family_candidate_banks, family_candidate_bank_manifest = build_phase0_family_candidate_banks(validated_candidates)
     family_bank_dir = ensure_dir(extracted_dir / "candidate_banks")
     family_bank_paths: dict[str, str] = {}
+    evidence_rows = build_candidate_evidence_rows(validated_candidates=validated_candidates, plugin_id=plugin_id)
+    block_sign_priors = build_block_sign_priors(evidence_rows=evidence_rows, plugin_id=plugin_id)
+    measurement_manifest = build_measurement_manifest(evidence_rows=evidence_rows, plugin_id=plugin_id)
+    philhealth_portal_artifacts = build_philhealth_portal_artifacts(
+        candidate_rows=validated_candidates,
+        collector_rows=list((structured_numeric_payload.get("summary") or {}).get("collectors") or []),
+    )
     _write_rows(extracted_dir / "numeric_observations.json", numeric_rows)
     _write_rows(extracted_dir / "canonical_parameter_candidates.json", validated_candidates)
     _write_rows(extracted_dir / "chunk_soft_candidates.json", validated_chunk_soft_candidates)
     _write_rows(extracted_dir / "rejected_canonical_parameter_candidates.json", rejected_candidates)
+    write_json(extracted_dir / "evidence_indicator_rows.json", evidence_rows)
+    write_json(extracted_dir / "block_sign_priors.json", block_sign_priors)
+    write_json(extracted_dir / "measurement_manifest.json", measurement_manifest)
     write_json(extracted_dir / "canonicalization_summary.json", canonicalization_summary)
     write_json(extracted_dir / "boundary_validation_report.json", boundary_validation_summary)
+    write_json(extracted_dir / "structured_numeric_candidate_summary.json", structured_numeric_payload.get("summary") or {})
+    write_json(
+        extracted_dir / "philhealth_portal_candidate_rows.json",
+        philhealth_portal_artifacts.get("candidate_rows") or [],
+    )
+    write_json(
+        extracted_dir / "philhealth_portal_metric_summary.json",
+        philhealth_portal_artifacts.get("summary") or {},
+    )
     for family_name, family_rows in family_candidate_banks.items():
         family_slug = re.sub(r"[^a-z0-9]+", "_", family_name.strip().lower()).strip("_")
         family_path = family_bank_dir / f"candidate_bank_{family_slug}.json"
@@ -4548,8 +4612,14 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             "canonical_parameter_candidates": str(extracted_dir / "canonical_parameter_candidates.json"),
             "chunk_soft_candidates": str(extracted_dir / "chunk_soft_candidates.json"),
             "rejected_canonical_parameter_candidates": str(extracted_dir / "rejected_canonical_parameter_candidates.json"),
+            "evidence_indicator_rows": str(extracted_dir / "evidence_indicator_rows.json"),
+            "block_sign_priors": str(extracted_dir / "block_sign_priors.json"),
+            "measurement_manifest": str(extracted_dir / "measurement_manifest.json"),
             "canonicalization_summary": str(extracted_dir / "canonicalization_summary.json"),
             "boundary_validation_report": str(extracted_dir / "boundary_validation_report.json"),
+            "structured_numeric_candidate_summary": str(extracted_dir / "structured_numeric_candidate_summary.json"),
+            "philhealth_portal_candidate_rows": str(extracted_dir / "philhealth_portal_candidate_rows.json"),
+            "philhealth_portal_metric_summary": str(extracted_dir / "philhealth_portal_metric_summary.json"),
             "family_candidate_banks_manifest": str(extracted_dir / "family_candidate_banks_manifest.json"),
             **{key: (value if isinstance(value, str) else value.get("value_path", "")) for key, value in tensor_artifacts.items()},
         },
@@ -4563,6 +4633,7 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
         notes=[
             f"skip_live_normalizer:{skip_live_normalizer}",
             f"chunk_soft_candidates:{len(validated_chunk_soft_candidates)}",
+            f"structured_numeric_candidates:{len(list(structured_numeric_payload.get('candidate_rows') or []))}",
             f"candidate_rows_rejected:{len(rejected_candidates)}",
             "phase0_tensor_bundle:enabled",
         ],
@@ -4577,10 +4648,16 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             _parquet_sidecar_path(extracted_dir / "canonical_parameter_candidates.json"),
             extracted_dir / "chunk_soft_candidates.json",
             _parquet_sidecar_path(extracted_dir / "chunk_soft_candidates.json"),
+            extracted_dir / "evidence_indicator_rows.json",
+            extracted_dir / "block_sign_priors.json",
+            extracted_dir / "measurement_manifest.json",
             extracted_dir / "canonicalization_summary.json",
             extracted_dir / "rejected_canonical_parameter_candidates.json",
             _parquet_sidecar_path(extracted_dir / "rejected_canonical_parameter_candidates.json"),
             extracted_dir / "boundary_validation_report.json",
+            extracted_dir / "structured_numeric_candidate_summary.json",
+            extracted_dir / "philhealth_portal_candidate_rows.json",
+            extracted_dir / "philhealth_portal_metric_summary.json",
             extracted_dir / "family_candidate_banks_manifest.json",
             extracted_dir / "aligned_tensor.npz",
             extracted_dir / "quality_weights.npz",
@@ -4720,10 +4797,17 @@ def run_phase0_build(
     )
     resource_usage.append(_phase0_resource_snapshot("literature_review"))
     phase0_dir = ensure_dir(ctx.run_dir / "phase0")
+    extracted_dir = ensure_dir(phase0_dir / "extracted")
     alignment_summary = read_json(phase0_dir / "extracted" / "alignment_summary.json", default={})
     source_manifest = read_json(phase0_dir / "raw" / "source_manifest.json", default=[])
     scored_records = read_json(ctx.run_dir / "wide_sweep" / "scored_records.json", default=[])
     candidates = read_json(phase0_dir / "extracted" / "canonical_parameter_candidates.json", default=[])
+    evidence_rows = read_json(extracted_dir / "evidence_indicator_rows.json", default=[])
+    literature_context_rows = build_literature_context_rows(literature_review_payload=literature_review, plugin_id=plugin_id)
+    merged_evidence_rows = list(evidence_rows) + list(literature_context_rows)
+    write_json(extracted_dir / "evidence_indicator_rows.json", merged_evidence_rows)
+    write_json(extracted_dir / "block_sign_priors.json", build_block_sign_priors(evidence_rows=merged_evidence_rows, plugin_id=plugin_id))
+    write_json(extracted_dir / "measurement_manifest.json", build_measurement_manifest(evidence_rows=merged_evidence_rows, plugin_id=plugin_id))
     aligned_tensor = load_tensor_artifact(phase0_dir / "extracted" / "aligned_tensor.npz")
     quality_weights = load_tensor_artifact(phase0_dir / "extracted" / "quality_weights.npz")
     province_axis = alignment_summary.get("province_axis", [])
@@ -4880,7 +4964,15 @@ def run_phase0_build(
         **boundary_paths,
         **support_artifacts,
         "literature_review": str(ctx.run_dir / "phase0" / "literature_review" / "literature_review_by_silo.json"),
+        "evidence_indicator_rows": str(extracted_dir / "evidence_indicator_rows.json"),
+        "block_sign_priors": str(extracted_dir / "block_sign_priors.json"),
+        "measurement_manifest": str(extracted_dir / "measurement_manifest.json"),
     }
+    phase0_manifest["source_count"] = len(source_manifest)
+    phase0_manifest["document_count"] = len(read_json(phase0_dir / "parsed" / "parsed_chunk_manifest.json", default=[]))
+    phase0_manifest["parsed_block_count"] = len(read_json(phase0_dir / "parsed" / "parsed_document_blocks.json", default=[]))
+    phase0_manifest["numeric_observation_count"] = len(read_json(extracted_dir / "numeric_observations.json", default=[]))
+    phase0_manifest["canonical_candidate_count"] = len(candidates)
     write_json(phase0_dir / "phase0_manifest.json", phase0_manifest)
     ctx.update_manifest(phase0=phase0_manifest)
     ctx.record_stage_outputs(
@@ -4897,6 +4989,9 @@ def run_phase0_build(
             Path(boundary_paths["boundary_shape_summary"]),
             ctx.run_dir / "phase0" / "literature_review" / "literature_review_by_silo.json",
             ctx.run_dir / "phase0" / "literature_review" / "literature_review_by_silo.md",
+            extracted_dir / "evidence_indicator_rows.json",
+            extracted_dir / "block_sign_priors.json",
+            extracted_dir / "measurement_manifest.json",
             *[Path(path) for path in support_artifacts.values()],
         ],
     )

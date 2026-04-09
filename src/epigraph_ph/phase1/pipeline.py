@@ -8,7 +8,9 @@ import numpy as np
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.geography import geo_resolution_label, infer_philippines_geo, infer_region_code, is_national_geo, normalize_geo_label
+from epigraph_ph.latent_blocks import annotate_latent_indicator_fields
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase1.latent_observability import build_direct_contextual_split, build_latent_observability_audit
 from epigraph_ph.phase1.normalization_helpers import (
     AGE_TOKENS,
     KP_TOKENS,
@@ -29,6 +31,7 @@ from epigraph_ph.phase1.normalization_helpers import (
     text_blob as _text_blob,
     time_components as _time_components,
 )
+from epigraph_ph.phase1.observation_noise import build_observation_noise_model
 from epigraph_ph.runtime import (
     RunContext,
     choose_jax_device,
@@ -509,6 +512,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "soft_ontology_tags": Counter(),
             "linkage_targets": Counter(),
             "evidence_classes": Counter(),
+            "candidate_blocks": Counter(),
+            "expected_signs": Counter(),
+            "measurement_roles": Counter(),
         }
     )
 
@@ -521,17 +527,33 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         sex = row.get("sex") or _infer_from_tokens(blob, SEX_TOKENS, default="")
         age_band = row.get("age_band") or _infer_from_tokens(blob, AGE_TOKENS, default="")
         kp_group = row.get("kp_group") or _infer_from_tokens(blob, KP_TOKENS, default="remaining_population")
-        geo = normalize_geo_label(str(row.get("geo") or ""), default_country_focus="philippines" in blob) or ("Philippines" if "philippines" in blob else "")
+        raw_geo = str(row.get("geo") or "").strip()
+        geo = normalize_geo_label(raw_geo, default_country_focus="philippines" in blob) or ("Philippines" if "philippines" in blob else "")
+        if raw_geo and raw_geo.lower() not in {"philippines", "national"} and str(geo).strip().lower() in {"philippines", "national", ""}:
+            geo = raw_geo
         geo_match = infer_philippines_geo(f"{geo} {blob}", default_country_focus="philippines" in blob)
         geo_resolution = _geo_resolution(str(geo))
         region = str(row.get("region") or geo_match.region or _infer_region(str(geo), blob))
         province = str(row.get("province") or geo_match.province or (geo if geo_resolution in {"province", "city"} else ""))
+        if geo_resolution == "unknown" and province and geo and geo.strip().lower() != province.strip().lower():
+            geo_resolution = "city"
         domain_family = _infer_domain_family(row, blob)
         pathway_family = _infer_pathway_family(row, blob)
         evidence_class = _evidence_class(row)
         evidence_weight = _evidence_weight(row, evidence_class)
         reliability_class = _source_reliability_class(row, evidence_class)
         bias_fields = _bias_fields(row, reliability_class, time_resolution, geo_resolution)
+        latent_fields = annotate_latent_indicator_fields(
+            {
+                **dict(row),
+                "value": raw_numeric_value,
+                "model_numeric_value": model_numeric_value,
+                "time": normalized_time,
+                "time_resolution": time_resolution,
+                "source_title": row.get("source_title") or row.get("title") or "",
+            },
+            plugin_id,
+        )
         normalized = {
             "normalized_id": row.get("subparameter_id") or row.get("candidate_id"),
             "canonical_name": row.get("canonical_name") or "unknown",
@@ -572,6 +594,15 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "soft_subparameter_hints": list(row.get("soft_subparameter_hints") or []),
             "linkage_targets": list(row.get("linkage_targets") or []),
             "literature_ref_details": list(row.get("literature_ref_details") or []),
+            "candidate_block": latent_fields["candidate_block"],
+            "candidate_block_display_name": latent_fields["candidate_block_display_name"],
+            "block_source": latent_fields["block_source"],
+            "expected_sign": latent_fields["expected_sign"],
+            "sign_source": latent_fields["sign_source"],
+            "measurement_role": latent_fields["measurement_role"],
+            "role_reason": latent_fields["role_reason"],
+            "observation_operator": latent_fields["observation_operator"],
+            "literature_basis": list(latent_fields.get("literature_basis") or []),
             **bias_fields,
         }
         normalized_rows.append(normalized)
@@ -590,11 +621,14 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         roll["domain_families"][normalized["domain_family"]] += 1
         roll["pathway_families"][normalized["pathway_family"]] += 1
         roll["evidence_classes"][normalized["evidence_class"]] += 1
+        roll["candidate_blocks"][normalized["candidate_block"]] += 1
+        roll["expected_signs"][normalized["expected_sign"]] += 1
+        roll["measurement_roles"][normalized["measurement_role"]] += 1
         for tag in normalized["soft_ontology_tags"]:
             roll["soft_ontology_tags"][tag] += 1
         for target in normalized["linkage_targets"]:
             roll["linkage_targets"][target] += 1
-        for axis_name in ("geo_resolution", "geo", "country", "region", "time_resolution", "sex", "age_band", "kp_group", "domain_family", "pathway_family", "evidence_class", "source_bank", "normalized_unit"):
+        for axis_name in ("geo_resolution", "geo", "country", "region", "time_resolution", "sex", "age_band", "kp_group", "domain_family", "pathway_family", "evidence_class", "source_bank", "normalized_unit", "candidate_block", "expected_sign", "measurement_role"):
             value = normalized.get(axis_name)
             if value not in {"", None}:
                 extra_axis_values[axis_name].add(str(value))
@@ -621,6 +655,43 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             ),
             4,
         )
+
+    observation_noise_model = build_observation_noise_model(
+        normalized_rows=normalized_rows,
+        plugin_id=plugin_id,
+    )
+    observation_noise_cfg = dict(_phase1_cfg().get("observation_noise", {}) or {})
+    residual_eps = float(observation_noise_cfg.get("residual_eps") or 1e-6)
+    precision_floor = float(observation_noise_cfg.get("precision_floor") or 0.05)
+    weight_floor = float(observation_noise_cfg.get("weight_floor") or 0.10)
+    noise_rows_by_id = {
+        str(row.get("normalized_id") or ""): dict(row)
+        for row in list(observation_noise_model.get("rows") or [])
+        if str(row.get("normalized_id") or "")
+    }
+    for row in normalized_rows:
+        noise_row = noise_rows_by_id.get(str(row.get("normalized_id") or ""))
+        if not noise_row:
+            continue
+        row["observation_noise_log_variance"] = float(noise_row["observation_noise_log_variance"])
+        row["observation_noise_variance"] = float(noise_row["observation_noise_variance"])
+        row["observation_precision"] = float(noise_row["observation_precision"])
+        row["observation_weight"] = float(noise_row["observation_weight"])
+        row["noise_support_level"] = str(noise_row["support_level"])
+    for row in normalized_rows:
+        if "observation_precision" in row and "observation_weight" in row:
+            continue
+        fallback_precision = max(
+            precision_floor,
+            float(row.get("evidence_weight") or 0.0) * max(0.0, 1.0 - float(row.get("bias_penalty") or 0.0)),
+        )
+        fallback_weight = max(weight_floor, min(1.0, fallback_precision))
+        fallback_variance = 1.0 / max(fallback_precision, residual_eps)
+        row["observation_noise_log_variance"] = float(np.log(max(fallback_variance, residual_eps)))
+        row["observation_noise_variance"] = float(fallback_variance)
+        row["observation_precision"] = float(fallback_precision)
+        row["observation_weight"] = float(fallback_weight)
+        row["noise_support_level"] = str(row.get("noise_support_level") or "low_support_prior")
 
     province_axis = [normalize_geo_label(str(item), default_country_focus=is_national_geo(str(item))) or str(item) for item in (axis_catalogs["province"] or ["Philippines"])]
     province_axis = list(dict.fromkeys(province_axis))
@@ -697,16 +768,29 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
                 "soft_ontology_tags": dict(roll["soft_ontology_tags"]),
                 "linkage_targets": dict(roll["linkage_targets"]),
                 "evidence_classes": dict(roll["evidence_classes"]),
+                "candidate_blocks": dict(roll["candidate_blocks"]),
+                "expected_signs": dict(roll["expected_signs"]),
+                "measurement_roles": dict(roll["measurement_roles"]),
             }
         )
 
     axis_catalogs.update({axis: sorted(values) for axis, values in sorted(extra_axis_values.items())})
+    latent_observability_audit = build_latent_observability_audit(
+        normalized_rows=normalized_rows,
+        parameter_catalog=parameter_catalog,
+        plugin_id=plugin_id,
+    )
+    direct_contextual_split = build_direct_contextual_split(
+        normalized_rows=normalized_rows,
+        plugin_id=plugin_id,
+    )
     normalization_report = {
         "normalized_row_count": len(normalized_rows),
         "tensor_row_count": len(tensor_rows),
         "model_numeric_coverage": round(sum(1 for row in normalized_rows if row["model_numeric_value"] is not None) / len(normalized_rows), 4) if normalized_rows else 0.0,
         "direct_measurement_count": sum(1 for row in normalized_rows if row["is_direct_measurement"]),
         "anchor_eligible_count": sum(1 for row in normalized_rows if row["is_anchor_eligible"]),
+        "measurement_role_counts": dict(Counter(row["measurement_role"] for row in normalized_rows)),
         "source_reliability_counts": dict(Counter(row["source_reliability_class"] for row in normalized_rows)),
         "promotion_hint_counts": dict(Counter(row["promotion_eligibility_hint"] for row in normalized_rows)),
         "domain_family_counts": dict(Counter(row["domain_family"] for row in normalized_rows)),
@@ -718,6 +802,7 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         "denominator_map": denominator_map,
         "preprocess_meta": preprocess_meta,
         "source_registry_mode": source_registry_mode,
+        "observation_noise_summary": dict(observation_noise_model.get("summary") or {}),
     }
 
     backend_map = detect_backends()
@@ -765,6 +850,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     write_json(phase1_dir / "parameter_catalog.json", parameter_catalog)
     write_json(phase1_dir / "axis_catalogs.json", axis_catalogs)
     write_json(phase1_dir / "tensor_rows.json", tensor_rows)
+    write_json(phase1_dir / "latent_observability_audit.json", latent_observability_audit)
+    write_json(phase1_dir / "direct_vs_contextual_split.json", direct_contextual_split)
+    write_json(phase1_dir / "observation_noise_model.json", observation_noise_model)
     tensor_schema = {
         "axes": axis_catalogs,
         "value_fields": {
@@ -799,6 +887,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "parameter_catalog": str(phase1_dir / "parameter_catalog.json"),
             "axis_catalogs": str(phase1_dir / "axis_catalogs.json"),
             "tensor_rows": str(phase1_dir / "tensor_rows.json"),
+            "latent_observability_audit": str(phase1_dir / "latent_observability_audit.json"),
+            "direct_vs_contextual_split": str(phase1_dir / "direct_vs_contextual_split.json"),
+            "observation_noise_model": str(phase1_dir / "observation_noise_model.json"),
             "tensor_schema": str(phase1_dir / "tensor_schema.json"),
             "normalization_report": str(phase1_dir / "normalization_report.json"),
             "interop_report": str(phase1_dir / "interop_report.json"),
@@ -830,6 +921,14 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
                 "name": "truth_fields_present",
                 "passed": all("source_reliability_class" in row and "bias_penalty" in row for row in normalized_rows),
             },
+            {
+                "name": "observation_noise_fields_present",
+                "passed": all(
+                    ("observation_precision" in row and "observation_weight" in row)
+                    for row in normalized_rows
+                    if row.get("model_numeric_value") is not None
+                ),
+            },
         ],
         truth_sources=sorted(set(str(row.get("source_reliability_class") or "") for row in normalized_rows if row.get("source_reliability_class"))),
         stage_manifest_path=str(phase1_dir / "phase1_manifest.json"),
@@ -851,6 +950,7 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         checks=[
             {"name": "gold_standard_profile_declared", "passed": bool(gold_profile)},
             {"name": "measurement_uncertainty_fields_present", "passed": all("source_reliability_class" in row and "bias_penalty" in row for row in normalized_rows)},
+            {"name": "observation_noise_model_present", "passed": bool(observation_noise_model.get("rows"))},
             {"name": "denominator_alignment_present", "passed": bool(np.isfinite(denominator_tensor_np).all()) and denominator_tensor_np.shape == standardized_tensor_np.shape and bool(np.any(denominator_tensor_np != 1.0))},
             {"name": "missing_mask_emitted", "passed": missing_mask.shape == standardized_tensor_np.shape},
             {"name": "robust_scaling_documented", "passed": "phase1_preprocessing:robust_tensor_scaling" in manifest.get("notes", []) and bool(normalization_report)},
@@ -927,6 +1027,12 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
                 "path": str(phase1_dir / "tensor_schema.json"),
                 "expected_keys": ["axes", "value_fields", "default_value_field"],
             },
+            {
+                "name": "observation_noise_model",
+                "kind": "json_dict",
+                "path": str(phase1_dir / "observation_noise_model.json"),
+                "expected_keys": ["enabled", "rows", "coefficient_rows", "summary"],
+            },
         ],
         summary={
             "normalized_row_count": len(normalized_rows),
@@ -950,6 +1056,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             phase1_dir / "parameter_catalog.json",
             phase1_dir / "axis_catalogs.json",
             phase1_dir / "tensor_rows.json",
+            phase1_dir / "latent_observability_audit.json",
+            phase1_dir / "direct_vs_contextual_split.json",
+            phase1_dir / "observation_noise_model.json",
             phase1_dir / "tensor_schema.json",
             phase1_dir / "normalization_report.json",
             phase1_dir / "interop_report.json",
