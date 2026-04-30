@@ -461,6 +461,26 @@ def _estimated_plhiv_by_quarter(metric_rows: list[dict[str, Any]]) -> dict[str, 
     }
 
 
+def _estimated_plhiv_provenance_by_quarter(metric_rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    selected_rows = _primary_metric_rows(metric_rows, metric_name="estimated_plhiv")
+    return {
+        quarter: {
+            "series_kind": row.get("series_kind"),
+            "measurement_class": row.get("measurement_class"),
+            "source_quality_tier": row.get("source_quality_tier"),
+            "source_bank": row.get("source_bank"),
+            "source_id": row.get("source_id"),
+            "source_label": row.get("source_label"),
+            "source_ids": [str(row.get("source_id"))] if row.get("source_id") else [],
+            "source_labels": [str(row.get("source_label"))] if row.get("source_label") else [],
+            "extraction_method": row.get("extraction_method"),
+            "value_semantics": row.get("value_semantics"),
+            "is_direct_measurement": row.get("is_direct_measurement"),
+        }
+        for quarter, row in selected_rows.items()
+    }
+
+
 def _diagnosis_flow_targets_by_quarter(archive_dir: Path) -> dict[str, dict[str, Any]]:
     payload = read_json(archive_dir / "diagnosis_flow_points.json", default={})
     points = list(payload.get("points") or []) if isinstance(payload, dict) else list(payload or [])
@@ -557,6 +577,12 @@ def build_national_reset_observation_table_payload(
                 "aggregation_method": source_row.get("aggregation_method"),
                 "months_covered": source_row.get("months_covered"),
                 "quality_filter": quality_filter,
+                "measurement_class": source_row.get("measurement_class"),
+                "source_quality_tier": source_row.get("source_quality_tier"),
+                "source_bank": source_row.get("source_bank"),
+                "extraction_method": source_row.get("extraction_method"),
+                "value_semantics": source_row.get("value_semantics"),
+                "is_direct_measurement": source_row.get("is_direct_measurement"),
             }
             record["metric_provenance"][metric_name] = provenance
             record["source_ids"].extend(provenance["source_ids"])
@@ -601,6 +627,7 @@ def build_national_reset_observation_table_payload(
         "summary": summary,
         "rows": rows,
         "estimated_plhiv_by_quarter": _estimated_plhiv_by_quarter(metric_rows),
+        "estimated_plhiv_provenance_by_quarter": _estimated_plhiv_provenance_by_quarter(metric_rows),
         "diagnosis_flow_targets_by_quarter": diagnosis_flow_targets,
     }
 

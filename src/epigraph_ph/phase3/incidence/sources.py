@@ -18,6 +18,8 @@ class IncidenceAuditInputs:
     population_candidate_rows: list[dict[str, Any]]
     normalized_subparameters_path: Path | None
     normalized_subparameter_rows: list[dict[str, Any]]
+    official_population_denominator_path: Path | None
+    official_population_denominator_rows: list[dict[str, Any]]
 
 
 def _candidate_bank_paths() -> list[Path]:
@@ -86,6 +88,47 @@ def _load_normalized_subparameter_rows(path: Path | None) -> list[dict[str, Any]
     return []
 
 
+def _official_population_denominator_path() -> Path | None:
+    preferred_candidates = (
+        ROOT_DIR / "src" / "epigraph_ph" / "phase3" / "incidence" / "official_population_denominator_phl_wpp2024_2010_2025.json",
+        ROOT_DIR / "src" / "epigraph_ph" / "phase3" / "incidence" / "official_population_denominator_phl_wb_2010_2024.json",
+    )
+    for candidate in preferred_candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _load_official_population_denominator_rows(path: Path | None) -> list[dict[str, Any]]:
+    if path is None:
+        return []
+    payload = read_json(path, default={})
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("rows", [])
+    if not isinstance(rows, list):
+        return []
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        year = row.get("year")
+        population_total = row.get("population_total")
+        if year in (None, "") or population_total in (None, ""):
+            continue
+        try:
+            normalized.append(
+                {
+                    "year": int(year),
+                    "population_total": float(population_total),
+                }
+            )
+        except (TypeError, ValueError):
+            continue
+    normalized.sort(key=lambda row: int(row["year"]))
+    return normalized
+
+
 def load_incidence_audit_inputs(ctx: IncidenceResearchContext) -> IncidenceAuditInputs:
     historical_metric_rows = read_json(ctx.harp_archive_dir / "historical_metric_rows.json", default=[])
     ground_truth_summary = read_json(ctx.harp_archive_dir / "ground_truth_summary.json", default={})
@@ -93,6 +136,8 @@ def load_incidence_audit_inputs(ctx: IncidenceResearchContext) -> IncidenceAudit
     population_candidate_rows = _load_population_candidate_rows(population_candidate_bank_path)
     normalized_subparameters_path = _resolve_normalized_subparameters(ctx)
     normalized_subparameter_rows = _load_normalized_subparameter_rows(normalized_subparameters_path)
+    official_population_denominator_path = _official_population_denominator_path()
+    official_population_denominator_rows = _load_official_population_denominator_rows(official_population_denominator_path)
     return IncidenceAuditInputs(
         ctx=ctx,
         historical_metric_rows=[dict(row) for row in historical_metric_rows if isinstance(row, dict)],
@@ -101,4 +146,6 @@ def load_incidence_audit_inputs(ctx: IncidenceResearchContext) -> IncidenceAudit
         population_candidate_rows=population_candidate_rows,
         normalized_subparameters_path=normalized_subparameters_path,
         normalized_subparameter_rows=normalized_subparameter_rows,
+        official_population_denominator_path=official_population_denominator_path,
+        official_population_denominator_rows=official_population_denominator_rows,
     )

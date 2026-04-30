@@ -1,14 +1,28 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
 
 from epigraph_ph.cli.main import build_parser
+from epigraph_ph.phase3.frontier.aggregation_diagnostic import run_an03a
 from epigraph_ph.phase3.frontier.age_research import run_age_01a, run_age_01b, run_age_01c
 from epigraph_ph.phase3.frontier.analytics import compute_an01a_outputs
+from epigraph_ph.phase3.frontier.cli import run_phase3_transition_report
+from epigraph_ph.phase3.frontier.denoising_diagnostic import run_an03b
 from epigraph_ph.phase3.frontier.artifacts import build_transition_research_context
 from epigraph_ph.phase3.frontier.decomposition import run_decomp_01a, run_decomp_01b, run_decomp_01c, run_decomp_01d, run_decomp_01e, run_decomp_01f
+from epigraph_ph.phase3.frontier.hierarchical_autoresearch import _hmba03_auxiliary_gate, run_hmba_00
+from epigraph_ph.phase3.frontier.integrated_autoresearch import (
+    CandidateConfig,
+    _build_blocked_time_contract as _build_integrated_blocked_time_contract,
+    _branch_candidate_configs,
+    _build_candidate_configs,
+    _build_snapshot,
+    _serialize_year_metrics,
+)
+from epigraph_ph.phase3.frontier.strict_diagnosis_kernel_research import _build_blocked_time_contract, _build_candidates, _budget_multipliers
 from epigraph_ph.phase3.frontier.analytics import _factor_transition_rows, run_an02b, run_an02c
 from epigraph_ph.phase3.frontier.peak_windows import run_peak_01a, run_peak_01b, run_peak_01c, run_peak_01d, run_peak_01e, run_peak_01f
 from epigraph_ph.phase3.frontier.sources import load_transition_research_inputs
@@ -96,6 +110,227 @@ def test_transition_research_cli_and_phase1_5_alias_parse() -> None:
         ]
     )
     assert tr_v2_ablation_args.phase3_transition_research_command == "tr-v2-03"
+
+    rolling_report_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-report",
+            "rolling-origin",
+            "--run-id",
+            "tr-report-rolling",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert rolling_report_args.phase3_transition_report_command == "rolling-origin"
+
+    early_partial_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-report",
+            "early-history-partial",
+            "--run-id",
+            "tr-report-early",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert early_partial_args.phase3_transition_report_command == "early-history-partial"
+
+    dashboard_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-report",
+            "benchmark-dashboard",
+            "--run-id",
+            "tr-report-dashboard",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert dashboard_args.phase3_transition_report_command == "benchmark-dashboard"
+
+    phase3_v2_int_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "phase3-v2-int",
+            "--run-id",
+            "phase3-v2-int-parse",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert phase3_v2_int_args.phase3_transition_research_command == "phase3-v2-int"
+
+    an03a_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "an-03a",
+            "--run-id",
+            "tr-parse-an03a",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert an03a_args.phase3_transition_research_command == "an-03a"
+
+    an03b_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "an-03b",
+            "--run-id",
+            "tr-parse-an03b",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert an03b_args.phase3_transition_research_command == "an-03b"
+
+    an03c_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "an-03c",
+            "--run-id",
+            "tr-parse-an03c",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert an03c_args.phase3_transition_research_command == "an-03c"
+
+    diag01a_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "diag-01a",
+            "--run-id",
+            "tr-parse-diag01a",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert diag01a_args.phase3_transition_research_command == "diag-01a"
+
+    diag01b_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "diag-01b",
+            "--run-id",
+            "tr-parse-diag01b",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert diag01b_args.phase3_transition_research_command == "diag-01b"
+
+    diag02a_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "diag-02a",
+            "--run-id",
+            "tr-parse-diag02a",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert diag02a_args.phase3_transition_research_command == "diag-02a"
+
+    diag02b_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "diag-02b",
+            "--run-id",
+            "tr-parse-diag02b",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert diag02b_args.phase3_transition_research_command == "diag-02b"
+
+    diag02c_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "diag-02c",
+            "--run-id",
+            "tr-parse-diag02c",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert diag02c_args.phase3_transition_research_command == "diag-02c"
+
+    hmba00_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "hmba-00",
+            "--run-id",
+            "tr-parse-hmba00",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert hmba00_args.phase3_transition_research_command == "hmba-00"
+
+    hmba01_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "hmba-01",
+            "--run-id",
+            "tr-parse-hmba01",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert hmba01_args.phase3_transition_research_command == "hmba-01"
+
+    hmba02_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "hmba-02",
+            "--run-id",
+            "tr-parse-hmba02",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert hmba02_args.phase3_transition_research_command == "hmba-02"
+
+    hmba03_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "hmba-03",
+            "--run-id",
+            "tr-parse-hmba03",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert hmba03_args.phase3_transition_research_command == "hmba-03"
+
+    hmba03a_args = parser.parse_args(
+        [
+            "phase3",
+            "transition-research",
+            "hmba-03a",
+            "--run-id",
+            "tr-parse-hmba03a",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert hmba03a_args.phase3_transition_research_command == "hmba-03a"
 
     mech_args = parser.parse_args(
         [
@@ -318,6 +553,164 @@ def test_transition_research_cli_and_phase1_5_alias_parse() -> None:
     )
     assert peak_kp_modifier_args.phase3_transition_research_command == "peak-01e"
 
+
+def test_phase3_v2_int_snapshot_and_candidate_space() -> None:
+    parser = build_parser()
+    ctx = build_transition_research_context(
+        run_id="phase3-v2-int-snapshot",
+        plugin_id="hiv",
+        experiment_id="PHASE3-V2-INT-explicit-incidence-autoresearch",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    snapshot = _build_snapshot(ctx)
+    candidate_configs = _build_candidate_configs(snapshot)
+    branch_candidate_configs = _branch_candidate_configs(snapshot, candidate_configs[0])
+
+    assert snapshot.historical_quarters
+    assert snapshot.historical_quarters[0] == "2010-Q1"
+    assert snapshot.historical_end_quarter.startswith("2025-")
+    assert snapshot.historical_years[0] == 2010
+    assert snapshot.historical_years[-1] == 2025
+    assert snapshot.target_horizon.endswith("Q4")
+    assert snapshot.population_denominator.shape[0] == len(snapshot.model_quarters)
+    assert candidate_configs
+    assert {config.diagnosis_family for config in candidate_configs} == {"hazard"}
+    assert {config.care_family for config in candidate_configs} == {"markov"}
+    assert {config.diagnosis_family for config in branch_candidate_configs} == {"hazard", "delay"}
+    assert {config.care_family for config in branch_candidate_configs} == {"markov", "semi_markov"}
+
+
+def test_phase3_v2_int_blocked_time_contract_and_provenance() -> None:
+    ctx = build_transition_research_context(
+        run_id="phase3-v2-int-publication-contract",
+        plugin_id="hiv",
+        experiment_id="PHASE3-V2-INT-explicit-incidence-autoresearch",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    snapshot = _build_snapshot(ctx)
+    contract = _build_integrated_blocked_time_contract(snapshot)
+
+    assert contract.train_diagnosis_quarters
+    assert contract.validation_quarters
+    assert contract.holdout_quarters
+    assert contract.train_end_quarter == contract.train_diagnosis_quarters[-1]
+    assert contract.validation_start_quarter == contract.validation_quarters[0]
+    assert contract.validation_end_quarter == contract.validation_quarters[-1]
+    assert contract.holdout_start_quarter == contract.holdout_quarters[0]
+    assert contract.holdout_end_quarter == contract.holdout_quarters[-1]
+    assert contract.train_end_quarter < contract.validation_start_quarter
+    assert contract.validation_end_quarter < contract.holdout_start_quarter
+    assert contract.holdout_end_quarter == snapshot.evidence_provenance["metrics"]["new_diagnosed_cases_period"]["last_observed_quarter"]
+    assert snapshot.evidence_provenance["metrics"]["estimated_plhiv"]["role"] == "auxiliary_latent_population_size"
+    assert snapshot.evidence_provenance["metrics"]["estimated_plhiv"]["evidence_tier_counts"]["model_estimated_total"] > 0
+    assert "archive_program_observation_metrics" in snapshot.evidence_provenance["summary"]["direct_vs_contextual_split"]
+    assert snapshot.phase2_insertion_contract["structured_prior_status"] is False
+    assert snapshot.phase2_insertion_contract["province_resolved_hidden_dynamics_status"] is False
+
+
+def test_phase3_v2_int_yearly_reporting_marks_unobserved_diagnosis_flow() -> None:
+    ctx = build_transition_research_context(
+        run_id="phase3-v2-int-yearly-contract",
+        plugin_id="hiv",
+        experiment_id="PHASE3-V2-INT-explicit-incidence-autoresearch",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    snapshot = _build_snapshot(ctx)
+    serialized = _serialize_year_metrics(
+        snapshot,
+        {
+            "2010": {"primary_loss": 0.1, "diag_flow_loss": float("inf")},
+            "2025": {"primary_loss": 0.2, "diag_flow_loss": 0.3},
+        },
+    )
+
+    assert serialized["2010"]["diag_flow_loss"] is None
+    assert serialized["2010"]["diagnosis_flow_observed"] is False
+    assert serialized["2010"]["diagnosis_flow_status"] == "not observed"
+    assert serialized["2025"]["diag_flow_loss"] == 0.3
+    assert serialized["2025"]["diagnosis_flow_observed"] is True
+    assert serialized["2025"]["diagnosis_flow_status"] == "observed"
+
+
+def test_hmba03_auxiliary_gate_rejects_absolute_spikes() -> None:
+    module_summaries = {
+        "U_to_D": {"feature_ids": ["f1"], "depth_metrics": {"national": 4.09, "region": 0.73, "province": 0.47}},
+        "D_to_A": {"feature_ids": ["f2"], "depth_metrics": {"national": 0.20, "region": 0.15, "province": 0.10}},
+    }
+    depth_map = {"U_to_D": "national", "D_to_A": "province"}
+    gate = _hmba03_auxiliary_gate(module_summaries, depth_map, absolute_ceiling=0.287076)
+
+    assert gate["passes_auxiliary_gate"] is False
+    assert gate["max_selected_module_rmse"] > gate["absolute_auxiliary_ceiling"]
+    assert any(str(row["module_name"]) == "U_to_D" for row in gate["spike_modules"])
+
+
+def test_diag_01a_blocked_time_contract_and_candidate_widths() -> None:
+    ctx = build_transition_research_context(
+        run_id="diag-01a-contract",
+        plugin_id="hiv",
+        experiment_id="PHASE3-V2-INT-explicit-incidence-autoresearch",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    snapshot = _build_snapshot(ctx)
+    contract = _build_blocked_time_contract(snapshot)
+    reference_config = CandidateConfig(
+        candidate_id="diag-delay-care-markov-h05-obsoff",
+        diagnosis_family="delay",
+        care_family="markov",
+        hidden_rank=5,
+        use_observation_covariates=False,
+    )
+    candidates = _build_candidates(reference_config, contract)
+
+    assert contract.train_diagnosis_quarters
+    assert contract.validation_quarters
+    assert contract.holdout_quarters
+    assert contract.train_end_quarter < contract.validation_start_quarter
+    assert contract.validation_end_quarter < contract.holdout_start_quarter
+    assert len(contract.train_diagnosis_quarters) + len(contract.validation_quarters) + len(contract.holdout_quarters) == len(
+        contract.diagnosis_flow_observed_quarters
+    )
+    assert {candidate.diagnosis_kind for candidate in candidates} == {"hazard", "delay", "strict"}
+    strict_widths = [candidate.kernel_width for candidate in candidates if candidate.diagnosis_kind == "strict"]
+    assert strict_widths[0] == 2
+    assert strict_widths[-1] == len(contract.train_diagnosis_quarters)
+
+
+def test_diag_01b_budget_ladder_is_predeclared_and_monotone() -> None:
+    ctx = build_transition_research_context(
+        run_id="diag-01b-contract",
+        plugin_id="hiv",
+        experiment_id="PHASE3-V2-INT-explicit-incidence-autoresearch",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    snapshot = _build_snapshot(ctx)
+    contract = _build_blocked_time_contract(snapshot)
+    multipliers = _budget_multipliers(contract)
+
+    assert multipliers[0] == 1.0
+    assert multipliers == sorted(multipliers)
+    assert len(set(multipliers)) == len(multipliers)
+    assert multipliers[-1] == float(max(2, len(contract.train_diagnosis_quarters)))
+    assert all(next_value <= current_value * 2.0 for current_value, next_value in zip(multipliers, multipliers[1:]))
+
+
+def test_rebuilt_harp_archive_expands_early_national_support() -> None:
+    parser = build_parser()
+    metric_rows = json.loads(
+        (Path("D:/EpiGraph_PH/artifacts/runs") / SOURCE_RUN_ID / "harp_archive" / "historical_metric_rows.json").read_text(encoding="utf-8")
+    )
+    national_rows = [dict(row) for row in metric_rows if str(row.get("region") or "").lower() == "national"]
+
+    diagnosed_times = {str(row.get("time")) for row in national_rows if str(row.get("metric_name")) == "diagnosed_plhiv"}
+    art_rows = [row for row in national_rows if str(row.get("metric_name")) == "alive_on_art"]
+    total_times = {str(row.get("time")) for row in national_rows if str(row.get("metric_name")) == "estimated_plhiv"}
+
+    assert "2010-12" in diagnosed_times
+    assert any(str(row.get("time")) == "2012-06" and float(row.get("value") or 0.0) == 2761.0 for row in art_rows)
+    assert any(str(row.get("time")) == "2012-09" and float(row.get("value") or 0.0) == 3115.0 for row in art_rows)
+    assert "2010-01" in total_times
+
     peak_kp_modifier_gated_args = parser.parse_args(
         [
             "phase3",
@@ -388,6 +781,40 @@ def test_an01a_live_source_covers_expected_years_and_factors() -> None:
     assert any(entry["name"] == "analysis_year_ceiling" and entry["value"] == 2025 for entry in payload["numeric_justification"])
 
 
+def test_transition_report_dispatch_passes_expected_arguments(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_report(**kwargs: object) -> dict[str, str]:
+        calls.append(dict(kwargs))
+        return {"markdown": "ok"}
+
+    monkeypatch.setattr("epigraph_ph.phase3.frontier.cli.REPORT_DISPATCH", {"rolling-origin": fake_report})
+
+    result = run_phase3_transition_report(
+        run_id="report-run",
+        plugin_id="hiv",
+        source_run_id=SOURCE_RUN_ID,
+        cli_report_name="rolling-origin",
+        start_year=2012,
+        end_year=2024,
+        min_train_years=4,
+        horizon_years=2,
+    )
+
+    assert result == {"markdown": "ok"}
+    assert calls == [
+        {
+            "run_id": "report-run",
+            "plugin_id": "hiv",
+            "source_run_id": SOURCE_RUN_ID,
+            "start_year": 2012,
+            "end_year": 2024,
+            "min_train_years": 4,
+            "horizon_years": 2,
+        }
+    ]
+
+
 def test_an02_transition_and_kp_maps_reflect_sparse_kp_support() -> None:
     ctx = build_transition_research_context(
         run_id="tr-pytest-an02",
@@ -426,6 +853,81 @@ def test_an02c_writes_expected_artifacts() -> None:
     assert (experiment_dir / "kp_transition_relevance.json").exists()
     assert (experiment_dir / "kp_transition_drift.png").exists()
     assert (experiment_dir / "numeric_justification.json").exists()
+
+
+def test_an03a_writes_aggregation_loss_artifacts() -> None:
+    run_id = "tr-pytest-an03a"
+    ctx = build_transition_research_context(
+        run_id=run_id,
+        plugin_id="hiv",
+        experiment_id="AN-03A-phase2-aggregation-loss-diagnostic",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    result = run_an03a(ctx)
+    experiment_dir = Path(ctx.experiment_dir)
+
+    assert result["artifacts"]["decision"].endswith("decision.json")
+    assert result["provincial_evidence_run_id"]
+    assert (experiment_dir / "aggregation_loss_diagnostic.json").exists()
+    assert (experiment_dir / "provincial_evidence_summary.json").exists()
+    assert (experiment_dir / "module_bundle_seed_report.json").exists()
+    assert (experiment_dir / "aggregation_loss_top_factors.png").exists()
+    assert (experiment_dir / "aggregation_loss_module_heatmap.png").exists()
+    top_row = result["rows"][0]
+    assert "hierarchical_priority_score" in top_row
+    assert "transition_priority" in top_row
+    incidence_bundles = result["module_bundle_seed_report"]["module_bundle_rankings"]["incidence"]
+    assert incidence_bundles
+
+
+def test_hmba00_writes_contract_and_panel_artifacts() -> None:
+    run_id = "tr-pytest-hmba00"
+    ctx = build_transition_research_context(
+        run_id=run_id,
+        plugin_id="hiv",
+        experiment_id="HMBA-00-hierarchical-contract-freeze",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    result = run_hmba_00(ctx)
+    experiment_dir = Path(ctx.experiment_dir)
+
+    assert result["decision"]["completed"] is True
+    assert (experiment_dir / "contract_snapshot.json").exists()
+    assert (experiment_dir / "module_seed_manifest.json").exists()
+    assert (experiment_dir / "evidence_panel_summary.json").exists()
+    assert (experiment_dir / "national_observation_values.npz").exists()
+    assert (experiment_dir / "national_observation_mask.npz").exists()
+    assert (experiment_dir / "provincial_auxiliary_state_shares.npz").exists()
+    assert (experiment_dir / "regional_auxiliary_state_shares.npz").exists()
+    assert (experiment_dir / "national_auxiliary_state_shares.npz").exists()
+    assert (experiment_dir / "coverage_frontier.png").exists()
+    assert (experiment_dir / "module_seed_frontier.png").exists()
+    assert result["contract_snapshot"]["contract_terms"]["province_truth_available"] is False
+    assert result["module_seed_manifest"]["module_bundle_rankings"]["incidence"]
+    assert result["evidence_panel_summary"]["provincial_auxiliary_panel"]["province_count"] > 0
+
+
+def test_an03b_writes_partial_denoising_artifacts() -> None:
+    run_id = "tr-pytest-an03b"
+    ctx = build_transition_research_context(
+        run_id=run_id,
+        plugin_id="hiv",
+        experiment_id="AN-03B-phase2-partial-denoising-diagnostic",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    result = run_an03b(ctx)
+    experiment_dir = Path(ctx.experiment_dir)
+
+    assert result["decision"]["completed"] is True
+    assert (experiment_dir / "partial_denoising_factor_delta.json").exists()
+    assert (experiment_dir / "partial_denoising_module_delta.json").exists()
+    assert (experiment_dir / "partial_denoising_summary.json").exists()
+    assert (experiment_dir / "partial_denoising_module_delta.png").exists()
+    assert (experiment_dir / "partial_denoising_rank_compression.png").exists()
+    assert (experiment_dir / "partial_denoising_priority_comparison.png").exists()
+    assert (experiment_dir / "raw_module_seed_manifest.json").exists()
+    assert (experiment_dir / "denoised_module_seed_manifest.json").exists()
+    assert result["paper_archive"]["figure_count"] >= 3
 
 
 def test_age_01a_writes_age_audit_artifacts() -> None:

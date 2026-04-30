@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .cli import run_phase3_transition_research
+from .cli import run_phase3_transition_report, run_phase3_transition_research
 from .registry import (
     ANALYTICS_EXPERIMENT_IDS,
     KP_COLLAPSED_NAMES,
@@ -19,5 +19,6 @@ __all__ = [
     "TRANSITION_NAMES",
     "list_cli_names",
     "make_transition_run_id",
+    "run_phase3_transition_report",
     "run_phase3_transition_research",
 ]

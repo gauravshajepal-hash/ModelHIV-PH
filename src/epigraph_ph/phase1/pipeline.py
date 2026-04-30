@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+import os
 import re
 from typing import Any
 
@@ -10,6 +11,7 @@ from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.geography import geo_resolution_label, infer_philippines_geo, infer_region_code, is_national_geo, normalize_geo_label
 from epigraph_ph.latent_blocks import annotate_latent_indicator_fields
 from epigraph_ph.phase0.models import Phase0BackendStatus, Phase0ManifestArtifact
+from epigraph_ph.phase0.phase3_target_contract import build_phase3_targeted_extraction_audit
 from epigraph_ph.phase1.latent_observability import build_direct_contextual_split, build_latent_observability_audit
 from epigraph_ph.phase1.normalization_helpers import (
     AGE_TOKENS,
@@ -57,6 +59,17 @@ except Exception:  # pragma: no cover
     torch = None
 
 _HIV_PLUGIN = get_disease_plugin("hiv")
+
+
+def _phase1_tensor_rows_mode() -> str:
+    mode = os.environ.get("EPIGRAPH_PHASE1_TENSOR_ROWS_MODE", "auto").strip().lower()
+    if mode not in {"auto", "dense", "sparse", "off"}:
+        raise ValueError(f"Unsupported EPIGRAPH_PHASE1_TENSOR_ROWS_MODE={mode!r}")
+    return mode
+
+
+def _phase1_dense_tensor_row_limit() -> int:
+    return int(os.environ.get("EPIGRAPH_PHASE1_DENSE_TENSOR_ROW_LIMIT", "250000"))
 
 
 def _phase1_cfg() -> dict[str, Any]:
@@ -215,6 +228,96 @@ def _build_denominator_tensor(
         source_idx = canonical_index[denominator_name]
         denominator_tensor[:, :, feature_idx] = np.clip(aligned_tensor[:, :, source_idx], a_min=min_denominator, a_max=None)
     return denominator_tensor.astype(np.float32), denominator_map
+
+
+def _phase1_tensor_row_payload(
+    *,
+    province: str,
+    month: str,
+    canonical_name: str,
+    standardized_value: float,
+    raw_value: float,
+    missing_mask_value: float,
+    quality_weight_value: float,
+    catalog_rollup: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "tensor_row_id": f"{province}:{month}:{canonical_name}",
+        "canonical_name": canonical_name,
+        "model_numeric_value": float(standardized_value),
+        "raw_numeric_value": float(raw_value),
+        "normalized_unit": "standard_score",
+        "geo_resolution": geo_resolution_label(province),
+        "geo": province,
+        "country": "Philippines" if province != "global" else "global",
+        "region": infer_region_code(province),
+        "province": province,
+        "time_resolution": "monthly",
+        "time": month,
+        "year": int(month.split("-")[0]) if re.fullmatch(r"\d{4}-\d{2}", month) else None,
+        "month": int(month.split("-")[1]) if re.fullmatch(r"\d{4}-\d{2}", month) else None,
+        "sex": "",
+        "age_band": "",
+        "kp_group": "remaining_population",
+        "domain_family": next(iter(catalog_rollup.get(canonical_name, {}).get("domain_families", {"mixed": 1})), "mixed"),
+        "pathway_family": next(iter(catalog_rollup.get(canonical_name, {}).get("pathway_families", {"mixed": 1})), "mixed"),
+        "evidence_class": "phase1_standardized_tensor",
+        "evidence_weight": 1.0,
+        "source_bank": "phase1_standardized_tensor",
+        "missing_mask": float(missing_mask_value),
+        "quality_weight": float(quality_weight_value),
+    }
+
+
+def _phase1_build_tensor_rows(
+    *,
+    province_axis: list[str],
+    month_axis: list[str],
+    canonical_axis: list[str],
+    standardized_tensor_np: np.ndarray,
+    aligned_tensor: np.ndarray,
+    missing_mask: np.ndarray,
+    quality_weight_tensor_np: np.ndarray,
+    catalog_rollup: dict[str, dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    dense_count = int(len(province_axis) * len(month_axis) * len(canonical_axis))
+    mode = _phase1_tensor_rows_mode()
+    limit = _phase1_dense_tensor_row_limit()
+    if mode == "auto":
+        mode = "dense" if dense_count <= limit else "sparse"
+    emitted_rows: list[dict[str, Any]] = []
+    if mode == "dense":
+        index_iter = ((pi, ti, fi) for pi in range(len(province_axis)) for ti in range(len(month_axis)) for fi in range(len(canonical_axis)))
+    elif mode == "sparse":
+        index_iter = ((int(pi), int(ti), int(fi)) for pi, ti, fi in np.argwhere(np.asarray(missing_mask) > 0.0))
+    else:
+        index_iter = iter(())
+    for pi, ti, fi in index_iter:
+        emitted_rows.append(
+            _phase1_tensor_row_payload(
+                province=province_axis[pi],
+                month=month_axis[ti],
+                canonical_name=canonical_axis[fi],
+                standardized_value=float(standardized_tensor_np[pi, ti, fi]),
+                raw_value=float(aligned_tensor[pi, ti, fi]),
+                missing_mask_value=float(missing_mask[pi, ti, fi]),
+                quality_weight_value=float(quality_weight_tensor_np[pi, ti, fi]),
+                catalog_rollup=catalog_rollup,
+            )
+        )
+    return emitted_rows, {
+        "mode": mode,
+        "dense_tensor_row_count": dense_count,
+        "emitted_tensor_row_count": len(emitted_rows),
+        "dense_tensor_row_limit": limit,
+        "semantics": "dense_all_cells" if mode == "dense" else ("sparse_observed_cells" if mode == "sparse" else "not_emitted"),
+        "primary_tensor_artifacts": [
+            "standardized_tensor.npz",
+            "denominator_tensor.npz",
+            "missing_mask.npz",
+            "quality_weight_tensor.npz",
+        ],
+    }
 
 
 def _phase1_quality_weights(
@@ -718,37 +821,16 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     denominator_tensor_np = to_numpy(denominator_tensor)
     standardized_tensor_np = to_numpy(standardized_tensor)
     quality_weight_tensor_np = to_numpy(quality_weight_tensor)
-    for pi, province in enumerate(province_axis):
-        for ti, month in enumerate(month_axis):
-            for fi, canonical_name in enumerate(canonical_axis):
-                tensor_rows.append(
-                    {
-                        "tensor_row_id": f"{province}:{month}:{canonical_name}",
-                        "canonical_name": canonical_name,
-                        "model_numeric_value": float(standardized_tensor_np[pi, ti, fi]),
-                        "raw_numeric_value": float(aligned_tensor[pi, ti, fi]),
-                        "normalized_unit": "standard_score",
-                        "geo_resolution": geo_resolution_label(province),
-                        "geo": province,
-                        "country": "Philippines" if province != "global" else "global",
-                        "region": infer_region_code(province),
-                        "province": province,
-                        "time_resolution": "monthly",
-                        "time": month,
-                        "year": int(month.split("-")[0]) if re.fullmatch(r"\d{4}-\d{2}", month) else None,
-                        "month": int(month.split("-")[1]) if re.fullmatch(r"\d{4}-\d{2}", month) else None,
-                        "sex": "",
-                        "age_band": "",
-                        "kp_group": "remaining_population",
-                        "domain_family": next(iter(catalog_rollup.get(canonical_name, {}).get("domain_families", {"mixed": 1})), "mixed"),
-                        "pathway_family": next(iter(catalog_rollup.get(canonical_name, {}).get("pathway_families", {"mixed": 1})), "mixed"),
-                        "evidence_class": "phase1_standardized_tensor",
-                        "evidence_weight": 1.0,
-                        "source_bank": "phase1_standardized_tensor",
-                        "missing_mask": float(missing_mask[pi, ti, fi]),
-                        "quality_weight": float(quality_weight_tensor_np[pi, ti, fi]),
-                    }
-                )
+    tensor_rows, tensor_rows_contract = _phase1_build_tensor_rows(
+        province_axis=province_axis,
+        month_axis=month_axis,
+        canonical_axis=canonical_axis,
+        standardized_tensor_np=standardized_tensor_np,
+        aligned_tensor=aligned_tensor,
+        missing_mask=missing_mask,
+        quality_weight_tensor_np=quality_weight_tensor_np,
+        catalog_rollup=catalog_rollup,
+    )
 
     parameter_catalog = []
     for canonical_name, roll in sorted(catalog_rollup.items()):
@@ -801,6 +883,7 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         "missing_mask_fraction": round(float(1.0 - missing_mask.mean()), 6) if missing_mask.size else 0.0,
         "denominator_map": denominator_map,
         "preprocess_meta": preprocess_meta,
+        "tensor_rows_contract": tensor_rows_contract,
         "source_registry_mode": source_registry_mode,
         "observation_noise_summary": dict(observation_noise_model.get("summary") or {}),
     }
@@ -853,8 +936,14 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     write_json(phase1_dir / "latent_observability_audit.json", latent_observability_audit)
     write_json(phase1_dir / "direct_vs_contextual_split.json", direct_contextual_split)
     write_json(phase1_dir / "observation_noise_model.json", observation_noise_model)
+    phase3_targeted_normalization_audit = build_phase3_targeted_extraction_audit(
+        normalized_rows,
+        artifact_name="phase1:normalized_subparameters",
+    )
+    write_json(phase1_dir / "phase3_targeted_normalization_audit.json", phase3_targeted_normalization_audit)
     tensor_schema = {
         "axes": axis_catalogs,
+        "tensor_rows_contract": tensor_rows_contract,
         "value_fields": {
             "aligned_tensor": "phase0/aligned_tensor",
             "standardized_tensor": "phase1/standardized_tensor",
@@ -867,6 +956,7 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         "default_value_field": "standardized_tensor",
     }
     write_json(phase1_dir / "tensor_schema.json", tensor_schema)
+    write_json(phase1_dir / "tensor_rows_contract.json", tensor_rows_contract)
     write_json(phase1_dir / "normalization_report.json", normalization_report)
 
     manifest = Phase0ManifestArtifact(
@@ -890,7 +980,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             "latent_observability_audit": str(phase1_dir / "latent_observability_audit.json"),
             "direct_vs_contextual_split": str(phase1_dir / "direct_vs_contextual_split.json"),
             "observation_noise_model": str(phase1_dir / "observation_noise_model.json"),
+            "phase3_targeted_normalization_audit": str(phase1_dir / "phase3_targeted_normalization_audit.json"),
             "tensor_schema": str(phase1_dir / "tensor_schema.json"),
+            "tensor_rows_contract": str(phase1_dir / "tensor_rows_contract.json"),
             "normalization_report": str(phase1_dir / "normalization_report.json"),
             "interop_report": str(phase1_dir / "interop_report.json"),
         },
@@ -1028,6 +1120,12 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
                 "expected_keys": ["axes", "value_fields", "default_value_field"],
             },
             {
+                "name": "tensor_rows_contract",
+                "kind": "json_dict",
+                "path": str(phase1_dir / "tensor_rows_contract.json"),
+                "expected_keys": ["mode", "dense_tensor_row_count", "emitted_tensor_row_count", "semantics"],
+            },
+            {
                 "name": "observation_noise_model",
                 "kind": "json_dict",
                 "path": str(phase1_dir / "observation_noise_model.json"),
@@ -1059,7 +1157,9 @@ def run_phase1_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
             phase1_dir / "latent_observability_audit.json",
             phase1_dir / "direct_vs_contextual_split.json",
             phase1_dir / "observation_noise_model.json",
+            phase1_dir / "phase3_targeted_normalization_audit.json",
             phase1_dir / "tensor_schema.json",
+            phase1_dir / "tensor_rows_contract.json",
             phase1_dir / "normalization_report.json",
             phase1_dir / "interop_report.json",
             phase1_dir / "gold_standard_manifest.json",

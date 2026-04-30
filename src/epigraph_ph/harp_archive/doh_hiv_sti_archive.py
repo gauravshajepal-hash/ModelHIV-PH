@@ -5,6 +5,8 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import subprocess
 import time
 from functools import lru_cache
 from pathlib import Path
@@ -74,6 +76,36 @@ MONTH_ABBREVIATIONS = {
     "nov": "november",
     "dec": "december",
 }
+_NUMBER_WORD_VALUES = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
+}
 ARCHIVE_APPENDIX_MARKERS = (
     "facilities designated as hiv treatment hubs",
     "primary hiv care facilities",
@@ -97,6 +129,56 @@ MONTH_COLUMN_ORDER = [
 
 GDRIVE_EXPORT = "https://drive.google.com/uc?export=download&id={file_id}"
 GDRIVE_CONFIRM = "https://drive.google.com/uc?export=download&confirm=t&id={file_id}"
+
+
+def _local_archive_corpus_root_dirs() -> list[Path]:
+    return [
+        ROOT_DIR / "artifacts" / "runs",
+        ROOT_DIR / "docs" / "harp_probe",
+    ]
+
+
+def local_archive_pdf_corpus_rows() -> list[dict[str, Any]]:
+    by_source_id: dict[str, Path] = {}
+    for root in _local_archive_corpus_root_dirs():
+        if not root.exists():
+            continue
+        for path in root.rglob("doh_hiv_sti_*.pdf"):
+            if not path.is_file():
+                continue
+            source_id = str(path.stem or "")
+            previous = by_source_id.get(source_id)
+            if previous is None or path.stat().st_mtime > previous.stat().st_mtime:
+                by_source_id[source_id] = path
+    rows: list[dict[str, Any]] = []
+    for source_id, path in sorted(by_source_id.items()):
+        stat = path.stat()
+        rows.append(
+            {
+                "source_id": source_id,
+                "path": str(path),
+                "checksum": sha256_file(path),
+                "size_bytes": int(stat.st_size),
+                "modified_at": float(stat.st_mtime),
+            }
+        )
+    return rows
+
+
+@lru_cache(maxsize=1)
+def _local_archive_pdf_corpus_index() -> dict[str, Path]:
+    return {
+        str(row.get("source_id") or ""): Path(str(row.get("path") or ""))
+        for row in local_archive_pdf_corpus_rows()
+        if str(row.get("source_id") or "") and str(row.get("path") or "")
+    }
+
+
+def _local_archive_pdf_for_source_id(source_id: str) -> Path | None:
+    candidate = _local_archive_pdf_corpus_index().get(str(source_id or ""))
+    if candidate is None or not candidate.exists() or not candidate.is_file():
+        return None
+    return candidate
 
 
 def _available_ocr_providers() -> list[str]:
@@ -411,6 +493,44 @@ def _looks_like_pdf(content: bytes) -> bool:
     return bytes(content[:16]).startswith(b"%PDF")
 
 
+def _powershell_download_pdf(url: str, destination: Path, *, timeout_seconds: float) -> tuple[bool, str]:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    escaped_url = str(url).replace("'", "''")
+    escaped_destination = str(destination).replace("'", "''")
+    command = [
+        "powershell.exe",
+        "-NoProfile",
+        "-Command",
+        f"Invoke-WebRequest -Uri '{escaped_url}' -OutFile '{escaped_destination}'",
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=max(float(timeout_seconds), 1.0),
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return False, f"PowerShellTimeout: {exc}"
+    except OSError as exc:
+        return False, f"PowerShellOSError: {exc}"
+    if completed.returncode != 0:
+        stderr = str(completed.stderr or completed.stdout or "").strip()
+        return False, f"PowerShellError: {stderr or completed.returncode}"
+    try:
+        content = destination.read_bytes()
+    except OSError as exc:
+        return False, f"PowerShellReadError: {exc}"
+    if not _looks_like_pdf(content):
+        try:
+            destination.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return False, "PowerShellNonPdfResponse"
+    return True, ""
+
+
 def download_archive_pdfs(
     *,
     archive_rows: list[dict[str, Any]],
@@ -423,6 +543,26 @@ def download_archive_pdfs(
     for row in archive_rows:
         local_path = raw_dir / f"{row['source_id']}.pdf"
         failure_reason = ""
+        local_corpus_pdf = _local_archive_pdf_for_source_id(str(row.get("source_id") or ""))
+        if local_corpus_pdf is not None:
+            ensure_dir(local_path.parent)
+            try:
+                shutil.copy2(local_corpus_pdf, local_path)
+            except OSError:
+                pass
+            if local_path.exists() and local_path.stat().st_size >= 1024 and _looks_like_pdf(local_path.read_bytes()[:16]):
+                hydrated.append(
+                    {
+                        **row,
+                        "download_status": "local_corpus",
+                        "local_path": str(local_path),
+                        "checksum": sha256_file(local_path),
+                        "downloaded_at": utc_now_iso(),
+                        "download_error": "",
+                        "local_corpus_origin": str(local_corpus_pdf),
+                    }
+                )
+                continue
         if not local_path.exists() or local_path.stat().st_size < 1024:
             success = False
             for template in (GDRIVE_EXPORT, GDRIVE_CONFIRM):
@@ -446,6 +586,16 @@ def download_archive_pdfs(
                     success = True
                     failure_reason = ""
                     break
+            if not success:
+                for template in (GDRIVE_EXPORT, GDRIVE_CONFIRM):
+                    success, failure_reason = _powershell_download_pdf(
+                        template.format(file_id=row["file_id"]),
+                        local_path,
+                        timeout_seconds=request_timeout_seconds,
+                    )
+                    if success and local_path.exists() and local_path.stat().st_size >= 1024:
+                        failure_reason = ""
+                        break
             if pause_seconds > 0:
                 time.sleep(pause_seconds)
             if not success:
@@ -738,12 +888,51 @@ def extract_archive_pdf_pages(local_path: Path, *, max_pages: int = 2) -> list[d
 
 def _to_float(value: str | None) -> float | None:
     token = str(value or "").replace(",", "").strip()
+    token = re.sub(r"(?<=\d)\s+(?=\d)", "", token)
+    token = re.sub(r"(?<=\d)\.(?=\d{3}(?:\D|$))", "", token)
     if not token:
         return None
     try:
         return float(token)
     except Exception:
         return None
+
+
+def _word_number_to_float(value: str | None) -> float | None:
+    tokens = re.findall(r"[a-z]+", str(value or "").lower().replace("-", " "))
+    if not tokens:
+        return None
+    total = 0
+    current = 0
+    used = False
+    for token in tokens:
+        if token == "and":
+            continue
+        if token in _NUMBER_WORD_VALUES:
+            current += int(_NUMBER_WORD_VALUES[token])
+            used = True
+            continue
+        if token == "hundred":
+            current = max(current, 1) * 100
+            used = True
+            continue
+        if token == "thousand":
+            total += max(current, 1) * 1000
+            current = 0
+            used = True
+            continue
+        return None
+    result = total + current
+    if not used:
+        return None
+    return float(result)
+
+
+def _to_count(value: str | None) -> float | None:
+    numeric = _to_float(value)
+    if numeric is not None:
+        return numeric
+    return _word_number_to_float(value)
 
 
 def _capture_first_number(text: str, patterns: list[str]) -> float | None:
@@ -757,6 +946,93 @@ def _capture_first_number(text: str, patterns: list[str]) -> float | None:
     return None
 
 
+def _capture_first_count(text: str, patterns: list[str]) -> float | None:
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.I | re.S)
+        if not match:
+            continue
+        value = _to_count(match.group(1))
+        if value is not None:
+            return value
+    return None
+
+
+def _capture_match(text: str, patterns: list[str]) -> re.Match[str] | None:
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.I | re.S)
+        if match:
+            return match
+    return None
+
+
+def _line_number(line: str) -> float | None:
+    match = re.search(r"\d{1,3}(?:,\s*\d{3})*|\d+", str(line or ""))
+    if not match:
+        return None
+    return _to_float(match.group(0))
+
+
+def _quick_facts_numeric_values(lines: list[str], *, label_patterns: list[str], max_values: int = 4) -> list[float]:
+    lowered = [str(line or "").lower().strip() for line in lines]
+    for idx, line in enumerate(lowered):
+        if not any(re.search(pattern, line, flags=re.I) for pattern in label_patterns):
+            continue
+        values: list[float] = []
+        for next_line in lines[idx + 1 :]:
+            numeric = _line_number(next_line)
+            if numeric is not None:
+                stripped_line = str(next_line or "").strip()
+                if values and re.fullmatch(r"(?:19|20)\d{2}", stripped_line):
+                    break
+                values.append(float(numeric))
+                if len(values) >= max_values:
+                    break
+                continue
+            if values:
+                break
+        if values:
+            return values
+    return []
+
+
+def _table_block_lines(page_text: str, *, header_patterns: list[str], end_patterns: list[str]) -> list[str]:
+    lines = [str(line or "").strip() for line in str(page_text or "").splitlines() if str(line or "").strip()]
+    start_idx = 0
+    for idx, line in enumerate(lines):
+        if any(re.search(pattern, line, flags=re.I) for pattern in header_patterns):
+            start_idx = idx + 1
+            break
+    end_idx = len(lines)
+    for idx in range(start_idx, len(lines)):
+        if any(re.search(pattern, lines[idx], flags=re.I) for pattern in end_patterns):
+            end_idx = idx
+            break
+    return lines[start_idx:end_idx]
+
+
+def _quick_facts_cumulative_index(header_lines: list[str], value_count: int) -> int:
+    if value_count <= 1:
+        return 0
+    if value_count <= 3:
+        return 1
+    header_text = "\n".join(header_lines).lower()
+    cumulative_match = re.search(r"cumulative", header_text)
+    jan_match = re.search(r"\bjan", header_text)
+    if jan_match is not None and (cumulative_match is None or jan_match.start() < cumulative_match.start()):
+        return 2
+    return 1
+
+
+def _month_label_from_capture(month_token: str, year_token: str) -> str | None:
+    month_number = _token_to_month(month_token)
+    if month_number is None:
+        return None
+    year_value = str(year_token or "").strip()
+    if not year_value.isdigit():
+        return None
+    return _month_label(int(year_value), int(month_number))
+
+
 def _make_metric_row(
     *,
     report_row: dict[str, Any],
@@ -768,10 +1044,16 @@ def _make_metric_row(
     page_number: int | None = None,
     series_kind: str | None = None,
     time_label: str | None = None,
+    period_start: str | None = None,
+    period_end: str | None = None,
+    temporal_precision: str | None = None,
 ) -> dict[str, Any]:
+    effective_time = str(time_label or report_row["effective_month"])
+    effective_period_start = str(period_start or effective_time)
+    effective_period_end = str(period_end or effective_time)
     return {
-        "year": int(report_row["source_year"]),
-        "time": str(time_label or report_row["effective_month"]),
+        "year": int(effective_time[:4]),
+        "time": effective_time,
         "metric_name": metric_name,
         "value": float(value),
         "unit": unit,
@@ -779,10 +1061,10 @@ def _make_metric_row(
         "source_label": report_row["label"],
         "page_number": page_number,
         "measurement_class": measurement_class,
-        "series_kind": str(series_kind or report_row["temporal_precision"]),
-        "temporal_precision": str(report_row["temporal_precision"]),
-        "period_start": str(report_row["start_month"]),
-        "period_end": str(report_row["end_month"]),
+        "series_kind": str(series_kind or temporal_precision or report_row["temporal_precision"]),
+        "temporal_precision": str(temporal_precision or report_row["temporal_precision"]),
+        "period_start": effective_period_start,
+        "period_end": effective_period_end,
         "geo": "Philippines",
         "region": "national",
         "province": "Philippines",
@@ -802,7 +1084,7 @@ def extract_continuum_metric_rows(report_row: dict[str, Any], page_texts: list[d
     estimated = _capture_first_number(
         joined,
         [
-            r"there will be\s*(\d{1,3}(?:,\d{3})+)\s*estimated people living with hiv",
+            r"there\s*will\s*be\s*(\d{1,3}(?:[,.]\d{3})+)\s*estimated\s*people\s*living\s*with\s*hiv",
             r"estimated(?: number of)? people living with hiv[^\d]{0,120}(\d{1,3}(?:,\d{3})+)",
             r"estimated plhiv[^\d]{0,80}(\d{1,3}(?:,\d{3})+)",
         ],
@@ -810,6 +1092,7 @@ def extract_continuum_metric_rows(report_row: dict[str, Any], page_texts: list[d
     diagnosed = _capture_first_number(
         joined,
         [
+            r"of\s*the\s*estimated\s*plhiv,\s*(\d{1,3}(?:[,.]\d{3})+)\s*[\(\uff08]?\s*\d{1,3}%[\)\uff09]?\s*cases?\s*have\s*been\s*diagnosed",
             r"of the estimated plhiv,\s*(\d{1,3}(?:,\d{3})+)\s*\(\d{1,3}%\)",
             r"number of diagnosed plhiv[^\d]{0,80}(\d{1,3}(?:,\d{3})+)",
             r"(\d{1,3}(?:,\d{3})+)\s*\(\d{1,3}%\)\s*of the estimated plhiv",
@@ -907,13 +1190,16 @@ def extract_diagnosis_summary_rows(report_row: dict[str, Any], page_texts: list[
     if not page_texts:
         return []
     page_text = str(page_texts[0].get("text") or "")
+    first_two_pages_text = "\n".join(str(page.get("text") or "") for page in page_texts[:2])
     metrics = {
         "new_diagnosed_cases_period": _capture_first_number(
             page_text,
             [
-                r"there were\s*(\d{1,3}(?:,\d{3})+)\s*confirmed hiv-positive individuals reported to the one hiv",
-                r"in\s+[a-z]+\s+\d{4},\s*there were\s*(\d{1,3}(?:,\d{3})+)\s*confirmed hiv-positive individuals reported",
-                r"in\s+[a-z]+\s+to\s+[a-z]+\s+\d{4},\s*there were\s*(\d{1,3}(?:,\d{3})+)\s*confirmed hiv-positive individuals reported",
+                r"in\s*[a-z]+\s*\d{4}\s*,?\s*there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*confirmed\s*hiv[-\s]*positive",
+                r"there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*(?:confirmed|newly\s*diagnosed)?\s*hiv[-\s]*positive\s*individuals\s*reported\s*to\s*the\s*(?:one\s*)?hiv",
+                r"in\s*[a-z]+\s*\d{4}\s*,?\s*there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*(?:confirmed|newly\s*diagnosed)?\s*hiv[-\s]*positive\s*individuals\s*reported",
+                r"from\s*[a-z]+\s*to\s*[a-z]+\s*\d{4}\s*,?\s*there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*(?:confirmed|newly\s*diagnosed)?\s*hiv[-\s]*positive\s*individuals",
+                r"total\s*reported\s*cases[a-z0-9]*\s+(\d{1,3}(?:,\s*\d{3})*|\d+)",
             ],
         ),
         "advanced_hiv_cases_period": _capture_first_number(
@@ -923,11 +1209,14 @@ def extract_diagnosis_summary_rows(report_row: dict[str, Any], page_texts: list[
                 r"(\d{1,3}(?:,\d{3})+)\s*\(\d{1,3}%\)[^\n]{0,40}had an advanced hiv infection",
             ],
         ),
-        "deaths_reported_period": _capture_first_number(
-            page_text,
+        "deaths_reported_period": _capture_first_count(
+            first_two_pages_text,
             [
-                r"total reported deaths[,:\s]+[a-z0-9\-\s]*\s(\d{1,3}(?:,\d{3})+)",
-                r"there were (\d{1,3}(?:,\d{3})*) reported deaths due to any cause",
+                r"in\s*[a-z]+\s*\d{4}\s*,?\s*there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*reported\s*deaths\s*due\s*to\s*any\s*cause",
+                r"there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*deaths\s*that\s*were\s*newly\s*reported(?:\s*this\s*year)?",
+                r"there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*reported\s*deaths\s*due\s*to\s*any\s*cause",
+                r"([a-z-]+(?:\s+[a-z-]+){0,4})\s*deaths\s*were\s*newly\s*reported",
+                r"report(?:ed)?\s*deaths[a-z0-9]*\s+(\d{1,3}(?:,\s*\d{3})*|\d+)",
             ],
         ),
         "average_cases_per_day": _capture_first_number(
@@ -938,10 +1227,18 @@ def extract_diagnosis_summary_rows(report_row: dict[str, Any], page_texts: list[
             ],
         ),
         "diagnosed_cases_cumulative": _capture_first_number(
-            page_text,
+            first_two_pages_text,
             [
                 r"total reported cases[,:\s]+jan 1984[a-z0-9\-\s]*\s(\d{1,3}(?:,\d{3})+)",
                 r"cumulatively,\s*(\d{1,3}(?:,\d{3})+)\s*confirmed hiv cases",
+                r"total\s*reported\s*cases\s+\d{1,3}(?:,\d{3})*\s+\d{1,3}(?:,\d{3})*\s+\d{1,3}(?:,\d{3})*\s+(\d{1,3}(?:,\d{3})+)",
+            ],
+        ),
+        "deaths_reported_cumulative": _capture_first_number(
+            first_two_pages_text,
+            [
+                r"report(?:ed)?\s*deaths[a-z0-9]*\s+\d{1,3}(?:,\d{3})*\s+\d{1,3}(?:,\d{3})*\s+\d{1,3}(?:,\d{3})*\s+(\d{1,3}(?:,\d{3})+)",
+                r"total\s*deaths\s*reported\s*(?:since\s*january\s*1984|since\s*1984)?[^\d]{0,40}(\d{1,3}(?:,\d{3})+)",
             ],
         ),
         "new_hiv_positive_pregnant_women": _capture_first_number(
@@ -988,8 +1285,127 @@ def extract_diagnosis_summary_rows(report_row: dict[str, Any], page_texts: list[
     return rows
 
 
+def extract_quick_facts_stock_rows(report_row: dict[str, Any], page_texts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not page_texts:
+        return []
+    page_text = str(page_texts[0].get("text") or "")
+    if not re.search(r"table\s*1\.?\s*quick\s*facts", page_text, flags=re.I):
+        return []
+    lines = _table_block_lines(
+        page_text,
+        header_patterns=[r"table\s*1\.?\s*quick\s*facts"],
+        end_patterns=[r"^figure\b", r"^fig\b", r"^table\s*2\b"],
+    )
+    if not lines:
+        return []
+    try:
+        demographic_idx = next(idx for idx, line in enumerate(lines) if "demographic data" in line.lower())
+        total_idx = next(idx for idx, line in enumerate(lines) if "total reported cases" in line.lower())
+        header_lines = lines[demographic_idx + 1 : total_idx]
+    except StopIteration:
+        header_lines = []
+    total_values = _quick_facts_numeric_values(lines, label_patterns=[r"total reported cases"])
+    death_values = _quick_facts_numeric_values(lines, label_patterns=[r"reported deaths"])
+    period_cases = _capture_first_number(
+        page_text,
+        [
+            r"in\s*[a-z]+\s*\d{4}\s*,?\s*there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*confirmed\s*hiv[-\s]*positive",
+            r"there\s*were\s*(\d{1,3}(?:,\s*\d{3})*|\d+)\s*(?:confirmed|newly\s*diagnosed)?\s*hiv[-\s]*positive",
+        ],
+    )
+    rows: list[dict[str, Any]] = []
+    if total_values:
+        cumulative_index = min(_quick_facts_cumulative_index(header_lines, len(total_values)), len(total_values) - 1)
+        cumulative_cases = float(total_values[cumulative_index])
+        rows.append(
+            _make_metric_row(
+                report_row=report_row,
+                metric_name="diagnosed_cases_cumulative",
+                value=cumulative_cases,
+                unit="count_people",
+                measurement_class="program_observed_harp",
+                extraction_method="rapidocr_quick_facts",
+                page_number=int(page_texts[0].get("page_number") or 1),
+            )
+        )
+        if death_values:
+            period_deaths = float(death_values[0])
+            rows.append(
+                _make_metric_row(
+                    report_row=report_row,
+                    metric_name="deaths_reported_period",
+                    value=period_deaths,
+                    unit="count_people",
+                    measurement_class="program_observed_harp",
+                    extraction_method="rapidocr_quick_facts_period_deaths",
+                    page_number=int(page_texts[0].get("page_number") or 1),
+                )
+            )
+            death_index = min(_quick_facts_cumulative_index(header_lines, len(death_values)), len(death_values) - 1)
+            cumulative_deaths = float(death_values[death_index])
+            diagnosed_alive = max(cumulative_cases - cumulative_deaths, 0.0)
+            if period_cases is not None and diagnosed_alive < float(period_cases):
+                return []
+            rows.append(
+                _make_metric_row(
+                    report_row=report_row,
+                    metric_name="diagnosed_plhiv",
+                    value=diagnosed_alive,
+                    unit="count_people",
+                    measurement_class="program_observed_harp",
+                    extraction_method="rapidocr_quick_facts_alive_diagnosed_derived",
+                    page_number=int(page_texts[0].get("page_number") or 1),
+                )
+            )
+    return rows
+
+
 def extract_art_summary_rows(report_row: dict[str, Any], page_texts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    joined = "\n".join(str(page.get("text") or "") for page in page_texts[:2])
+    joined = "\n".join(str(page.get("text") or "") for page in page_texts)
+    first_page_lines = [str(line or "").strip() for line in str(page_texts[0].get("text") or "").splitlines() if str(line or "").strip()] if page_texts else []
+    alive_on_art_match = _capture_match(
+        joined,
+        [
+            r"a total of[\W_]*(\d{1,3}(?:,\d{3})+)\*?[\W_]*plhiv[\W_]*were presently[\W_]*on[\W_]*art[\W_]*as of[\W_]*([A-Za-z]+)[\W_]*(\d{4})",
+            r"(?:a\s*total\s*of|atotalof)[\W_]*(\d{1,3}(?:[,.]\d{3})+).*?presently[\W_]*on[\W_]*art[\W_]*as[\W_]*of[\W_]*([A-Za-z]+)[\W_]*(\d{4})",
+            r"as of[\W_]*([A-Za-z]+)[\W_]*(\d{4})[\W_]*,?[\W_]*(?:there(?:[\W_]|are|were))*?(\d{1,3}(?:,\d{3})+)\*?[\W_]*people living with hiv[\W_]*presently[\W_]*on[\W_]*anti[\W_]*retroviral therapy",
+        ],
+    )
+    alive_on_art_value = None
+    alive_on_art_time = None
+    if alive_on_art_match is not None:
+        groups = alive_on_art_match.groups()
+        if groups and groups[0].replace(",", "").isdigit():
+            alive_on_art_value = _to_float(groups[0])
+            alive_on_art_time = _month_label_from_capture(groups[1], groups[2]) if len(groups) >= 3 else None
+        else:
+            alive_on_art_value = _to_float(groups[2]) if len(groups) >= 3 else None
+            alive_on_art_time = _month_label_from_capture(groups[0], groups[1]) if len(groups) >= 2 else None
+    if alive_on_art_value is None:
+        fuzzy_art_match = _capture_match(
+            joined,
+            [
+                r"as of[\W_]*([A-Za-z]+)[\W_]*(\d{4})[\W_]*,?[\W_]*there[\W_]*(?:are|were)[\W_]*(\d{1,3}(?:,\d{3})+)\*?.{0,250}?presently[\W_]*on[\W_]*anti[\W_]*retroviral[\W_]*therapy",
+            ],
+        )
+        if fuzzy_art_match is not None:
+            alive_on_art_time = _month_label_from_capture(fuzzy_art_match.group(1), fuzzy_art_match.group(2))
+            alive_on_art_value = _to_float(fuzzy_art_match.group(3))
+    if alive_on_art_value is None:
+        compact_joined = re.sub(r"[^a-z0-9]", "", joined.lower())
+        compact_art_match = re.search(
+            r"asof([a-z]+)(\d{4})there(?:are|were)(\d{4,8})(?:peoplelivingwithhiv|plhiv)presentlyon(?:antiretroviraltherapy|art)",
+            compact_joined,
+            flags=re.I,
+        )
+        if compact_art_match is not None:
+            alive_on_art_time = _month_label_from_capture(compact_art_match.group(1), compact_art_match.group(2))
+            alive_on_art_value = _to_float(compact_art_match.group(3))
+    if alive_on_art_value is None:
+        total_art_values = _quick_facts_numeric_values(first_page_lines, label_patterns=[r"total plhiv on art"])
+        if total_art_values:
+            alive_on_art_value = float(total_art_values[0])
+            alive_on_art_time = str(report_row["effective_month"])
     metrics = {
         "newly_enrolled_to_treatment": _capture_first_number(
             joined,
@@ -997,14 +1413,6 @@ def extract_art_summary_rows(report_row: dict[str, Any], page_texts: list[dict[s
                 r"newly enrolled[^\d]{0,40}(\d{1,3}(?:,\d{3})+)",
                 r"in [a-z0-9\-\s,]+,\s*there were (\d{1,3}(?:,\d{3})+)\w* people with hiv who were enrolled to treatment",
                 r"there were[\W_]*(\d{1,3}(?:,\d{3})+)\w*[\W_]*people with hiv[\W_]*who were enrolled to treatment",
-            ],
-        ),
-        "alive_on_art": _capture_first_number(
-            joined,
-            [
-                r"plhiv alive on art[^\d]{0,20}(\d{1,3}(?:,\d{3})+)",
-                r"a total of\s*(\d{1,3}(?:,\d{3})+)\s*people living with hiv\s*\(plhiv\)\s*were presently on art",
-                r"a total of[\W_]*(\d{1,3}(?:,\d{3})+)[\W_]*people living with hiv[\W_]*plhiv[\W_]*were presently[\W_]*on art",
             ],
         ),
         "median_cd4_at_enrollment": _capture_first_number(
@@ -1033,6 +1441,90 @@ def extract_art_summary_rows(report_row: dict[str, Any], page_texts: list[dict[s
                 unit=unit,
                 measurement_class="program_observed_harp",
                 extraction_method="rapidocr_art_summary",
+            )
+        )
+    if alive_on_art_value is not None:
+        time_label = str(alive_on_art_time or report_row["effective_month"])
+        rows.append(
+            _make_metric_row(
+                report_row=report_row,
+                metric_name="alive_on_art",
+                value=float(alive_on_art_value),
+                unit="count_people",
+                measurement_class="program_observed_harp",
+                extraction_method="rapidocr_art_summary",
+                time_label=time_label,
+                period_start=time_label,
+                period_end=time_label,
+                temporal_precision="monthly_snapshot",
+            )
+        )
+    return rows
+
+
+def extract_art_treatment_outcome_rows(report_row: dict[str, Any], page_texts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    joined = "\n".join(str(page.get("text") or "") for page in page_texts)
+    if "lost to follow-up" not in joined.lower() and "treatment outcome" not in joined.lower():
+        return []
+    metrics = {
+        "art_ever_enrolled_cumulative": _capture_first_number(
+            joined,
+            [
+                r"among\s+the\s+(\d{1,3}(?:,\d{3})+)\s+people\s+living\s+with\s+hiv\s*\(plhiv\)\s+who\s+have\s+ever\s+been\s+enrolled\s+on\s+antiretroviral\s+therapy",
+                r"among\s+the\s+(\d{1,3}(?:,\d{3})+)\s+people\s+living\s+with\s+hiv\s*\(plhiv\)\s+who\s+have\s+ever\s+been\s+enrolled\s+on\s+art",
+            ],
+        ),
+        "art_ltfu_cumulative": _capture_first_number(
+            joined,
+            [
+                r"lost\s+to\s+follow-up\d*\s*\(n\s*=\s*(\d{1,3}(?:,\d{3})*)\)",
+                r"includes\s+(\d{1,3}(?:,\d{3})+)\s+individuals\s+who\s+were\s+lost\s+to\s+follow-up",
+                r"(\d{1,3}(?:,\d{3})+)\s+individuals\s+who\s+were\s+lost\s+to\s+follow-up\s*\(ltfu\)",
+            ],
+        ),
+        "art_deaths_cumulative": _capture_first_number(
+            joined,
+            [
+                r"\bdead\s*\(n\s*=\s*(\d{1,3}(?:,\d{3})*)\)",
+            ],
+        ),
+        "art_transfer_out_overseas_cumulative": _capture_first_number(
+            joined,
+            [
+                r"trans\s+out\s*\(overseas\)\d*\s*\(n\s*=\s*(\d{1,3}(?:,\d{3})*)\)",
+                r"(\d{1,3}(?:,\d{3})*)\s+who\s+reported\s+migrating\s+overseas",
+            ],
+        ),
+        "art_stopped_refused_cumulative": _capture_first_number(
+            joined,
+            [
+                r"stopped\d*\s*\(n\s*=\s*(\d{1,3}(?:,\d{3})*)\)",
+                r"(\d{1,3}(?:,\d{3})*)\s+who\s+refused\s+to\s+continue\s+art",
+            ],
+        ),
+        "art_no_longer_on_treatment_cumulative": _capture_first_number(
+            joined,
+            [
+                r"as\s+of\s+[A-Za-z]+\s+\d{4},\s*(\d{1,3}(?:,\d{3})+)\s*\(\d+%\)\s+individuals\s+who\s+were\s+previously\s+on\s+art\s+were\s+no\s+longer\s+receiving\s+treatment",
+            ],
+        ),
+    }
+    rows: list[dict[str, Any]] = []
+    for metric_name, value in metrics.items():
+        if value is None:
+            continue
+        rows.append(
+            _make_metric_row(
+                report_row=report_row,
+                metric_name=metric_name,
+                value=value,
+                unit="count_people",
+                measurement_class="program_observed_harp_art_outcome",
+                extraction_method="pdf_text_art_treatment_outcome_table",
+                time_label=str(report_row["effective_month"]),
+                period_start=str(report_row["effective_month"]),
+                period_end=str(report_row["effective_month"]),
+                temporal_precision="monthly_snapshot",
             )
         )
     return rows
@@ -1129,7 +1621,9 @@ def extract_archive_metric_rows(report_row: dict[str, Any], page_texts: list[dic
     rows: list[dict[str, Any]] = []
     rows.extend(extract_continuum_metric_rows(report_row, page_texts))
     rows.extend(extract_diagnosis_summary_rows(report_row, page_texts))
+    rows.extend(extract_quick_facts_stock_rows(report_row, page_texts))
     rows.extend(extract_art_summary_rows(report_row, page_texts))
+    rows.extend(extract_art_treatment_outcome_rows(report_row, page_texts))
     rows.extend(extract_prep_rows(report_row, page_texts))
     rows.extend(extract_monthly_case_rows(report_row, page_texts))
     return rows
@@ -1206,6 +1700,60 @@ def build_harp_program_points(metric_rows: list[dict[str, Any]]) -> list[dict[st
                 "on_art": round(float(on_art.get("value") or 0.0), 6),
                 "viral_load_tested": round(float(tested.get("value") or 0.0), 6),
                 "suppressed": round(float(suppressed.get("value") or 0.0), 6),
+                "source_label": str(source_row.get("source_label") or ""),
+                "source_url": str(source_row.get("source_url") or ""),
+            }
+        )
+    return points
+
+
+def build_harp_stock_anchor_points(metric_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    point_metrics = {
+        "estimated_plhiv",
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+    }
+    rows_by_time: dict[str, dict[str, Any]] = {}
+    for row in metric_rows:
+        metric_name = str(row.get("metric_name") or "")
+        time_label = str(row.get("time") or "")
+        if metric_name not in point_metrics or not time_label:
+            continue
+        rows_by_time.setdefault(time_label, {})[metric_name] = row
+
+    estimate_points = _estimated_plhiv_points(metric_rows)
+
+    points: list[dict[str, Any]] = []
+    for time_label, grouped in sorted(rows_by_time.items(), key=lambda item: _month_ordinal(item[0]) or -1):
+        diagnosed = grouped.get("diagnosed_plhiv")
+        on_art = grouped.get("alive_on_art")
+        if diagnosed is None or on_art is None:
+            continue
+        estimate_row = grouped.get("estimated_plhiv")
+        if estimate_row is not None:
+            estimated_value = float(estimate_row.get("value") or 0.0)
+        else:
+            ordinal = _month_ordinal(time_label)
+            estimate_array = _interpolate_estimated_plhiv(
+                estimate_points,
+                np.asarray([ordinal], dtype=np.float32) if ordinal is not None else np.zeros((0,), dtype=np.float32),
+            )
+            estimated_value = float(estimate_array[0]) if estimate_array.size else 0.0
+        source_row = diagnosed
+        points.append(
+            {
+                "label": str(source_row.get("source_label") or f"HARP stock point {time_label}"),
+                "month": time_label,
+                "effective_month": time_label,
+                "source_month": time_label,
+                "temporal_precision": str(source_row.get("series_kind") or source_row.get("temporal_precision") or "monthly_snapshot"),
+                "estimated_plhiv": round(float(estimated_value), 6) if estimated_value > 0.0 else None,
+                "diagnosed": round(float(diagnosed.get("value") or 0.0), 6),
+                "on_art": round(float(on_art.get("value") or 0.0), 6),
+                "viral_load_tested": round(float(grouped.get("tested_for_viral_load", {}).get("value") or 0.0), 6) if grouped.get("tested_for_viral_load") is not None else None,
+                "suppressed": round(float(grouped.get("virally_suppressed", {}).get("value") or 0.0), 6) if grouped.get("virally_suppressed") is not None else None,
                 "source_label": str(source_row.get("source_label") or ""),
                 "source_url": str(source_row.get("source_url") or ""),
             }

@@ -8,6 +8,8 @@ import numpy as np
 
 from epigraph_ph.runtime import load_tensor_artifact, read_json, save_tensor_artifact, write_json
 
+PHASE3_COMPATIBILITY_BRIDGE_SCHEMA_VERSION = "phase2_phase3_compatibility_bridge.v2"
+
 
 def select_retained_factor_rows(
     *,
@@ -184,6 +186,13 @@ def _canonical_phase1_rollup(
             "targets": Counter(),
         }
     )
+
+    def _measurement_role(row: dict[str, Any]) -> str:
+        measurement_role = str(row.get("measurement_role") or "").strip()
+        if measurement_role:
+            return measurement_role
+        return str(row.get("observation_role") or "context_only").strip()
+
     for row in normalized_rows:
         canonical_name = str(row.get("canonical_name") or "")
         if canonical_name not in axis_set:
@@ -192,7 +201,7 @@ def _canonical_phase1_rollup(
         item["support_count"] += 1
         item["numeric_support"] += 1 if row.get("model_numeric_value") is not None else 0
         item["anchor_support"] += 1 if row.get("is_anchor_eligible") else 0
-        item["direct_support"] += 1 if str(row.get("observation_role") or "") == "direct_indicator" else 0
+        item["direct_support"] += 1 if _measurement_role(row) == "direct_indicator" else 0
         item["evidence_weight"] += float(row.get("evidence_weight") or 0.0)
         item["observation_weight"] += float(row.get("observation_weight") or row.get("quality_weight") or 0.0)
         item["domain_families"][str(row.get("domain_family") or "mixed")] += 1
@@ -546,7 +555,26 @@ def build_phase3_compatibility_payload(
         "hidden_driver": hidden_driver_surface,
         "multiscale_support": multiscale_support_surface,
     }
+    compatibility_contract = {
+        "schema_version": PHASE3_COMPATIBILITY_BRIDGE_SCHEMA_VERSION,
+        "scientific_status": "historical_bridge_only",
+        "role": "legacy_phase3_interop_bridge",
+        "canonical_frontier_input": "phase2_structural_payload",
+        "direct_support_semantics": "counts use measurement_role with observation_role fallback for historical rows",
+        "core_feature_tensor_contract": "alias of direct temporal tensor only; hidden and multiscale tensors remain separate side arrays",
+        "allowed_use": [
+            "historical_replay",
+            "interop_loader_for_legacy_phase3_consumers",
+            "diagnostic_comparison_against_structural_payload",
+        ],
+        "not_allowed_use": [
+            "scientific_frontier_input_when_structural_payload_exists",
+            "validated_mechanistic_claim",
+            "causal_interpretation_of_bridge_outputs",
+        ],
+    }
     return {
+        "compatibility_contract": compatibility_contract,
         "candidate_profiles": candidate_profiles,
         "curated_candidate_blocks": curated_candidate_blocks,
         "markov_blanket": markov_blanket,
@@ -636,6 +664,7 @@ def build_phase3_compatibility_artifacts(
     write_json(phase2_dir / "supporting_factor_set.json", payload["supporting_factor_set"])
     write_json(phase2_dir / "retained_mesoscopic_factor_catalog.json", payload["retained_mesoscopic_factor_catalog"])
     frozen_payload = {
+        "compatibility_contract": payload["compatibility_contract"],
         "candidate_profiles": payload["candidate_profiles"],
         "curated_candidate_blocks": payload["curated_candidate_blocks"],
         "markov_blanket": payload["markov_blanket"],

@@ -1,0 +1,951 @@
+{
+  "metadata": {
+    "lastUpdated": "2025-11-14",
+    "source": "PhilHealth Annual Reports (2007, 2022-2024) & 1st Semester 2025 Reports",
+    "description": "Authentic financial data from PhilHealth's audited financial statements and current semester reports",
+    "currency": "PHP",
+    "yearsAvailable": [
+      2007,
+      2022,
+      2023,
+      2024,
+      "2025-H1"
+    ]
+  },
+  "annualReports": [
+    {
+      "year": "2025-H1",
+      "period": "As of June 30, 2025",
+      "reportingPeriod": "January 1 - June 30, 2025",
+      "premiumContributions": 100505776645,
+      "benefitExpense": 152569912080,
+      "claimsPaid": 139310045787,
+      "claimsCount": 9396020,
+      "beneficiaries": 106235882,
+      "populationCovered": 113863084,
+      "coverageRate": 100,
+      "registrationRate": 93,
+      "averageProcessingDays": 25,
+      "breakdown": {
+        "directContributors": {
+          "premiumContributions": 100500291598,
+          "benefitExpense": 68716046786,
+          "claimsPaid": 59162645251,
+          "claimsCount": 3908722,
+          "contributionsByCategory": {
+            "employedGovernment": 26442149779.96,
+            "employedPrivate": 69889319294.89,
+            "kasambahay": 53481931.52,
+            "familyDriver": 15509.48,
+            "migrantWorkerLandBased": 78268241.97,
+            "migrantWorkerSeaBased": 3317.75,
+            "filipinoDualCitizenship": 1197418.55,
+            "womenAboutToGiveBirth": 0,
+            "professionalPractitioner": 65571748.91,
+            "selfEarningIndividual": 3153454759.48,
+            "selfEarningSoleProprietor": 6586464.23,
+            "selfEarningGroupEnrollment": 790113553.01,
+            "foreignNational": 19380195.22,
+            "others": 749383.0
+          }
+        },
+        "indirectContributors": {
+          "premiumContributions": 5485047,
+          "benefitExpense": 79140262419,
+          "claimsPaid": 80147400536,
+          "claimsCount": 5487298
+        },
+        "yakap": {
+          "benefitExpense": 4713602875,
+          "payments": 5116104440,
+          "registrations": 31789799,
+          "firstEncounters": 10030102,
+          "accreditedClinics": 3476
+        }
+      },
+      "notes": "Financial data as of June 30, 2025 - Premium Contributions Breakdown by Direct Contributor category. UHC Act ensures 100% population coverage."
+    },
+    {
+      "year": 2024,
+      "revenue": 239573300339,
+      "expenditures": 185451901932,
+      "netIncome": 54121398407,
+      "totalAssets": 612639975995,
+      "totalLiabilities": 1554389267840,
+      "fundBalance": 280574913605,
+      "beneficiaries": 112880000,
+      "claimsCount": 12680000,
+      "claimsPaid": 128890795944,
+      "reserveFund": 280574913605,
+      "breakdown": {
+        "directContributors": {
+          "revenue": 199223000000,
+          "claims": 92413466236
+        },
+        "indirectContributors": {
+          "revenue": 40350455320,
+          "claims": 87087211879
+        }
+      },
+      "notes": "DOF directive required return of ₱89.9B excess reserves. Supreme Court TRO blocked final ₱29.88B remittance."
+    },
+    {
+      "year": 2023,
+      "revenue": 236158650315,
+      "premiumContributions": 237173437775,
+      "expenditures": 74207188265,
+      "benefitExpense": 75767225217,
+      "claimsPaid": 122383003091,
+      "netIncome": 161951462050,
+      "totalAssets": 1716540625991,
+      "totalLiabilities": 1252253633842,
+      "fundBalance": 464286992149,
+      "reserveFund": 464286992149,
+      "totalBeneficiaries": 108505167,
+      "registeredMembers": 62236523,
+      "registeredDependents": 46268644,
+      "populationCovered": 112892781,
+      "coverageRate": 100,
+      "registrationRate": 96,
+      "claimsCount": 12675634,
+      "membershipCategories": {
+        "directContributors": {
+          "total": 66666112,
+          "members": 36895531,
+          "dependents": 29770581,
+          "percentage": 61.5,
+          "premiumContributions": 158367821777,
+          "claimsPaid": 62045524816,
+          "claimsCount": 6287618,
+          "subcategories": {
+            "employedPrivate": {
+              "members": 18115215,
+              "dependents": 12645478,
+              "total": 30760693,
+              "premiums": 106776137294,
+              "claims": 22021316640,
+              "claimsCount": 2139785
+            },
+            "employedGovernment": {
+              "members": 2936619,
+              "dependents": 4081707,
+              "total": 7018326,
+              "premiums": 42448992903,
+              "claims": 8829831816,
+              "claimsCount": 949652
+            },
+            "informal": {
+              "members": 11132556,
+              "dependents": 9542930,
+              "total": 20675486,
+              "premiums": 9142691580,
+              "claims": 22232262203,
+              "claimsCount": 2409192
+            },
+            "ofws": {
+              "members": 3173450,
+              "dependents": 2310831,
+              "total": 5484281,
+              "claims": 1153327993,
+              "claimsCount": 104029
+            },
+            "lifetimeMembers": {
+              "members": 1453692,
+              "dependents": 1138628,
+              "total": 2592320,
+              "claims": 7720793661,
+              "claimsCount": 676129
+            },
+            "kasambahay": {
+              "members": 74462,
+              "dependents": 46815,
+              "total": 121277,
+              "claims": 53940889,
+              "claimsCount": 4717
+            },
+            "others": {
+              "members": 9537,
+              "dependents": 4192,
+              "total": 13729,
+              "claims": 34051613,
+              "claimsCount": 4114
+            }
+          }
+        },
+        "indirectContributors": {
+          "total": 41839055,
+          "members": 25340992,
+          "dependents": 16498063,
+          "percentage": 38.5,
+          "premiumContributions": 78805615998,
+          "claimsPaid": 60337478276,
+          "claimsCount": 6388016,
+          "subcategories": {
+            "indigents": {
+              "members": 14168031,
+              "dependents": 12022852,
+              "total": 26190883,
+              "premiums": 35256167000,
+              "claims": 14303917078,
+              "claimsCount": 1638248
+            },
+            "seniorCitizens": {
+              "members": 9651725,
+              "dependents": 2931958,
+              "total": 12583683,
+              "premiums": 42931355000,
+              "claims": 26279897266,
+              "claimsCount": 2344525
+            },
+            "sponsored": {
+              "members": 1521236,
+              "dependents": 1543253,
+              "total": 3064489,
+              "premiums": 618093998,
+              "claims": 19753663932,
+              "claimsCount": 2405243
+            }
+          }
+        }
+      },
+      "claimsAnalytics": {
+        "total": {
+          "amount": 122383003091,
+          "count": 12675634
+        },
+        "covidVsNonCovid": {
+          "nonCovid": {
+            "amount": 105690715256,
+            "count": 11746136,
+            "amountPercentage": 86,
+            "countPercentage": 93
+          },
+          "covid": {
+            "amount": 16692287836,
+            "count": 929498,
+            "amountPercentage": 14,
+            "countPercentage": 7,
+            "breakdown": {
+              "isolation": {
+                "amount": 86634130,
+                "count": 4208,
+                "amountPercentage": 0.52,
+                "countPercentage": 0.2
+              },
+              "inpatient": {
+                "amount": 14631490044,
+                "count": 72511,
+                "amountPercentage": 88,
+                "countPercentage": 8
+              },
+              "testing": {
+                "amount": 1974163662,
+                "count": 852779,
+                "amountPercentage": 12,
+                "countPercentage": 92
+              }
+            }
+          }
+        },
+        "byPatientType": {
+          "member": {
+            "amount": 93811098954,
+            "count": 9279897,
+            "percentage": 73
+          },
+          "dependent": {
+            "amount": 28571904138,
+            "count": 3395737,
+            "percentage": 27
+          }
+        },
+        "bySex": {
+          "female": {
+            "amount": 67636566275,
+            "count": 6971552,
+            "percentage": 55
+          },
+          "male": {
+            "amount": 54746436816,
+            "count": 5704082,
+            "percentage": 45
+          }
+        },
+        "byAgeGroup": {
+          "lessThan1": {
+            "count": 22803,
+            "amount": 226000000
+          },
+          "age1to4": {
+            "count": 1933222,
+            "amount": 13301000000
+          },
+          "age5to9": {
+            "count": 301863,
+            "amount": 2779000000
+          },
+          "age10to14": {
+            "count": 197387,
+            "amount": 1897000000
+          },
+          "age15to19": {
+            "count": 363358,
+            "amount": 3277000000
+          },
+          "age20to24": {
+            "count": 670511,
+            "amount": 5850000000
+          },
+          "age25to29": {
+            "count": 925652,
+            "amount": 8637000000
+          },
+          "age30to34": {
+            "count": 950587,
+            "amount": 9135000000
+          },
+          "age35to39": {
+            "count": 813860,
+            "amount": 7875000000
+          },
+          "age40to44": {
+            "count": 752498,
+            "amount": 7363000000
+          },
+          "age45to49": {
+            "count": 748788,
+            "amount": 7366000000
+          },
+          "age50to54": {
+            "count": 846772,
+            "amount": 8556000000
+          },
+          "age55to59": {
+            "count": 912079,
+            "amount": 9396000000
+          },
+          "age60andAbove": {
+            "count": 3236254,
+            "amount": 36708000000
+          },
+          "distribution": {
+            "under1to14": {
+              "amountPercentage": 15,
+              "countPercentage": 19
+            },
+            "age15to59": {
+              "amountPercentage": 55,
+              "countPercentage": 55
+            },
+            "age60andAbove": {
+              "amountPercentage": 30,
+              "countPercentage": 26
+            }
+          }
+        },
+        "bySector": {
+          "private": {
+            "amount": 68711633806,
+            "count": 7070786,
+            "percentage": 56
+          },
+          "government": {
+            "amount": 53669272096,
+            "count": 5604747,
+            "percentage": 44
+          },
+          "international": {
+            "amount": 2097189,
+            "count": 10,
+            "percentage": 8e-05
+          }
+        },
+        "byIllnessType": {
+          "procedural": {
+            "amount": 84634755783,
+            "count": 9391310,
+            "percentage": 74
+          },
+          "medical": {
+            "amount": 36658958293,
+            "count": 3237205,
+            "percentage": 26
+          },
+          "others": {
+            "amount": 1089289016,
+            "count": 47119
+          }
+        },
+        "byHCIClass": {
+          "level3Hospital": {
+            "amount": 45552567270,
+            "count": 3761541,
+            "percentage": 30
+          },
+          "level2Hospital": {
+            "amount": 32707014624,
+            "count": 3441351,
+            "percentage": 27
+          },
+          "level1Hospital": {
+            "amount": 25832733317,
+            "count": 2830426,
+            "percentage": 22
+          },
+          "dialysisClinics": {
+            "amount": 8806694853,
+            "count": 1117882,
+            "percentage": 9
+          },
+          "mcpProvider": {
+            "amount": 2650292852,
+            "count": 492552,
+            "percentage": 4
+          },
+          "infirmary": {
+            "amount": 2536621268,
+            "count": 467676,
+            "percentage": 4
+          },
+          "ambulatorySurgical": {
+            "amount": 2918766189,
+            "count": 209959,
+            "percentage": 2
+          },
+          "animalBite": {
+            "amount": 355310923,
+            "count": 115891,
+            "percentage": 1
+          },
+          "diagnostic": {
+            "amount": 280875743,
+            "count": 111962,
+            "percentage": 1
+          },
+          "tbDots": {
+            "amount": 359535953,
+            "count": 78382,
+            "percentage": 1
+          },
+          "hivTreatment": {
+            "amount": 268287835,
+            "count": 37705,
+            "percentage": 0.3
+          },
+          "familyPlanning": {
+            "amount": 15318800,
+            "count": 5206,
+            "percentage": 0.04
+          },
+          "communityIsolation": {
+            "amount": 82952943,
+            "count": 4097,
+            "percentage": 0.03
+          },
+          "facilityAbroad": {
+            "amount": 13067387,
+            "count": 683,
+            "percentage": 0.005
+          },
+          "drugAbuse": {
+            "amount": 2899381,
+            "count": 310,
+            "percentage": 0.002
+          },
+          "primaryHealth": {
+            "amount": 63753,
+            "count": 11,
+            "percentage": 0.0001
+          }
+        }
+      },
+      "healthcareFacilities": {
+        "hospitals": {
+          "total": 1879,
+          "government": 785,
+          "private": 1094,
+          "byLevel": {
+            "level1": 794,
+            "level2": 370,
+            "level3": 123,
+            "infirmary": 592
+          },
+          "distribution": {
+            "level1Percentage": 42,
+            "level2Percentage": 20,
+            "level3Percentage": 7,
+            "infirmaryPercentage": 31
+          }
+        },
+        "otherFacilities": {
+          "total": 10025,
+          "government": 6314,
+          "private": 3711
+        },
+        "specificFacilities": {
+          "animalBiteCenters": {
+            "total": 611,
+            "government": 563,
+            "private": 48
+          },
+          "ambulatorySurgical": {
+            "total": 185,
+            "government": 3,
+            "private": 182
+          },
+          "drugRehabCenters": {
+            "total": 12,
+            "government": 12,
+            "private": 0
+          },
+          "tbDots": {
+            "total": 1603,
+            "government": 1518,
+            "private": 85
+          },
+          "dialysisClinics": {
+            "total": 624,
+            "government": 27,
+            "private": 597
+          },
+          "familyPlanning": {
+            "total": 965,
+            "government": 352,
+            "private": 613
+          },
+          "mcpProviders": {
+            "total": 2825,
+            "government": 1143,
+            "private": 1682
+          },
+          "hivAidsCenters": {
+            "total": 199,
+            "government": 143,
+            "private": 56
+          },
+          "opMalaria": {
+            "total": 50,
+            "government": 50,
+            "private": 0
+          },
+          "konsultaProviders": {
+            "total": 2611,
+            "government": 2267,
+            "private": 344
+          },
+          "covidTestingLabs": {
+            "total": 203,
+            "government": 115,
+            "private": 88
+          },
+          "communityIsolation": {
+            "total": 90,
+            "government": 84,
+            "private": 6
+          },
+          "homeIsolation": {
+            "total": 47,
+            "government": 37,
+            "private": 10
+          }
+        },
+        "programCoverage": {
+          "konsulta": {
+            "providers": 2611,
+            "citiesWithProviders": 1324,
+            "totalCities": 1634,
+            "coveragePercentage": 81
+          },
+          "mcp": {
+            "providers": 2825,
+            "citiesWithProviders": 1089,
+            "coveragePercentage": 67
+          },
+          "tbDots": {
+            "providers": 1603,
+            "citiesWithProviders": 976,
+            "coveragePercentage": 60
+          }
+        }
+      },
+      "healthcareProfessionals": {
+        "total": 49179,
+        "physicians": {
+          "total": 45150,
+          "generalPractitioners": 11644,
+          "generalPractitionersWithTraining": 9866,
+          "medicalSpecialists": 23640
+        },
+        "otherProfessionals": {
+          "total": 4029,
+          "dentists": 716,
+          "nurses": 103,
+          "midwives": 3210
+        }
+      },
+      "konsultaProgram": {
+        "registrations": {
+          "total": 20744674,
+          "members": 14545416,
+          "dependents": 6199258
+        },
+        "providers": {
+          "total": 2611,
+          "government": 2267,
+          "private": 344
+        },
+        "coverage": {
+          "citiesWithProviders": 1324,
+          "totalCities": 1634,
+          "percentage": 81
+        }
+      },
+      "benefitExpenseDistribution": {
+        "total": 75767225217,
+        "directContributors": {
+          "total": 35321215070,
+          "employedPrivate": 8757892835,
+          "employedGovernment": 3912926507,
+          "informal": 14973316203,
+          "lifetimeMembers": 7677079525
+        },
+        "indirectContributors": {
+          "total": 40016434639,
+          "indigents": 5639985224,
+          "seniorCitizens": 4800801526,
+          "sponsored": 29575647889
+        },
+        "konsulta": 429575508,
+        "percentageDistribution": {
+          "sponsored": 39,
+          "informal": 20,
+          "employedPrivate": 12,
+          "lifetimeMembers": 10,
+          "indigents": 7,
+          "seniorCitizens": 6,
+          "employedGovernment": 5,
+          "konsulta": 0.6
+        }
+      },
+      "philhealthInfrastructure": {
+        "personnel": 7837,
+        "totalStations": 284,
+        "regionalBranchOffices": 22,
+        "localHealthInsuranceOffices": 114,
+        "philhealthExpress": 65,
+        "satelliteOffices": 14,
+        "businessCenters": 17,
+        "serviceDesks": 52,
+        "malasakitCenters": 180,
+        "philhealthCARES": 521,
+        "facilitiesWithCARES": 1102
+      },
+      "notes": "Population coverage: 100% of 112.89M Filipinos per PSA 2023 projection. Registration rate: 96%. Benefit Expense adjusted for IBNP (Incurred But Not Paid): ₱116.6B before adjustment, ₱75.77B after ₱40.84B adjustment. Premium Contributions: ₱237.17B. Claims Paid: ₱122.38B."
+    },
+    {
+      "year": 2022,
+      "revenue": 216779856065,
+      "expenditures": 143560402394,
+      "netIncome": 73219453671,
+      "totalAssets": 510000000000,
+      "totalLiabilities": 238746287205,
+      "fundBalance": 271253712795,
+      "beneficiaries": 104098583,
+      "claimsCount": 13893856,
+      "claimsPaid": 129629620225,
+      "reserveFund": 271253712795,
+      "breakdown": {
+        "directContributors": {
+          "revenue": 145000000000,
+          "claims": 85000000000
+        },
+        "indirectContributors": {
+          "revenue": 71779856065,
+          "claims": 58560402394
+        }
+      },
+      "notes": "Post-pandemic recovery year with normalized claim patterns"
+    },
+    {
+      "year": 2007,
+      "revenue": 29138157771,
+      "expenditures": 18450891889,
+      "netIncome": 8299810283,
+      "totalAssets": 17222690817,
+      "totalLiabilities": 1035596750,
+      "fundBalance": 16187094067,
+      "beneficiaries": 64470000,
+      "totalMembers": 15850000,
+      "coverageRate": 73,
+      "claimsPaid": 18450891889,
+      "reserveFund": 16187094067,
+      "premiumContributions": 23726746649,
+      "interestIncome": 5387451143,
+      "breakdown": {
+        "revenueBySource": [
+          {
+            "source": "NHIP Premium Contributions",
+            "amount": 23726746649,
+            "percentage": 81.4
+          },
+          {
+            "source": "Interest Income",
+            "amount": 5387451143,
+            "percentage": 18.5
+          },
+          {
+            "source": "Accreditation Fees",
+            "amount": 18507775,
+            "percentage": 0.1
+          },
+          {
+            "source": "Other Income",
+            "amount": 5654596,
+            "percentage": 0.0
+          }
+        ],
+        "benefitPaymentsBySector": [
+          {
+            "sector": "Private Sector",
+            "amount": 7739751249,
+            "percentage": 42.0
+          },
+          {
+            "sector": "Government Sector",
+            "amount": 3824262437,
+            "percentage": 20.7
+          },
+          {
+            "sector": "Indigent Program",
+            "amount": 3115868664,
+            "percentage": 16.9
+          },
+          {
+            "sector": "Individually Paying Member",
+            "amount": 2148120968,
+            "percentage": 11.6
+          },
+          {
+            "sector": "Non-paying Member",
+            "amount": 936310333,
+            "percentage": 5.1
+          },
+          {
+            "sector": "Overseas Foreign Worker",
+            "amount": 686578238,
+            "percentage": 3.7
+          }
+        ]
+      },
+      "membership": {
+        "totalMembers": 15850000,
+        "totalBeneficiaries": 64470000,
+        "bySector": [
+          {
+            "sector": "Private-Employed",
+            "members": 7000000,
+            "beneficiaries": 24860000
+          },
+          {
+            "sector": "Sponsored Program",
+            "members": 2720000,
+            "beneficiaries": 13640000
+          },
+          {
+            "sector": "Individually-Paying",
+            "members": 2430000,
+            "beneficiaries": 11070000
+          },
+          {
+            "sector": "Government-Employed",
+            "members": 1780000,
+            "beneficiaries": 7420000
+          },
+          {
+            "sector": "Overseas Workers",
+            "members": 1590000,
+            "beneficiaries": 6910000
+          },
+          {
+            "sector": "Non-Paying",
+            "members": 340000,
+            "beneficiaries": 570000
+          }
+        ]
+      },
+      "cashFlow": {
+        "operatingActivities": 5443655321,
+        "investingActivities": 687184746,
+        "cashEquivalentsEnd": 14679049552
+      },
+      "notes": "First year to achieve over 70% population coverage with 73% coverage rate"
+    }
+  ],
+  "monthlyRevenue": [
+    {
+      "month": "Jan",
+      "revenue": 19500000000,
+      "expenditures": 14800000000
+    },
+    {
+      "month": "Feb",
+      "revenue": 19800000000,
+      "expenditures": 15200000000
+    },
+    {
+      "month": "Mar",
+      "revenue": 20200000000,
+      "expenditures": 15800000000
+    },
+    {
+      "month": "Apr",
+      "revenue": 19900000000,
+      "expenditures": 15400000000
+    },
+    {
+      "month": "May",
+      "revenue": 20100000000,
+      "expenditures": 15600000000
+    },
+    {
+      "month": "Jun",
+      "revenue": 19700000000,
+      "expenditures": 15300000000
+    },
+    {
+      "month": "Jul",
+      "revenue": 20300000000,
+      "expenditures": 15900000000
+    },
+    {
+      "month": "Aug",
+      "revenue": 20000000000,
+      "expenditures": 15500000000
+    },
+    {
+      "month": "Sep",
+      "revenue": 19600000000,
+      "expenditures": 15100000000
+    },
+    {
+      "month": "Oct",
+      "revenue": 20400000000,
+      "expenditures": 16000000000
+    },
+    {
+      "month": "Nov",
+      "revenue": 20000000000,
+      "expenditures": 15500000000
+    },
+    {
+      "month": "Dec",
+      "revenue": 20073300339,
+      "expenditures": 15451901932
+    }
+  ],
+  "investments": [
+    {
+      "id": 1,
+      "type": "Government Securities (Treasury Bonds)",
+      "amount": 347228619666,
+      "percentage": 56.7,
+      "returns": 5.26,
+      "year": 2024
+    },
+    {
+      "id": 2,
+      "type": "Treasury Bills",
+      "amount": 28284279260,
+      "percentage": 4.6,
+      "returns": 5.99,
+      "year": 2024
+    },
+    {
+      "id": 3,
+      "type": "Corporate Bonds",
+      "amount": 16147910000,
+      "percentage": 2.6,
+      "returns": 6.33,
+      "year": 2024
+    },
+    {
+      "id": 4,
+      "type": "Time Deposits",
+      "amount": 51941636979,
+      "percentage": 8.5,
+      "returns": 6.08,
+      "year": 2024
+    },
+    {
+      "id": 5,
+      "type": "Special Savings Deposits",
+      "amount": 48743566043,
+      "percentage": 8.0,
+      "returns": 5.74,
+      "year": 2024
+    },
+    {
+      "id": 6,
+      "type": "Investment Property & Real Estate",
+      "amount": 855663291,
+      "percentage": 0.14,
+      "returns": 0,
+      "year": 2024
+    }
+  ],
+  "administrativeCosts": [
+    {
+      "category": "Personnel Services",
+      "amount": 5462651693,
+      "percentage": 35.3,
+      "year": 2024
+    },
+    {
+      "category": "Maintenance & Operating Expenses",
+      "amount": 3732620675,
+      "percentage": 24.1,
+      "year": 2024
+    },
+    {
+      "category": "Depreciation & Amortization",
+      "amount": 548851758,
+      "percentage": 3.5,
+      "year": 2024
+    },
+    {
+      "category": "Financial Expenses",
+      "amount": 66670269,
+      "percentage": 0.4,
+      "year": 2024
+    },
+    {
+      "category": "Other Operating Expenses",
+      "amount": 5669713625,
+      "percentage": 36.7,
+      "year": 2024
+    }
+  ],
+  "keyMetrics": {
+    "2024": {
+      "membershipGrowth": 4.03,
+      "claimsProcessingTime": 60,
+      "collectionEfficiency": 82.84,
+      "benefitUtilizationRate": 77.4,
+      "adminExpenseRatio": 6.46
+    },
+    "2023": {
+      "membershipGrowth": 4.23,
+      "claimsProcessingTime": 60,
+      "collectionEfficiency": 78.5,
+      "benefitUtilizationRate": 51.8,
+      "adminExpenseRatio": 3.98
+    },
+    "2022": {
+      "membershipGrowth": 3.8,
+      "claimsProcessingTime": 60,
+      "collectionEfficiency": 75.2,
+      "benefitUtilizationRate": 93.9,
+      "adminExpenseRatio": 5.2
+    }
+  }
+}

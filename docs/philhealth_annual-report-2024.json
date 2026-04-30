@@ -1,0 +1,543 @@
+{
+  "philhealth_annual_report_2024": {
+    "overall_source": "2024 ANNUAL REPORT, Philippine Health Insurance Corporation",
+    "mandate_and_vision": {
+      "source": "Page 2",
+      "vision": "Bawat Pilipino, Miyembro, Bawat Miyembro, Protektado, Kalusugan ng Lahat, Segurado.",
+      "mission": "Benepisyong Pangkalusugang Sapat at Dekalidad Para sa Lahat"
+    },
+    "operational_highlights": {
+      "population_coverage": {
+        "source": "Page 9",
+        "coverage_rate_policy": "100% of all Filipinos under UHC Act (Republic Act No.11223)",
+        "psa_projected_population_2024": 112880000,
+        "registered_filipinos_end_of_2023": 108510000,
+        "registered_percentage_of_2023_population": "97% of 111.91M population projection by PSA in 2023"
+      },
+      "provider_accreditation": {
+        "source": "Page 9-10",
+        "accredited_health_facilities": [
+          {
+            "status": "As of April 2024",
+            "count": 10909
+          },
+          {
+            "status": "End of 2023",
+            "count": 11904
+          },
+          {
+            "status": "End of 2022",
+            "count": 10897
+          }
+        ],
+        "accredited_health_care_professionals": [
+          {
+            "status": "As of April 2024",
+            "count": 50951
+          },
+          {
+            "status": "End of 2023",
+            "count": 49179
+          },
+          {
+            "status": "End of 2022",
+            "count": 47251
+          }
+        ]
+      }
+    },
+    "benefit_enhancements_2024": {
+      "source": "Page 10-11",
+      "general_enhancements": [
+        "30% Increase for Case Rates to account for health inflation",
+        "Transitioning provider payment mechanism to Diagnosis-Related Groups (DRGs)"
+      ],
+      "package_specific_enhancements": [
+        {
+          "package": "Bacterial Sepsis of Newborns",
+          "from_php": 11700,
+          "to_php": 25793,
+          "increase_percent": 120.5
+        },
+        {
+          "package": "Bronchial Asthma (in Acute Exacerbation)",
+          "from_php": 9000,
+          "to_php": 22488,
+          "increase_percent": 150
+        },
+        {
+          "package": "Konsulta Expansion",
+          "details": "Increased capitation from PHP500 (govt) / PHP750 (private) to PHP1,700",
+          "new_coverage": "breast ultrasound and mammogram, among others"
+        },
+        {
+          "package": "Severe Dengue",
+          "from_php": 16000,
+          "to_php": 47000,
+          "increase_percent": 194
+        },
+        {
+          "package": "Z Benefits: Breast Cancer",
+          "from_php": 100000,
+          "to_php": 1400000,
+          "increase_percent": 1300
+        },
+        {
+          "package": "Z Benefits: Kidney Transplantation",
+          "from_php": 600000,
+          "to_php": 2146000,
+          "increase_percent": "up to 258%"
+        },
+        {
+          "package": "Z Benefits: Peritoneal Dialysis",
+          "from_php": 270000,
+          "to_php": 1269000,
+          "increase_percent": "up to 370%"
+        }
+      ],
+      "new_benefit_packages": [
+        {
+          "package": "Outpatient Therapeutic Care Services for Severe Acute Malnutrition (SAM)",
+          "amount_php": "7,500 to 17,000"
+        },
+        {
+          "package": "Preventive Oral Health Services",
+          "amount_php": "200 to 1,500 (on a per tooth or visit basis)"
+        },
+        {
+          "package": "Ischemic Heart Disease with Acute Myocardial Infarction (Enhancement)"
+        },
+        {
+          "package": "Outpatient Emergency Care Benefit (OECB)"
+        }
+      ]
+    },
+    "auditor_report": {
+      "source": "Page 12-14, Independent Auditor's Report",
+      "auditor": "Republic of the Philippines, Commission on Audit (COA)",
+      "opinion": "Qualified Opinion",
+      "date": "June 10, 2025",
+      "bases_for_qualified_opinion": [
+        {
+          "account": "Provision for Insurance Contract Liabilities (ICL)",
+          "issue": "Faithful representation could not be established due to: a) completeness and accuracy of claims and premium data could not be established; b) uncertainties regarding propriety of valuation methodology; c) delayed submission of supporting documents; d) use of unauthorized amounts diminishing reliability.",
+          "amount_2024": 1407000000000,
+          "amount_2023": 1150000000000
+        },
+        {
+          "account": "Contributions and Premium Receivable, Members' Contributions, Fines & Penalties",
+          "issue": "Completeness and accuracy could not be reasonably ascertained due to incomplete and non-recognition of unremitted income and corresponding interest/surcharges.",
+          "amount_2024": 53238000000,
+          "amount_2023": 238573000000
+        },
+        {
+          "account": "Premium Contributions - Direct Contributor and Receivables from Direct Contributor, net",
+          "issue": "Faithful representation could not be ascertained due to: a) inability to validate Statement of Premium Accounts (SPA) online; b) restrictions in access to remittance systems; c) limitations hindering verification of member payments; d) issues with correctness of Allowance for Impairment.",
+          "amount_2024": 108323000000,
+          "amount_2023": 44104000000
+        },
+        {
+          "account": "Members' Benefits, Accrued Benefit Claims - In Course of Settlement (ICS), and Accrued Benefits Payable (ABP) - Processed",
+          "issue": "Faithful representation could not be established due to improper recognition of related transactions, related deficiencies in highlight policy and procedural gaps, and inconsistencies between recognized amounts.",
+          "amount_2024": 185452000000,
+          "amount_2023": 26569000000
+        }
+      ]
+    },
+    "financial_statements": {
+      "statement_of_financial_position": {
+        "source": "Page 20, STATEMENTS OF FINANCIAL POSITION",
+        "as_of": "December 31, 2024 and 2023 (As Restated)",
+        "currency": "In Philippine Peso",
+        "assets": {
+          "current_assets": [
+            {
+              "item": "Cash and cash equivalents",
+              "2024": 54272107334,
+              "2023": 30779119092
+            },
+            {
+              "item": "Investment in time deposits",
+              "2024": 51941638979,
+              "2023": 135606097538
+            },
+            {
+              "item": "Receivables, net",
+              "2024": 110350577121,
+              "2023": 80698605575
+            },
+            {
+              "item": "Inventories",
+              "2024": 172353298,
+              "2023": 125116220
+            },
+            {
+              "item": "Other current assets",
+              "2024": 386853648,
+              "2023": 2722503287
+            },
+            {
+              "item": "Total Current Assets",
+              "2024": 217123530381,
+              "2023": 249931441712
+            }
+          ],
+          "non_current_assets": [
+            {
+              "item": "Investment securities at amortized cost",
+              "2024": 391653029474,
+              "2023": 336127635854
+            },
+            {
+              "item": "Investment property",
+              "2024": 565663291,
+              "2023": 859693291
+            },
+            {
+              "item": "Property and equipment, net",
+              "2024": 1146603137,
+              "2023": 827988543
+            },
+            {
+              "item": "Right-of-use of assets",
+              "2024": 1315324748,
+              "2023": 432170366
+            },
+            {
+              "item": "Intangible assets, net",
+              "2024": 305500380,
+              "2023": 269353119
+            },
+            {
+              "item": "Other non-current assets, net",
+              "2024": 239392604,
+              "2023": 200185196
+            },
+            {
+              "item": "Total Non-Current Assets",
+              "2024": 395215442634,
+              "2023": 338717026369
+            }
+          ],
+          "TOTAL_ASSETS": {
+            "2024": 612639975995,
+            "2023": 588546803721
+          }
+        },
+        "liabilities_and_equity": {
+          "current_liabilities": [
+            {
+              "item": "Financial liabilities",
+              "2024": 36646157845,
+              "2023": 38728256696
+            },
+            {
+              "item": "Inter-agency payables",
+              "2024": 30655475095,
+              "2023": 763080685
+            },
+            {
+              "item": "Trust liabilities",
+              "2024": 1088781895,
+              "2023": 1259591402
+            },
+            {
+              "item": "Provision for health benefits",
+              "2024": 74467831648,
+              "2023": 57507819227
+            },
+            {
+              "item": "Other payables",
+              "2024": 1424355776,
+              "2023": 2458149334
+            },
+            {
+              "item": "Total Current Liabilities",
+              "2024": 144512572173,
+              "2023": 100512685458
+            }
+          ],
+          "non_current_liabilities": [
+            {
+              "item": "Deferred credits/Unearned income",
+              "2024": 769089893,
+              "2023": 818228649
+            },
+            {
+              "item": "Lease payable",
+              "2024": 1337918581,
+              "2023": 451912384
+            },
+            {
+              "item": "Leave benefits payable",
+              "2024": 843718804,
+              "2023": 814658894
+            },
+            {
+              "item": "Provision for insurance contract liabilities",
+              "2024": 1406915873309,
+              "2023": 1149658439006
+            },
+            {
+              "item": "Total Non-Current Liabilities",
+              "2024": 1409876695667,
+              "2023": 1151740949394
+            }
+          ],
+          "TOTAL_LIABILITIES": {
+            "2024": 1554389267840,
+            "2023": 1252253833842
+          },
+          "equity": [
+            {
+              "item": "Members' Equity",
+              "2024": -941749291845,
+              "2023": -663706830121
+            },
+            {
+              "item": "Total Equity",
+              "2024": -941749291845,
+              "2023": -663706830121
+            }
+          ],
+          "TOTAL_LIABILITIES_AND_EQUITY": {
+            "2024": 612639975995,
+            "2023": 588546803721
+          }
+        }
+      },
+      "statement_of_comprehensive_income": {
+        "source": "Page 21, STATEMENTS OF COMPREHENSIVE INCOME",
+        "for_years_ended": "December 31, 2024 and 2023",
+        "currency": "In Philippine Peso",
+        "revenue_and_expenses": [
+          {
+            "item": "Premium contributions",
+            "2024": 239573300339,
+            "2023": 236158650315
+          },
+          {
+            "item": "Less: Benefit claims expenses",
+            "2024": 185451901932,
+            "2023": 74207186265
+          },
+          {
+            "item": "GROSS MARGIN FROM OPERATIONS",
+            "2024": 54121398407,
+            "2023": 161951462050
+          },
+          {
+            "item": "Personnel services",
+            "2024": 5462651693,
+            "2023": 5348565974
+          },
+          {
+            "item": "Other operating expenses",
+            "2024": 10436856327,
+            "2023": 4054742038
+          },
+          {
+            "item": "TOTAL OPERATING EXPENSES",
+            "2024": 15899508020,
+            "2023": 9403308012
+          },
+          {
+            "item": "NET OPERATING INCOME (LOSS)",
+            "2024": 38221890387,
+            "2023": 152548154038
+          },
+          {
+            "item": "Add: Interest and other income",
+            "2024": 26081978932,
+            "2023": 21516226869
+          },
+          {
+            "item": "NET INCOME BEFORE CHANGE IN ICL",
+            "2024": 64303869319,
+            "2023": 174064380907
+          },
+          {
+            "item": "OTHER LOSSES",
+            "2024": -257259434303,
+            "2023": -882783126475
+          },
+          {
+            "item": "NET INCOME (LOSS)",
+            "2024": -192955564984,
+            "2023": -705718745566
+          }
+        ]
+      },
+      "statement_of_cash_flows": {
+        "source": "Page 23, STATEMENTS OF CASH FLOWS",
+        "for_years_ended": "December 31, 2024 and 2023",
+        "currency": "In Philippine Peso",
+        "operating_activities": {
+          "cash_inflows": [
+            {
+              "item": "Cash received from premium contributions",
+              "2024": 204097676836,
+              "2023": 197809239822
+            },
+            {
+              "item": "Collection of other income",
+              "2024": 561495240,
+              "2023": 1237371508
+            },
+            {
+              "item": "Gain on foreign exchange",
+              "2024": 40847,
+              "2023": 40402
+            },
+            {
+              "item": "Trust Receipts",
+              "2024": 31723821,
+              "2023": 44393237
+            },
+            {
+              "item": "Total Cash Inflows",
+              "2024": 204720945744,
+              "2023": 199091045832
+            }
+          ],
+          "cash_outflows": [
+            {
+              "item": "Unutilized Funds Pursuant to the GAA FY 2024",
+              "2024": -60000000000,
+              "2023": 0
+            },
+            {
+              "item": "Payment of benefit claims",
+              "2024": -165097003209,
+              "2023": -116900340656
+            },
+            {
+              "item": "Payment of operating expenses",
+              "2024": -9478132508,
+              "2023": -8099271234
+            },
+            {
+              "item": "Payment on financial charges",
+              "2024": -21037245,
+              "2023": -29555380
+            },
+            {
+              "item": "Loss on Foreign Exchange",
+              "2024": -13735429,
+              "2023": -6986634
+            },
+            {
+              "item": "Trust Disbursements",
+              "2024": -13735429,
+              "2023": -28500639
+            },
+            {
+              "item": "Total Cash Outflows",
+              "2024": -234520926126,
+              "2023": -127055712673
+            }
+          ],
+          "net_cash_operating": {
+            "2024": -29799977342,
+            "2023": 72035932152
+          }
+        },
+        "investing_activities": {
+          "cash_inflows": [
+            {
+              "item": "Matured time deposits",
+              "2024": 192987540432,
+              "2023": 157103588752
+            },
+            {
+              "item": "Matured treasury bills",
+              "2024": 0,
+              "2023": 9350077532
+            },
+            {
+              "item": "Matured treasury bonds",
+              "2024": 28974300000,
+              "2023": 41678160000
+            },
+            {
+              "item": "Proceeds from investments",
+              "2024": 26842133603,
+              "2023": 18713690400
+            },
+            {
+              "item": "Proceeds from disposal of assets",
+              "2024": 676290,
+              "2023": 380100
+            },
+            {
+              "item": "Total Cash Inflows",
+              "2024": 248804650625,
+              "2023": 226846955327
+            }
+          ],
+          "cash_outflows": [
+            {
+              "item": "Placement on time deposits",
+              "2024": -109323022012,
+              "2023": -166263301101
+            },
+            {
+              "item": "Placement on treasury bills",
+              "2024": -28284279250,
+              "2023": 0
+            },
+            {
+              "item": "Placement on treasury bonds",
+              "2024": -56857519711,
+              "2023": -105831298408
+            },
+            {
+              "item": "Fixed assets purchase",
+              "2024": -656953715,
+              "2023": -314822914
+            },
+            {
+              "item": "Total Cash Outflows",
+              "2024": -195279583603,
+              "2023": -274241302831
+            }
+          ],
+          "net_cash_investing": {
+            "2024": 53525057022,
+            "2023": -47384347504
+          }
+        },
+        "financing_activities": {
+          "cash_outflows": [
+            {
+              "item": "Finance lease payments",
+              "2024": -232091428,
+              "2023": -286168567
+            }
+          ],
+          "net_cash_financing": {
+            "2024": -232091428,
+            "2023": -286168567
+          }
+        },
+        "cash_summary": [
+          {
+            "item": "NET INCREASE/(DECREASE) IN CASH AND CASH EQUIVALENTS",
+            "2024": 4437077978,
+            "2023": 24365415981
+          },
+          {
+            "item": "CASH AND CASH EQUIVALENTS, JANUARY 1",
+            "2024": 30779119092,
+            "2023": 6423703001
+          },
+          {
+            "item": "CASH AND CASH EQUIVALENTS, DECEMBER 31",
+            "2024": 54272107334,
+            "2023": 30779119092
+          }
+        ]
+      }
+    }
+  }
+}

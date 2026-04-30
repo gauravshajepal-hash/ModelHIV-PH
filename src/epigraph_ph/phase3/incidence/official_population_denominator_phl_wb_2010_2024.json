@@ -1,0 +1,73 @@
+{
+  "source": {
+    "provider": "World Bank WDI",
+    "indicator_code": "SP.POP.TOTL",
+    "country_code": "PHL",
+    "country_name": "Philippines",
+    "indicator_name": "Population, total",
+    "retrieved_utc_date": "2026-04-09",
+    "url": "https://api.worldbank.org/v2/country/PHL/indicator/SP.POP.TOTL?format=json"
+  },
+  "rows": [
+    {
+      "year": 2010,
+      "population_total": 96337125
+    },
+    {
+      "year": 2011,
+      "population_total": 98248614
+    },
+    {
+      "year": 2012,
+      "population_total": 100175512
+    },
+    {
+      "year": 2013,
+      "population_total": 102076336
+    },
+    {
+      "year": 2014,
+      "population_total": 103767130
+    },
+    {
+      "year": 2015,
+      "population_total": 105312992
+    },
+    {
+      "year": 2016,
+      "population_total": 106735719
+    },
+    {
+      "year": 2017,
+      "population_total": 108119693
+    },
+    {
+      "year": 2018,
+      "population_total": 109465287
+    },
+    {
+      "year": 2019,
+      "population_total": 110804683
+    },
+    {
+      "year": 2020,
+      "population_total": 112081264
+    },
+    {
+      "year": 2021,
+      "population_total": 113100950
+    },
+    {
+      "year": 2022,
+      "population_total": 113964338
+    },
+    {
+      "year": 2023,
+      "population_total": 114891199
+    },
+    {
+      "year": 2024,
+      "population_total": 115843670
+    }
+  ]
+}

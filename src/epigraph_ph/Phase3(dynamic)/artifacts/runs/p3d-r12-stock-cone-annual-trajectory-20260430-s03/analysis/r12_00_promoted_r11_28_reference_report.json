@@ -1,0 +1,1883 @@
+{
+  "contract": "R11-28 combines R11-17 and R11-20 using train-origin inverse-error weights",
+  "experiment_id": "R12-00-REFERENCE",
+  "family": "multi_horizon_weighted_process",
+  "generated_at": "2026-04-30T22:50:39.074337+00:00",
+  "horizon_reports": {
+    "h1": {
+      "conditional_rate_anatomy": [
+        {
+          "candidate_mean_rate_error": 0.09366570257588623,
+          "candidate_minus_carry_forward_mean_rate_error": 0.0,
+          "carry_forward_mean_rate_error": 0.09366570257588623,
+          "denominator_metric": "alive_on_art",
+          "entry_count": 7,
+          "numerator_metric": "tested_for_viral_load",
+          "rate_id": "vl_tested_among_art",
+          "worst_candidate_minus_carry_forward_rate_error": 0.0
+        },
+        {
+          "candidate_mean_rate_error": 0.025984101524344595,
+          "candidate_minus_carry_forward_mean_rate_error": 2.7755575615628914e-17,
+          "carry_forward_mean_rate_error": 0.025984101524344567,
+          "denominator_metric": "tested_for_viral_load",
+          "entry_count": 7,
+          "numerator_metric": "virally_suppressed",
+          "rate_id": "suppressed_among_vl_tested",
+          "worst_candidate_minus_carry_forward_rate_error": 0.0
+        }
+      ],
+      "conditional_rate_gate": {
+        "blockers": [],
+        "contract": "dedicated third-95 process gate against last-observed conditional-rate carry-forward",
+        "rate_rows": [
+          {
+            "blockers": [],
+            "candidate_mean_rate_error": 0.09366570257588623,
+            "candidate_minus_carry_forward_mean_rate_error": 0.0,
+            "carry_forward_mean_rate_error": 0.09366570257588623,
+            "entry_count": 7,
+            "rate_id": "vl_tested_among_art",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_rate_error": 0.0
+          },
+          {
+            "blockers": [],
+            "candidate_mean_rate_error": 0.025984101524344595,
+            "candidate_minus_carry_forward_mean_rate_error": 2.7755575615628914e-17,
+            "carry_forward_mean_rate_error": 0.025984101524344567,
+            "entry_count": 7,
+            "rate_id": "suppressed_among_vl_tested",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_rate_error": 0.0
+          }
+        ],
+        "schema_version": "phase3_dynamic.r11_conditional_rate_gate.v1",
+        "status": "pass"
+      },
+      "contract": "train-origin-safe sparse state/readout filter; target values are not used in holdout prediction",
+      "experiment_id": "R12-00-REFERENCE-H1",
+      "family": "multi_horizon_weighted_process",
+      "generated_at": "2026-04-30T22:50:34.870753+00:00",
+      "metric_anatomy": [
+        {
+          "candidate_mean_norm_error": 0.043538058118710296,
+          "candidate_minus_carry_forward_mean_norm_error": -0.08346645108749064,
+          "carry_forward_mean_norm_error": 0.12700450920620093,
+          "entry_count": 7,
+          "metric_name": "diagnosed_plhiv",
+          "worst_candidate_minus_carry_forward_norm_error": -0.0856524187925995
+        },
+        {
+          "candidate_mean_norm_error": 0.07872783857621904,
+          "candidate_minus_carry_forward_mean_norm_error": -0.08806093570428608,
+          "carry_forward_mean_norm_error": 0.16678877428050512,
+          "entry_count": 7,
+          "metric_name": "alive_on_art",
+          "worst_candidate_minus_carry_forward_norm_error": -0.09513717928253385
+        },
+        {
+          "candidate_mean_norm_error": 0.4160480865118946,
+          "candidate_minus_carry_forward_mean_norm_error": -0.05626314870008908,
+          "carry_forward_mean_norm_error": 0.4723112352119837,
+          "entry_count": 7,
+          "metric_name": "tested_for_viral_load",
+          "worst_candidate_minus_carry_forward_norm_error": -0.10069908566645991
+        },
+        {
+          "candidate_mean_norm_error": 0.4167311494971074,
+          "candidate_minus_carry_forward_mean_norm_error": -0.0656606611278871,
+          "carry_forward_mean_norm_error": 0.4823918106249945,
+          "entry_count": 7,
+          "metric_name": "virally_suppressed",
+          "worst_candidate_minus_carry_forward_norm_error": -0.06302853599497049
+        },
+        {
+          "candidate_mean_norm_error": 0.16354995925440932,
+          "candidate_minus_carry_forward_mean_norm_error": -0.01899962398533428,
+          "carry_forward_mean_norm_error": 0.1825495832397436,
+          "entry_count": 6,
+          "metric_name": "new_diagnosed_cases_period",
+          "worst_candidate_minus_carry_forward_norm_error": -0.02479415136294033
+        }
+      ],
+      "model_summaries": [
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2019
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2018
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2020
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2019
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2021
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2020
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2022
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2021
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2023
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2022
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2024
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2023
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2024
+        }
+      ],
+      "one_year_gate": {
+        "blockers": [],
+        "candidate_mean_mae": 0.2235828298385683,
+        "candidate_minus_carry_forward_mean_mae": -0.06339153454283475,
+        "candidate_minus_carry_forward_worst_mae": -0.07635727484275462,
+        "candidate_worst_mae": 0.43532119417180765,
+        "carry_forward_mean_mae": 0.28697436438140306,
+        "carry_forward_worst_mae": 0.5116784690145623,
+        "contract": "blocked-origin one-year sparse cascade score over D/A/T/V and diagnosis flow",
+        "r10_comparable_candidate_mean_mae": 0.09108534006249573,
+        "r10_comparable_carry_forward_mean_mae": 0.15799845325880346,
+        "r10_comparable_entry_count": 44,
+        "r10_comparable_metric_scope": [
+          "diagnosed_plhiv",
+          "alive_on_art",
+          "new_diagnosed_cases_period"
+        ],
+        "schema_version": "phase3_dynamic.r11_one_year_gate.v1",
+        "split_count": 7,
+        "status": "pass"
+      },
+      "promotion_gate": {
+        "blockers": [
+          "candidate_mean_not_better_than_r10_reference"
+        ],
+        "claim_boundary": "R11 candidate must beat carry-forward, guarded stock consistency, and R10 before any full-cascade claim",
+        "promotion_eligible": false,
+        "status": "reject_full_cascade_claim"
+      },
+      "r10_reference": {
+        "available": true,
+        "reference_quarterly_mean_mae": 0.10601883888971031
+      },
+      "rows": [
+        {
+          "candidate_entry_count": 5,
+          "candidate_mae": 0.3693535768894388,
+          "candidate_minus_carry_forward_mae": -0.07487397819054997,
+          "carry_forward_entry_count": 5,
+          "carry_forward_mae": 0.4442275550799888,
+          "fit_status": "completed",
+          "holdout_years": [
+            2019
+          ],
+          "r10_comparable_candidate_mae": 0.1124581582066254,
+          "r10_comparable_carry_forward_mae": 0.18301842928007642,
+          "r10_comparable_entry_count": 3,
+          "train_end_year": 2018,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018
+          ]
+        },
+        {
+          "candidate_entry_count": 5,
+          "candidate_mae": 0.21545356100220725,
+          "candidate_minus_carry_forward_mae": 0.010173968724254856,
+          "carry_forward_entry_count": 5,
+          "carry_forward_mae": 0.2052795922779524,
+          "fit_status": "completed",
+          "holdout_years": [
+            2020
+          ],
+          "r10_comparable_candidate_mae": 0.08766067456356481,
+          "r10_comparable_carry_forward_mae": 0.135426484181109,
+          "r10_comparable_entry_count": 3,
+          "train_end_year": 2019,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019
+          ]
+        },
+        {
+          "candidate_entry_count": 4,
+          "candidate_mae": 0.43532119417180765,
+          "candidate_minus_carry_forward_mae": -0.07635727484275462,
+          "carry_forward_entry_count": 4,
+          "carry_forward_mae": 0.5116784690145623,
+          "fit_status": "completed",
+          "holdout_years": [
+            2021
+          ],
+          "r10_comparable_candidate_mae": 0.07563110892144886,
+          "r10_comparable_carry_forward_mae": 0.16611703458946953,
+          "r10_comparable_entry_count": 2,
+          "train_end_year": 2020,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020
+          ]
+        },
+        {
+          "candidate_entry_count": 5,
+          "candidate_mae": 0.11014833141587896,
+          "candidate_minus_carry_forward_mae": -0.06290101708101042,
+          "carry_forward_entry_count": 5,
+          "carry_forward_mae": 0.17304934849688938,
+          "fit_status": "completed",
+          "holdout_years": [
+            2022
+          ],
+          "r10_comparable_candidate_mae": 0.1670652020456275,
+          "r10_comparable_carry_forward_mae": 0.24242239756670156,
+          "r10_comparable_entry_count": 3,
+          "train_end_year": 2021,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021
+          ]
+        },
+        {
+          "candidate_entry_count": 13,
+          "candidate_mae": 0.2599747007139268,
+          "candidate_minus_carry_forward_mae": -0.09184917087152106,
+          "carry_forward_entry_count": 13,
+          "carry_forward_mae": 0.35182387158544787,
+          "fit_status": "completed",
+          "holdout_years": [
+            2023
+          ],
+          "r10_comparable_candidate_mae": 0.07561614452999886,
+          "r10_comparable_carry_forward_mae": 0.15025885800564381,
+          "r10_comparable_entry_count": 9,
+          "train_end_year": 2022,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ]
+        },
+        {
+          "candidate_entry_count": 20,
+          "candidate_mae": 0.06835031361437696,
+          "candidate_minus_carry_forward_mae": -0.09413234415441663,
+          "carry_forward_entry_count": 20,
+          "carry_forward_mae": 0.1624826577687936,
+          "fit_status": "completed",
+          "holdout_years": [
+            2024
+          ],
+          "r10_comparable_candidate_mae": 0.06593310327122479,
+          "r10_comparable_carry_forward_mae": 0.131544404751969,
+          "r10_comparable_entry_count": 12,
+          "train_end_year": 2023,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ]
+        },
+        {
+          "candidate_entry_count": 20,
+          "candidate_mae": 0.10647813106234175,
+          "candidate_minus_carry_forward_mae": -0.05380092538384554,
+          "carry_forward_entry_count": 20,
+          "carry_forward_mae": 0.16027905644618728,
+          "fit_status": "completed",
+          "holdout_years": [
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.053232988898979816,
+          "r10_comparable_carry_forward_mae": 0.09720156443665512,
+          "r10_comparable_entry_count": 12,
+          "train_end_year": 2024,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ]
+        }
+      ],
+      "schema_version": "phase3_dynamic.r11_state_filter_report.v1",
+      "stock_consistency_gate": {
+        "blockers": [],
+        "contract": "strict signed non-regression against carry-forward on guarded stock metrics; zero hand-tuned tolerance",
+        "guard_metrics": [
+          "diagnosed_plhiv",
+          "alive_on_art"
+        ],
+        "metric_rows": [
+          {
+            "blockers": [],
+            "candidate_mean_norm_error": 0.043538058118710296,
+            "candidate_minus_carry_forward_mean_norm_error": -0.08346645108749064,
+            "carry_forward_mean_norm_error": 0.12700450920620093,
+            "metric_name": "diagnosed_plhiv",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_norm_error": -0.0856524187925995
+          },
+          {
+            "blockers": [],
+            "candidate_mean_norm_error": 0.07872783857621904,
+            "candidate_minus_carry_forward_mean_norm_error": -0.08806093570428608,
+            "carry_forward_mean_norm_error": 0.16678877428050512,
+            "metric_name": "alive_on_art",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_norm_error": -0.09513717928253385
+          }
+        ],
+        "schema_version": "phase3_dynamic.r11_stock_consistency_gate.v1",
+        "status": "pass"
+      }
+    },
+    "h3": {
+      "conditional_rate_anatomy": [
+        {
+          "candidate_mean_rate_error": 0.1095226519775745,
+          "candidate_minus_carry_forward_mean_rate_error": 0.0,
+          "carry_forward_mean_rate_error": 0.1095226519775745,
+          "denominator_metric": "alive_on_art",
+          "entry_count": 7,
+          "numerator_metric": "tested_for_viral_load",
+          "rate_id": "vl_tested_among_art",
+          "worst_candidate_minus_carry_forward_rate_error": 0.0
+        },
+        {
+          "candidate_mean_rate_error": 0.03885778757979602,
+          "candidate_minus_carry_forward_mean_rate_error": 6.938893903907228e-18,
+          "carry_forward_mean_rate_error": 0.038857787579796015,
+          "denominator_metric": "tested_for_viral_load",
+          "entry_count": 7,
+          "numerator_metric": "virally_suppressed",
+          "rate_id": "suppressed_among_vl_tested",
+          "worst_candidate_minus_carry_forward_rate_error": 0.0
+        }
+      ],
+      "conditional_rate_gate": {
+        "blockers": [],
+        "contract": "dedicated third-95 process gate against last-observed conditional-rate carry-forward",
+        "rate_rows": [
+          {
+            "blockers": [],
+            "candidate_mean_rate_error": 0.1095226519775745,
+            "candidate_minus_carry_forward_mean_rate_error": 0.0,
+            "carry_forward_mean_rate_error": 0.1095226519775745,
+            "entry_count": 7,
+            "rate_id": "vl_tested_among_art",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_rate_error": 0.0
+          },
+          {
+            "blockers": [],
+            "candidate_mean_rate_error": 0.03885778757979602,
+            "candidate_minus_carry_forward_mean_rate_error": 6.938893903907228e-18,
+            "carry_forward_mean_rate_error": 0.038857787579796015,
+            "entry_count": 7,
+            "rate_id": "suppressed_among_vl_tested",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_rate_error": 0.0
+          }
+        ],
+        "schema_version": "phase3_dynamic.r11_conditional_rate_gate.v1",
+        "status": "pass"
+      },
+      "contract": "train-origin-safe sparse state/readout filter; target values are not used in holdout prediction",
+      "experiment_id": "R12-00-REFERENCE-H3",
+      "family": "multi_horizon_weighted_process",
+      "generated_at": "2026-04-30T22:50:36.972852+00:00",
+      "metric_anatomy": [
+        {
+          "candidate_mean_norm_error": 0.1068900665015162,
+          "candidate_minus_carry_forward_mean_norm_error": -0.15959245413492193,
+          "carry_forward_mean_norm_error": 0.2664825206364381,
+          "entry_count": 7,
+          "metric_name": "diagnosed_plhiv",
+          "worst_candidate_minus_carry_forward_norm_error": -0.2071306376882338
+        },
+        {
+          "candidate_mean_norm_error": 0.07348666152887084,
+          "candidate_minus_carry_forward_mean_norm_error": -0.2838485050806812,
+          "carry_forward_mean_norm_error": 0.35733516660955206,
+          "entry_count": 7,
+          "metric_name": "alive_on_art",
+          "worst_candidate_minus_carry_forward_norm_error": -0.4943586471565602
+        },
+        {
+          "candidate_mean_norm_error": 0.5326830819102749,
+          "candidate_minus_carry_forward_mean_norm_error": -0.31565057077467307,
+          "carry_forward_mean_norm_error": 0.848333652684948,
+          "entry_count": 7,
+          "metric_name": "tested_for_viral_load",
+          "worst_candidate_minus_carry_forward_norm_error": -0.42651822803536943
+        },
+        {
+          "candidate_mean_norm_error": 0.5839971131325867,
+          "candidate_minus_carry_forward_mean_norm_error": -0.318864478746532,
+          "carry_forward_mean_norm_error": 0.9028615918791187,
+          "entry_count": 7,
+          "metric_name": "virally_suppressed",
+          "worst_candidate_minus_carry_forward_norm_error": -0.43762629225777117
+        },
+        {
+          "candidate_mean_norm_error": 0.27771271286924903,
+          "candidate_minus_carry_forward_mean_norm_error": -0.012932455339704385,
+          "carry_forward_mean_norm_error": 0.2906451682089534,
+          "entry_count": 7,
+          "metric_name": "new_diagnosed_cases_period",
+          "worst_candidate_minus_carry_forward_norm_error": -0.024794151362940386
+        }
+      ],
+      "model_summaries": [
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 3,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2019,
+            2020,
+            2021
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2018
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 3,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2020,
+            2021,
+            2022
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2019
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 3,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2021,
+            2022,
+            2023
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2020
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 3,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2022,
+            2023,
+            2024
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2021
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 3,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2023,
+            2024,
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2022
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 2,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2024,
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2023
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2024
+        }
+      ],
+      "one_year_gate": {
+        "blockers": [],
+        "candidate_mean_mae": 0.30621655897456135,
+        "candidate_minus_carry_forward_mean_mae": -0.22165527096826887,
+        "candidate_minus_carry_forward_worst_mae": -0.2562056072691832,
+        "candidate_worst_mae": 0.6259475478097684,
+        "carry_forward_mean_mae": 0.5278718299428302,
+        "carry_forward_worst_mae": 0.8821531550789515,
+        "contract": "blocked-origin one-year sparse cascade score over D/A/T/V and diagnosis flow",
+        "r10_comparable_candidate_mean_mae": 0.14904325416653394,
+        "r10_comparable_carry_forward_mean_mae": 0.30970286782712403,
+        "r10_comparable_entry_count": 123,
+        "r10_comparable_metric_scope": [
+          "diagnosed_plhiv",
+          "alive_on_art",
+          "new_diagnosed_cases_period"
+        ],
+        "schema_version": "phase3_dynamic.r11_one_year_gate.v1",
+        "split_count": 7,
+        "status": "pass"
+      },
+      "promotion_gate": {
+        "blockers": [
+          "candidate_mean_not_better_than_r10_reference"
+        ],
+        "claim_boundary": "R11 candidate must beat carry-forward, guarded stock consistency, and R10 before any full-cascade claim",
+        "promotion_eligible": false,
+        "status": "reject_full_cascade_claim"
+      },
+      "r10_reference": {
+        "available": true,
+        "reference_quarterly_mean_mae": 0.10601883888971031
+      },
+      "rows": [
+        {
+          "candidate_entry_count": 14,
+          "candidate_mae": 0.36574489755941025,
+          "candidate_minus_carry_forward_mae": -0.24205254051302233,
+          "carry_forward_entry_count": 14,
+          "carry_forward_mae": 0.6077974380724326,
+          "fit_status": "completed",
+          "holdout_years": [
+            2019,
+            2020,
+            2021
+          ],
+          "r10_comparable_candidate_mae": 0.13849066694078643,
+          "r10_comparable_carry_forward_mae": 0.33742867876466887,
+          "r10_comparable_entry_count": 8,
+          "train_end_year": 2018,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018
+          ]
+        },
+        {
+          "candidate_entry_count": 14,
+          "candidate_mae": 0.1528111114150468,
+          "candidate_minus_carry_forward_mae": -0.22018986822916733,
+          "carry_forward_entry_count": 14,
+          "carry_forward_mae": 0.37300097964421414,
+          "fit_status": "completed",
+          "holdout_years": [
+            2020,
+            2021,
+            2022
+          ],
+          "r10_comparable_candidate_mae": 0.11171833503008685,
+          "r10_comparable_carry_forward_mae": 0.274821395203101,
+          "r10_comparable_entry_count": 8,
+          "train_end_year": 2019,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019
+          ]
+        },
+        {
+          "candidate_entry_count": 22,
+          "candidate_mae": 0.6259475478097684,
+          "candidate_minus_carry_forward_mae": -0.2562056072691832,
+          "carry_forward_entry_count": 22,
+          "carry_forward_mae": 0.8821531550789515,
+          "fit_status": "completed",
+          "holdout_years": [
+            2021,
+            2022,
+            2023
+          ],
+          "r10_comparable_candidate_mae": 0.2380009726883279,
+          "r10_comparable_carry_forward_mae": 0.4698160752981981,
+          "r10_comparable_entry_count": 14,
+          "train_end_year": 2020,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020
+          ]
+        },
+        {
+          "candidate_entry_count": 38,
+          "candidate_mae": 0.3393741620346399,
+          "candidate_minus_carry_forward_mae": -0.3334247074916826,
+          "carry_forward_entry_count": 38,
+          "carry_forward_mae": 0.6727988695263225,
+          "fit_status": "completed",
+          "holdout_years": [
+            2022,
+            2023,
+            2024
+          ],
+          "r10_comparable_candidate_mae": 0.24223131326448577,
+          "r10_comparable_carry_forward_mae": 0.47900835731890296,
+          "r10_comparable_entry_count": 24,
+          "train_end_year": 2021,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021
+          ]
+        },
+        {
+          "candidate_entry_count": 53,
+          "candidate_mae": 0.42651705997684863,
+          "candidate_minus_carry_forward_mae": -0.28854719305223886,
+          "carry_forward_entry_count": 53,
+          "carry_forward_mae": 0.7150642530290875,
+          "fit_status": "completed",
+          "holdout_years": [
+            2023,
+            2024,
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.15007304668190766,
+          "r10_comparable_carry_forward_mae": 0.31426185408040214,
+          "r10_comparable_entry_count": 33,
+          "train_end_year": 2022,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ]
+        },
+        {
+          "candidate_entry_count": 40,
+          "candidate_mae": 0.12664300296387346,
+          "candidate_minus_carry_forward_mae": -0.15736605483874258,
+          "carry_forward_entry_count": 40,
+          "carry_forward_mae": 0.28400905780261604,
+          "fit_status": "completed",
+          "holdout_years": [
+            2024,
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.10955545566116322,
+          "r10_comparable_carry_forward_mae": 0.19538214968793977,
+          "r10_comparable_entry_count": 24,
+          "train_end_year": 2023,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ]
+        },
+        {
+          "candidate_entry_count": 20,
+          "candidate_mae": 0.10647813106234175,
+          "candidate_minus_carry_forward_mae": -0.05380092538384554,
+          "carry_forward_entry_count": 20,
+          "carry_forward_mae": 0.16027905644618728,
+          "fit_status": "completed",
+          "holdout_years": [
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.053232988898979816,
+          "r10_comparable_carry_forward_mae": 0.09720156443665512,
+          "r10_comparable_entry_count": 12,
+          "train_end_year": 2024,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ]
+        }
+      ],
+      "schema_version": "phase3_dynamic.r11_state_filter_report.v1",
+      "stock_consistency_gate": {
+        "blockers": [],
+        "contract": "strict signed non-regression against carry-forward on guarded stock metrics; zero hand-tuned tolerance",
+        "guard_metrics": [
+          "diagnosed_plhiv",
+          "alive_on_art"
+        ],
+        "metric_rows": [
+          {
+            "blockers": [],
+            "candidate_mean_norm_error": 0.1068900665015162,
+            "candidate_minus_carry_forward_mean_norm_error": -0.15959245413492193,
+            "carry_forward_mean_norm_error": 0.2664825206364381,
+            "metric_name": "diagnosed_plhiv",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_norm_error": -0.2071306376882338
+          },
+          {
+            "blockers": [],
+            "candidate_mean_norm_error": 0.07348666152887084,
+            "candidate_minus_carry_forward_mean_norm_error": -0.2838485050806812,
+            "carry_forward_mean_norm_error": 0.35733516660955206,
+            "metric_name": "alive_on_art",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_norm_error": -0.4943586471565602
+          }
+        ],
+        "schema_version": "phase3_dynamic.r11_stock_consistency_gate.v1",
+        "status": "pass"
+      }
+    },
+    "h5": {
+      "conditional_rate_anatomy": [
+        {
+          "candidate_mean_rate_error": 0.14289611887716572,
+          "candidate_minus_carry_forward_mean_rate_error": 0.0,
+          "carry_forward_mean_rate_error": 0.14289611887716572,
+          "denominator_metric": "alive_on_art",
+          "entry_count": 7,
+          "numerator_metric": "tested_for_viral_load",
+          "rate_id": "vl_tested_among_art",
+          "worst_candidate_minus_carry_forward_rate_error": 0.0
+        },
+        {
+          "candidate_mean_rate_error": 0.048767120843928875,
+          "candidate_minus_carry_forward_mean_rate_error": 6.938893903907228e-18,
+          "carry_forward_mean_rate_error": 0.04876712084392887,
+          "denominator_metric": "tested_for_viral_load",
+          "entry_count": 7,
+          "numerator_metric": "virally_suppressed",
+          "rate_id": "suppressed_among_vl_tested",
+          "worst_candidate_minus_carry_forward_rate_error": 0.0
+        }
+      ],
+      "conditional_rate_gate": {
+        "blockers": [],
+        "contract": "dedicated third-95 process gate against last-observed conditional-rate carry-forward",
+        "rate_rows": [
+          {
+            "blockers": [],
+            "candidate_mean_rate_error": 0.14289611887716572,
+            "candidate_minus_carry_forward_mean_rate_error": 0.0,
+            "carry_forward_mean_rate_error": 0.14289611887716572,
+            "entry_count": 7,
+            "rate_id": "vl_tested_among_art",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_rate_error": 0.0
+          },
+          {
+            "blockers": [],
+            "candidate_mean_rate_error": 0.048767120843928875,
+            "candidate_minus_carry_forward_mean_rate_error": 6.938893903907228e-18,
+            "carry_forward_mean_rate_error": 0.04876712084392887,
+            "entry_count": 7,
+            "rate_id": "suppressed_among_vl_tested",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_rate_error": 0.0
+          }
+        ],
+        "schema_version": "phase3_dynamic.r11_conditional_rate_gate.v1",
+        "status": "pass"
+      },
+      "contract": "train-origin-safe sparse state/readout filter; target values are not used in holdout prediction",
+      "experiment_id": "R12-00-REFERENCE-H5",
+      "family": "multi_horizon_weighted_process",
+      "generated_at": "2026-04-30T22:50:39.074237+00:00",
+      "metric_anatomy": [
+        {
+          "candidate_mean_norm_error": 0.16970802906371638,
+          "candidate_minus_carry_forward_mean_norm_error": -0.2364660228340187,
+          "carry_forward_mean_norm_error": 0.4061740518977351,
+          "entry_count": 7,
+          "metric_name": "diagnosed_plhiv",
+          "worst_candidate_minus_carry_forward_norm_error": -0.3694519568619805
+        },
+        {
+          "candidate_mean_norm_error": 0.20698176406332797,
+          "candidate_minus_carry_forward_mean_norm_error": -0.3551419308800498,
+          "carry_forward_mean_norm_error": 0.5621236949433778,
+          "entry_count": 7,
+          "metric_name": "alive_on_art",
+          "worst_candidate_minus_carry_forward_norm_error": -0.3700768961634955
+        },
+        {
+          "candidate_mean_norm_error": 1.028917518696874,
+          "candidate_minus_carry_forward_mean_norm_error": -0.3837745777849646,
+          "carry_forward_mean_norm_error": 1.4126920964818386,
+          "entry_count": 7,
+          "metric_name": "tested_for_viral_load",
+          "worst_candidate_minus_carry_forward_norm_error": -0.31854166800456696
+        },
+        {
+          "candidate_mean_norm_error": 1.1319118918246203,
+          "candidate_minus_carry_forward_mean_norm_error": -0.3816865425553515,
+          "carry_forward_mean_norm_error": 1.5135984343799718,
+          "entry_count": 7,
+          "metric_name": "virally_suppressed",
+          "worst_candidate_minus_carry_forward_norm_error": -0.7104502105574619
+        },
+        {
+          "candidate_mean_norm_error": 0.3190422884274184,
+          "candidate_minus_carry_forward_mean_norm_error": -0.0589602376831001,
+          "carry_forward_mean_norm_error": 0.3780025261105185,
+          "entry_count": 7,
+          "metric_name": "new_diagnosed_cases_period",
+          "worst_candidate_minus_carry_forward_norm_error": -0.10205307328707869
+        }
+      ],
+      "model_summaries": [
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 5,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2018
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 5,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2019
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 5,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2020
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 4,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2021
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 3,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "era_datv_transition_process",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2023,
+            2024,
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2022
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 2,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2024,
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2023
+        },
+        {
+          "family_selector": {
+            "candidate_families": [
+              "constrained_trajectory_shape_head",
+              "era_datv_transition_process"
+            ],
+            "max_horizon_years": 1,
+            "metric_scope": [
+              "diagnosed_plhiv",
+              "alive_on_art",
+              "new_diagnosed_cases_period"
+            ],
+            "selected_family": "constrained_trajectory_shape_head",
+            "status": "completed"
+          },
+          "holdout_years": [
+            2025
+          ],
+          "metric_model_status": {},
+          "train_end_year": 2024
+        }
+      ],
+      "one_year_gate": {
+        "blockers": [],
+        "candidate_mean_mae": 0.5562544818761366,
+        "candidate_minus_carry_forward_mean_mae": -0.282509892584193,
+        "candidate_minus_carry_forward_worst_mae": -0.44286902973785325,
+        "candidate_worst_mae": 1.104443368906,
+        "carry_forward_mean_mae": 0.8387643744603296,
+        "carry_forward_worst_mae": 1.5473123986438533,
+        "contract": "blocked-origin one-year sparse cascade score over D/A/T/V and diagnosis flow",
+        "r10_comparable_candidate_mean_mae": 0.23240795203672612,
+        "r10_comparable_carry_forward_mean_mae": 0.4526300016057158,
+        "r10_comparable_entry_count": 192,
+        "r10_comparable_metric_scope": [
+          "diagnosed_plhiv",
+          "alive_on_art",
+          "new_diagnosed_cases_period"
+        ],
+        "schema_version": "phase3_dynamic.r11_one_year_gate.v1",
+        "split_count": 7,
+        "status": "pass"
+      },
+      "promotion_gate": {
+        "blockers": [
+          "candidate_mean_not_better_than_r10_reference"
+        ],
+        "claim_boundary": "R11 candidate must beat carry-forward, guarded stock consistency, and R10 before any full-cascade claim",
+        "promotion_eligible": false,
+        "status": "reject_full_cascade_claim"
+      },
+      "r10_reference": {
+        "available": true,
+        "reference_quarterly_mean_mae": 0.10601883888971031
+      },
+      "rows": [
+        {
+          "candidate_entry_count": 32,
+          "candidate_mae": 0.9955058997425126,
+          "candidate_minus_carry_forward_mae": -0.23930606611670924,
+          "carry_forward_entry_count": 32,
+          "carry_forward_mae": 1.2348119658592218,
+          "fit_status": "completed",
+          "holdout_years": [
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ],
+          "r10_comparable_candidate_mae": 0.44332135742675877,
+          "r10_comparable_carry_forward_mae": 0.6549238491706442,
+          "r10_comparable_entry_count": 20,
+          "train_end_year": 2018,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018
+          ]
+        },
+        {
+          "candidate_entry_count": 47,
+          "candidate_mae": 0.6791183018233251,
+          "candidate_minus_carry_forward_mae": -0.3566334346358637,
+          "carry_forward_entry_count": 47,
+          "carry_forward_mae": 1.0357517364591888,
+          "fit_status": "completed",
+          "holdout_years": [
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "r10_comparable_candidate_mae": 0.30447876623016024,
+          "r10_comparable_carry_forward_mae": 0.6042598067874834,
+          "r10_comparable_entry_count": 29,
+          "train_end_year": 2019,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019
+          ]
+        },
+        {
+          "candidate_entry_count": 62,
+          "candidate_mae": 1.104443368906,
+          "candidate_minus_carry_forward_mae": -0.44286902973785325,
+          "carry_forward_entry_count": 62,
+          "carry_forward_mae": 1.5473123986438533,
+          "fit_status": "completed",
+          "holdout_years": [
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.31537804881515435,
+          "r10_comparable_carry_forward_mae": 0.7217067343936885,
+          "r10_comparable_entry_count": 38,
+          "train_end_year": 2020,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020
+          ]
+        },
+        {
+          "candidate_entry_count": 58,
+          "candidate_mae": 0.45507560865805463,
+          "candidate_minus_carry_forward_mae": -0.4390465443240973,
+          "carry_forward_entry_count": 58,
+          "carry_forward_mae": 0.8941221529821519,
+          "fit_status": "completed",
+          "holdout_years": [
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.25081600054295894,
+          "r10_comparable_carry_forward_mae": 0.5806740526831979,
+          "r10_comparable_entry_count": 36,
+          "train_end_year": 2021,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021
+          ]
+        },
+        {
+          "candidate_entry_count": 53,
+          "candidate_mae": 0.42651705997684863,
+          "candidate_minus_carry_forward_mae": -0.28854719305223886,
+          "carry_forward_entry_count": 53,
+          "carry_forward_mae": 0.7150642530290875,
+          "fit_status": "completed",
+          "holdout_years": [
+            2023,
+            2024,
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.15007304668190766,
+          "r10_comparable_carry_forward_mae": 0.31426185408040214,
+          "r10_comparable_entry_count": 33,
+          "train_end_year": 2022,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ]
+        },
+        {
+          "candidate_entry_count": 40,
+          "candidate_mae": 0.12664300296387346,
+          "candidate_minus_carry_forward_mae": -0.15736605483874258,
+          "carry_forward_entry_count": 40,
+          "carry_forward_mae": 0.28400905780261604,
+          "fit_status": "completed",
+          "holdout_years": [
+            2024,
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.10955545566116322,
+          "r10_comparable_carry_forward_mae": 0.19538214968793977,
+          "r10_comparable_entry_count": 24,
+          "train_end_year": 2023,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ]
+        },
+        {
+          "candidate_entry_count": 20,
+          "candidate_mae": 0.10647813106234175,
+          "candidate_minus_carry_forward_mae": -0.05380092538384554,
+          "carry_forward_entry_count": 20,
+          "carry_forward_mae": 0.16027905644618728,
+          "fit_status": "completed",
+          "holdout_years": [
+            2025
+          ],
+          "r10_comparable_candidate_mae": 0.053232988898979816,
+          "r10_comparable_carry_forward_mae": 0.09720156443665512,
+          "r10_comparable_entry_count": 12,
+          "train_end_year": 2024,
+          "train_years": [
+            2012,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ]
+        }
+      ],
+      "schema_version": "phase3_dynamic.r11_state_filter_report.v1",
+      "stock_consistency_gate": {
+        "blockers": [],
+        "contract": "strict signed non-regression against carry-forward on guarded stock metrics; zero hand-tuned tolerance",
+        "guard_metrics": [
+          "diagnosed_plhiv",
+          "alive_on_art"
+        ],
+        "metric_rows": [
+          {
+            "blockers": [],
+            "candidate_mean_norm_error": 0.16970802906371638,
+            "candidate_minus_carry_forward_mean_norm_error": -0.2364660228340187,
+            "carry_forward_mean_norm_error": 0.4061740518977351,
+            "metric_name": "diagnosed_plhiv",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_norm_error": -0.3694519568619805
+          },
+          {
+            "blockers": [],
+            "candidate_mean_norm_error": 0.20698176406332797,
+            "candidate_minus_carry_forward_mean_norm_error": -0.3551419308800498,
+            "carry_forward_mean_norm_error": 0.5621236949433778,
+            "metric_name": "alive_on_art",
+            "status": "pass",
+            "worst_candidate_minus_carry_forward_norm_error": -0.3700768961634955
+          }
+        ],
+        "schema_version": "phase3_dynamic.r11_stock_consistency_gate.v1",
+        "status": "pass"
+      }
+    }
+  },
+  "horizon_rows": [
+    {
+      "candidate_mean_mae": 0.2235828298385683,
+      "candidate_minus_carry_forward_mean_mae": -0.06339153454283475,
+      "candidate_minus_r10_reference_mae": -0.004218118667849283,
+      "candidate_worst_mae": 0.43532119417180765,
+      "carry_forward_mean_mae": 0.28697436438140306,
+      "carry_forward_worst_mae": 0.5116784690145623,
+      "conditional_rate_status": "pass",
+      "horizon_years": 1,
+      "r10_comparable_candidate_mean_mae": 0.09108534006249573,
+      "r10_comparable_carry_forward_mean_mae": 0.15799845325880346,
+      "r10_comparable_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "r10_horizon_reference_mae": 0.09530345873034501,
+      "r10_horizon_reference_source": "horizon_matched_replay",
+      "split_count": 7,
+      "stock_consistency_status": "pass"
+    },
+    {
+      "candidate_mean_mae": 0.30621655897456135,
+      "candidate_minus_carry_forward_mean_mae": -0.22165527096826887,
+      "candidate_minus_r10_reference_mae": 0.03339267194537188,
+      "candidate_worst_mae": 0.6259475478097684,
+      "carry_forward_mean_mae": 0.5278718299428302,
+      "carry_forward_worst_mae": 0.8821531550789515,
+      "conditional_rate_status": "pass",
+      "horizon_years": 3,
+      "r10_comparable_candidate_mean_mae": 0.14904325416653394,
+      "r10_comparable_carry_forward_mean_mae": 0.30970286782712403,
+      "r10_comparable_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "r10_horizon_reference_source": "horizon_matched_replay",
+      "split_count": 7,
+      "stock_consistency_status": "pass"
+    },
+    {
+      "candidate_mean_mae": 0.5562544818761366,
+      "candidate_minus_carry_forward_mean_mae": -0.282509892584193,
+      "candidate_minus_r10_reference_mae": 0.10298686428651588,
+      "candidate_worst_mae": 1.104443368906,
+      "carry_forward_mean_mae": 0.8387643744603296,
+      "carry_forward_worst_mae": 1.5473123986438533,
+      "conditional_rate_status": "pass",
+      "horizon_years": 5,
+      "r10_comparable_candidate_mean_mae": 0.23240795203672612,
+      "r10_comparable_carry_forward_mean_mae": 0.4526300016057158,
+      "r10_comparable_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "r10_horizon_reference_source": "horizon_matched_replay",
+      "split_count": 7,
+      "stock_consistency_status": "pass"
+    }
+  ],
+  "horizons": [
+    1,
+    3,
+    5
+  ],
+  "metric_horizon_anatomy": [
+    {
+      "candidate_mean_norm_error": 0.043538058118710296,
+      "candidate_minus_carry_forward_mean_norm_error": -0.08346645108749064,
+      "carry_forward_mean_norm_error": 0.12700450920620093,
+      "entry_count": 7,
+      "horizon_years": 1,
+      "metric_name": "diagnosed_plhiv",
+      "worst_candidate_minus_carry_forward_norm_error": -0.0856524187925995
+    },
+    {
+      "candidate_mean_norm_error": 0.07872783857621904,
+      "candidate_minus_carry_forward_mean_norm_error": -0.08806093570428608,
+      "carry_forward_mean_norm_error": 0.16678877428050512,
+      "entry_count": 7,
+      "horizon_years": 1,
+      "metric_name": "alive_on_art",
+      "worst_candidate_minus_carry_forward_norm_error": -0.09513717928253385
+    },
+    {
+      "candidate_mean_norm_error": 0.4160480865118946,
+      "candidate_minus_carry_forward_mean_norm_error": -0.05626314870008908,
+      "carry_forward_mean_norm_error": 0.4723112352119837,
+      "entry_count": 7,
+      "horizon_years": 1,
+      "metric_name": "tested_for_viral_load",
+      "worst_candidate_minus_carry_forward_norm_error": -0.10069908566645991
+    },
+    {
+      "candidate_mean_norm_error": 0.4167311494971074,
+      "candidate_minus_carry_forward_mean_norm_error": -0.0656606611278871,
+      "carry_forward_mean_norm_error": 0.4823918106249945,
+      "entry_count": 7,
+      "horizon_years": 1,
+      "metric_name": "virally_suppressed",
+      "worst_candidate_minus_carry_forward_norm_error": -0.06302853599497049
+    },
+    {
+      "candidate_mean_norm_error": 0.16354995925440932,
+      "candidate_minus_carry_forward_mean_norm_error": -0.01899962398533428,
+      "carry_forward_mean_norm_error": 0.1825495832397436,
+      "entry_count": 6,
+      "horizon_years": 1,
+      "metric_name": "new_diagnosed_cases_period",
+      "worst_candidate_minus_carry_forward_norm_error": -0.02479415136294033
+    },
+    {
+      "candidate_mean_norm_error": 0.1068900665015162,
+      "candidate_minus_carry_forward_mean_norm_error": -0.15959245413492193,
+      "carry_forward_mean_norm_error": 0.2664825206364381,
+      "entry_count": 7,
+      "horizon_years": 3,
+      "metric_name": "diagnosed_plhiv",
+      "worst_candidate_minus_carry_forward_norm_error": -0.2071306376882338
+    },
+    {
+      "candidate_mean_norm_error": 0.07348666152887084,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2838485050806812,
+      "carry_forward_mean_norm_error": 0.35733516660955206,
+      "entry_count": 7,
+      "horizon_years": 3,
+      "metric_name": "alive_on_art",
+      "worst_candidate_minus_carry_forward_norm_error": -0.4943586471565602
+    },
+    {
+      "candidate_mean_norm_error": 0.5326830819102749,
+      "candidate_minus_carry_forward_mean_norm_error": -0.31565057077467307,
+      "carry_forward_mean_norm_error": 0.848333652684948,
+      "entry_count": 7,
+      "horizon_years": 3,
+      "metric_name": "tested_for_viral_load",
+      "worst_candidate_minus_carry_forward_norm_error": -0.42651822803536943
+    },
+    {
+      "candidate_mean_norm_error": 0.5839971131325867,
+      "candidate_minus_carry_forward_mean_norm_error": -0.318864478746532,
+      "carry_forward_mean_norm_error": 0.9028615918791187,
+      "entry_count": 7,
+      "horizon_years": 3,
+      "metric_name": "virally_suppressed",
+      "worst_candidate_minus_carry_forward_norm_error": -0.43762629225777117
+    },
+    {
+      "candidate_mean_norm_error": 0.27771271286924903,
+      "candidate_minus_carry_forward_mean_norm_error": -0.012932455339704385,
+      "carry_forward_mean_norm_error": 0.2906451682089534,
+      "entry_count": 7,
+      "horizon_years": 3,
+      "metric_name": "new_diagnosed_cases_period",
+      "worst_candidate_minus_carry_forward_norm_error": -0.024794151362940386
+    },
+    {
+      "candidate_mean_norm_error": 0.16970802906371638,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2364660228340187,
+      "carry_forward_mean_norm_error": 0.4061740518977351,
+      "entry_count": 7,
+      "horizon_years": 5,
+      "metric_name": "diagnosed_plhiv",
+      "worst_candidate_minus_carry_forward_norm_error": -0.3694519568619805
+    },
+    {
+      "candidate_mean_norm_error": 0.20698176406332797,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3551419308800498,
+      "carry_forward_mean_norm_error": 0.5621236949433778,
+      "entry_count": 7,
+      "horizon_years": 5,
+      "metric_name": "alive_on_art",
+      "worst_candidate_minus_carry_forward_norm_error": -0.3700768961634955
+    },
+    {
+      "candidate_mean_norm_error": 1.028917518696874,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3837745777849646,
+      "carry_forward_mean_norm_error": 1.4126920964818386,
+      "entry_count": 7,
+      "horizon_years": 5,
+      "metric_name": "tested_for_viral_load",
+      "worst_candidate_minus_carry_forward_norm_error": -0.31854166800456696
+    },
+    {
+      "candidate_mean_norm_error": 1.1319118918246203,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3816865425553515,
+      "carry_forward_mean_norm_error": 1.5135984343799718,
+      "entry_count": 7,
+      "horizon_years": 5,
+      "metric_name": "virally_suppressed",
+      "worst_candidate_minus_carry_forward_norm_error": -0.7104502105574619
+    },
+    {
+      "candidate_mean_norm_error": 0.3190422884274184,
+      "candidate_minus_carry_forward_mean_norm_error": -0.0589602376831001,
+      "carry_forward_mean_norm_error": 0.3780025261105185,
+      "entry_count": 7,
+      "horizon_years": 5,
+      "metric_name": "new_diagnosed_cases_period",
+      "worst_candidate_minus_carry_forward_norm_error": -0.10205307328707869
+    }
+  ],
+  "multi_horizon_gate": {
+    "blockers": [],
+    "contract": "multi-horizon lifted gate requires every blocked horizon to beat carry-forward while preserving stock and conditional-rate gates",
+    "horizon_count": 3,
+    "schema_version": "phase3_dynamic.r11_multi_horizon_gate.v1",
+    "status": "pass"
+  },
+  "promotion_gate": {
+    "blockers": [
+      "h3_candidate_mean_not_better_than_r10_reference",
+      "h5_candidate_mean_not_better_than_r10_reference"
+    ],
+    "claim_boundary": "R12-00-REFERENCE must beat carry-forward at all horizons, preserve stock/rate gates, and beat the frozen R10 reference at all horizons",
+    "promotion_eligible": false,
+    "status": "reject_lifted_full_cascade_claim"
+  },
+  "r10_lifted_gate": {
+    "blockers": [
+      "h3_candidate_mean_not_better_than_r10_reference",
+      "h5_candidate_mean_not_better_than_r10_reference"
+    ],
+    "contract": "R10-level lifted gate compares each horizon against a horizon-matched frozen R10-family replay when available; candidate scoring uses the legacy R10-comparable metric scope, with the old scalar reference used only as a documented fallback.",
+    "horizon_rows": [
+      {
+        "blockers": [],
+        "candidate_minus_r10_reference_mae": -0.004218118667849283,
+        "candidate_r10_comparable_mean_mae": 0.09108534006249573,
+        "horizon_years": 1,
+        "r10_reference_mae": 0.09530345873034501,
+        "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+        "reference_source": "horizon_matched_replay",
+        "status": "pass"
+      },
+      {
+        "blockers": [
+          "candidate_mean_not_better_than_r10_reference"
+        ],
+        "candidate_minus_r10_reference_mae": 0.03339267194537188,
+        "candidate_r10_comparable_mean_mae": 0.14904325416653394,
+        "horizon_years": 3,
+        "r10_reference_mae": 0.11565058222116206,
+        "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+        "reference_source": "horizon_matched_replay",
+        "status": "fail"
+      },
+      {
+        "blockers": [
+          "candidate_mean_not_better_than_r10_reference"
+        ],
+        "candidate_minus_r10_reference_mae": 0.10298686428651588,
+        "candidate_r10_comparable_mean_mae": 0.23240795203672612,
+        "horizon_years": 5,
+        "r10_reference_mae": 0.12942108775021025,
+        "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+        "reference_source": "horizon_matched_replay",
+        "status": "fail"
+      }
+    ],
+    "legacy_scalar_reference_quarterly_mean_mae": 0.10601883888971031,
+    "schema_version": "phase3_dynamic.r11_r10_lifted_gate.v1",
+    "status": "fail"
+  },
+  "rate_horizon_anatomy": [
+    {
+      "candidate_mean_rate_error": 0.09366570257588623,
+      "candidate_minus_carry_forward_mean_rate_error": 0.0,
+      "carry_forward_mean_rate_error": 0.09366570257588623,
+      "denominator_metric": "alive_on_art",
+      "entry_count": 7,
+      "horizon_years": 1,
+      "numerator_metric": "tested_for_viral_load",
+      "rate_id": "vl_tested_among_art",
+      "worst_candidate_minus_carry_forward_rate_error": 0.0
+    },
+    {
+      "candidate_mean_rate_error": 0.025984101524344595,
+      "candidate_minus_carry_forward_mean_rate_error": 2.7755575615628914e-17,
+      "carry_forward_mean_rate_error": 0.025984101524344567,
+      "denominator_metric": "tested_for_viral_load",
+      "entry_count": 7,
+      "horizon_years": 1,
+      "numerator_metric": "virally_suppressed",
+      "rate_id": "suppressed_among_vl_tested",
+      "worst_candidate_minus_carry_forward_rate_error": 0.0
+    },
+    {
+      "candidate_mean_rate_error": 0.1095226519775745,
+      "candidate_minus_carry_forward_mean_rate_error": 0.0,
+      "carry_forward_mean_rate_error": 0.1095226519775745,
+      "denominator_metric": "alive_on_art",
+      "entry_count": 7,
+      "horizon_years": 3,
+      "numerator_metric": "tested_for_viral_load",
+      "rate_id": "vl_tested_among_art",
+      "worst_candidate_minus_carry_forward_rate_error": 0.0
+    },
+    {
+      "candidate_mean_rate_error": 0.03885778757979602,
+      "candidate_minus_carry_forward_mean_rate_error": 6.938893903907228e-18,
+      "carry_forward_mean_rate_error": 0.038857787579796015,
+      "denominator_metric": "tested_for_viral_load",
+      "entry_count": 7,
+      "horizon_years": 3,
+      "numerator_metric": "virally_suppressed",
+      "rate_id": "suppressed_among_vl_tested",
+      "worst_candidate_minus_carry_forward_rate_error": 0.0
+    },
+    {
+      "candidate_mean_rate_error": 0.14289611887716572,
+      "candidate_minus_carry_forward_mean_rate_error": 0.0,
+      "carry_forward_mean_rate_error": 0.14289611887716572,
+      "denominator_metric": "alive_on_art",
+      "entry_count": 7,
+      "horizon_years": 5,
+      "numerator_metric": "tested_for_viral_load",
+      "rate_id": "vl_tested_among_art",
+      "worst_candidate_minus_carry_forward_rate_error": 0.0
+    },
+    {
+      "candidate_mean_rate_error": 0.048767120843928875,
+      "candidate_minus_carry_forward_mean_rate_error": 6.938893903907228e-18,
+      "carry_forward_mean_rate_error": 0.04876712084392887,
+      "denominator_metric": "tested_for_viral_load",
+      "entry_count": 7,
+      "horizon_years": 5,
+      "numerator_metric": "virally_suppressed",
+      "rate_id": "suppressed_among_vl_tested",
+      "worst_candidate_minus_carry_forward_rate_error": 0.0
+    }
+  ],
+  "schema_version": "phase3_dynamic.r11_multi_horizon_lifted_report.v1",
+  "summary": {
+    "candidate_mean_mae_across_horizons": 0.3620179568964221,
+    "candidate_minus_carry_forward_across_horizons": -0.18918556603176556,
+    "carry_forward_mean_mae_across_horizons": 0.5512035229281876,
+    "r10_comparable_candidate_mean_mae_across_horizons": 0.15751218208858528,
+    "r10_horizon_reference_mae_by_horizon": {
+      "1": 0.09530345873034501,
+      "3": 0.11565058222116206,
+      "5": 0.12942108775021025
+    },
+    "r10_reference_mae": 0.10601883888971031
+  }
+}

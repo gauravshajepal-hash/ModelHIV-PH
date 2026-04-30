@@ -496,8 +496,15 @@ def _factor_surface_from_cluster(
     }
 
 
-def run_phase15_build(*, run_id: str, plugin_id: str, profile: str = PHASE15_PROFILE_ID) -> dict[str, Any]:
-    run_harp_archive_build(run_id=run_id, plugin_id=plugin_id)
+def run_phase15_build(
+    *,
+    run_id: str,
+    plugin_id: str,
+    profile: str = PHASE15_PROFILE_ID,
+    reuse_existing_harp_archive: bool = False,
+) -> dict[str, Any]:
+    if not reuse_existing_harp_archive:
+        run_harp_archive_build(run_id=run_id, plugin_id=plugin_id)
     ctx = RunContext.create(run_id=run_id, plugin_id=plugin_id)
     phase15_dir = ensure_dir(ctx.run_dir / "phase15")
     normalized_rows = read_json(ctx.run_dir / "phase1" / "normalized_subparameters.json", default=[])

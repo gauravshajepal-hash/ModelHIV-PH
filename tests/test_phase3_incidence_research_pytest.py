@@ -5,7 +5,7 @@ from pathlib import Path
 from epigraph_ph.cli.main import build_parser
 from epigraph_ph.phase3.incidence.artifacts import build_incidence_research_context
 from epigraph_ph.phase3.incidence.audits import run_inc_00a, run_inc_00b, run_inc_00c
-from epigraph_ph.phase3.incidence.modeling import run_inc_01b, run_inc_01d
+from epigraph_ph.phase3.incidence.modeling import run_inc_01b, run_inc_01d, run_inc_v2_01
 from epigraph_ph.phase3._lineage.shocks import run_shock_00a
 
 
@@ -58,6 +58,19 @@ def test_incidence_research_cli_parse() -> None:
         ]
     )
     assert args_01b.phase3_incidence_research_command == "inc-01b"
+
+    args_v2_01 = parser.parse_args(
+        [
+            "phase3",
+            "incidence-research",
+            "inc-v2-01",
+            "--run-id",
+            "inc-parse-v2-01",
+            "--source-run-id",
+            SOURCE_RUN_ID,
+        ]
+    )
+    assert args_v2_01.phase3_incidence_research_command == "inc-v2-01"
 
     args_shock = parser.parse_args(
         [
@@ -139,6 +152,23 @@ def test_inc_01d_and_inc_01b_live_runs() -> None:
     assert result_b["decision"]["completed"] is True
     assert (ctx_b.experiment_dir / "swap_stress_summary.json").exists()
     assert (ctx_b.experiment_dir / "identifiability_margin.json").exists()
+
+
+def test_inc_v2_01_live_run() -> None:
+    ctx = build_incidence_research_context(
+        run_id="inc-pytest-v2-01",
+        plugin_id="hiv",
+        experiment_id="INC-V2-01-observed-denominator-explicit-incidence",
+        source_run_id=SOURCE_RUN_ID,
+    )
+    result = run_inc_v2_01(ctx)
+    assert result["decision"]["completed"] is True
+    assert (ctx.experiment_dir / "population_denominator_series.json").exists()
+    assert (ctx.experiment_dir / "explicit_incidence_hazard_summary.json").exists()
+    assert (ctx.experiment_dir / "incidence_flow_summary.json").exists()
+    assert (ctx.experiment_dir / "fit_artifact.json").exists()
+    assert (ctx.experiment_dir / "state_estimates.npz").exists()
+    assert (ctx.experiment_dir / "forecast_states.npz").exists()
 
 
 def test_shock_00a_live_run() -> None:

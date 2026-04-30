@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import os
 from statistics import NormalDist
 from typing import Any, Mapping
 
@@ -118,7 +119,7 @@ def _phase15_v2_engine_cfg(plugin_id: str) -> dict[str, Any]:
     phase15_cfg = dict((plugin.constraint_settings or {}).get("phase15", {}) or {})
     v2_cfg = dict(phase15_cfg.get("latent_blocks_v2", {}) or {})
     engine_cfg = dict(v2_cfg.get("engine", {}) or {})
-    return {
+    cfg = {
         "enabled": bool(v2_cfg.get("enabled", True)),
         "outer_iterations": int(engine_cfg.get("outer_iterations") or 6),
         "inner_gradient_steps": int(engine_cfg.get("inner_gradient_steps") or 20),
@@ -232,6 +233,22 @@ def _phase15_v2_engine_cfg(plugin_id: str) -> dict[str, Any]:
         "pooling_sensitivity_inner_gradient_steps": int(engine_cfg.get("pooling_sensitivity_inner_gradient_steps") or 10),
         "calibration_intervals": [float(value) for value in list(engine_cfg.get("calibration_intervals") or [0.5, 0.8, 0.95])],
     }
+    if str(os.environ.get("EPIGRAPH_PHASE15_LARGE_EVIDENCE_MODE", "")).strip().lower() in {"1", "true", "yes", "on"}:
+        cfg.update(
+            {
+                "missing_information_enabled": False,
+                "numerical_adequacy_enabled": False,
+                "pooling_sensitivity_enabled": False,
+                "outer_iterations": min(int(cfg["outer_iterations"]), 3),
+                "inner_gradient_steps": min(int(cfg["inner_gradient_steps"]), 10),
+                "loading_theta_steps": min(int(cfg["loading_theta_steps"]), 12),
+                "aggregation_learning_steps": min(int(cfg["aggregation_learning_steps"]), 30),
+                "large_evidence_mode": True,
+            }
+        )
+    else:
+        cfg["large_evidence_mode"] = False
+    return cfg
 
 
 def _infer_weight_feature_and_supervision_names(

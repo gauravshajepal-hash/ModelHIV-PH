@@ -41,9 +41,9 @@ def test_phase15_constraint_settings_are_declared_in_plugin_contract() -> None:
     assert phase15_cfg.get("latent_blocks_v2", {}).get("engine", {}).get("pooling_sensitivity_enabled") is True
     assert phase15_cfg.get("latent_blocks_v2", {}).get("engine", {}).get("pooling_sensitivity_scales")
     assert phase15_cfg.get("latent_blocks_v2", {}).get("engine", {}).get("calibration_intervals")
-    testing_block = next(row for row in phase15_cfg.get("latent_blocks", {}).get("blocks", []) if row.get("block_id") == "testing_engagement")
+    testing_block = next(row for row in phase15_cfg.get("latent_blocks", {}).get("blocks", []) if row.get("block_id") == "testing_prevention_reach")
     suppression_block = next(row for row in phase15_cfg.get("latent_blocks", {}).get("blocks", []) if row.get("block_id") == "suppression_capacity")
-    assert "prevention_coverage" in testing_block.get("indicators", {})
+    assert "annual_hiv_tests_volume_per_100k" in testing_block.get("indicators", {})
     assert "viral_load" in suppression_block.get("indicators", {})
     assert phase15_cfg.get("stability", {}).get("permutation_draws") is not None
     assert phase15_cfg.get("stability", {}).get("score_weights", {}).get("predictive_gain") is not None

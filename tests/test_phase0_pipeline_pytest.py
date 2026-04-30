@@ -15,6 +15,7 @@ from epigraph_ph.phase0.pipeline import (
     _document_metadata_text,
     _docling_should_parse_pdf,
     _filter_min_literature_year,
+    _lighton_local_ready,
     _lighton_ocr_vllm_extract,
     _lighton_ocr_vllm_ready,
     _local_official_anchor_specs,
@@ -22,6 +23,8 @@ from epigraph_ph.phase0.pipeline import (
     _openalex_abstract_from_inverted_index,
     _parse_html_document,
     _parse_non_pdf_document,
+    _ocr_render_variants,
+    _ocr_text_quality_score,
     _phase0_ocr_backend,
     _phase0_observation_time,
     _second_pass_canonical_name,
@@ -36,6 +39,11 @@ from epigraph_ph.phase0.shard_materializer import build_slice_payload, select_do
 from epigraph_ph.phase0.semantic_benchmark import run_phase0_semantic_benchmark
 from epigraph_ph.plugins.hiv import HIV_CONSTRAINT_SETTINGS
 from epigraph_ph.runtime import read_json
+
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover
+    Image = None
 
 
 def test_query_bank_and_budgets_include_new_sources() -> None:
@@ -735,17 +743,50 @@ def test_semantic_benchmark_runs_on_phase0_smoke_corpus(phase0_registry_run_dir:
 
 
 def test_phase0_ocr_backend_auto_stays_disabled_without_local_or_reachable_vllm(monkeypatch) -> None:
+    _phase0_ocr_backend.cache_clear()
+    _lighton_local_ready.cache_clear()
     _lighton_ocr_vllm_ready.cache_clear()
     monkeypatch.delenv("EPIGRAPH_LIGHTON_OCR_ENDPOINT", raising=False)
+    monkeypatch.setattr("epigraph_ph.phase0.pipeline._lighton_local_ready", lambda: False)
     monkeypatch.setattr("epigraph_ph.phase0.pipeline.requests.get", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("unreachable")))
     assert _phase0_ocr_backend("auto") == "disabled"
 
 
 def test_phase0_ocr_backend_auto_uses_explicit_vllm_endpoint(monkeypatch) -> None:
+    _phase0_ocr_backend.cache_clear()
+    _lighton_local_ready.cache_clear()
     _lighton_ocr_vllm_ready.cache_clear()
     monkeypatch.setenv("EPIGRAPH_LIGHTON_OCR_ENDPOINT", "http://127.0.0.1:8000/v1/chat/completions")
+    monkeypatch.setattr("epigraph_ph.phase0.pipeline._lighton_local_ready", lambda: False)
     monkeypatch.setattr("epigraph_ph.phase0.pipeline.requests.get", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
     assert _phase0_ocr_backend("auto") == "lighton_vllm"
+
+
+def test_phase0_ocr_backend_prefers_local_backend_when_workspace_lighton_stack_is_ready(monkeypatch) -> None:
+    _phase0_ocr_backend.cache_clear()
+    _lighton_local_ready.cache_clear()
+    _lighton_ocr_vllm_ready.cache_clear()
+    monkeypatch.delenv("EPIGRAPH_LIGHTON_OCR_ENDPOINT", raising=False)
+    monkeypatch.setattr("epigraph_ph.phase0.pipeline._lighton_local_ready", lambda: True)
+    monkeypatch.setattr("epigraph_ph.phase0.pipeline.requests.get", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
+    assert _phase0_ocr_backend("auto") == "lighton_local"
+
+
+def test_ocr_render_variants_expand_for_annual_country_summary() -> None:
+    if Image is None:
+        return
+    image = Image.new("RGB", (1200, 1800), "white")
+    for x in range(120, 1080, 6):
+        for y in range(160, 1640, 12):
+            image.putpixel((x, y), (140, 140, 140))
+    variants = _ocr_render_variants(page_number=1, pil_image=image, layout_hint="annual_country_summary")
+    variant_names = {variant["variant"] for variant in variants}
+    assert {"full_enhanced", "full_binarized", "top_crop_enhanced", "bottom_crop_enhanced", "right_crop_binarized"} <= variant_names
+
+
+def test_ocr_text_quality_score_rejects_punctuation_noise() -> None:
+    assert _ocr_text_quality_score("!" * 500) < 0.8
+    assert _ocr_text_quality_score("PHILIPPINES\nCOUNTRY SNAPSHOT 2018\nPeople living with HIV 68 000") > 0.8
 
 
 def test_phase0_normalizes_lighton_base_endpoint() -> None:

@@ -17,19 +17,30 @@ from epigraph_ph.harp_archive.doh_hiv_sti_archive import (
     archive_ocr_settings,
     build_diagnosis_flow_points,
     build_harp_program_points,
+    build_harp_stock_anchor_points,
     download_archive_pdfs,
     extract_archive_metric_rows,
     extract_archive_pdf_pages,
+    local_archive_pdf_corpus_rows,
     load_archive_seed_rows,
     materialize_archive_ocr_payload,
     promote_archive_ocr_artifact_to_shared,
 )
+from epigraph_ph.harp_archive.multinational_hiv_import import (
+    extract_multinational_hiv_rows_from_sources,
+    materialize_multinational_hiv_sources,
+)
+from epigraph_ph.harp_archive.wdi_hiv_import import default_wdi_hiv_workbook_path, extract_wdi_hiv_rows
+from epigraph_ph.harp_archive.wdi_hiv_merge import merge_wdi_hiv_rows_with_harp
 from epigraph_ph.runtime import RunContext, ensure_dir, read_json, sha256_file, utc_now_iso, write_ground_truth_package, write_json
 
 try:
     from pypdf import PdfReader
 except Exception:  # pragma: no cover
     PdfReader = None
+
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
 DEFAULT_LOCAL_SEED_SPECS = [
@@ -43,6 +54,12 @@ DEFAULT_LOCAL_SEED_SPECS = [
         "source_id": "doh_official_cascade_ground_truth_2018_2025",
         "label": "DOH 95-95-95 Ground Truth 2018-2025 From User-Supplied Official Slide",
         "path": Path(__file__).resolve().with_name("seeds") / "doh_official_cascade_ground_truth_2018_2025.csv",
+        "source_kind": "packaged_csv",
+    },
+    {
+        "source_id": "wdi_population_total_2010_2024",
+        "label": "WDI Population Total Philippines 2010-2024",
+        "path": Path(__file__).resolve().with_name("seeds") / "philippines_population_total_wdi_2010_2024.csv",
         "source_kind": "packaged_csv",
     },
     {
@@ -61,7 +78,7 @@ DEFAULT_LOCAL_SEED_SPECS = [
 
 YEAR_RANGE = list(range(2010, 2026))
 _HARP_ARCHIVE_BUILD_VERSION = "harp_archive_cache_v1"
-_HARP_ARCHIVE_SEMANTICS_VERSION = "2026-04-03_harp_panel_priority_v1"
+_HARP_ARCHIVE_SEMANTICS_VERSION = "2026-04-26_harp_art_process_outcome_table_v1"
 MANUAL_SEED_PATTERNS = [
     "*PNAC*Annual*Report*.pdf",
     "*HARP*.pdf",
@@ -71,6 +88,80 @@ MANUAL_SEED_PATTERNS = [
     "*harp_panel*.csv",
     "*harp_panel*.json",
 ]
+
+
+def _local_seed_search_roots(desktop_seed_dir: Path | None = None) -> list[Path]:
+    candidates = [
+        desktop_seed_dir,
+        Path(r"C:\Users\gaura\OneDrive\Desktop"),
+        ROOT_DIR / "docs",
+        ROOT_DIR / "docs" / "Pdf",
+        ROOT_DIR / "docs" / "pdfs",
+    ]
+    roots: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        try:
+            resolved = candidate.resolve()
+        except Exception:
+            resolved = candidate
+        if resolved in seen or not resolved.exists():
+            continue
+        seen.add(resolved)
+        roots.append(resolved)
+    return roots
+
+
+def _resolve_local_seed_path(spec: dict[str, Any], *, desktop_seed_dir: Path | None = None) -> Path | None:
+    original_path = Path(spec["path"])
+    if original_path.exists() and original_path.is_file():
+        return original_path
+
+    source_kind = str(spec.get("source_kind") or "")
+    source_id = str(spec.get("source_id") or "")
+    candidate_paths: list[Path] = []
+
+    if desktop_seed_dir is not None and source_kind.startswith("local_"):
+        candidate_paths.append(desktop_seed_dir / original_path.name)
+
+    for root in _local_seed_search_roots(desktop_seed_dir):
+        try:
+            candidate_paths.extend(root.rglob(original_path.name))
+        except Exception:
+            continue
+
+    if source_kind == "local_pdf" and source_id:
+        for row in local_archive_pdf_corpus_rows():
+            if str(row.get("source_id") or "") != source_id:
+                continue
+            candidate = Path(str(row.get("path") or ""))
+            if candidate.exists() and candidate.is_file():
+                candidate_paths.append(candidate)
+
+    seen: set[Path] = set()
+    for candidate in candidate_paths:
+        try:
+            resolved = candidate.resolve()
+        except Exception:
+            resolved = candidate
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if resolved.exists() and resolved.is_file():
+            return resolved
+    return None
+
+
+def _wdi_hiv_workbook_input() -> dict[str, Any]:
+    workbook_path = default_wdi_hiv_workbook_path()
+    exists = workbook_path.exists() and workbook_path.is_file()
+    return {
+        "path": str(workbook_path),
+        "exists": bool(exists),
+        "checksum": sha256_file(workbook_path) if exists else "",
+    }
 
 
 def _safe_ascii_label(value: str) -> str:
@@ -127,6 +218,8 @@ def _archive_build_cache_key(source_rows: list[dict[str, Any]]) -> str:
         "semantics_version": _HARP_ARCHIVE_SEMANTICS_VERSION,
         "ocr_settings": ocr_cfg,
         "sources": _archive_source_manifest_rows(source_rows),
+        "local_archive_pdf_corpus": local_archive_pdf_corpus_rows(),
+        "wdi_hiv_workbook": _wdi_hiv_workbook_input(),
     }
     return hashlib.sha256(json.dumps(stable_payload, sort_keys=True).encode("utf-8")).hexdigest()
 
@@ -145,8 +238,11 @@ def _archive_manifest_is_reusable(archive_dir: Path, *, cache_key: str) -> dict[
     artifact_paths = dict(manifest.get("artifact_paths") or {})
     if not artifact_paths:
         return None
-    for path_str in artifact_paths.values():
-        if not path_str or not Path(str(path_str)).exists():
+    required_artifacts = _archive_required_artifact_paths(archive_dir)
+    for name, expected_path in required_artifacts.items():
+        path_str = str(artifact_paths.get(name) or "")
+        candidate_path = Path(path_str) if path_str else expected_path
+        if not candidate_path.exists():
             return None
     return manifest
 
@@ -206,74 +302,181 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
     return float(numerator / denominator) if abs(denominator) > 1e-6 else 0.0
 
 
-def _find_spectrum_sequences(page_text: str) -> dict[str, list[int]]:
-    tokens = [_to_int(token) for token in re.findall(r"\d{1,3}(?:,\d{3})+|\d+", page_text)]
+def _monotone_candidate_sequences(tokens: list[int], *, seq_len: int) -> list[list[int]]:
     candidates: list[list[int]] = []
-    seq_len = len(YEAR_RANGE)
     for idx in range(len(tokens) - seq_len + 1):
         seq = tokens[idx : idx + seq_len]
         if seq[0] in YEAR_RANGE:
             continue
-        if sum(1 for left, right in zip(seq, seq[1:]) if right >= left) < 12:
+        if any(right < left for left, right in zip(seq, seq[1:])):
             continue
         if seq not in candidates:
             candidates.append(seq)
-    classified: dict[str, list[int]] = {}
-    for seq in candidates:
-        seq_min = min(seq)
-        seq_max = max(seq)
-        if seq_max > 100_000 and seq_min >= 10_000:
-            classified.setdefault("estimated_plhiv_spectrum_2025", seq)
-        elif 4_000 <= seq_min and seq_max <= 50_000:
-            classified.setdefault("annual_new_infections_spectrum_2025", seq)
-        elif seq_max <= 5_000:
-            classified.setdefault("annual_aids_deaths_spectrum_2025", seq)
-    return classified
+    return candidates
+
+
+def _first_matching_sequence(
+    tokens: list[int],
+    *,
+    seq_len: int,
+    predicate: Any,
+) -> list[int]:
+    for seq in _monotone_candidate_sequences(tokens, seq_len=seq_len):
+        if predicate(seq):
+            return seq
+    return []
 
 
 def _extract_core_team_series(page_text: str, source_id: str, source_label: str, page_number: int) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    sequences = _find_spectrum_sequences(page_text)
-    metric_specs = {
-        "estimated_plhiv_spectrum_2025": {
-            "metric_name": "estimated_plhiv",
-            "measurement_class": "model_estimate",
-            "series_kind": "annual_series",
-        },
-        "annual_new_infections_spectrum_2025": {
-            "metric_name": "annual_new_infections",
-            "measurement_class": "model_estimate",
-            "series_kind": "annual_series",
-        },
-        "annual_aids_deaths_spectrum_2025": {
-            "metric_name": "annual_aids_deaths",
-            "measurement_class": "model_estimate",
-            "series_kind": "annual_series",
-        },
-    }
-    for key, spec in metric_specs.items():
-        series = sequences.get(key, [])
-        if len(series) != len(YEAR_RANGE):
-            continue
-        for year, value in zip(YEAR_RANGE, series, strict=True):
-            rows.append(
-                {
-                    "year": year,
-                    "time": f"{year:04d}-01",
-                    "metric_name": spec["metric_name"],
-                    "value": float(value),
-                    "unit": "count_people",
-                    "source_id": source_id,
-                    "source_label": source_label,
-                    "page_number": page_number,
-                    "measurement_class": spec["measurement_class"],
-                    "series_kind": spec["series_kind"],
-                    "geo": "Philippines",
-                    "region": "national",
-                    "province": "Philippines",
-                    "evidence_confidence": 0.98,
-                }
+    rows_by_key: dict[tuple[str, int], dict[str, Any]] = {}
+
+    def _emit_rows(
+        *,
+        years: list[int],
+        values: list[int],
+        metric_name: str,
+        measurement_class: str,
+        series_kind: str = "annual_series",
+    ) -> None:
+        for year, value in zip(years, values, strict=True):
+            rows_by_key[(metric_name, int(year))] = {
+                "year": int(year),
+                "time": f"{int(year):04d}-12",
+                "metric_name": metric_name,
+                "value": float(value),
+                "unit": "count_people",
+                "source_id": source_id,
+                "source_label": source_label,
+                "page_number": page_number,
+                "measurement_class": measurement_class,
+                "series_kind": series_kind,
+                "geo": "Philippines",
+                "region": "national",
+                "province": "Philippines",
+                "evidence_confidence": 0.98,
+                "source_quality_tier": "official_local_corpus",
+                "extraction_method": "core_team_series_text_parse",
+            }
+
+    if "Annual new HIV infections, 2010-2024" in page_text and "Estimated PLHIV" in page_text:
+        line_number_sequences = [
+            [_to_int(token) for token in re.findall(r"\d{1,3}(?:,\d{3})+|\d+", line)]
+            for line in page_text.splitlines()
+        ]
+        new_infections = []
+        annual_aids_deaths = []
+        if "Annual AIDS Deaths, 2010-2024" in page_text and "Spectrum 2025" in page_text:
+            deaths_tail = page_text.split("Annual AIDS Deaths, 2010-2024", 1)[0][-800:]
+            death_tokens = [_to_int(token) for token in re.findall(r"\d{1,3}(?:,\d{3})+|\d+", deaths_tail)]
+            annual_aids_deaths = _first_matching_sequence(
+                death_tokens,
+                seq_len=15,
+                predicate=lambda seq: seq[0] <= 1_000 and seq[-1] <= 5_000,
             )
+        for seq in line_number_sequences:
+            if len(seq) == 15 and 4_000 <= seq[0] <= 10_000 and seq[-1] <= 40_000:
+                new_infections = seq
+                break
+        if not annual_aids_deaths:
+            for seq in line_number_sequences:
+                if len(seq) == 15 and seq[0] <= 1_000 and seq[-1] <= 5_000:
+                    annual_aids_deaths = seq
+                    break
+        estimated_segment = page_text.split("Annual new HIV infections, 2010-2024", 1)[-1].split("Estimated PLHIV", 1)[0]
+        estimated_tokens = [_to_int(token) for token in re.findall(r"\d{1,3}(?:,\d{3})+|\d+", estimated_segment)]
+        estimated_plhiv = _first_matching_sequence(
+            estimated_tokens,
+            seq_len=15,
+            predicate=lambda seq: 10_000 <= seq[0] <= 50_000 and seq[-1] >= 100_000,
+        )
+        if new_infections:
+            _emit_rows(
+                years=list(range(2010, 2025)),
+                values=new_infections,
+                metric_name="annual_new_infections",
+                measurement_class="model_estimate",
+            )
+        if estimated_plhiv:
+            _emit_rows(
+                years=list(range(2010, 2025)),
+                values=estimated_plhiv,
+                metric_name="estimated_plhiv",
+                measurement_class="model_estimate",
+            )
+        if annual_aids_deaths:
+            _emit_rows(
+                years=list(range(2010, 2025)),
+                values=annual_aids_deaths,
+                metric_name="annual_aids_deaths",
+                measurement_class="model_estimate",
+            )
+
+    if "Estimated number of PLHIV, 2020-2027" in page_text and "Spectrum 2025" in page_text:
+        match = re.search(
+            r"2020\s+2021\s+2022\s+2023\s+2024\s+2025\s+2026\s+2027.*?Spectrum 2025\s+((?:\d{1,3}(?:,\d{3})*\s+){7}\d{1,3}(?:,\d{3})*)",
+            page_text,
+            flags=re.I | re.S,
+        )
+        if match:
+            values = [_to_int(token) for token in re.findall(r"\d{1,3}(?:,\d{3})+|\d+", match.group(1))]
+            if len(values) == 8:
+                _emit_rows(
+                    years=list(range(2020, 2028)),
+                    values=values,
+                    metric_name="estimated_plhiv",
+                    measurement_class="model_estimate",
+                )
+
+    if not rows_by_key:
+        raw_tokens = [_to_int(token) for token in re.findall(r"\d{1,3}(?:,\d{3})+|\d+", page_text)]
+        seq_len = len(YEAR_RANGE)
+        year_sequence = YEAR_RANGE
+        year_start = -1
+        for idx in range(len(raw_tokens) - seq_len + 1):
+            if raw_tokens[idx : idx + seq_len] == year_sequence:
+                year_start = idx
+                break
+        if year_start >= 0:
+            tail_tokens = raw_tokens[year_start + seq_len :]
+            candidate_sequences: list[list[int]] = []
+            for idx in range(0, len(tail_tokens) - seq_len + 1, seq_len):
+                seq = tail_tokens[idx : idx + seq_len]
+                if len(seq) != seq_len:
+                    continue
+                if any(right < left for left, right in zip(seq, seq[1:])):
+                    continue
+                candidate_sequences.append(seq)
+                if len(candidate_sequences) == 3:
+                    break
+            if len(candidate_sequences) == 3:
+                averages = [mean(seq) for seq in candidate_sequences]
+                plhiv_idx = max(range(3), key=lambda idx: averages[idx])
+                deaths_idx = min(range(3), key=lambda idx: averages[idx])
+                infections_idx = next(idx for idx in range(3) if idx not in {plhiv_idx, deaths_idx})
+                _emit_rows(
+                    years=year_sequence,
+                    values=candidate_sequences[infections_idx],
+                    metric_name="annual_new_infections",
+                    measurement_class="model_estimate",
+                )
+                _emit_rows(
+                    years=year_sequence,
+                    values=candidate_sequences[plhiv_idx],
+                    metric_name="estimated_plhiv",
+                    measurement_class="model_estimate",
+                )
+                _emit_rows(
+                    years=year_sequence,
+                    values=candidate_sequences[deaths_idx],
+                    metric_name="annual_aids_deaths",
+                    measurement_class="model_estimate",
+                )
+
+    rows = [
+        row
+        for (_, year), row in sorted(rows_by_key.items(), key=lambda item: (item[0][1], item[0][0]))
+        if int(year) in YEAR_RANGE
+    ]
     return rows
 
 
@@ -355,7 +558,7 @@ def _extract_generic_harp_snapshot(page_text: str, source_id: str, source_label:
         rows.append(
             {
                 "year": year,
-                "time": f"{year:04d}-01",
+                "time": f"{year:04d}-12",
                 "metric_name": metric_name,
                 "value": value,
                 "unit": "count_people",
@@ -368,6 +571,8 @@ def _extract_generic_harp_snapshot(page_text: str, source_id: str, source_label:
                 "region": "national",
                 "province": "Philippines",
                 "evidence_confidence": 0.82,
+                "source_quality_tier": "official_local_corpus",
+                "extraction_method": "generic_snapshot_text_parse",
             }
         )
     return rows if len(rows) >= 3 else []
@@ -461,9 +666,9 @@ def _materialize_local_sources(run_dir: Path, desktop_seed_dir: Path | None = No
         seed_specs.extend(_manual_seed_specs(desktop_seed_dir))
     seen_source_ids: set[str] = set()
     for spec in seed_specs:
-        path = Path(spec["path"])
-        if desktop_seed_dir is not None and spec in DEFAULT_LOCAL_SEED_SPECS and str(spec.get("source_kind") or "").startswith("local_"):
-            path = desktop_seed_dir / path.name
+        path = _resolve_local_seed_path(spec, desktop_seed_dir=desktop_seed_dir)
+        if path is None:
+            continue
         if not path.exists():
             continue
         if spec["source_id"] in seen_source_ids:
@@ -522,12 +727,21 @@ def _expected_archive_artifact_paths(archive_dir: Path) -> list[Path]:
         archive_dir / "ocr_corpus_manifest.json",
         archive_dir / "page_catalog.json",
         archive_dir / "historical_metric_rows.json",
+        archive_dir / "historical_metric_rows_harp_only.json",
         archive_dir / "historical_harp_panel.json",
         archive_dir / "historical_harp_panel.csv",
         archive_dir / "harp_program_points.json",
+        archive_dir / "harp_stock_anchor_points.json",
         archive_dir / "diagnosis_flow_points.json",
         archive_dir / "observed_program_panel.json",
         archive_dir / "subgroup_anchor_pack.json",
+        archive_dir / "multinational_hiv_metric_rows.json",
+        archive_dir / "multinational_hiv_series_inventory.json",
+        archive_dir / "multinational_hiv_series_inventory.csv",
+        archive_dir / "wdi_hiv_rows.json",
+        archive_dir / "wdi_hiv_series_inventory.json",
+        archive_dir / "wdi_hiv_series_inventory.csv",
+        archive_dir / "wdi_hiv_overlap_summary.json",
         archive_dir / "backtest_assessment.json",
         archive_dir / "frozen_backtest_spec.json",
         archive_dir / "frozen_backtest_summary.json",
@@ -562,12 +776,21 @@ def _archive_required_artifact_paths(archive_dir: Path) -> dict[str, Path]:
         "ocr_corpus_manifest": archive_dir / "ocr_corpus_manifest.json",
         "page_catalog": archive_dir / "page_catalog.json",
         "historical_metric_rows": archive_dir / "historical_metric_rows.json",
+        "historical_metric_rows_harp_only": archive_dir / "historical_metric_rows_harp_only.json",
         "historical_harp_panel": archive_dir / "historical_harp_panel.json",
         "historical_harp_panel_csv": archive_dir / "historical_harp_panel.csv",
         "harp_program_points": archive_dir / "harp_program_points.json",
+        "harp_stock_anchor_points": archive_dir / "harp_stock_anchor_points.json",
         "diagnosis_flow_points": archive_dir / "diagnosis_flow_points.json",
         "observed_program_panel": archive_dir / "observed_program_panel.json",
         "subgroup_anchor_pack": archive_dir / "subgroup_anchor_pack.json",
+        "multinational_hiv_metric_rows": archive_dir / "multinational_hiv_metric_rows.json",
+        "multinational_hiv_series_inventory_json": archive_dir / "multinational_hiv_series_inventory.json",
+        "multinational_hiv_series_inventory_csv": archive_dir / "multinational_hiv_series_inventory.csv",
+        "wdi_hiv_rows": archive_dir / "wdi_hiv_rows.json",
+        "wdi_hiv_series_inventory_json": archive_dir / "wdi_hiv_series_inventory.json",
+        "wdi_hiv_series_inventory_csv": archive_dir / "wdi_hiv_series_inventory.csv",
+        "wdi_hiv_overlap_summary": archive_dir / "wdi_hiv_overlap_summary.json",
         "backtest_assessment": archive_dir / "backtest_assessment.json",
         "frozen_backtest_spec": archive_dir / "frozen_backtest_spec.json",
         "frozen_backtest_summary": archive_dir / "frozen_backtest_summary.json",
@@ -608,6 +831,7 @@ def _archive_build_fingerprint(source_rows: list[dict[str, Any]]) -> str:
         "ocr_settings": archive_ocr_settings(),
         "sources": source_payload,
         "code_inputs": code_payload,
+        "wdi_hiv_workbook": _wdi_hiv_workbook_input(),
     }
     canonical = json.dumps(fingerprint_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
@@ -665,7 +889,7 @@ def _read_tabular_seed_rows(path: Path, *, source_id: str, source_label: str) ->
         rows.append(
             {
                 "year": year,
-                "time": str(raw.get("time") or f"{year:04d}-01"),
+                "time": str(raw.get("time") or f"{year:04d}-12"),
                 "metric_name": str(metric_name),
                 "value": value,
                 "unit": str(raw.get("unit") or "count_people"),
@@ -730,7 +954,7 @@ def _panel_from_metric_rows(metric_rows: list[dict[str, Any]]) -> dict[str, Any]
         year_key = str(year)
         panel.setdefault(year_key, {"year": year})
         panel[year_key][metric_name] = row["value"]
-        panel[year_key]["time"] = str(row.get("time") or panel[year_key].get("time") or f"{year:04d}-01")
+        panel[year_key]["time"] = str(row.get("time") or panel[year_key].get("time") or f"{year:04d}-12")
     return {"rows": [panel[str(year)] for year in YEAR_RANGE]}
 
 
@@ -740,6 +964,18 @@ def _write_panel_csv(path: Path, panel_rows: list[dict[str, Any]]) -> None:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         for row in panel_rows:
+            writer.writerow(row)
+
+
+def _write_rows_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        path.write_text("", encoding="utf-8")
+        return
+    fieldnames = sorted({key for row in rows for key in row.keys()})
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
             writer.writerow(row)
 
 
@@ -873,13 +1109,14 @@ def _archive_source_signature(source_rows: list[dict[str, Any]]) -> list[dict[st
     return _archive_source_identity_rows(source_rows)
 
 
-def _manifest_artifact_paths_present(artifact_paths: dict[str, Any]) -> bool:
+def _manifest_artifact_paths_present(artifact_paths: dict[str, Any], *, archive_dir: Path) -> bool:
     if not artifact_paths:
         return False
-    for path in artifact_paths.values():
-        if not str(path or "").strip():
-            return False
-        if not Path(str(path)).exists():
+    required_artifacts = _archive_required_artifact_paths(archive_dir)
+    for name, expected_path in required_artifacts.items():
+        path = artifact_paths.get(name)
+        candidate_path = Path(str(path)) if str(path or "").strip() else expected_path
+        if not candidate_path.exists():
             return False
     return True
 
@@ -932,17 +1169,14 @@ def _load_reusable_archive_manifest(
     saved_ocr_cache_settings = _saved_archive_ocr_cache_settings(dict(ocr_manifest))
     if manifest_cache_key:
         if manifest_cache_key != expected_cache_key:
-            if dict(saved_ocr_cache_settings) != _archive_ocr_cache_settings():
-                return None
-            if saved_source_signature != expected_source_signature:
-                return None
+            return None
     else:
         if dict(saved_ocr_cache_settings) != _archive_ocr_cache_settings():
             return None
         if saved_source_signature != expected_source_signature:
             return None
     artifact_paths = dict(manifest.get("artifact_paths") or {})
-    if not _manifest_artifact_paths_present(artifact_paths):
+    if not _manifest_artifact_paths_present(artifact_paths, archive_dir=archive_dir):
         return None
     return dict(manifest)
 
@@ -1062,8 +1296,9 @@ def run_harp_archive_build(
     ocr_dir = ensure_dir(archive_dir / "ocr_corpus")
     desktop_path = Path(manual_seed_dir or desktop_seed_dir) if (manual_seed_dir or desktop_seed_dir) else None
     local_source_rows = _materialize_local_sources(ctx.run_dir, desktop_seed_dir=desktop_path)
+    multinational_hiv_source_rows = materialize_multinational_hiv_sources(ctx.run_dir)
     archive_seed_rows = [dict(row) for row in load_archive_seed_rows(archive_seed_path())]
-    predownload_source_rows = list(local_source_rows) + [dict(row) for row in archive_seed_rows]
+    predownload_source_rows = list(local_source_rows) + list(multinational_hiv_source_rows) + [dict(row) for row in archive_seed_rows]
     reused_manifest = _reuse_cached_archive_build_if_current(
         archive_dir=archive_dir,
         source_rows=predownload_source_rows,
@@ -1086,6 +1321,7 @@ def run_harp_archive_build(
         return reused_manifest
 
     source_rows = list(local_source_rows)
+    source_rows.extend(multinational_hiv_source_rows)
     source_rows.extend(download_archive_pdfs(archive_rows=archive_seed_rows, raw_dir=raw_dir))
     build_cache_key = _archive_build_cache_key(source_rows)
 
@@ -1093,6 +1329,8 @@ def run_harp_archive_build(
     metric_rows: list[dict[str, Any]] = []
     subgroup_anchor_rows: list[dict[str, Any]] = []
     archive_ocr_manifest_rows: list[dict[str, Any]] = []
+    multinational_hiv_metric_rows: list[dict[str, Any]] = []
+    multinational_hiv_series_inventory: list[dict[str, Any]] = []
     archive_pdf_total = sum(1 for row in source_rows if str(row.get("source_kind") or "") == "doh_hiv_sti_archive_pdf")
     archive_pdf_index = 0
     for source in source_rows:
@@ -1102,6 +1340,10 @@ def run_harp_archive_build(
             source["tabular_row_count"] = 0
             continue
         suffix = local_path.suffix.lower()
+        if str(source.get("source_kind") or "") == "unaids_multinational_csv":
+            source["page_count"] = 0
+            source["tabular_row_count"] = 0
+            continue
         if suffix in {".csv", ".json"}:
             tabular_rows = _read_tabular_seed_rows(local_path, source_id=str(source["source_id"]), source_label=str(source["label"]))
             metric_rows.extend(tabular_rows)
@@ -1175,12 +1417,27 @@ def run_harp_archive_build(
                     _extract_generic_harp_snapshot(page["text"], str(source["source_id"]), str(source["label"]), int(page["page_number"]))
                 )
 
-    metric_rows = _deduplicate_metric_rows(metric_rows)
-    panel = _panel_from_metric_rows(metric_rows)
-    assessment = _backtest_assessment(metric_rows)
-    frozen_backtest_spec, frozen_backtest_summary = _build_frozen_backtest_artifacts(metric_rows)
-    harp_program_points = build_harp_program_points(metric_rows)
-    diagnosis_flow_points = build_diagnosis_flow_points(metric_rows)
+    imported_multinational_rows, imported_multinational_inventory = extract_multinational_hiv_rows_from_sources(source_rows)
+    metric_rows.extend(imported_multinational_rows)
+    multinational_hiv_metric_rows.extend(imported_multinational_rows)
+    multinational_hiv_series_inventory.extend(imported_multinational_inventory)
+    imported_counts = {
+        str(row.get("source_id") or ""): int(row.get("imported_row_count") or 0)
+        for row in imported_multinational_inventory
+        if str(row.get("source_id") or "").startswith("unaids_")
+    }
+    for source in source_rows:
+        if str(source.get("source_kind") or "") != "unaids_multinational_csv":
+            continue
+        source["tabular_row_count"] = int(imported_counts.get(str(source.get("source_id") or ""), 0))
+
+    canonical_metric_rows = _deduplicate_metric_rows(metric_rows)
+    panel = _panel_from_metric_rows(canonical_metric_rows)
+    assessment = _backtest_assessment(canonical_metric_rows)
+    frozen_backtest_spec, frozen_backtest_summary = _build_frozen_backtest_artifacts(canonical_metric_rows)
+    harp_program_points = build_harp_program_points(canonical_metric_rows)
+    harp_stock_anchor_points = build_harp_stock_anchor_points(canonical_metric_rows)
+    diagnosis_flow_points = build_diagnosis_flow_points(canonical_metric_rows)
     subgroup_anchor_pack = {
         "anchors": subgroup_anchor_rows,
         "national_kp_profile": next((row for row in subgroup_anchor_rows if row.get("anchor_id") == "national_kp_profile_2021"), None),
@@ -1189,10 +1446,47 @@ def run_harp_archive_build(
     observed_program_panel = {
         "rows": [
             row
-            for row in metric_rows
+            for row in canonical_metric_rows
             if str(row.get("measurement_class") or "").startswith("program_observed_harp")
         ]
     }
+    wdi_series_rows: list[dict[str, Any]] = []
+    wdi_series_inventory: list[dict[str, Any]] = []
+    wdi_overlap_summary: dict[str, Any] = {
+        "annual_new_infections_overlap": {
+            "series_code": "SH.HIV.INCD.TL",
+            "harp_metric_name": "annual_new_infections",
+            "comparison_rows": [],
+            "mean_absolute_percent_error": None,
+        },
+        "art_coverage_overlap": {
+            "series_code": "SH.HIV.ARTC.ZS",
+            "harp_derived_metric_name": "alive_on_art_over_estimated_plhiv_percent",
+            "comparison_rows": [],
+            "mean_absolute_percentage_point_error": None,
+        },
+        "workbook_present": False,
+    }
+    workbook_info = _wdi_hiv_workbook_input()
+    if bool(workbook_info.get("exists")):
+        extracted_wdi_rows, wdi_series_inventory = extract_wdi_hiv_rows(Path(str(workbook_info["path"])))
+        wdi_series_rows, wdi_overlap_summary, _ = merge_wdi_hiv_rows_with_harp(
+            harp_rows=canonical_metric_rows,
+            harp_panel_rows=panel["rows"],
+            wdi_rows=extracted_wdi_rows,
+        )
+        wdi_overlap_summary = dict(wdi_overlap_summary)
+        wdi_overlap_summary["workbook_present"] = True
+        wdi_overlap_summary["workbook_path"] = str(workbook_info["path"])
+        wdi_overlap_summary["workbook_checksum"] = str(workbook_info["checksum"] or "")
+    standard_metric_rows = list(canonical_metric_rows) + list(wdi_series_rows)
+    standard_metric_rows.sort(
+        key=lambda item: (
+            str(item.get("metric_name") or ""),
+            str(item.get("time") or ""),
+            str(item.get("source_id") or ""),
+        )
+    )
 
     write_json(
         archive_dir / "archive_source_manifest.json",
@@ -1202,6 +1496,7 @@ def run_harp_archive_build(
             "source_signature": _archive_source_signature(source_rows),
             "source_manifest_rows": _archive_source_manifest_rows(source_rows),
             "build_cache_key": build_cache_key,
+            "wdi_hiv_workbook": workbook_info,
             "sources": source_rows,
         },
     )
@@ -1216,13 +1511,22 @@ def run_harp_archive_build(
         },
     )
     write_json(archive_dir / "page_catalog.json", page_catalog)
-    write_json(archive_dir / "historical_metric_rows.json", metric_rows)
+    write_json(archive_dir / "historical_metric_rows.json", standard_metric_rows)
+    write_json(archive_dir / "historical_metric_rows_harp_only.json", canonical_metric_rows)
     write_json(archive_dir / "historical_harp_panel.json", panel)
     _write_panel_csv(archive_dir / "historical_harp_panel.csv", panel["rows"])
+    write_json(archive_dir / "wdi_hiv_rows.json", wdi_series_rows)
+    write_json(archive_dir / "wdi_hiv_series_inventory.json", wdi_series_inventory)
+    _write_rows_csv(archive_dir / "wdi_hiv_series_inventory.csv", wdi_series_inventory)
+    write_json(archive_dir / "wdi_hiv_overlap_summary.json", wdi_overlap_summary)
     write_json(archive_dir / "harp_program_points.json", {"points": harp_program_points})
+    write_json(archive_dir / "harp_stock_anchor_points.json", {"points": harp_stock_anchor_points})
     write_json(archive_dir / "diagnosis_flow_points.json", {"points": diagnosis_flow_points})
     write_json(archive_dir / "observed_program_panel.json", observed_program_panel)
     write_json(archive_dir / "subgroup_anchor_pack.json", subgroup_anchor_pack)
+    write_json(archive_dir / "multinational_hiv_metric_rows.json", multinational_hiv_metric_rows)
+    write_json(archive_dir / "multinational_hiv_series_inventory.json", multinational_hiv_series_inventory)
+    _write_rows_csv(archive_dir / "multinational_hiv_series_inventory.csv", multinational_hiv_series_inventory)
     write_json(archive_dir / "backtest_assessment.json", assessment)
     write_json(archive_dir / "frozen_backtest_spec.json", frozen_backtest_spec)
     write_json(archive_dir / "frozen_backtest_summary.json", frozen_backtest_summary)
@@ -1240,7 +1544,7 @@ def run_harp_archive_build(
                     for row in source_rows
                 ),
             },
-            {"name": "historical_metric_rows_present", "passed": bool(metric_rows)},
+            {"name": "historical_metric_rows_present", "passed": bool(standard_metric_rows)},
             {"name": "panel_years_complete", "passed": len(panel["rows"]) == len(YEAR_RANGE)},
             {"name": "subgroup_anchor_pack_present", "passed": bool(subgroup_anchor_rows)},
             {"name": "frozen_backtest_spec_present", "passed": True},
@@ -1250,8 +1554,11 @@ def run_harp_archive_build(
         summary={
             "source_count": len(source_rows),
             "ocr_document_count": len(archive_ocr_manifest_rows),
-            "historical_metric_row_count": len(metric_rows),
+            "historical_metric_row_count": len(standard_metric_rows),
+            "historical_harp_only_metric_row_count": len(canonical_metric_rows),
+            "wdi_hiv_row_count": len(wdi_series_rows),
             "harp_program_point_count": len(harp_program_points),
+            "harp_stock_anchor_point_count": len(harp_stock_anchor_points),
             "diagnosis_flow_point_count": len(diagnosis_flow_points),
             "subgroup_anchor_count": len(subgroup_anchor_rows),
             "backtest_ready": assessment["backtest_ready"],
@@ -1269,9 +1576,15 @@ def run_harp_archive_build(
             "ocr_corpus_manifest": str(archive_dir / "ocr_corpus_manifest.json"),
             "page_catalog": str(archive_dir / "page_catalog.json"),
             "historical_metric_rows": str(archive_dir / "historical_metric_rows.json"),
+            "historical_metric_rows_harp_only": str(archive_dir / "historical_metric_rows_harp_only.json"),
             "historical_harp_panel": str(archive_dir / "historical_harp_panel.json"),
             "historical_harp_panel_csv": str(archive_dir / "historical_harp_panel.csv"),
+            "wdi_hiv_rows": str(archive_dir / "wdi_hiv_rows.json"),
+            "wdi_hiv_series_inventory_json": str(archive_dir / "wdi_hiv_series_inventory.json"),
+            "wdi_hiv_series_inventory_csv": str(archive_dir / "wdi_hiv_series_inventory.csv"),
+            "wdi_hiv_overlap_summary": str(archive_dir / "wdi_hiv_overlap_summary.json"),
             "harp_program_points": str(archive_dir / "harp_program_points.json"),
+            "harp_stock_anchor_points": str(archive_dir / "harp_stock_anchor_points.json"),
             "diagnosis_flow_points": str(archive_dir / "diagnosis_flow_points.json"),
             "observed_program_panel": str(archive_dir / "observed_program_panel.json"),
             "subgroup_anchor_pack": str(archive_dir / "subgroup_anchor_pack.json"),
@@ -1283,6 +1596,8 @@ def run_harp_archive_build(
         "notes": [
             "historical_harp_panel_is_gap_aware",
             "spectrum_estimates_and_harp_program_counts_are_separated",
+            "historical_metric_rows_includes_tiered_wdi_hiv_references_when_workbook_present",
+            "historical_harp_panel_remains_canonical_harp_only",
             "backtest_readiness_false_means_missing_historical_program_series",
             "manual_seed_csv_json_rows_are_supported_for_historical_panel_assembly",
         ],
@@ -1294,9 +1609,15 @@ def run_harp_archive_build(
             archive_dir / "archive_source_manifest.json",
             archive_dir / "page_catalog.json",
             archive_dir / "historical_metric_rows.json",
+            archive_dir / "historical_metric_rows_harp_only.json",
             archive_dir / "historical_harp_panel.json",
             archive_dir / "historical_harp_panel.csv",
+            archive_dir / "wdi_hiv_rows.json",
+            archive_dir / "wdi_hiv_series_inventory.json",
+            archive_dir / "wdi_hiv_series_inventory.csv",
+            archive_dir / "wdi_hiv_overlap_summary.json",
             archive_dir / "harp_program_points.json",
+            archive_dir / "harp_stock_anchor_points.json",
             archive_dir / "diagnosis_flow_points.json",
             archive_dir / "observed_program_panel.json",
             archive_dir / "subgroup_anchor_pack.json",

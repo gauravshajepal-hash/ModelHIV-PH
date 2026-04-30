@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import platform
+import sys
 import re
 import shutil
 import subprocess
@@ -39,6 +40,10 @@ from epigraph_ph.phase0.evidence_artifacts import (
     build_measurement_manifest,
 )
 from epigraph_ph.phase0.literature_candidates import wide_sweep_candidate_rows
+from epigraph_ph.phase0.phase3_target_contract import (
+    build_phase3_targeted_extraction_audit,
+    phase3_target_query_rows,
+)
 from epigraph_ph.phase0.prompts import build_phase0_prompt_library
 from epigraph_ph.phase0.shard_materializer import build_slice_payload
 from epigraph_ph.phase0.structured_numeric_sources import (
@@ -121,9 +126,10 @@ except Exception:  # pragma: no cover
     pdfium = None
 
 try:
-    from PIL import Image  # type: ignore
+    from PIL import Image, ImageOps  # type: ignore
 except Exception:  # pragma: no cover
     Image = None
+    ImageOps = None
 
 try:
     import psutil  # type: ignore
@@ -329,6 +335,14 @@ DEFAULT_LIGHTON_OCR_MODEL = "lightonai/LightOnOCR-2-1B"
 DEFAULT_LIGHTON_OCR_BACKEND = "auto"
 DEFAULT_LIGHTON_OCR_ENDPOINT = "http://localhost:8000/v1/chat/completions"
 DEFAULT_LIGHTON_OCR_PROMPT = "Extract all visible text from this page. Preserve table structure in markdown where possible. Do not summarize."
+DEFAULT_LIGHTON_LOCAL_SITE_PACKAGES = str(Path(__file__).resolve().parents[3] / ".lighton-ocr-venv" / "Lib" / "site-packages")
+REPO_LIGHTON_CACHE_DIR = str(Path(__file__).resolve().parents[3] / ".hf-cache")
+DEFAULT_LIGHTON_CACHE_DIR = os.environ.get("HF_HOME", REPO_LIGHTON_CACHE_DIR)
+DEFAULT_LIGHTON_LOCAL_HOST = os.environ.get("EPIGRAPH_LIGHTON_OCR_HOST", "127.0.0.1")
+DEFAULT_LIGHTON_LOCAL_PORT = int(os.environ.get("EPIGRAPH_LIGHTON_OCR_PORT", "8010"))
+DEFAULT_LIGHTON_LOCAL_ENDPOINT = f"http://{DEFAULT_LIGHTON_LOCAL_HOST}:{DEFAULT_LIGHTON_LOCAL_PORT}/v1/chat/completions"
+DEFAULT_LIGHTON_LOCAL_SERVER_SCRIPT = str(Path(__file__).resolve().parents[3] / "scripts" / "serve_lighton_ocr_endpoint.py")
+
 
 EXTERNAL_HARVESTER_ORDER = (
     "pubmed",
@@ -339,6 +353,21 @@ EXTERNAL_HARVESTER_ORDER = (
     "biorxiv",
     "kaggle",
 )
+
+
+def _external_harvester_order() -> tuple[str, ...]:
+    """Allow large harvests to be split into reproducible source-family passes."""
+
+    selected = os.environ.get("EPIGRAPH_PHASE0_HARVESTERS", "").strip()
+    if not selected:
+        return EXTERNAL_HARVESTER_ORDER
+    allowed = set(EXTERNAL_HARVESTER_ORDER)
+    requested = tuple(item.strip().lower() for item in selected.split(",") if item.strip())
+    unknown = sorted(set(requested) - allowed)
+    if unknown:
+        raise ValueError(f"Unknown EPIGRAPH_PHASE0_HARVESTERS entries: {unknown}")
+    return requested or EXTERNAL_HARVESTER_ORDER
+
 
 CORPUS_SOURCE_BUDGET_WEIGHTS = dict(_phase0_required_section("source_budget_weights"))
 
@@ -393,6 +422,13 @@ LINKAGE_KEYWORDS = {
     "mobility_network_mixing": ["mobility", "migration", "network", "mixing", "commuting"],
     "health_system_reach": ["supply chain", "telehealth", "facility", "health system", "coverage"],
     "biological_progression": ["cd4", "viral reservoir", "immune response", "drug resistance"],
+    "key_population_burden": ["key population", "msm", "transgender women", "tgw", "sex worker", "pwid"],
+    "app_mediated_partner_seeking": ["geosocial", "dating app", "mobile app", "online partner", "grindr"],
+    "prep_persistence": ["prep persistence", "prep refill", "prep continuation", "prep discontinuation"],
+    "diagnosis_delay_backlog": ["late diagnosis", "advanced hiv disease", "median cd4", "diagnosis delay"],
+    "art_ltfu_reengagement": ["loss to follow up", "treatment interruption", "re-engagement", "return to care"],
+    "vl_lab_capacity": ["viral load turnaround", "laboratory capacity", "reagent stockout", "vl testing"],
+    "reporting_process": ["reporting delay", "surveillance completeness", "registry backlog", "case reporting"],
 }
 
 SOFT_TAG_MAP = {
@@ -405,6 +441,11 @@ SOFT_TAG_MAP = {
     "housing": ["housing", "shelter", "precarity", "eviction", "informal settlement"],
     "education": ["education", "schooling", "health literacy", "literacy", "attainment"],
     "social_capital": ["social capital", "community support", "trust", "collective efficacy", "social cohesion"],
+    "key_population": ["key population", "msm", "men who have sex with men", "transgender women", "tgw", "pwid", "sex worker"],
+    "digital_network": ["geosocial", "dating app", "mobile app", "online partner", "grindr", "social media"],
+    "prep": ["prep", "pre exposure prophylaxis", "refill", "persistence", "continuation", "discontinuation"],
+    "reporting": ["reporting delay", "surveillance completeness", "registry backlog", "case report", "data quality"],
+    "laboratory": ["viral load turnaround", "laboratory capacity", "reagent", "stockout", "vl testing"],
 }
 
 HIV_TERMS = ["hiv", "aids", "art", "viral load", "cd4", "key population", "msm", "tgw", "pwid"]
@@ -699,6 +740,7 @@ def _phase0_query_groups(plugin_id: str = "hiv") -> list[list[dict[str, str]]]:
     groups.append(_query_rows(query_banks.get("modeling", ARXIV_FOCUSED_QUERY_BANK), query_domain="modeling", query_lane="upstream_determinant", query_geo_focus="global", query_silo="modeling"))
     groups.append(_query_rows(query_banks.get("biology", BIORXIV_FOCUSED_QUERY_BANK), query_domain="biology", query_lane="hiv_direct", query_geo_focus="global", query_silo="biology"))
     groups.append(_query_rows(query_banks.get("mixed", KAGGLE_FOCUSED_QUERY_BANK + OPENALEX_FOCUSED_QUERY_BANK + SEMANTIC_SCHOLAR_FOCUSED_QUERY_BANK), query_domain="mixed", query_lane="mixed", query_geo_focus="global", query_silo="mixed"))
+    groups.append(phase3_target_query_rows())
     determinant_silos = plugin.determinant_silos or {key: value for key, value in DETERMINANT_SILO_QUERY_BANKS.items()}
     for silo_name, silo in determinant_silos.items():
         silo_queries = silo.query_examples if hasattr(silo, "query_examples") else DETERMINANT_SILO_QUERY_BANKS.get(silo_name, [])
@@ -853,12 +895,18 @@ def _query_budget_plan(queries: list[dict[str, str]], *, target_records: int, ma
 
 def _source_harvest_budgets(queries: list[dict[str, str]], *, target_records: int, max_results: int) -> dict[str, int]:
     per_query = _query_budget_plan(queries, target_records=target_records, max_results=max_results)["per_query"]
-    total_weight = sum(CORPUS_SOURCE_BUDGET_WEIGHTS.values()) or float(len(EXTERNAL_HARVESTER_ORDER))
+    harvester_order = _external_harvester_order()
+    total_weight = sum(float(CORPUS_SOURCE_BUDGET_WEIGHTS[source]) for source in harvester_order) or float(len(harvester_order))
     budgets: dict[str, int] = {}
-    for source in EXTERNAL_HARVESTER_ORDER:
+    for source in harvester_order:
         share = float(CORPUS_SOURCE_BUDGET_WEIGHTS[source]) / total_weight
         budgets[source] = max(1, int(round(per_query * share)))
     return budgets
+
+
+def _append_harvest_progress(progress_path: Path, row: dict[str, Any]) -> None:
+    with progress_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, sort_keys=True) + "\n")
 
 
 def _requests_json_with_backoff(url: str, *, params: dict[str, Any] | None = None, headers: dict[str, str] | None = None) -> dict[str, Any]:
@@ -1668,16 +1716,57 @@ def _soft_subparameter_hints(text: str) -> list[str]:
     lowered = text.lower()
     if any(token in lowered for token in ("msm", "men who have sex with men", "transgender women", "tgw", "key population")):
         hints.append("sexual_risk")
+        hints.append("key_population_burden")
+    if any(token in lowered for token in ("female sex worker", "sex worker", "fsw")):
+        hints.append("fsw_population_share")
+        hints.append("key_population_burden")
+    if any(token in lowered for token in ("pwid", "people who inject drugs", "injecting drug")):
+        hints.append("pwid_population_share")
+        hints.append("key_population_burden")
+    if any(token in lowered for token in ("men who have sex with men", "msm")):
+        hints.append("msm_population_share")
+    if any(token in lowered for token in ("transgender women", "tgw", "trans women")):
+        hints.append("tgw_population_share")
+    if any(token in lowered for token in ("geosocial", "dating app", "mobile app", "online partner", "grindr", "social media")):
+        hints.append("app_mediated_partner_seeking")
+        hints.append("geosocial_networking")
     if any(token in lowered for token in ("condom", "prep", "pre exposure prophylaxis", "harm reduction", "self test", "community screening")):
         hints.append("prevention_access")
+    if any(token in lowered for token in ("prep refill", "prep persistence", "prep continuation", "active prep", "prep discontinuation", "prep lapse")):
+        hints.append("prep_active_refill")
+        hints.append("prep_lapse")
     if any(token in lowered for token in ("testing", "screening", "diagnosis", "late diagnosis", "fear of positive result", "hiv knowledge")):
         hints.append("testing_uptake")
+    if any(token in lowered for token in ("sex education", "sexuality education", "comprehensive sexuality education", "school-based hiv education")):
+        hints.append("sex_education_reach")
     if any(token in lowered for token in ("linkage", "referral", "treatment initiation", "diagnosis to art", "care navigation")):
         hints.append("linkage_to_care")
+    if any(token in lowered for token in ("diagnosis to art delay", "treatment initiation delay", "time to art")):
+        hints.append("diagnosis_to_art_delay")
+        hints.append("treatment_initiation_delay")
     if any(token in lowered for token in ("retention", "adherence", "loss to follow up", "continuity of care", "treatment interruption")):
         hints.append("retention_adherence")
+    if any(token in lowered for token in ("loss to follow up", "lost to follow up", "ltfu")):
+        hints.append("loss_to_follow_up")
+    if any(token in lowered for token in ("reengagement", "re-engagement", "return to care")):
+        hints.append("reengagement_in_care")
+    if any(token in lowered for token in ("missed appointment", "missed visit", "appointment failure")):
+        hints.append("missed_appointment")
     if any(token in lowered for token in ("viral suppression", "viral load", "vl testing", "documentation", "suppressed")):
         hints.append("suppression_outcomes")
+    if any(token in lowered for token in ("viral load testing coverage", "vl coverage")):
+        hints.append("viral_load_testing_coverage")
+    if any(token in lowered for token in ("viral load turnaround", "vl turnaround", "laboratory turnaround")):
+        hints.append("vl_testing_turnaround")
+    if any(token in lowered for token in ("laboratory capacity", "lab capacity", "viral load laboratory")):
+        hints.append("lab_capacity")
+    if any(token in lowered for token in ("reagent stockout", "commodity stockout", "stockout", "stock-out")):
+        hints.append("reagent_stockout")
+        hints.append("stockout_disruption")
+    if any(token in lowered for token in ("advanced hiv disease", "late diagnosis", "median cd4", "cd4 at diagnosis", "cd4 at enrollment")):
+        hints.append("advanced_hiv_disease_share")
+        hints.append("late_hiv_diagnosis_percent")
+        hints.append("median_cd4_at_diagnosis")
     if any(token in lowered for token in ("poverty", "income", "afford", "inequality")):
         hints.append("economic_access_constraint")
     if any(token in lowered for token in ("cash", "liquidity", "income shock", "financial volatility", "remittance")):
@@ -1693,6 +1782,8 @@ def _soft_subparameter_hints(text: str) -> list[str]:
         hints.append("congestion_travel_time")
     if any(token in lowered for token in ("stigma", "discrimination", "social norm")):
         hints.append("stigma_barrier")
+    if any(token in lowered for token in ("disclosure fear", "fear of disclosure", "fear of positive result")):
+        hints.append("disclosure_fear")
     if any(token in lowered for token in ("social capital", "community support", "trust", "collective efficacy")):
         hints.append("social_capital")
     if any(token in lowered for token in ("housing", "shelter", "eviction", "informal settlement")):
@@ -1717,8 +1808,18 @@ def _soft_subparameter_hints(text: str) -> list[str]:
         hints.append("migration_rate")
     if any(token in lowered for token in ("clinic density", "clinics per", "treatment hub", "facility density")):
         hints.append("clinics_per_capita")
+        hints.append("treatment_hub_density")
     if any(token in lowered for token in ("physician density", "physicians per", "doctors per")):
         hints.append("physicians_per_capita")
+    if any(token in lowered for token in ("population density", "urban density", "dense urban")):
+        hints.append("population_density")
+    if any(token in lowered for token in ("urbanization", "urbanisation", "urban growth")):
+        hints.append("urbanization_pressure")
+    if any(token in lowered for token in ("reporting delay", "surveillance completeness", "registry backlog", "case report timeliness", "data quality")):
+        hints.append("reporting_delay")
+        hints.append("surveillance_completeness")
+        hints.append("registry_backlog")
+        hints.append("case_report_timeliness")
     return sorted(set(hints))
 
 
@@ -2075,17 +2176,65 @@ def _parse_pdf_blocks_with_fallbacks(
         return [], "pdf_parse_failed"
 
 
+def _lighton_local_site_packages() -> str:
+    explicit = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_SITE_PACKAGES", "")).strip()
+    candidates = [explicit, DEFAULT_LIGHTON_LOCAL_SITE_PACKAGES]
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return ""
+
+
+def _lighton_local_snapshot_path() -> str:
+    explicit = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_MODEL", "")).strip()
+    if explicit:
+        return explicit
+    cache_candidates = [
+        str(os.environ.get("HF_HOME", "")).strip(),
+        REPO_LIGHTON_CACHE_DIR,
+        DEFAULT_LIGHTON_CACHE_DIR,
+    ]
+    seen: set[str] = set()
+    for cache_dir in cache_candidates:
+        if not cache_dir or cache_dir in seen:
+            continue
+        seen.add(cache_dir)
+        snapshot_root = Path(cache_dir) / "models--lightonai--LightOnOCR-2-1B" / "snapshots"
+        if not snapshot_root.exists():
+            continue
+        snapshots = sorted((item for item in snapshot_root.iterdir() if item.is_dir()), key=lambda item: item.name, reverse=True)
+        for snapshot in snapshots:
+            if (snapshot / "processor_config.json").exists() and (snapshot / "config.json").exists():
+                return str(snapshot)
+    return DEFAULT_LIGHTON_OCR_MODEL
+
+
+def _lighton_local_server_script() -> Path:
+    explicit = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_SERVER_SCRIPT", "")).strip()
+    return Path(explicit or DEFAULT_LIGHTON_LOCAL_SERVER_SCRIPT)
+
+
+def _lighton_local_endpoint() -> str:
+    explicit = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_LOCAL_ENDPOINT", "")).strip()
+    if explicit:
+        return _normalize_lighton_ocr_endpoint(explicit)
+    return _normalize_lighton_ocr_endpoint(DEFAULT_LIGHTON_LOCAL_ENDPOINT)
+
+
+_LIGHTON_LOCAL_PROCESS: dict[str, Any] = {}
+
+
+@lru_cache(maxsize=1)
+def _lighton_local_ready() -> bool:
+    return bool(_lighton_local_site_packages()) and _lighton_local_server_script().exists() and bool(sys.executable)
+
+
+@lru_cache(maxsize=1)
 def _phase0_ocr_backend(requested_backend: str | None = None) -> str:
     requested = str(requested_backend or os.environ.get("EPIGRAPH_PHASE0_OCR_BACKEND", DEFAULT_LIGHTON_OCR_BACKEND)).strip().lower()
     if requested in {"", "false", "none", "disabled"}:
         return "disabled"
-    local_ready = False
-    try:
-        import transformers as _transformers  # type: ignore
-
-        local_ready = hasattr(_transformers, "LightOnOcrProcessor") and hasattr(_transformers, "LightOnOcrForConditionalGeneration")
-    except Exception:
-        local_ready = False
+    local_ready = _lighton_local_ready()
     endpoint = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_ENDPOINT", "")).strip()
     vllm_ready = _lighton_ocr_vllm_ready(endpoint if endpoint else DEFAULT_LIGHTON_OCR_ENDPOINT, explicit=bool(endpoint))
     if requested == "lighton_local":
@@ -2123,6 +2272,19 @@ def _lighton_ocr_health_endpoint(endpoint: str) -> str:
     if normalized.endswith("/v1"):
         return normalized[:-3] + "/health"
     return normalized.rsplit("/", 1)[0] + "/health"
+
+
+def _lighton_ocr_endpoint_healthy(endpoint: str, *, timeout_seconds: float = 1.5) -> bool:
+    normalized = _normalize_lighton_ocr_endpoint(endpoint)
+    if not normalized:
+        return False
+    health_endpoint = _lighton_ocr_health_endpoint(normalized)
+    try:
+        response = requests.get(health_endpoint, timeout=timeout_seconds)
+        response.raise_for_status()
+        return True
+    except Exception:
+        return False
 
 
 @lru_cache(maxsize=4)
@@ -2167,6 +2329,7 @@ def _render_pdf_pages_for_ocr(
     *,
     preferred_pages: list[int] | None = None,
     max_pages: int = 5,
+    layout_hint: str | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
     selected_pages = preferred_pages or []
     rendered: list[dict[str, Any]] = []
@@ -2174,20 +2337,13 @@ def _render_pdf_pages_for_ocr(
         try:
             pdf = pdfium.PdfDocument(str(path))
             page_numbers = selected_pages or list(range(1, min(len(pdf), max_pages) + 1))
+            dpi = _ocr_render_dpi(layout_hint)
             for page_number in page_numbers:
                 if page_number < 1 or page_number > len(pdf):
                     continue
                 page = pdf[page_number - 1]
-                dpi = float(_phase0_required_section("ocr")["render_dpi"])
                 pil_image = page.render(scale=(dpi / 72.0)).to_pil()
-                buffer = io.BytesIO()
-                pil_image.save(buffer, format="PNG")
-                rendered.append(
-                    {
-                        "page_number": page_number,
-                        "image_base64": base64.b64encode(buffer.getvalue()).decode("utf-8"),
-                    }
-                )
+                rendered.extend(_ocr_render_variants(page_number=page_number, pil_image=pil_image, layout_hint=layout_hint))
             if rendered:
                 return rendered, "pypdfium2"
         except Exception:
@@ -2197,17 +2353,14 @@ def _render_pdf_pages_for_ocr(
             doc = fitz.open(path)
             try:
                 page_numbers = selected_pages or list(range(1, min(doc.page_count, max_pages) + 1))
+                dpi = _ocr_render_dpi(layout_hint)
                 for page_number in page_numbers:
                     if page_number < 1 or page_number > doc.page_count:
                         continue
                     page = doc.load_page(page_number - 1)
-                    pix = page.get_pixmap(dpi=200, alpha=False)
-                    rendered.append(
-                        {
-                            "page_number": page_number,
-                            "image_base64": base64.b64encode(pix.tobytes("png")).decode("utf-8"),
-                        }
-                    )
+                    pix = page.get_pixmap(dpi=dpi, alpha=False)
+                    pil_image = Image.open(io.BytesIO(pix.tobytes("png")))
+                    rendered.extend(_ocr_render_variants(page_number=page_number, pil_image=pil_image, layout_hint=layout_hint))
                 if rendered:
                     return rendered, "pymupdf_render"
             finally:
@@ -2217,7 +2370,7 @@ def _render_pdf_pages_for_ocr(
     pdftoppm_path = shutil.which("pdftoppm")
     if pdftoppm_path and path.exists():
         try:
-            dpi = str(int(float(_phase0_required_section("ocr")["render_dpi"])))
+            dpi = str(int(_ocr_render_dpi(layout_hint)))
             with tempfile.TemporaryDirectory(prefix="epigraph_ocr_") as tmpdir:
                 page_numbers = selected_pages or list(range(1, max_pages + 1))
                 for page_number in page_numbers:
@@ -2242,12 +2395,8 @@ def _render_pdf_pages_for_ocr(
                     output_path = prefix.parent / f"{prefix.name}-{page_number}.png"
                     if not output_path.exists():
                         continue
-                    rendered.append(
-                        {
-                            "page_number": page_number,
-                            "image_base64": base64.b64encode(output_path.read_bytes()).decode("utf-8"),
-                        }
-                    )
+                    pil_image = Image.open(output_path)
+                    rendered.extend(_ocr_render_variants(page_number=page_number, pil_image=pil_image, layout_hint=layout_hint))
             if rendered:
                 return rendered, "pdftoppm"
         except Exception:
@@ -2255,8 +2404,126 @@ def _render_pdf_pages_for_ocr(
     return [], "render_unavailable"
 
 
-def _lighton_ocr_vllm_extract(image_base64: str) -> str:
-    endpoint = _normalize_lighton_ocr_endpoint(str(os.environ.get("EPIGRAPH_LIGHTON_OCR_ENDPOINT", DEFAULT_LIGHTON_OCR_ENDPOINT)).strip())
+def _ocr_render_dpi(layout_hint: str | None) -> float:
+    base_dpi = float(_phase0_required_section("ocr")["render_dpi"])
+    if str(layout_hint or "").strip().lower() == "annual_country_summary":
+        return max(base_dpi, 320.0)
+    return max(base_dpi, 240.0)
+
+
+def _ocr_content_bbox(pil_image: Any) -> tuple[int, int, int, int] | None:
+    if Image is None:
+        return None
+    grayscale = pil_image.convert("L")
+    pixels = np.asarray(grayscale)
+    if pixels.size == 0:
+        return None
+    mask = pixels < 245
+    if not bool(mask.any()):
+        return None
+    ys, xs = np.where(mask)
+    if ys.size == 0 or xs.size == 0:
+        return None
+    height, width = pixels.shape
+    margin_x = max(12, int(width * 0.02))
+    margin_y = max(12, int(height * 0.02))
+    left = max(0, int(xs.min()) - margin_x)
+    top = max(0, int(ys.min()) - margin_y)
+    right = min(width, int(xs.max()) + margin_x + 1)
+    bottom = min(height, int(ys.max()) + margin_y + 1)
+    if right - left < max(32, int(width * 0.2)) or bottom - top < max(32, int(height * 0.2)):
+        return None
+    return left, top, right, bottom
+
+
+def _ocr_variant_to_base64(pil_image: Any) -> str:
+    buffer = io.BytesIO()
+    pil_image.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
+def _ocr_preprocessed_image(pil_image: Any, *, binarize: bool = False) -> Any:
+    if Image is None or ImageOps is None:
+        return pil_image
+    grayscale = ImageOps.autocontrast(pil_image.convert("L"))
+    if not binarize:
+        return grayscale.convert("RGB")
+    threshold = int(np.median(np.asarray(grayscale))) if np.asarray(grayscale).size else 180
+    threshold = max(120, min(200, threshold))
+    binary = grayscale.point(lambda value: 255 if value >= threshold else 0, mode="1")
+    return binary.convert("RGB")
+
+
+def _ocr_render_variants(
+    *,
+    page_number: int,
+    pil_image: Any,
+    layout_hint: str | None = None,
+) -> list[dict[str, Any]]:
+    if Image is None:
+        return []
+    variants: list[tuple[str, Any]] = []
+    content_bbox = _ocr_content_bbox(pil_image)
+    content_image = pil_image.crop(content_bbox) if content_bbox is not None else pil_image
+    variants.append(("full_enhanced", _ocr_preprocessed_image(content_image)))
+    variants.append(("full_binarized", _ocr_preprocessed_image(content_image, binarize=True)))
+    if str(layout_hint or "").strip().lower() == "annual_country_summary":
+        width, height = content_image.size
+        if width > 80 and height > 80:
+            top_crop = content_image.crop((0, 0, width, max(1, int(height * 0.60))))
+            bottom_crop = content_image.crop((0, int(height * 0.45), width, height))
+            right_crop = content_image.crop((int(width * 0.42), 0, width, height))
+            variants.extend(
+                [
+                    ("top_crop_enhanced", _ocr_preprocessed_image(top_crop)),
+                    ("bottom_crop_enhanced", _ocr_preprocessed_image(bottom_crop)),
+                    ("right_crop_binarized", _ocr_preprocessed_image(right_crop, binarize=True)),
+                ]
+            )
+    rendered: list[dict[str, Any]] = []
+    seen_hashes: set[str] = set()
+    for variant_name, variant_image in variants:
+        image_base64 = _ocr_variant_to_base64(variant_image)
+        digest = hashlib.sha1(image_base64.encode("utf-8")).hexdigest()
+        if digest in seen_hashes:
+            continue
+        seen_hashes.add(digest)
+        rendered.append(
+            {
+                "page_number": int(page_number),
+                "variant": variant_name,
+                "image_base64": image_base64,
+            }
+        )
+    return rendered
+
+
+def _ocr_text_quality_score(text: str) -> float:
+    raw = str(text or "")
+    stripped = raw.strip()
+    if not stripped:
+        return -1.0
+    total = max(len(raw), 1)
+    alnum = sum(1 for char in raw if char.isalnum())
+    digits = sum(1 for char in raw if char.isdigit())
+    whitespace = sum(1 for char in raw if char.isspace())
+    exclamation_ratio = raw.count("!") / total
+    alnum_ratio = alnum / total
+    whitespace_ratio = whitespace / total
+    line_count = sum(1 for line in raw.splitlines() if line.strip())
+    unique_chars = len(set(stripped))
+    return (
+        (alnum_ratio * 3.0)
+        + (min(line_count, 24) / 12.0)
+        + min(digits, 50) / 100.0
+        + min(unique_chars, 32) / 32.0
+        + min(whitespace_ratio, 0.35)
+        - (exclamation_ratio * 8.0)
+    )
+
+
+def _lighton_ocr_vllm_extract(image_base64: str, *, endpoint: str | None = None) -> str:
+    endpoint = _normalize_lighton_ocr_endpoint(str(endpoint or os.environ.get("EPIGRAPH_LIGHTON_OCR_ENDPOINT", DEFAULT_LIGHTON_OCR_ENDPOINT)).strip())
     model_name = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_MODEL", DEFAULT_LIGHTON_OCR_MODEL)).strip()
     prompt = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_PROMPT", DEFAULT_LIGHTON_OCR_PROMPT)).strip() or DEFAULT_LIGHTON_OCR_PROMPT
     include_prompt = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_INCLUDE_PROMPT", "1")).strip().lower() not in {"0", "false", "no", "off"}
@@ -2351,31 +2618,121 @@ def _lighton_ocr_vllm_extract(image_base64: str) -> str:
     raise RuntimeError("lighton_ocr_vllm_failed:" + ";".join(errors))
 
 
+def _lighton_local_subprocess_env() -> dict[str, str]:
+    env = dict(os.environ)
+    root = Path(__file__).resolve().parents[3]
+    src_dir = root / "src"
+    site_packages = _lighton_local_site_packages()
+    existing = [part for part in str(env.get("PYTHONPATH", "")).split(os.pathsep) if part]
+    combined: list[str] = []
+    for part in [site_packages, str(src_dir), str(root), *existing]:
+        if part and part not in combined:
+            combined.append(part)
+    env["PYTHONPATH"] = os.pathsep.join(combined)
+    env["HF_HOME"] = REPO_LIGHTON_CACHE_DIR if Path(REPO_LIGHTON_CACHE_DIR).exists() else DEFAULT_LIGHTON_CACHE_DIR
+    env["EPIGRAPH_LIGHTON_OCR_MODEL"] = _lighton_local_snapshot_path()
+    env.setdefault("HF_HUB_OFFLINE", "1")
+    env.setdefault("TRANSFORMERS_OFFLINE", "1")
+    return env
+
+
+def _ensure_lighton_local_endpoint() -> str:
+    endpoint = _lighton_local_endpoint()
+    _lighton_ocr_vllm_ready.cache_clear()
+    if _lighton_ocr_endpoint_healthy(endpoint):
+        return endpoint
+    if not _lighton_local_ready():
+        raise RuntimeError("lighton_local_stack_unavailable")
+    process = _LIGHTON_LOCAL_PROCESS.get("process")
+    if process is not None and getattr(process, "poll", lambda: None)() is None:
+        timeout_at = time.time() + 180.0
+        while time.time() < timeout_at:
+            _lighton_ocr_vllm_ready.cache_clear()
+            if _lighton_ocr_endpoint_healthy(endpoint, timeout_seconds=2.0):
+                return endpoint
+            time.sleep(1.0)
+        raise RuntimeError("lighton_local_endpoint_start_timeout")
+    logs_dir = ensure_dir(Path(__file__).resolve().parents[3] / "artifacts" / "logs")
+    out_path = logs_dir / "lighton_ocr_server.out.log"
+    err_path = logs_dir / "lighton_ocr_server.err.log"
+    out_handle = out_path.open("ab")
+    err_handle = err_path.open("ab")
+    host = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_HOST", DEFAULT_LIGHTON_LOCAL_HOST)).strip() or DEFAULT_LIGHTON_LOCAL_HOST
+    port_value = str(os.environ.get("EPIGRAPH_LIGHTON_OCR_PORT", str(DEFAULT_LIGHTON_LOCAL_PORT))).strip() or str(DEFAULT_LIGHTON_LOCAL_PORT)
+    port = str(int(port_value))
+    process = subprocess.Popen(
+        [sys.executable, str(_lighton_local_server_script()), "--host", host, "--port", port],
+        cwd=str(Path(__file__).resolve().parents[3]),
+        env=_lighton_local_subprocess_env(),
+        stdout=out_handle,
+        stderr=err_handle,
+    )
+    _LIGHTON_LOCAL_PROCESS["process"] = process
+    _LIGHTON_LOCAL_PROCESS["stdout"] = out_handle
+    _LIGHTON_LOCAL_PROCESS["stderr"] = err_handle
+    timeout_at = time.time() + 240.0
+    while time.time() < timeout_at:
+        if process.poll() is not None:
+            raise RuntimeError(f"lighton_local_endpoint_exited:{process.returncode}")
+        _lighton_ocr_vllm_ready.cache_clear()
+        if _lighton_ocr_endpoint_healthy(endpoint, timeout_seconds=2.0):
+            return endpoint
+        time.sleep(2.0)
+    raise RuntimeError("lighton_local_endpoint_start_timeout")
+
+
+def _lighton_ocr_local_extract(image_base64: str) -> str:
+    endpoint = _ensure_lighton_local_endpoint()
+    return _lighton_ocr_vllm_extract(image_base64, endpoint=endpoint)
+
+
 def _lighton_ocr_sidecar_blocks(
     path: Path,
     *,
     preferred_pages: list[int] | None = None,
     max_pages: int = 5,
     requested_backend: str | None = None,
+    layout_hint: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     backend = _phase0_ocr_backend(requested_backend)
     if backend == "disabled":
         return [], {"enabled": False, "backend": "disabled", "status": "backend_unavailable"}
-    if backend == "lighton_local":
-        return [], {"enabled": True, "backend": backend, "status": "local_backend_requires_transformers_v5"}
-    rendered_pages, render_backend = _render_pdf_pages_for_ocr(path, preferred_pages=preferred_pages, max_pages=max_pages)
+    rendered_pages, render_backend = _render_pdf_pages_for_ocr(
+        path,
+        preferred_pages=preferred_pages,
+        max_pages=max_pages,
+        layout_hint=layout_hint,
+    )
     if not rendered_pages:
         return [], {"enabled": True, "backend": backend, "status": "render_failed", "render_backend": render_backend}
+    endpoint = _ensure_lighton_local_endpoint() if backend == "lighton_local" else None
     blocks: list[dict[str, Any]] = []
     failures: list[str] = []
+    seen_text_keys: set[str] = set()
     for rendered in rendered_pages:
         try:
-            text = _lighton_ocr_vllm_extract(str(rendered["image_base64"]))
-            if text.strip():
-                blocks.append({"page_number": int(rendered["page_number"]), "text": text.strip()})
+            text = _lighton_ocr_vllm_extract(str(rendered["image_base64"]), endpoint=endpoint) if endpoint else _lighton_ocr_vllm_extract(str(rendered["image_base64"]))
+            quality_score = _ocr_text_quality_score(text)
+            normalized_key = re.sub(r"\s+", " ", str(text or "").strip()).lower()
+            if text.strip() and quality_score >= 0.8 and normalized_key not in seen_text_keys:
+                seen_text_keys.add(normalized_key)
+                blocks.append(
+                    {
+                        "page_number": int(rendered["page_number"]),
+                        "variant": str(rendered.get("variant") or ""),
+                        "text": text.strip(),
+                        "quality_score": float(round(quality_score, 6)),
+                    }
+                )
+            else:
+                failures.append(
+                    f"page_{int(rendered['page_number'])}:{str(rendered.get('variant') or 'full')}:low_quality"
+                )
         except Exception as exc:
-            failures.append(f"page_{int(rendered['page_number'])}:{exc.__class__.__name__}")
-    return blocks, {
+            failures.append(
+                f"page_{int(rendered['page_number'])}:{str(rendered.get('variant') or 'full')}:{exc.__class__.__name__}"
+            )
+    meta = {
         "enabled": True,
         "backend": backend,
         "status": "parsed" if blocks else "failed",
@@ -2383,7 +2740,14 @@ def _lighton_ocr_sidecar_blocks(
         "failure_notes": failures,
         "page_count": len(rendered_pages),
         "parsed_page_count": len(blocks),
+        "layout_hint": str(layout_hint or ""),
     }
+    if backend == "lighton_local":
+        meta["endpoint"] = endpoint or _lighton_local_endpoint()
+        meta["site_packages"] = _lighton_local_site_packages()
+        meta["server_script"] = str(_lighton_local_server_script())
+        meta["model_source"] = _lighton_local_snapshot_path()
+    return blocks, meta
 
 
 def _detect_time_for_span(text: str) -> str:
@@ -2942,6 +3306,18 @@ def _chunk_linkage_targets(text: str, query_silo: str, hints: list[str]) -> list
         targets.add("suppression_outcomes")
     if any(token in lowered for token in ("condom", "prep", "pre exposure prophylaxis", "harm reduction")):
         targets.add("prevention_access")
+    if any(token in lowered for token in ("key population", "msm", "transgender women", "tgw", "sex worker", "pwid")):
+        targets.add("key_population_burden")
+    if any(token in lowered for token in ("geosocial", "dating app", "mobile app", "online partner", "grindr")):
+        targets.add("app_mediated_partner_seeking")
+    if any(token in lowered for token in ("prep refill", "prep persistence", "prep continuation", "prep discontinuation")):
+        targets.add("prep_persistence")
+    if any(token in lowered for token in ("advanced hiv disease", "median cd4", "cd4 at diagnosis", "cd4 at enrollment")):
+        targets.add("diagnosis_delay_backlog")
+    if any(token in lowered for token in ("viral load turnaround", "laboratory capacity", "reagent stockout", "vl testing")):
+        targets.add("vl_lab_capacity")
+    if any(token in lowered for token in ("reporting delay", "surveillance completeness", "registry backlog", "case reporting")):
+        targets.add("reporting_process")
     return sorted(targets)
 
 
@@ -3655,6 +4031,9 @@ def run_phase0_harvest(
     queries = _slice_queries_for_shard(all_queries, shard_count=query_shard_count, shard_index=query_shard_index)
     shard_target_records = max(1, (int(target_records) + max(1, query_shard_count) - 1) // max(1, query_shard_count))
     budgets = _source_harvest_budgets(queries, target_records=shard_target_records, max_results=max_results)
+    harvester_order = _external_harvester_order()
+    progress_path = raw_dir / "harvest_progress.jsonl"
+    progress_path.write_text("", encoding="utf-8")
     source_rows = _harvest_official_seed_rows()
     source_rows.extend(_structured_source_seed_rows(plugin_id))
     source_rows.extend(_local_official_anchor_specs())
@@ -3688,11 +4067,41 @@ def run_phase0_harvest(
             "biorxiv": _harvest_biorxiv,
             "kaggle": _harvest_kaggle,
         }
-        for query in queries:
-            for source in EXTERNAL_HARVESTER_ORDER:
+        for query_index, query in enumerate(queries):
+            for source in harvester_order:
+                started_at = utc_now_iso()
                 try:
-                    source_rows.extend(harvester_map[source](query, limit=budgets[source]))
-                except Exception:
+                    harvested_rows = harvester_map[source](query, limit=budgets[source])
+                    source_rows.extend(harvested_rows)
+                    _append_harvest_progress(
+                        progress_path,
+                        {
+                            "status": "completed",
+                            "source": source,
+                            "query_index": query_index,
+                            "query": query.get("query"),
+                            "query_silo": query.get("query_silo"),
+                            "limit": budgets[source],
+                            "returned_count": len(harvested_rows),
+                            "started_at": started_at,
+                            "finished_at": utc_now_iso(),
+                        },
+                    )
+                except Exception as exc:
+                    _append_harvest_progress(
+                        progress_path,
+                        {
+                            "status": "failed",
+                            "source": source,
+                            "query_index": query_index,
+                            "query": query.get("query"),
+                            "query_silo": query.get("query_silo"),
+                            "limit": budgets.get(source),
+                            "error": str(exc),
+                            "started_at": started_at,
+                            "finished_at": utc_now_iso(),
+                        },
+                    )
                     continue
     source_rows = _filter_min_literature_year(source_rows)
     source_rows = _ensure_unique_ids(_apply_document_relevance_filter(source_rows, relevance_mode=relevance_mode), "source_id")
@@ -3735,6 +4144,7 @@ def run_phase0_harvest(
             "structured_source_adapter_manifest": str(adapter_manifest),
             "collector_manifest": str(collector_manifest),
             "query_manifest": str(query_manifest),
+            "harvest_progress": str(progress_path),
         },
         backend_status={
             "duckdb": Phase0BackendStatus("duckdb", duckdb is not None, duckdb is not None),
@@ -3750,6 +4160,7 @@ def run_phase0_harvest(
             f"total_query_count:{len(all_queries)}",
             f"metadata_only:{bool(metadata_only)}",
             f"query_shard:{query_shard_index + 1}/{max(1, query_shard_count)}",
+            f"harvester_sources:{','.join(harvester_order)}",
         ],
     )
     write_json(raw_dir / "phase0_manifest.json", phase0_manifest)
@@ -3766,6 +4177,7 @@ def run_phase0_harvest(
             _parquet_sidecar_path(sweep_manifest),
             query_manifest,
             _parquet_sidecar_path(query_manifest),
+            progress_path,
             adapter_manifest,
             collector_manifest,
             raw_dir / "phase0_manifest.json",
@@ -3788,6 +4200,7 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
     document_rows: list[dict[str, Any]] = []
     sweep_rows: list[dict[str, Any]] = []
     query_rows: list[dict[str, Any]] = []
+    progress_rows: list[dict[str, Any]] = []
 
     for shard_run_id in source_run_ids:
         shard_ctx = RunContext.create(run_id=shard_run_id, plugin_id=plugin_id)
@@ -3808,6 +4221,17 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
             merged_row = dict(row)
             merged_row["merged_from_run_id"] = shard_run_id
             query_rows.append(merged_row)
+        progress_path = shard_raw_dir / "harvest_progress.jsonl"
+        if progress_path.exists():
+            for line in progress_path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    merged_row = json.loads(line)
+                except json.JSONDecodeError:
+                    merged_row = {"status": "unparseable", "raw_line": line}
+                merged_row["merged_from_run_id"] = shard_run_id
+                progress_rows.append(merged_row)
 
     source_rows = _ensure_unique_ids(source_rows, "source_id")
     document_rows = _ensure_unique_ids(document_rows, "document_path")
@@ -3818,6 +4242,7 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
     document_manifest = raw_dir / "document_manifest.json"
     sweep_manifest = raw_dir / "harvested_sweep_records.json"
     query_manifest = raw_dir / "query_manifest.json"
+    progress_manifest = raw_dir / "harvest_progress.jsonl"
     adapter_manifest = raw_dir / "structured_source_adapter_manifest.json"
     collector_manifest = raw_dir / "collector_manifest.json"
     merge_manifest = raw_dir / "merge_manifest.json"
@@ -3826,6 +4251,7 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
     _write_rows(document_manifest, document_rows)
     _write_rows(sweep_manifest, sweep_rows)
     _write_rows(query_manifest, query_rows)
+    progress_manifest.write_text("\n".join(json.dumps(row, sort_keys=True) for row in progress_rows) + ("\n" if progress_rows else ""), encoding="utf-8")
     write_json(adapter_manifest, [row.to_dict() for row in plugin.structured_source_adapters])
     write_json(collector_manifest, _collector_manifest_rows(source_rows))
     write_json(
@@ -3863,6 +4289,7 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
             "collector_manifest": str(collector_manifest),
             "query_manifest": str(query_manifest),
             "query_manifest_parquet": str(_parquet_sidecar_path(query_manifest)),
+            "harvest_progress": str(progress_manifest),
             "merge_manifest": str(merge_manifest),
         },
         backend_status={
@@ -3891,6 +4318,7 @@ def run_phase0_merge_shards(*, run_id: str, plugin_id: str, source_run_ids: list
             _parquet_sidecar_path(sweep_manifest),
             query_manifest,
             _parquet_sidecar_path(query_manifest),
+            progress_manifest,
             adapter_manifest,
             collector_manifest,
             merge_manifest,
@@ -4548,6 +4976,10 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
     evidence_rows = build_candidate_evidence_rows(validated_candidates=validated_candidates, plugin_id=plugin_id)
     block_sign_priors = build_block_sign_priors(evidence_rows=evidence_rows, plugin_id=plugin_id)
     measurement_manifest = build_measurement_manifest(evidence_rows=evidence_rows, plugin_id=plugin_id)
+    phase3_targeted_extraction_audit = build_phase3_targeted_extraction_audit(
+        evidence_rows,
+        artifact_name="phase0_extract:evidence_indicator_rows",
+    )
     philhealth_portal_artifacts = build_philhealth_portal_artifacts(
         candidate_rows=validated_candidates,
         collector_rows=list((structured_numeric_payload.get("summary") or {}).get("collectors") or []),
@@ -4559,6 +4991,7 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
     write_json(extracted_dir / "evidence_indicator_rows.json", evidence_rows)
     write_json(extracted_dir / "block_sign_priors.json", block_sign_priors)
     write_json(extracted_dir / "measurement_manifest.json", measurement_manifest)
+    write_json(extracted_dir / "phase3_targeted_extraction_audit.json", phase3_targeted_extraction_audit)
     write_json(extracted_dir / "canonicalization_summary.json", canonicalization_summary)
     write_json(extracted_dir / "boundary_validation_report.json", boundary_validation_summary)
     write_json(extracted_dir / "structured_numeric_candidate_summary.json", structured_numeric_payload.get("summary") or {})
@@ -4615,6 +5048,7 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             "evidence_indicator_rows": str(extracted_dir / "evidence_indicator_rows.json"),
             "block_sign_priors": str(extracted_dir / "block_sign_priors.json"),
             "measurement_manifest": str(extracted_dir / "measurement_manifest.json"),
+            "phase3_targeted_extraction_audit": str(extracted_dir / "phase3_targeted_extraction_audit.json"),
             "canonicalization_summary": str(extracted_dir / "canonicalization_summary.json"),
             "boundary_validation_report": str(extracted_dir / "boundary_validation_report.json"),
             "structured_numeric_candidate_summary": str(extracted_dir / "structured_numeric_candidate_summary.json"),
@@ -4651,6 +5085,7 @@ def run_phase0_extract(*, run_id: str, plugin_id: str, skip_live_normalizer: boo
             extracted_dir / "evidence_indicator_rows.json",
             extracted_dir / "block_sign_priors.json",
             extracted_dir / "measurement_manifest.json",
+            extracted_dir / "phase3_targeted_extraction_audit.json",
             extracted_dir / "canonicalization_summary.json",
             extracted_dir / "rejected_canonical_parameter_candidates.json",
             _parquet_sidecar_path(extracted_dir / "rejected_canonical_parameter_candidates.json"),
@@ -4808,6 +5243,11 @@ def run_phase0_build(
     write_json(extracted_dir / "evidence_indicator_rows.json", merged_evidence_rows)
     write_json(extracted_dir / "block_sign_priors.json", build_block_sign_priors(evidence_rows=merged_evidence_rows, plugin_id=plugin_id))
     write_json(extracted_dir / "measurement_manifest.json", build_measurement_manifest(evidence_rows=merged_evidence_rows, plugin_id=plugin_id))
+    phase3_targeted_extraction_audit = build_phase3_targeted_extraction_audit(
+        merged_evidence_rows,
+        artifact_name="phase0_build:merged_evidence_indicator_rows",
+    )
+    write_json(extracted_dir / "phase3_targeted_extraction_audit.json", phase3_targeted_extraction_audit)
     aligned_tensor = load_tensor_artifact(phase0_dir / "extracted" / "aligned_tensor.npz")
     quality_weights = load_tensor_artifact(phase0_dir / "extracted" / "quality_weights.npz")
     province_axis = alignment_summary.get("province_axis", [])
@@ -4967,6 +5407,7 @@ def run_phase0_build(
         "evidence_indicator_rows": str(extracted_dir / "evidence_indicator_rows.json"),
         "block_sign_priors": str(extracted_dir / "block_sign_priors.json"),
         "measurement_manifest": str(extracted_dir / "measurement_manifest.json"),
+        "phase3_targeted_extraction_audit": str(extracted_dir / "phase3_targeted_extraction_audit.json"),
     }
     phase0_manifest["source_count"] = len(source_manifest)
     phase0_manifest["document_count"] = len(read_json(phase0_dir / "parsed" / "parsed_chunk_manifest.json", default=[]))
@@ -4992,6 +5433,7 @@ def run_phase0_build(
             extracted_dir / "evidence_indicator_rows.json",
             extracted_dir / "block_sign_priors.json",
             extracted_dir / "measurement_manifest.json",
+            extracted_dir / "phase3_targeted_extraction_audit.json",
             *[Path(path) for path in support_artifacts.values()],
         ],
     )

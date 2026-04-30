@@ -19,6 +19,7 @@ from epigraph_ph.harp_archive.pipeline import (
     _extract_core_team_series,
     _extract_core_team_subnational_kp,
     _extract_generic_harp_snapshot,
+    _resolve_local_seed_path,
     _read_tabular_seed_rows,
     _extract_surveillance_kp_profile,
     _panel_from_metric_rows,
@@ -30,6 +31,8 @@ from epigraph_ph.harp_archive.doh_hiv_sti_archive import (
     build_diagnosis_flow_points,
     build_harp_program_points,
     download_archive_pdfs,
+    extract_art_summary_rows,
+    extract_art_treatment_outcome_rows,
     extract_diagnosis_summary_rows,
     extract_continuum_metric_rows,
     load_archive_seed_rows,
@@ -52,6 +55,25 @@ def test_extract_core_team_series_from_sample_page() -> None:
     assert {"annual_new_infections", "estimated_plhiv", "annual_aids_deaths"} <= metrics
     assert min(int(row["year"]) for row in rows) == 2010
     assert max(int(row["year"]) for row in rows) == 2025
+    assert {str(row["time"])[-3:] for row in rows} == {"-12"}
+
+
+def test_extract_core_team_series_reads_explicit_annual_deaths_block() -> None:
+    sample = (
+        "Annual new HIV infections, 2010-2024 "
+        "Estimated PLHIV "
+        "2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 "
+        "Spectrum 2025 4,600 5,600 6,700 7,900 9,000 10,300 11,800 13,400 14,900 16,400 18,300 20,900 23,900 26,900 29,800 "
+        "Spectrum 2025 300 400 500 600 600 600 600 700 800 900 1100 1300 1600 1900 2100 "
+        "300 2100 0 500 1000 1500 2000 "
+        "Annual AIDS deaths Annual AIDS Deaths, 2010-2024"
+    )
+
+    rows = _extract_core_team_series(sample, "core_team_2025", "Core team", 12)
+    deaths = {(int(row["year"]), row["metric_name"]): float(row["value"]) for row in rows}
+
+    assert deaths[(2022, "annual_aids_deaths")] == 1600.0
+    assert deaths[(2024, "annual_aids_deaths")] == 2100.0
 
 
 def test_extract_core_team_cascade_snapshot() -> None:
@@ -67,6 +89,34 @@ def test_extract_core_team_cascade_snapshot() -> None:
     assert metrics["diagnosed_plhiv"] == 135026.0
     assert metrics["virally_suppressed"] == 41164.0
     assert {row["time"] for row in rows} == {"2024-12"}
+
+
+def test_extract_continuum_metric_rows_handles_ohasis_quarterly_layout() -> None:
+    sample = (
+        "95-95-95 ACCOMPLISHMENT\n"
+        "ThelatestPhilippineHIVestimatesshowthatbytheendof2023 there will be189.000estimated People Living with HIV.\n"
+        "Of the estimated PLHIV,111,031（59%) cases have been diagnosed or laboratory-confirmed and currently living or not reported to have died, as of June 2023.\n"
+        "Further,70,916 PLHIV are currently on life-saving Anti-retroviral Therapy(ART),ofwhich,26,006(37%)PLHIVhave been tested for viral load(VL) in the past12 months.Among those tested forVL,22,690(87%)are virally suppressed.\n"
+    )
+
+    rows = extract_continuum_metric_rows(
+        {
+            "source_id": "probe_2023_q2",
+            "label": "2023 April-June",
+            "source_year": 2023,
+            "source_url": "",
+            "effective_month": "2023-06",
+            "start_month": "2023-04",
+            "end_month": "2023-06",
+            "temporal_precision": "quarterly_snapshot",
+        },
+        [{"page_number": 1, "text": sample}],
+    )
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["estimated_plhiv"] == 189000.0
+    assert by_metric["diagnosed_plhiv"] == 111031.0
+    assert by_metric["alive_on_art"] == 70916.0
 
 
 def test_extract_surveillance_national_kp_profile() -> None:
@@ -127,6 +177,7 @@ def test_extract_generic_harp_snapshot() -> None:
     by_metric = {row["metric_name"]: row["value"] for row in rows}
     assert by_metric["diagnosed_plhiv"] == 78291.0
     assert by_metric["alive_on_art"] == 47977.0
+    assert {str(row["time"])[-3:] for row in rows} == {"-12"}
 
 
 def test_read_tabular_seed_rows_from_csv(tmp_path) -> None:
@@ -143,6 +194,26 @@ def test_read_tabular_seed_rows_from_csv(tmp_path) -> None:
     assert len(rows) == 2
     assert {row["metric_name"] for row in rows} == {"diagnosed_plhiv", "alive_on_art"}
     assert all(row["measurement_class"] == "program_observed_harp" for row in rows)
+
+
+def test_resolve_local_seed_path_recovers_moved_local_pdf(monkeypatch, tmp_path) -> None:
+    relocated_root = tmp_path / "Bioarxiv"
+    relocated_root.mkdir(parents=True)
+    relocated_pdf = relocated_root / "2025 PH HIV Estimates_Core team_for WHO.pdf"
+    relocated_pdf.write_bytes(b"%PDF-1.4\n")
+
+    monkeypatch.setattr(pipeline_module, "_local_seed_search_roots", lambda desktop_seed_dir=None: [relocated_root])
+    monkeypatch.setattr(pipeline_module, "local_archive_pdf_corpus_rows", lambda: [])
+
+    resolved = _resolve_local_seed_path(
+        {
+            "source_id": "core_team_2025",
+            "path": Path(r"C:\Users\gaura\OneDrive\Desktop\2025 PH HIV Estimates_Core team_for WHO.pdf"),
+            "source_kind": "local_pdf",
+        }
+    )
+
+    assert resolved == relocated_pdf
 
 
 def test_frozen_backtest_artifacts_reflect_holdout() -> None:
@@ -170,6 +241,10 @@ def test_packaged_curated_seed_makes_archive_backtest_ready() -> None:
     spec = read_json(archive_dir / "frozen_backtest_spec.json", default={})
     summary = read_json(archive_dir / "frozen_backtest_summary.json", default={})
     panel = read_json(archive_dir / "historical_harp_panel.json", default={})
+    merged_rows = read_json(archive_dir / "historical_metric_rows.json", default=[])
+    canonical_rows = read_json(archive_dir / "historical_metric_rows_harp_only.json", default=[])
+    wdi_rows = read_json(archive_dir / "wdi_hiv_rows.json", default=[])
+    wdi_overlap = read_json(archive_dir / "wdi_hiv_overlap_summary.json", default={})
 
     assert assessment.get("backtest_ready") is True
     assert assessment.get("coverage_summary", {}).get("program_observed_year_count", 0) >= 5
@@ -177,6 +252,13 @@ def test_packaged_curated_seed_makes_archive_backtest_ready() -> None:
     assert spec.get("holdout_years") == [2025]
     assert summary.get("comparison_count", 0) >= 4
     assert any(int(row.get("year") or 0) == 2025 for row in panel.get("rows", []))
+    assert merged_rows
+    assert canonical_rows
+    assert wdi_rows
+    assert not any(str(row.get("measurement_class")) == "external_reference_wdi" for row in canonical_rows)
+    assert any(str(row.get("measurement_class")) == "external_reference_wdi" for row in merged_rows)
+    assert any(str(row.get("source_tier")) == "overlap_validated_external_reference" for row in wdi_rows)
+    assert wdi_overlap.get("art_coverage_overlap", {}).get("comparison_rows")
 
 
 def test_packaged_seed_survives_manual_seed_dir_override(tmp_path) -> None:
@@ -334,6 +416,28 @@ def test_doh_archive_seed_loads_and_preserves_quarter_ranges() -> None:
     assert q4_2024["effective_month"] == "2024-12"
 
 
+def test_doh_official_cascade_seed_uses_year_end_months() -> None:
+    seed_path = ROOT_DIR / "src" / "epigraph_ph" / "harp_archive" / "seeds" / "doh_official_cascade_ground_truth_2018_2025.csv"
+
+    rows = _read_tabular_seed_rows(seed_path, source_id="doh_official_cascade_ground_truth_2018_2025", source_label="DOH Official Cascade")
+    diagnosed_2022 = next(row for row in rows if row["metric_name"] == "diagnosed_plhiv" and int(row["year"]) == 2022)
+    art_2024 = next(row for row in rows if row["metric_name"] == "alive_on_art" and int(row["year"]) == 2024)
+
+    assert diagnosed_2022["time"] == "2022-12"
+    assert art_2024["time"] == "2024-12"
+
+
+def test_curated_harp_panel_seed_uses_year_end_months() -> None:
+    seed_path = ROOT_DIR / "src" / "epigraph_ph" / "harp_archive" / "seeds" / "historical_harp_panel_curated.csv"
+
+    rows = _read_tabular_seed_rows(seed_path, source_id="curated_historical_harp_2017_2024", source_label="Curated Historical HARP")
+    diagnosed_2022 = next(row for row in rows if row["metric_name"] == "diagnosed_plhiv" and int(row["year"]) == 2022)
+    art_2024 = next(row for row in rows if row["metric_name"] == "alive_on_art" and int(row["year"]) == 2024)
+
+    assert diagnosed_2022["time"] == "2022-12"
+    assert art_2024["time"] == "2024-12"
+
+
 def test_build_diagnosis_flow_points_dedupes_and_normalizes_against_estimated_plhiv() -> None:
     rows = [
         {
@@ -434,6 +538,34 @@ def test_download_archive_pdfs_tolerates_request_timeouts(tmp_path, monkeypatch)
     assert hydrated[0]["download_status"] == "failed"
     assert hydrated[0]["local_path"] == ""
     assert "Timeout" in str(hydrated[0]["download_error"])
+
+
+def test_download_archive_pdfs_uses_powershell_fallback_when_requests_fail(tmp_path, monkeypatch) -> None:
+    class _TimeoutSession:
+        def get(self, *_args, **_kwargs):
+            raise requests.ConnectionError("simulated connection error")
+
+    def _fake_powershell_download(_url: str, destination: Path, *, timeout_seconds: float) -> tuple[bool, str]:
+        assert timeout_seconds == 0.01
+        destination.write_bytes(b"%PDF-1.3\n%fake\n")
+        return True, ""
+
+    monkeypatch.setattr(archive_module, "_download_session", lambda: _TimeoutSession())
+    monkeypatch.setattr(archive_module, "_powershell_download_pdf", _fake_powershell_download)
+    rows = [
+        {
+            "source_id": "fallback_case",
+            "label": "2024 January",
+            "file_id": "fake-file-id",
+        }
+    ]
+
+    hydrated = download_archive_pdfs(archive_rows=rows, raw_dir=tmp_path, request_timeout_seconds=0.01, pause_seconds=0.0)
+
+    assert len(hydrated) == 1
+    assert hydrated[0]["download_status"] == "downloaded"
+    assert hydrated[0]["local_path"]
+    assert Path(hydrated[0]["local_path"]).exists()
 
 
 def test_reuse_cached_archive_build_accepts_legacy_ocr_settings_manifest(tmp_path) -> None:
@@ -703,6 +835,207 @@ def test_extract_diagnosis_summary_rows_captures_youth_quick_facts_table() -> No
     by_metric = {row["metric_name"]: row["value"] for row in rows}
 
     assert by_metric["youth_cases_15_24_period"] == 59.0
+
+
+def test_extract_diagnosis_summary_rows_handles_monthly_numeric_counts_and_deaths() -> None:
+    report = {
+        "source_id": "probe_2022_jan",
+        "label": "2022 January",
+        "source_year": 2022,
+        "source_url": "",
+        "effective_month": "2022-01",
+        "start_month": "2022-01",
+        "end_month": "2022-01",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "In January 2022, there were 875 confirmed HIV-positive individuals reported to the HIV/AIDS & ART Registry of the Philippines. "
+        "In January 2022, there were 33 reported deaths due to any cause among people with HIV."
+    )
+
+    rows = extract_diagnosis_summary_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["new_diagnosed_cases_period"] == 875.0
+    assert by_metric["deaths_reported_period"] == 33.0
+
+
+def test_extract_diagnosis_summary_rows_handles_collapsed_ocr_and_spelled_out_deaths() -> None:
+    report = {
+        "source_id": "probe_2022_oct",
+        "label": "2022 October",
+        "source_year": 2022,
+        "source_url": "",
+        "effective_month": "2022-10",
+        "start_month": "2022-10",
+        "end_month": "2022-10",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "InOctober2022,therewere1,383confirmedHIV-positiveindividuals reportedtotheHIV/AIDS&ARTRegistry of the Philippines. "
+        "Sixty-five deathswere newly reported,bringing the total deaths reported this year to 878e."
+    )
+
+    rows = extract_diagnosis_summary_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["new_diagnosed_cases_period"] == 1383.0
+    assert by_metric["deaths_reported_period"] == 65.0
+
+
+def test_extract_diagnosis_summary_rows_handles_interleaved_summary_table_ocr() -> None:
+    report = {
+        "source_id": "probe_2022_march",
+        "label": "2022 March",
+        "source_year": 2022,
+        "source_url": "",
+        "effective_month": "2022-03",
+        "start_month": "2022-03",
+        "end_month": "2022-03",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "NEWLYDIAGNOSEDCASES\n"
+        "InMarch2022,therewere1,539confirmedHIV-positive\n"
+        "Table1:SummaryofHivdiagnosesanddeaths\n"
+        "Mar Jan- Jan2017- Jan1984-\n"
+        "individualsreportedtotheHIV/AIDS&ARTRegistryofthe\n"
+        "Philippines(HARP).This wasa48%increase comparedto\n"
+        "Totalreportedcases 1,539 3,468 58,900 97,792\n"
+        "Reporteddeaths9 66 177 3,629 5,548\n"
+    )
+
+    rows = extract_diagnosis_summary_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["new_diagnosed_cases_period"] == 1539.0
+    assert by_metric["deaths_reported_period"] == 66.0
+
+
+def test_extract_diagnosis_summary_rows_captures_cumulative_cases_and_deaths_from_table() -> None:
+    report = {
+        "source_id": "probe_2022_june",
+        "label": "2022 June",
+        "source_year": 2022,
+        "source_url": "",
+        "effective_month": "2022-06",
+        "start_month": "2022-06",
+        "end_month": "2022-06",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "NEWLY DIAGNOSED CASES\n"
+        "Total reported cases 1,472 7,444 62,876 101,768\n"
+        "Reporteddeaths9 36 246 3,698 5,616\n"
+    )
+
+    rows = extract_diagnosis_summary_rows(report, [{"page_number": 1, "text": sample}, {"page_number": 2, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["diagnosed_cases_cumulative"] == 101768.0
+    assert by_metric["deaths_reported_cumulative"] == 5616.0
+
+
+def test_extract_art_summary_rows_captures_monthly_alive_on_art_bridge_stock() -> None:
+    report = {
+        "source_id": "probe_2022_january",
+        "label": "2022 January",
+        "source_year": 2022,
+        "source_url": "",
+        "effective_month": "2022-01",
+        "start_month": "2022-01",
+        "end_month": "2022-01",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = "A total of 56,982 people living with HIV (PLHIV) were presently on ART as of January 2022."
+
+    rows = extract_art_summary_rows(report, [{"page_number": 1, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["alive_on_art"] == 56982.0
+
+
+def test_extract_art_treatment_outcome_rows_captures_direct_ltfu_transfer_stop_and_death() -> None:
+    report = {
+        "source_id": "probe_2025_q2",
+        "label": "2025 Q2",
+        "source_year": 2025,
+        "source_url": "",
+        "effective_month": "2025-06",
+        "start_month": "2025-04",
+        "end_month": "2025-06",
+        "temporal_precision": "quarterly_snapshot",
+    }
+    sample = (
+        "Table 4. Number of PLHIV ever enrolled to ART by treatment outcome and region as of June 2025\n"
+        "Treatment Outcome Alive on ART Lost to Follow-up24 (n= 29,286) Dead (n= 6,255) "
+        "Trans out (Overseas)25 (n= 13) Stopped26 (n= 5)\n"
+        "Among the 131,381 people living with HIV (PLHIV) who have ever been enrolled on antiretroviral therapy (ART) since 2002, "
+        "a total of 95,556 individuals were alive on ART as of June 2025.\n"
+        "As of June 2025, 29,304 (22%) individuals who were previously on ART were no longer receiving treatment. "
+        "This group includes 29,286 individuals who were lost to follow-up, 5 who refused to continue ART for various reasons, "
+        "and 13 who reported migrating overseas."
+    )
+
+    rows = extract_art_treatment_outcome_rows(report, [{"page_number": 4, "text": sample}])
+    by_metric = {row["metric_name"]: row["value"] for row in rows}
+
+    assert by_metric["art_ever_enrolled_cumulative"] == 131381.0
+    assert by_metric["art_ltfu_cumulative"] == 29286.0
+    assert by_metric["art_deaths_cumulative"] == 6255.0
+    assert by_metric["art_transfer_out_overseas_cumulative"] == 13.0
+    assert by_metric["art_stopped_refused_cumulative"] == 5.0
+    assert by_metric["art_no_longer_on_treatment_cumulative"] == 29304.0
+    assert {row["temporal_precision"] for row in rows} == {"monthly_snapshot"}
+
+
+def test_extract_quick_facts_stock_rows_ignores_non_quick_facts_summary_pages() -> None:
+    report = {
+        "source_id": "probe_2023_may",
+        "label": "2023 May",
+        "source_year": 2023,
+        "source_url": "",
+        "effective_month": "2023-05",
+        "start_month": "2023-05",
+        "end_month": "2023-05",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "SUMMARYOFNEWLYDIAGNOSEDCASES\n"
+        "InMay2023,therewere1,256confirmedHIV-positiveindividualsreportedtotheHIV/AIDS&ARTRegistryofthePhilippines.\n"
+        "Table1:NumberofdiagnosedHiVcasesbymodeoftransmissionandsex,Jan-May2023(N=7,315)\n"
+        "Totalreported cases,May2023\n"
+        "1,186\n70\n323\n132\n1,256\n48\n"
+    )
+
+    rows = archive_module.extract_quick_facts_stock_rows(report, [{"page_number": 1, "text": sample}])
+
+    assert rows == []
+
+
+def test_extract_quick_facts_stock_rows_rejects_impossible_cumulative_alive_counts() -> None:
+    report = {
+        "source_id": "probe_2022_oct_quickfacts",
+        "label": "2022 October",
+        "source_year": 2022,
+        "source_url": "",
+        "effective_month": "2022-10",
+        "start_month": "2022-10",
+        "end_month": "2022-10",
+        "temporal_precision": "monthly_snapshot",
+    }
+    sample = (
+        "InOctober2022,therewere1,383confirmedHIV-positiveindividuals reportedtotheHIV/AIDS&ARTRegistry of the Philippines.\n"
+        "Table 1. Quick Facts\n"
+        "Demographic Data\n"
+        "Oct\nJan-Oct 2022\nJan1984-\n"
+        "Total reported cases\n513\n1,383\n109,282\n"
+        "Reported deaths\n202\n878\n6,351\n"
+    )
+
+    rows = archive_module.extract_quick_facts_stock_rows(report, [{"page_number": 1, "text": sample}])
+
+    assert rows == []
 
 
 def test_extract_diagnosis_summary_rows_captures_post_2014_youth_narrative_layout() -> None:
