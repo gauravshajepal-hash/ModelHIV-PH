@@ -1431,16 +1431,13 @@ def test_r12_10_official_annual_challenge_keeps_required_heads_out_of_training()
         if row["metric_name"] in {"annual_new_infections", "annual_aids_deaths", "estimated_plhiv"}
     ]
     assert report["experiment_id"] == "R12-10A"
-    assert report["status"] == "cascade_only_available"
+    assert report["status"] == "pass"
     assert required_records
-    assert all(row["training_use"] == "forbidden" for row in required_records)
-    assert all(row["candidate_value"] is None for row in required_records)
-    assert {
-        "annual_new_infections_model_head_missing",
-        "annual_aids_deaths_model_head_missing",
-        "estimated_plhiv_model_head_missing",
-        "no_required_incidence_death_plhiv_model_heads_scored",
-    }.issubset(set(report["blockers"]))
+    assert all(row["training_use"] == "train_origin_weak_measurement_head" for row in required_records)
+    assert all(row["candidate_value"] is not None for row in required_records)
+    assert report["blockers"] == []
+    assert report["scored_required_model_head_count"] > 0
+    assert report["annual_measurement_head_rows"]
     assert report["scored_cascade_metric_count"] > 0
 
 
@@ -1506,7 +1503,8 @@ def test_r12_10_program_nowcast_branch_is_doh_program_scoped() -> None:
 
     assert predictions
     assert summary["family"] == "r12_program_nowcast_mixed_quarterly_process"
-    assert summary["program_selector"]["program_train_row_count"] > 0
+    assert summary["monthly_reporting_state_process"]["program_train_row_count"] > 0
+    assert summary["monthly_reporting_state_process"]["status"] == "completed"
     mutation_by_quarter = {row["quarter"]: row for row in summary["mutation_rows"]}
     assert mutation_by_quarter["2023-Q2"]["program_row"] is True
     assert mutation_by_quarter["2023-Q3"]["program_row"] is True

@@ -750,6 +750,160 @@ def _strip_official_annual_validation_targets(row: dict[str, Any]) -> dict[str, 
     return output
 
 
+def _fit_annual_measurement_error_head(train_rows: list[dict[str, Any]], metric_name: str) -> dict[str, Any]:
+    metric_rows = [
+        dict(row)
+        for row in _available_metric_rows(train_rows, metric_name)
+        if str(row.get("quarter") or "").endswith("-Q4")
+    ]
+    if not metric_rows:
+        return {
+            "status": "not_estimable",
+            "metric_name": metric_name,
+            "reason": "no_train_annual_measurements",
+        }
+    years = np.asarray([quarter_year(str(row.get("quarter") or "")) for row in metric_rows], dtype=np.float64)
+    values = np.asarray(
+        [max(float(row.get(metric_name) or 0.0), 0.0) for row in metric_rows],
+        dtype=np.float64,
+    )
+    log_values = np.log1p(values)
+    slopes: list[float] = []
+    one_step_residuals: list[float] = []
+    for index in range(1, len(metric_rows)):
+        year_step = max(float(years[index] - years[index - 1]), float(np.finfo(np.float32).eps))
+        slope = float((log_values[index] - log_values[index - 1]) / year_step)
+        slopes.append(slope)
+        prior_slopes = slopes[:-1]
+        slope_prior = 0.0 if not prior_slopes else float(np.median(np.asarray(prior_slopes, dtype=np.float64)))
+        one_step_residuals.append(float(log_values[index] - (log_values[index - 1] + slope_prior * year_step)))
+    slope_array = np.asarray(slopes, dtype=np.float64)
+    residual_array = np.asarray(one_step_residuals, dtype=np.float64)
+    process_variance = float(np.var(slope_array)) if slope_array.size else 0.0
+    measurement_variance = float(np.var(residual_array)) if residual_array.size else 0.0
+    variance_denominator = process_variance + measurement_variance
+    trend_weight = (
+        0.0
+        if variance_denominator <= float(np.finfo(np.float64).eps)
+        else float(process_variance / variance_denominator)
+    )
+    median_slope = 0.0 if not slopes else float(np.median(slope_array))
+    return {
+        "status": "completed",
+        "metric_name": metric_name,
+        "train_count": len(metric_rows),
+        "first_year": int(years[0]),
+        "last_year": int(years[-1]),
+        "last_log_value": float(log_values[-1]),
+        "last_value": float(values[-1]),
+        "median_annual_log_slope": median_slope,
+        "process_variance": process_variance,
+        "measurement_variance": measurement_variance,
+        "trend_weight": trend_weight,
+        "one_step_residual_count": len(one_step_residuals),
+        "contract": (
+            "annual weak-measurement head: log1p(y_t)=x_t+epsilon_t, "
+            "x_t=x_{t-1}+g_t+eta_t; measurement and process variances are empirical train-origin residual variances"
+        ),
+    }
+
+
+def _predict_annual_measurement_error_head(model: dict[str, Any], holdout_row: dict[str, Any]) -> dict[str, Any]:
+    if str(model.get("status") or "") != "completed":
+        return {
+            "value": None,
+            "lower": None,
+            "upper": None,
+            "measurement_sd": None,
+            "prediction_sd": None,
+        }
+    metric_name = str(model.get("metric_name") or "")
+    holdout_year = quarter_year(str(holdout_row.get("quarter") or ""))
+    last_year = int(model.get("last_year") or holdout_year)
+    lead_years = max(int(holdout_year) - int(last_year), 0)
+    slope = float(model.get("median_annual_log_slope") or 0.0)
+    trend_weight = float(model.get("trend_weight") or 0.0)
+    log_mean = float(model.get("last_log_value") or 0.0) + trend_weight * slope * float(lead_years)
+    measurement_variance = max(float(model.get("measurement_variance") or 0.0), 0.0)
+    process_variance = max(float(model.get("process_variance") or 0.0), 0.0)
+    prediction_variance = measurement_variance + float(lead_years) * process_variance
+    prediction_sd = float(np.sqrt(max(prediction_variance, 0.0)))
+    value = float(max(np.expm1(log_mean), 0.0))
+    lower = float(max(np.expm1(log_mean - prediction_sd), 0.0))
+    upper = float(max(np.expm1(log_mean + prediction_sd), lower, value))
+    if metric_name == "estimated_plhiv":
+        diagnosed = _finite_float(holdout_row.get("diagnosed_plhiv"))
+        if diagnosed is not None:
+            value = float(max(value, float(diagnosed)))
+            lower = float(max(lower, float(diagnosed)))
+            upper = float(max(upper, value))
+    return {
+        "value": value,
+        "lower": lower,
+        "upper": upper,
+        "measurement_sd": float(np.sqrt(measurement_variance)),
+        "prediction_sd": prediction_sd,
+    }
+
+
+def _fit_official_annual_measurement_error_heads(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    heads = {
+        metric_name: _fit_annual_measurement_error_head(train_rows, metric_name)
+        for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS
+    }
+    return {
+        "status": "completed"
+        if any(str(head.get("status") or "") == "completed" for head in heads.values())
+        else "not_estimable",
+        "heads": heads,
+        "contract": (
+            "annual incidence, AIDS-death, and estimated-PLHIV heads are fitted only from train-origin annual "
+            "weak measurements. They emit annual predictions and uncertainty bands; they do not create quarterly truth."
+        ),
+    }
+
+
+def _apply_official_annual_measurement_error_heads(
+    prediction_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    annual_head_process: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    heads = dict(annual_head_process.get("heads") or {})
+    output: list[dict[str, Any]] = []
+    head_rows: list[dict[str, Any]] = []
+    for prediction_row, holdout_row in zip(
+        prediction_rows,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(prediction_row)
+        quarter = str(holdout_row.get("quarter") or row.get("quarter") or "")
+        if quarter.endswith("-Q4"):
+            for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS:
+                head = dict(heads.get(metric_name) or {})
+                prediction = _predict_annual_measurement_error_head(head, row)
+                value = _finite_float(prediction.get("value"))
+                if value is not None:
+                    row[metric_name] = float(value)
+                    row[f"{metric_name}_measurement_lower"] = prediction.get("lower")
+                    row[f"{metric_name}_measurement_upper"] = prediction.get("upper")
+                head_rows.append(
+                    {
+                        "quarter": quarter,
+                        "metric_name": metric_name,
+                        "head_status": str(head.get("status") or "not_estimable"),
+                        "predicted": value is not None,
+                        "prediction_value": value,
+                        "prediction_lower": prediction.get("lower"),
+                        "prediction_upper": prediction.get("upper"),
+                        "measurement_sd": prediction.get("measurement_sd"),
+                        "prediction_sd": prediction.get("prediction_sd"),
+                        "train_count": head.get("train_count"),
+                    }
+                )
+        output.append(row)
+    return output, head_rows
+
+
 def _annual_challenge_metric_scale(train_rows: list[dict[str, Any]], metric_name: str) -> float:
     values = [
         abs(float(value))
@@ -789,6 +943,8 @@ def _official_annual_challenge_metric_rows(
     family: str,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     score_rows: list[dict[str, Any]] = []
+    annual_head_rows: list[dict[str, Any]] = []
+    annual_head_manifests: list[dict[str, Any]] = []
     split_count_by_horizon: Counter[int] = Counter()
     prediction_missing_counts: Counter[str] = Counter()
     leakage_rows: list[dict[str, Any]] = []
@@ -828,6 +984,35 @@ def _official_annual_challenge_metric_rows(
                 train_rows,
                 holdout_rows,
                 family=family,
+            )
+            annual_head_process = _fit_official_annual_measurement_error_heads(raw_train_rows)
+            candidate_predictions, head_rows = _apply_official_annual_measurement_error_heads(
+                candidate_predictions,
+                holdout_rows,
+                annual_head_process,
+            )
+            annual_head_rows.extend(
+                [
+                    {
+                        **row,
+                        "candidate_family": family,
+                        "horizon_years": int(horizon),
+                        "train_end_year": train_end_year,
+                    }
+                    for row in head_rows
+                ]
+            )
+            annual_head_manifests.append(
+                {
+                    "candidate_family": family,
+                    "horizon_years": int(horizon),
+                    "train_end_year": train_end_year,
+                    "status": str(annual_head_process.get("status") or ""),
+                    "head_status_by_metric": {
+                        metric_name: str(dict(head).get("status") or "")
+                        for metric_name, head in dict(annual_head_process.get("heads") or {}).items()
+                    },
+                }
             )
             carry_predictions = _annual_challenge_carry_forward_rows(raw_train_rows, holdout_rows)
             candidate_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in candidate_predictions}
@@ -894,7 +1079,7 @@ def _official_annual_challenge_metric_rows(
                             "source_tier": str(metric_provenance.get("source_tier") or metric_provenance.get("source_quality_tier") or ""),
                             "support_partition": str(metric_provenance.get("support_partition") or ""),
                             "measurement_semantics": str(metric_provenance.get("measurement_semantics") or ""),
-                            "training_use": "forbidden"
+                            "training_use": "train_origin_weak_measurement_head"
                             if metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS
                             else "challenge_scoring_only",
                         }
@@ -917,6 +1102,8 @@ def _official_annual_challenge_metric_rows(
         "prediction_missing_counts": dict(sorted(prediction_missing_counts.items())),
         "leakage_violation_count": len(leakage_rows),
         "leakage_rows": leakage_rows,
+        "annual_measurement_head_rows": annual_head_rows,
+        "annual_measurement_head_manifests": annual_head_manifests,
         "status": "pass" if not blockers else "blocked",
         "blockers": blockers,
     }
@@ -1033,6 +1220,18 @@ def _build_r12_official_annual_challenge_gate_report(
         "family_rows": family_rows,
         "horizon_rows": horizon_rows,
         "metric_rows": metric_rows,
+        "annual_measurement_head_rows": [
+            row
+            for manifest in family_manifests
+            for row in list(manifest.get("annual_measurement_head_rows") or [])
+            if isinstance(row, dict)
+        ],
+        "annual_measurement_head_manifests": [
+            row
+            for manifest in family_manifests
+            for row in list(manifest.get("annual_measurement_head_manifests") or [])
+            if isinstance(row, dict)
+        ],
         "score_record_count": len(all_score_rows),
         "scored_required_model_head_count": len(scored_required),
         "scored_cascade_metric_count": len(cascade_rows),
@@ -1041,8 +1240,9 @@ def _build_r12_official_annual_challenge_gate_report(
         "contract": (
             "Official annual challenge rows are held out as AEM/Spectrum-style validation: annual incidence, AIDS deaths, "
             "estimated PLHIV, and annual cascade anchors are scored at annual Q4 only. Validation-only incidence/death rows "
-            "are stripped from training rows before candidate predictions. Missing annual model heads are reported as missing, "
-            "not replaced by quarterly diagnosis flow or cascade stocks."
+            "are stripped from quarterly state training rows before candidate predictions. Annual required metrics are predicted "
+            "only by train-origin weak-measurement heads with empirical measurement variance, not by quarterly diagnosis flow "
+            "or cascade stocks."
         ),
     }
 
@@ -3483,7 +3683,7 @@ def _write_r12_official_annual_challenge_dashboard(path: Path, report: dict[str,
         ax.spines["right"].set_visible(False)
         ax.grid(axis="y", color="#D9D9D9", linewidth=0.7, alpha=0.7)
     fig.suptitle(
-        "R12-10A annual challenge gate: validation-only annual heads are scored, not trained",
+        "R12-10A annual challenge gate: annual heads use train-origin weak measurements",
         fontsize=12,
     )
     fig.savefig(path, dpi=220)
@@ -3512,6 +3712,309 @@ def _r12_program_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for row in sorted(rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
         if _r12_is_program_row(row)
     ]
+
+
+def _r12_program_metric_lineage_id(row: dict[str, Any], metric_name: str) -> str:
+    for lineage_id in R12_PROGRAM_LINEAGE_IDS:
+        lineage = _r12_lineage_by_id(str(lineage_id))
+        source_family = str(lineage.get("source_family") or "")
+        if source_family and _r12_metric_matches_source_family(row, metric_name, source_family):
+            return str(lineage_id)
+    provenance = _metric_provenance(row, metric_name)
+    return str(provenance.get("series_kind") or provenance.get("source_id") or "non_program")
+
+
+def _r12_monthly_program_signature(row: dict[str, Any], median_intensity: float | None) -> str:
+    intensity = _monthly_intensity_label(_monthly_reporting_intensity(row), median_intensity)
+    return ";".join(
+        [
+            f"intensity={intensity}",
+            f"F={_r12_program_metric_lineage_id(row, 'new_diagnosed_cases_period')}",
+            f"D={_r12_program_metric_lineage_id(row, 'diagnosed_plhiv')}",
+            f"A={_r12_program_metric_lineage_id(row, 'alive_on_art')}",
+        ]
+    )
+
+
+def _r12_monthly_program_reporting_shift(
+    model: dict[str, Any],
+    row: dict[str, Any],
+    median_intensity: float | None,
+) -> float:
+    signature = _r12_monthly_program_signature(row, median_intensity)
+    shifts = dict(model.get("reporting_shift_by_era") or {})
+    return float(shifts.get(signature, model.get("global_reporting_shift") or 0.0))
+
+
+def _fit_r12_monthly_program_flow_process(program_rows: list[dict[str, Any]], median_intensity: float | None) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    x_rows: list[list[float]] = []
+    y_values: list[float] = []
+    era_labels: list[str] = []
+    for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+        previous_flow = _finite_float(previous.get("new_diagnosed_cases_period"))
+        current_flow = _finite_float(current.get("new_diagnosed_cases_period"))
+        if previous_flow is None or current_flow is None:
+            continue
+        x_rows.append([max(float(previous_flow), 0.0), 1.0])
+        y_values.append(max(float(current_flow), 0.0))
+        era_labels.append(_r12_monthly_program_signature(current, median_intensity))
+    flow_upper = max(y_values) if y_values else 0.0
+    fit = _fit_delta_transition_with_reporting_shifts(
+        x_rows=x_rows,
+        y_values=y_values,
+        era_labels=era_labels,
+        feature_names=("previous_diagnosis_flow", "flow_innovation"),
+        lower=(0.0, 0.0),
+        upper=(1.0, flow_upper),
+    )
+    if str(fit.get("status") or "") != "completed":
+        return fit
+    coefficients = list(fit.get("coefficients") or [])
+    return {
+        **fit,
+        "flow_retention_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
+        "flow_innovation": None if len(coefficients) < 2 else float(coefficients[1]),
+        "equation": "F_t = rho_F F_{t-1} + b_F + reporting_shift_F(monthly_program_signature_t)",
+    }
+
+
+def _fit_r12_monthly_program_diagnosed_transition(program_rows: list[dict[str, Any]], median_intensity: float | None) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    x_rows: list[list[float]] = []
+    y_values: list[float] = []
+    era_labels: list[str] = []
+    for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+        previous_diagnosed = _finite_float(previous.get("diagnosed_plhiv"))
+        current_diagnosed = _finite_float(current.get("diagnosed_plhiv"))
+        diagnosis_flow = _finite_float(current.get("new_diagnosed_cases_period"))
+        if previous_diagnosed is None or current_diagnosed is None or diagnosis_flow is None:
+            continue
+        x_rows.append([max(float(diagnosis_flow), 0.0), -max(float(previous_diagnosed), 0.0)])
+        y_values.append(float(current_diagnosed) - float(previous_diagnosed))
+        era_labels.append(_r12_monthly_program_signature(current, median_intensity))
+    fit = _fit_delta_transition_with_reporting_shifts(
+        x_rows=x_rows,
+        y_values=y_values,
+        era_labels=era_labels,
+        feature_names=("diagnosis_flow", "diagnosed_removal_stock"),
+        lower=(0.0, 0.0),
+        upper=(1.0, 1.0),
+    )
+    if str(fit.get("status") or "") != "completed":
+        return fit
+    coefficients = list(fit.get("coefficients") or [])
+    return {
+        **fit,
+        "diagnosis_flow_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
+        "diagnosed_removal_fraction": None if len(coefficients) < 2 else float(coefficients[1]),
+        "equation": "D_t = D_{t-1} + gamma_D F_t - mu_D D_{t-1} + reporting_shift_D(monthly_program_signature_t)",
+    }
+
+
+def _fit_r12_monthly_program_art_transition(program_rows: list[dict[str, Any]], median_intensity: float | None) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    by_ordinal = _train_row_by_ordinal(sorted_rows)
+    lag_rows: list[dict[str, Any]] = []
+    best: dict[str, Any] | None = None
+    for lag in TRANSITION_PROCESS_ART_LAGS:
+        x_rows: list[list[float]] = []
+        y_values: list[float] = []
+        era_labels: list[str] = []
+        for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+            current_ord = quarter_ordinal(str(current.get("quarter") or ""))
+            if current_ord <= quarter_ordinal(str(previous.get("quarter") or "")):
+                continue
+            lag_row = current if int(lag) == 0 else by_ordinal.get(current_ord - int(lag))
+            previous_art = _finite_float(previous.get("alive_on_art"))
+            current_art = _finite_float(current.get("alive_on_art"))
+            previous_diagnosed = _finite_float(previous.get("diagnosed_plhiv"))
+            lagged_flow = _finite_float((lag_row or {}).get("new_diagnosed_cases_period"))
+            if previous_art is None or current_art is None or previous_diagnosed is None or lagged_flow is None:
+                continue
+            diagnosed_art_gap = max(float(previous_diagnosed) - float(previous_art), 0.0)
+            x_rows.append([max(float(lagged_flow), 0.0), diagnosed_art_gap, -max(float(previous_art), 0.0)])
+            y_values.append(float(current_art) - float(previous_art))
+            era_labels.append(_r12_monthly_program_signature(current, median_intensity))
+        fit = _fit_delta_transition_with_reporting_shifts(
+            x_rows=x_rows,
+            y_values=y_values,
+            era_labels=era_labels,
+            feature_names=("lagged_diagnosis_flow", "diagnosed_not_art_gap", "art_removal_stock"),
+            lower=(0.0, 0.0, 0.0),
+            upper=(1.0, 1.0, 1.0),
+        )
+        row = {
+            "lag_quarters": int(lag),
+            "status": str(fit.get("status") or "not_estimable"),
+            "row_count": int(fit.get("row_count") or 0),
+            "reporting_adjusted_sse": _finite_float(fit.get("reporting_adjusted_sse")),
+            "coefficients": list(fit.get("coefficients") or []),
+        }
+        lag_rows.append(row)
+        if row["status"] == "completed" and row["reporting_adjusted_sse"] is not None:
+            if best is None or float(row["reporting_adjusted_sse"]) < float(best.get("reporting_adjusted_sse") or float("inf")):
+                best = {**fit, "selected_lag_quarters": int(lag), "lag_rows": lag_rows}
+    if best is None:
+        return {
+            "status": "not_estimable",
+            "reason": "no_monthly_program_art_pairs",
+            "candidate_lags": list(TRANSITION_PROCESS_ART_LAGS),
+            "lag_rows": lag_rows,
+        }
+    coefficients = list(best.get("coefficients") or [])
+    return {
+        **best,
+        "lag_rows": lag_rows,
+        "diagnosis_linkage_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
+        "diagnosed_gap_linkage_coefficient": None if len(coefficients) < 2 else float(coefficients[1]),
+        "art_removal_fraction": None if len(coefficients) < 3 else float(coefficients[2]),
+        "equation": "A_t = A_{t-1} + gamma_A F_{t-lag} + eta_A max(D_{t-1}-A_{t-1},0) - mu_A A_{t-1} + reporting_shift_A(monthly_program_signature_t)",
+    }
+
+
+def _fit_r12_monthly_reporting_state_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    program_rows = _r12_program_rows(train_rows)
+    intensities = [_monthly_reporting_intensity(row) for row in program_rows]
+    median_intensity = None if not intensities else float(np.median(np.asarray(intensities, dtype=np.float64)))
+    flow_model = _fit_r12_monthly_program_flow_process(program_rows, median_intensity)
+    diagnosed_model = _fit_r12_monthly_program_diagnosed_transition(program_rows, median_intensity)
+    art_model = _fit_r12_monthly_program_art_transition(program_rows, median_intensity)
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    flow_by_ordinal = {
+        quarter_ordinal(str(row.get("quarter") or "")): float(value)
+        for row in sorted_rows
+        for value in [_finite_float(row.get("new_diagnosed_cases_period"))]
+        if value is not None
+    }
+    return {
+        "status": "completed"
+        if str(flow_model.get("status") or "") == "completed"
+        and str(diagnosed_model.get("status") or "") == "completed"
+        and str(art_model.get("status") or "") == "completed"
+        else "not_estimable",
+        "program_train_row_count": len(program_rows),
+        "median_monthly_reporting_intensity": median_intensity,
+        "flow_reporting_process": flow_model,
+        "diagnosed_stock_transition": diagnosed_model,
+        "art_stock_transition": art_model,
+        "last_quarter": "" if not sorted_rows else str(sorted_rows[-1].get("quarter") or ""),
+        "last_state": {
+            "diagnosed_plhiv": _last_metric_value(program_rows, "diagnosed_plhiv"),
+            "alive_on_art": _last_metric_value(program_rows, "alive_on_art"),
+            "new_diagnosed_cases_period": _last_metric_value(program_rows, "new_diagnosed_cases_period"),
+        },
+        "observed_diagnosis_flow_by_ordinal": {str(key): value for key, value in sorted(flow_by_ordinal.items())},
+        "contract": (
+            "R12 monthly-native program process over DOH quarterly/monthly support: diagnosis flow, diagnosed stock, "
+            "and ART stock are propagated as states with empirical monthly/reporting-signature residual shifts. "
+            "It replaces generic readout-family selection for DOH program rows."
+        ),
+    }
+
+
+def _apply_r12_monthly_reporting_state_process(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    process: dict[str, Any],
+    back_half_process: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if str(process.get("status") or "") != "completed":
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    flow_model = dict(process.get("flow_reporting_process") or {})
+    diagnosed_model = dict(process.get("diagnosed_stock_transition") or {})
+    art_model = dict(process.get("art_stock_transition") or {})
+    median_intensity = _finite_float(process.get("median_monthly_reporting_intensity"))
+    last_state = dict(process.get("last_state") or {})
+    current_flow = _finite_float(last_state.get("new_diagnosed_cases_period"))
+    current_diagnosed = _finite_float(last_state.get("diagnosed_plhiv"))
+    current_art = _finite_float(last_state.get("alive_on_art"))
+    if current_flow is None or current_diagnosed is None or current_art is None:
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    flow_by_ordinal = {
+        int(key): float(value)
+        for key, value in dict(process.get("observed_diagnosis_flow_by_ordinal") or {}).items()
+        if _finite_float(value) is not None
+    }
+    base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+    output: list[dict[str, Any]] = []
+    state_rows: list[dict[str, Any]] = []
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        base_prediction = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        rho_f = _finite_float(flow_model.get("flow_retention_coefficient"))
+        innovation_f = _finite_float(flow_model.get("flow_innovation"))
+        if rho_f is not None and innovation_f is not None:
+            flow_shift = _r12_monthly_program_reporting_shift(flow_model, holdout_row, median_intensity)
+            next_flow = max(float(rho_f) * max(float(current_flow), 0.0) + float(innovation_f) + flow_shift, 0.0)
+        else:
+            next_flow = _finite_float(base_prediction.get("new_diagnosed_cases_period")) or float(current_flow)
+        gamma_d = _finite_float(diagnosed_model.get("diagnosis_flow_coefficient"))
+        mu_d = _finite_float(diagnosed_model.get("diagnosed_removal_fraction"))
+        if gamma_d is not None and mu_d is not None:
+            diagnosed_shift = _r12_monthly_program_reporting_shift(diagnosed_model, holdout_row, median_intensity)
+            next_diagnosed = max(
+                float(current_diagnosed)
+                + float(gamma_d) * max(float(next_flow), 0.0)
+                - float(mu_d) * max(float(current_diagnosed), 0.0)
+                + diagnosed_shift,
+                0.0,
+            )
+        else:
+            next_diagnosed = _finite_float(base_prediction.get("diagnosed_plhiv")) or float(current_diagnosed)
+        holdout_ord = quarter_ordinal(quarter)
+        lag = int(art_model.get("selected_lag_quarters") or 0)
+        if lag == 0:
+            lagged_flow = float(next_flow)
+        else:
+            lagged_flow = flow_by_ordinal.get(holdout_ord - lag, float(current_flow))
+        gamma_a = _finite_float(art_model.get("diagnosis_linkage_coefficient"))
+        eta_a = _finite_float(art_model.get("diagnosed_gap_linkage_coefficient"))
+        mu_a = _finite_float(art_model.get("art_removal_fraction"))
+        if gamma_a is not None and eta_a is not None and mu_a is not None:
+            diagnosed_gap = max(float(current_diagnosed) - float(current_art), 0.0)
+            art_shift = _r12_monthly_program_reporting_shift(art_model, holdout_row, median_intensity)
+            next_art = max(
+                float(current_art)
+                + float(gamma_a) * max(float(lagged_flow), 0.0)
+                + float(eta_a) * diagnosed_gap
+                - float(mu_a) * max(float(current_art), 0.0)
+                + art_shift,
+                0.0,
+            )
+        else:
+            next_art = _finite_float(base_prediction.get("alive_on_art")) or float(current_art)
+        next_art = float(min(max(float(next_art), 0.0), max(float(next_diagnosed), 0.0)))
+        row = dict(base_prediction)
+        mutated_metrics: list[str] = []
+        for metric_name, value in (
+            ("new_diagnosed_cases_period", next_flow),
+            ("diagnosed_plhiv", next_diagnosed),
+            ("alive_on_art", next_art),
+        ):
+            if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                continue
+            row[metric_name] = float(value)
+            mutated_metrics.append(metric_name)
+        row = _apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process)
+        output.append(row)
+        state_rows.append(
+            {
+                "quarter": quarter,
+                "program_row": _r12_is_program_row(holdout_row),
+                "monthly_program_signature": _r12_monthly_program_signature(holdout_row, median_intensity),
+                "diagnosis_flow_state": float(next_flow),
+                "diagnosed_state": float(next_diagnosed),
+                "art_state": float(next_art),
+                "mutated_metrics": mutated_metrics,
+            }
+        )
+        current_flow = float(next_flow)
+        current_diagnosed = float(next_diagnosed)
+        current_art = float(next_art)
+        flow_by_ordinal[holdout_ord] = float(next_flow)
+    return output, state_rows
 
 
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -3578,64 +4081,32 @@ def _r12_program_nowcast_mixed_quarterly_predictions(
         holdout_rows,
         family="r12_stock_cone_safe_annual_trajectory_process",
     )
-    selector = _fit_r12_program_nowcast_selector(train_rows, holdout_rows)
-    selected_family = str(selector.get("selected_family") or "multi_horizon_weighted_process")
     program_train_rows = _r12_program_rows(train_rows)
     program_holdout_rows = _r12_program_rows(holdout_rows)
-    selected_predictions: list[dict[str, Any]] = []
-    selected_summary: dict[str, Any] = {}
-    if program_train_rows and program_holdout_rows:
-        selected_predictions, selected_summary = _candidate_predictions(
-            program_train_rows,
-            program_holdout_rows,
-            family=selected_family,
-        )
-    selected_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in selected_predictions}
     back_half_process = _fit_back_half_rate_process(train_rows)
-    output: list[dict[str, Any]] = []
-    mutation_rows: list[dict[str, Any]] = []
-    for base_prediction, holdout_row in zip(
+    monthly_process = _fit_r12_monthly_reporting_state_process(train_rows)
+    output, state_rows = _apply_r12_monthly_reporting_state_process(
+        train_rows,
+        holdout_rows,
         base_predictions,
-        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
-    ):
-        quarter = str(holdout_row.get("quarter") or base_prediction.get("quarter") or "")
-        row = dict(base_prediction)
-        selected_row = selected_by_quarter.get(quarter, {})
-        mutated_metrics: list[str] = []
-        for metric_name in R12_PROGRAM_MUTATION_METRICS:
-            if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
-                continue
-            selected_value = _finite_float(selected_row.get(metric_name))
-            if selected_value is None:
-                continue
-            row[metric_name] = float(max(float(selected_value), 0.0))
-            mutated_metrics.append(metric_name)
-        row = _project_prediction_row(row)
-        row = _apply_back_half_rate_process(row, holdout_row, back_half_process)
-        output.append(row)
-        mutation_rows.append(
-            {
-                "quarter": quarter,
-                "program_row": _r12_is_program_row(holdout_row),
-                "selected_family": selected_family,
-                "mutated_metrics": mutated_metrics,
-            }
-        )
+        monthly_process,
+        back_half_process,
+    )
     return output, {
         "base_family": "r12_stock_cone_safe_annual_trajectory_process",
         "base_summary": base_summary,
-        "program_selector": selector,
-        "program_selected_family": selected_family,
-        "program_selected_summary": selected_summary,
+        "monthly_reporting_state_process": monthly_process,
+        "program_selected_family": "monthly_reporting_state_process",
+        "program_selected_summary": monthly_process,
         "program_train_row_count": len(program_train_rows),
         "program_holdout_row_count": len(program_holdout_rows),
         "back_half_rate_process": back_half_process,
-        "mutation_rows": mutation_rows,
+        "mutation_rows": state_rows,
         "contract": (
             "R12-10 starts from the frozen R12-09 annual-anchor behavior and does not add any new annual-anchor mutation. "
-            "It overlays a train-selected "
-            "program-specific diagnosis/ART/diagnosis-flow head only on DOH quarterly/monthly rows, then re-projects "
-            "the cascade cone and regenerates VL/suppression from conditional rates."
+            "It replaces the previous generic program readout selector with a monthly-native DOH reporting/state process "
+            "for diagnosis flow, diagnosed stock, and ART stock, then re-projects the cascade cone and regenerates "
+            "VL/suppression from conditional rates."
         ),
     }
 
@@ -5328,8 +5799,8 @@ def _candidate_predictions(
             **summary,
             "contract": (
                 "R12-10 targets the remaining R10 failure on DOH program nowcast and mixed quarterly D/A trajectory. "
-                "It keeps R12-09's annual-anchor behavior frozen and mutates only DOH quarterly/monthly diagnosed, ART, "
-                "and diagnosis-flow rows using a train-origin program selector."
+                "It keeps R12-09's annual-anchor behavior frozen and mutates only DOH quarterly/monthly diagnosis-flow, "
+                "diagnosed-stock, and ART rows using a monthly-native reporting/state process."
             ),
         }
 
@@ -6185,7 +6656,7 @@ def _r11_multi_horizon_report(
     elif family == "r12_program_nowcast_mixed_quarterly_process":
         branch_contract = (
             "R12-10 freezes the R12-09 annual-anchor route and targets only DOH quarterly/monthly program evidence. "
-            "A train-origin selector may replace diagnosed_plhiv, alive_on_art, and new_diagnosed_cases_period on "
+            "A monthly-native reporting/state process may replace diagnosis flow, diagnosed stock, and ART stock on "
             "program rows only; stock-cone and conditional-rate gates remain mandatory."
         )
     elif family == "r10_scope_teacher_stock_process":
