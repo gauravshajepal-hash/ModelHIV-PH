@@ -17,6 +17,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _build_r12_06_doh_quarterly_support_adjudication_report,
     _build_r12_07_horizon_specific_evidence_router_report,
     _build_r12_08_route_aware_two_head_candidate_report,
+    _build_r12_official_annual_challenge_gate_report,
     _fit_r12_annual_anchor_head_selector,
     _predict_back_half_rate,
     _r11_multi_horizon_report,
@@ -771,6 +772,7 @@ def test_era_datv_transition_process_candidate_preserves_stock_cone() -> None:
         "r12_da_residual_source_process",
         "r12_route_aware_two_head_process",
         "r12_stock_cone_safe_annual_trajectory_process",
+        "r12_program_nowcast_mixed_quarterly_process",
     ],
 )
 def test_r11_21_to_r12_candidate_families_preserve_stock_cone(family: str) -> None:
@@ -1353,3 +1355,160 @@ def test_r12_09_stock_cone_safe_annual_trajectory_head_is_lineage_scoped() -> No
     assert {row["candidate_family"] for row in report["route_horizon_rows"]} == {
         "r12_stock_cone_safe_annual_trajectory_process"
     }
+
+
+def test_r12_10_official_annual_challenge_keeps_required_heads_out_of_training() -> None:
+    rows = []
+    for index, year in enumerate(range(2015, 2026)):
+        diagnosed = 120.0 + 8.0 * index
+        art = 84.0 + 7.0 * index
+        provenance = {
+            "annual_new_infections": {
+                "source_id": "wdi_sh_hiv_incd_tl",
+                "source_tier": "canonical_external_reference_no_local_overlap",
+                "support_partition": "common_support",
+                "observation_role": "validation_only",
+                "allowed_use": "validation_only",
+                "measurement_semantics": "modeled_estimate",
+            },
+            "annual_aids_deaths": {
+                "source_id": "official_local_corpus_deaths",
+                "source_tier": "official_local_corpus",
+                "support_partition": "common_support",
+                "observation_role": "validation_only",
+                "allowed_use": "validation_only",
+                "measurement_semantics": "modeled_estimate",
+            },
+            "estimated_plhiv": {
+                "source_id": "spectrum_like_total",
+                "source_tier": "external_multinational_hiv_panel",
+                "support_partition": "common_support",
+                "observation_role": "auxiliary_likelihood",
+                "allowed_use": "auxiliary_likelihood",
+                "measurement_semantics": "modeled_estimate",
+            },
+        }
+        for metric in [
+            "diagnosed_plhiv",
+            "alive_on_art",
+            "tested_for_viral_load",
+            "virally_suppressed",
+        ]:
+            provenance[metric] = {
+                "source_id": f"annual_slide_{metric}",
+                "source_tier": "official_user_provided_slide",
+                "support_partition": "common_support",
+                "observation_role": "direct_target",
+                "allowed_use": "training",
+                "measurement_semantics": "stock_anchor",
+            }
+        rows.append(
+            {
+                "quarter": f"{year}-Q4",
+                "annual_new_infections": 10.0 + index,
+                "annual_aids_deaths": 2.0 + 0.2 * index,
+                "estimated_plhiv": 150.0 + 9.0 * index,
+                "diagnosed_plhiv": diagnosed,
+                "alive_on_art": art,
+                "tested_for_viral_load": 0.62 * art,
+                "virally_suppressed": 0.74 * 0.62 * art,
+                "metric_provenance": provenance,
+            }
+        )
+
+    report = _build_r12_official_annual_challenge_gate_report(
+        rows=rows,
+        start_year=2015,
+        end_year=2025,
+        min_train_years=3,
+        candidate_families=("multi_horizon_weighted_process",),
+        horizons=(1,),
+    )
+
+    required_records = [
+        row
+        for row in report["score_records"]
+        if row["metric_name"] in {"annual_new_infections", "annual_aids_deaths", "estimated_plhiv"}
+    ]
+    assert report["experiment_id"] == "R12-10A"
+    assert report["status"] == "cascade_only_available"
+    assert required_records
+    assert all(row["training_use"] == "forbidden" for row in required_records)
+    assert all(row["candidate_value"] is None for row in required_records)
+    assert {
+        "annual_new_infections_model_head_missing",
+        "annual_aids_deaths_model_head_missing",
+        "estimated_plhiv_model_head_missing",
+        "no_required_incidence_death_plhiv_model_heads_scored",
+    }.issubset(set(report["blockers"]))
+    assert report["scored_cascade_metric_count"] > 0
+
+
+def test_r12_10_program_nowcast_branch_is_doh_program_scoped() -> None:
+    source_families = {
+        "doh_quarterly": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+        "doh_monthly": "official_doh_archive|program_observed_harp|monthly_snapshot",
+        "slide_annual_anchor": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+    }
+    rows = []
+    state_by_lineage = {
+        "doh_quarterly": [130.0, 90.0],
+        "doh_monthly": [128.0, 89.0],
+        "slide_annual_anchor": [135.0, 93.0],
+    }
+    for year in range(2013, 2026):
+        for lineage_id, source_family in source_families.items():
+            diagnosed, art = state_by_lineage[lineage_id]
+            flow = 8.0 + float((year + len(lineage_id)) % 5)
+            diagnosed = diagnosed + 0.8 * flow + (0.4 if lineage_id == "slide_annual_anchor" else 0.0)
+            art = min(diagnosed, art + 0.5 * flow)
+            state_by_lineage[lineage_id] = [diagnosed, art]
+            source_tier, measurement_class, series_kind = source_family.split("|")
+            provenance = {
+                metric: {
+                    "source_id": f"{lineage_id}_{metric}",
+                    "source_tier": source_tier,
+                    "measurement_class": measurement_class,
+                    "series_kind": series_kind,
+                    "support_partition": "common_support",
+                    "aggregation_mode": "quarterly_observed",
+                    "observation_role": "direct_target",
+                    "allowed_use": "training",
+                }
+                for metric in [
+                    "diagnosed_plhiv",
+                    "alive_on_art",
+                    "tested_for_viral_load",
+                    "virally_suppressed",
+                    "new_diagnosed_cases_period",
+                ]
+            }
+            quarter = "Q4" if lineage_id == "slide_annual_anchor" else ("Q2" if lineage_id == "doh_monthly" else "Q3")
+            rows.append(
+                {
+                    "quarter": f"{year}-{quarter}",
+                    "diagnosed_plhiv": diagnosed,
+                    "alive_on_art": art,
+                    "tested_for_viral_load": 0.60 * art,
+                    "virally_suppressed": 0.72 * 0.60 * art,
+                    "new_diagnosed_cases_period": flow,
+                    "metric_provenance": provenance,
+                }
+            )
+
+    train_rows = [row for row in rows if int(row["quarter"][:4]) <= 2022]
+    holdout_rows = [row for row in rows if int(row["quarter"][:4]) == 2023]
+    predictions, summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r12_program_nowcast_mixed_quarterly_process",
+    )
+
+    assert predictions
+    assert summary["family"] == "r12_program_nowcast_mixed_quarterly_process"
+    assert summary["program_selector"]["program_train_row_count"] > 0
+    mutation_by_quarter = {row["quarter"]: row for row in summary["mutation_rows"]}
+    assert mutation_by_quarter["2023-Q2"]["program_row"] is True
+    assert mutation_by_quarter["2023-Q3"]["program_row"] is True
+    assert mutation_by_quarter["2023-Q4"]["program_row"] is False
+    assert mutation_by_quarter["2023-Q4"]["mutated_metrics"] == []

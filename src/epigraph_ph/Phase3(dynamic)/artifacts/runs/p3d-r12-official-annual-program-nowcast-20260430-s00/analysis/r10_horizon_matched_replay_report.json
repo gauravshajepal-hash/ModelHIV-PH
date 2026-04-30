@@ -1,0 +1,523 @@
+{
+  "contract": "Horizon-matched R10 replay uses frozen legacy R10-family experiment-suite artifacts generated with the same blocked horizon, start/end years, min-train-years, and dense expanded-HARP contract. The comparison is restricted to the legacy R10-comparable metric scope.",
+  "generated_at": "2026-04-30T23:21:51.137360+00:00",
+  "horizon_rows": [
+    {
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/tr-v3-r10-horizon-replay-dense-h1-20260430-s00/analysis/tr_v3_experiment_suite_report.json",
+      "artifact_sha256": "428c76b5dae855fea6bd52b29f75ac0633ecd408a8efcee82e7d09b18bc1e340",
+      "available": true,
+      "blockers": [],
+      "candidate_rows": [
+        {
+          "candidate_mean_mae": 0.12139471141323205,
+          "candidate_worst_mae": 0.23654825376515776,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.13022303954015366,
+          "candidate_worst_mae": 0.24395458633444675,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.1302835334787045,
+          "candidate_worst_mae": 0.24379487839894579,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-B1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.18537170470713704,
+          "candidate_worst_mae": 0.3847917921839765,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-F1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.20706630847257743,
+          "candidate_worst_mae": 0.3847917921839765,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-F1-C1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.13195058874138757,
+          "candidate_worst_mae": 0.24379487839894579,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M2",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.12223943093240154,
+          "candidate_worst_mae": 0.23234446948039905,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.13189009480283673,
+          "candidate_worst_mae": 0.24395458633444675,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-EXACT-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.10560169247320554,
+          "candidate_worst_mae": 0.21771835936245426,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.10560169247320554,
+          "candidate_worst_mae": 0.21771835936245426,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.10369852690652998,
+          "candidate_worst_mae": 0.21771835936245426,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.10369852690652998,
+          "candidate_worst_mae": 0.21771835936245426,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.09530345873034501,
+          "candidate_worst_mae": 0.18680338262390253,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.10386015346189863,
+          "candidate_worst_mae": 0.21867514759772402,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-B1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.15975132530723013,
+          "candidate_worst_mae": 0.2703464966135353,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-F1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.10575619899632503,
+          "candidate_worst_mae": 0.21867514759772402,
+          "carry_forward_mean_mae": 0.14136962808267026,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M2",
+          "family": "repair",
+          "quarterly_row_count": 11
+        }
+      ],
+      "horizon_years": 1,
+      "quarterly_window": {
+        "end_year": 2025,
+        "horizon_years": 1,
+        "min_train_years": 5,
+        "start_year": 2010
+      },
+      "reference_carry_forward_mean_mae": 0.14136962808267026,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "reference_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "reference_quarterly_mean_mae": 0.09530345873034501,
+      "reference_quarterly_worst_mae": 0.18680338262390253,
+      "reference_selection_policy": "best_executed_EXP_R10_family_candidate_within_same_horizon_dense_contract",
+      "status": "pass"
+    },
+    {
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/tr-v3-r10-horizon-replay-dense-h3-20260430-s00/analysis/tr_v3_experiment_suite_report.json",
+      "artifact_sha256": "c8ab1890b47bec1d1004ae132cb79d83fdb87ef3979a2ea70b767ba497939538",
+      "available": true,
+      "blockers": [],
+      "candidate_rows": [
+        {
+          "candidate_mean_mae": 0.16138456492240114,
+          "candidate_worst_mae": 0.32307836683536606,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.1810043640755796,
+          "candidate_worst_mae": 0.42178473770031805,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.18107870605037954,
+          "candidate_worst_mae": 0.4216918804743623,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-B1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.24947035643932408,
+          "candidate_worst_mae": 0.3923653460971191,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-F1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.2495621545656097,
+          "candidate_worst_mae": 0.3923653460971191,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-F1-C1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.18494736374466827,
+          "candidate_worst_mae": 0.42321383203208834,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M2",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.16115801528300946,
+          "candidate_worst_mae": 0.3148396405206556,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.1848730217698684,
+          "candidate_worst_mae": 0.4233066892580441,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-EXACT-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.1304231541524045,
+          "candidate_worst_mae": 0.27355512434709545,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.1304231541524045,
+          "candidate_worst_mae": 0.27355512434709545,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.12608745430779056,
+          "candidate_worst_mae": 0.2729514605059506,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.12608745430779056,
+          "candidate_worst_mae": 0.2729514605059506,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.11565058222116206,
+          "candidate_worst_mae": 0.24985317795262668,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.12626667705259706,
+          "candidate_worst_mae": 0.27423422761699856,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-B1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.2083046539688769,
+          "candidate_worst_mae": 0.2609092325969509,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-F1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.13058751795944978,
+          "candidate_worst_mae": 0.27423422761699856,
+          "carry_forward_mean_mae": 0.18967697114890783,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M2",
+          "family": "repair",
+          "quarterly_row_count": 11
+        }
+      ],
+      "horizon_years": 3,
+      "quarterly_window": {
+        "end_year": 2025,
+        "horizon_years": 3,
+        "min_train_years": 5,
+        "start_year": 2010
+      },
+      "reference_carry_forward_mean_mae": 0.18967697114890783,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "reference_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "reference_quarterly_mean_mae": 0.11565058222116206,
+      "reference_quarterly_worst_mae": 0.24985317795262668,
+      "reference_selection_policy": "best_executed_EXP_R10_family_candidate_within_same_horizon_dense_contract",
+      "status": "pass"
+    },
+    {
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/tr-v3-r10-horizon-replay-dense-h5-20260430-s00/analysis/tr_v3_experiment_suite_report.json",
+      "artifact_sha256": "261aae5f6a3c3f7d7f84be846514090c100621798b52a6a4272fdc2aeea54d2f",
+      "available": true,
+      "blockers": [],
+      "candidate_rows": [
+        {
+          "candidate_mean_mae": 0.18872088776134735,
+          "candidate_worst_mae": 0.3937938802048647,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.2239530769778578,
+          "candidate_worst_mae": 0.5384382405093451,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.22401779411707656,
+          "candidate_worst_mae": 0.5383667450033577,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-B1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.29616276031329564,
+          "candidate_worst_mae": 0.4301149618391356,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-F1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.29303052017215675,
+          "candidate_worst_mae": 0.4301149618391356,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M1-F1-C1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.22939908068135442,
+          "candidate_worst_mae": 0.559636711881439,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-M2",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.18859913989994037,
+          "candidate_worst_mae": 0.3855470244534764,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.22933464464584438,
+          "candidate_worst_mae": 0.5597112995282221,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-EXACT-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.14368376385993484,
+          "candidate_worst_mae": 0.3099303669679451,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-CHAMPION",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.14368376385993484,
+          "candidate_worst_mae": 0.3099303669679451,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.13981930623665212,
+          "candidate_worst_mae": 0.30988869067157304,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.13981930623665212,
+          "candidate_worst_mae": 0.30988869067157304,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.12942108775021025,
+          "candidate_worst_mae": 0.2895577296124719,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.14001055863002446,
+          "candidate_worst_mae": 0.3111073457166596,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-B1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.2394445492600309,
+          "candidate_worst_mae": 0.2880172983664638,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M1-F1-H1",
+          "family": "repair",
+          "quarterly_row_count": 11
+        },
+        {
+          "candidate_mean_mae": 0.1438627405241836,
+          "candidate_worst_mae": 0.3111571538300249,
+          "carry_forward_mean_mae": 0.2295200445523079,
+          "decision": "revert",
+          "experiment_id": "EXP-R10-DENSE-M2",
+          "family": "repair",
+          "quarterly_row_count": 11
+        }
+      ],
+      "horizon_years": 5,
+      "quarterly_window": {
+        "end_year": 2025,
+        "horizon_years": 5,
+        "min_train_years": 5,
+        "start_year": 2010
+      },
+      "reference_carry_forward_mean_mae": 0.2295200445523079,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "reference_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "reference_quarterly_mean_mae": 0.12942108775021025,
+      "reference_quarterly_worst_mae": 0.2895577296124719,
+      "reference_selection_policy": "best_executed_EXP_R10_family_candidate_within_same_horizon_dense_contract",
+      "status": "pass"
+    }
+  ],
+  "horizons": [
+    1,
+    3,
+    5
+  ],
+  "schema_version": "phase3_dynamic.r11_r10_horizon_matched_replay.v1",
+  "status": "pass"
+}

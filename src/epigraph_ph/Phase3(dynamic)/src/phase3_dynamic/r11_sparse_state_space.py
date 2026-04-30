@@ -106,6 +106,51 @@ R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     },
 )
 R12_ANNUAL_ANCHOR_LINEAGE_ID = "slide_annual_anchor"
+R12_PROGRAM_LINEAGE_IDS: tuple[str, ...] = ("doh_quarterly", "doh_monthly")
+R12_PROGRAM_MUTATION_METRICS: tuple[str, ...] = R10_COMPARABLE_METRICS
+R12_PROGRAM_NOWCAST_CANDIDATE_FAMILIES: tuple[str, ...] = (
+    "multi_horizon_weighted_process",
+    "r10_style_readout_teacher",
+    "support_era_diagnosis_flow_process",
+    "stock_flow_reconciliation_process",
+    "diagnosis_lag_stock_process",
+    "diagnosed_reporting_bias_process",
+    "r12_da_process_split_transition",
+)
+R12_PROGRAM_MIXED_QUARTERLY_ROUTES: tuple[dict[str, Any], ...] = (
+    {
+        "route_id": "program_nowcast",
+        "route_label": "DOH program nowcast evidence",
+        "claim_role": "short_horizon_nowcast",
+        "horizons": (1, 2),
+        "lineage_ids": R12_PROGRAM_LINEAGE_IDS,
+        "min_train_contract": "diagnostic_short_horizon",
+        "r10_required": True,
+    },
+    {
+        "route_id": "program_mixed_quarterly_trajectory",
+        "route_label": "DOH mixed quarterly diagnosis/ART trajectory",
+        "claim_role": "long_horizon_trajectory",
+        "horizons": (3, 5),
+        "lineage_ids": R12_PROGRAM_LINEAGE_IDS,
+        "min_train_contract": "production",
+        "r10_required": True,
+    },
+)
+OFFICIAL_ANNUAL_CHALLENGE_METRICS: tuple[str, ...] = (
+    "annual_new_infections",
+    "annual_aids_deaths",
+    "estimated_plhiv",
+    "diagnosed_plhiv",
+    "alive_on_art",
+    "tested_for_viral_load",
+    "virally_suppressed",
+)
+OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS: tuple[str, ...] = (
+    "annual_new_infections",
+    "annual_aids_deaths",
+    "estimated_plhiv",
+)
 FLOAT_NONREGRESSION_TOLERANCE = float(np.finfo(np.float64).eps)
 HORIZON_ADAPTIVE_SHAPE_POLICIES: tuple[dict[str, Any], ...] = (
     {
@@ -695,6 +740,310 @@ def _build_aem_spectrum_validation_panel(rows: list[dict[str, Any]]) -> dict[str
         "entries": entries,
         "leakage_violation_count": len(leakage),
         "contract": "annual incumbent-like targets are validation-only and cannot train quarterly states",
+    }
+
+
+def _strip_official_annual_validation_targets(row: dict[str, Any]) -> dict[str, Any]:
+    output = dict(row)
+    for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS:
+        output[metric_name] = None
+    return output
+
+
+def _annual_challenge_metric_scale(train_rows: list[dict[str, Any]], metric_name: str) -> float:
+    values = [
+        abs(float(value))
+        for value in (_finite_float(row.get(metric_name)) for row in train_rows)
+        if value is not None
+    ]
+    return max(values) if values else float(np.finfo(np.float32).eps)
+
+
+def _annual_challenge_carry_forward_rows(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    base_rows = _carry_forward_prediction(train_rows, holdout_rows)
+    base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_rows}
+    sorted_train = sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    output: list[dict[str, Any]] = []
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        row = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        for metric_name in OFFICIAL_ANNUAL_CHALLENGE_METRICS:
+            if _finite_float(row.get(metric_name)) is not None:
+                continue
+            eligible = [train_row for train_row in sorted_train if _finite_float(train_row.get(metric_name)) is not None]
+            row[metric_name] = None if not eligible else float(eligible[-1].get(metric_name) or 0.0)
+        output.append(row)
+    return output
+
+
+def _official_annual_challenge_metric_rows(
+    *,
+    rows: list[dict[str, Any]],
+    start_year: int,
+    end_year: int,
+    min_train_years: int,
+    horizons: tuple[int, ...],
+    family: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    score_rows: list[dict[str, Any]] = []
+    split_count_by_horizon: Counter[int] = Counter()
+    prediction_missing_counts: Counter[str] = Counter()
+    leakage_rows: list[dict[str, Any]] = []
+    q4_rows = [
+        dict(row)
+        for row in rows
+        if str(row.get("quarter") or "").endswith("-Q4")
+    ]
+    for horizon in horizons:
+        splits = rolling_origin_splits(
+            q4_rows,
+            start_year=int(start_year),
+            end_year=int(end_year),
+            min_train_years=int(min_train_years),
+            horizon_years=int(horizon),
+        )
+        for split in splits:
+            holdout_years = [int(year) for year in list(split.get("holdout_years") or [])]
+            if not holdout_years:
+                continue
+            train_end_year = int(split.get("train_end_year") or min(holdout_years) - 1)
+            raw_train_rows = [
+                dict(row)
+                for row in q4_rows
+                if quarter_year(str(row.get("quarter") or "")) <= train_end_year
+            ]
+            holdout_rows = [
+                dict(row)
+                for row in q4_rows
+                if quarter_year(str(row.get("quarter") or "")) in set(holdout_years)
+            ]
+            if not raw_train_rows or not holdout_rows:
+                continue
+            train_rows = [_strip_official_annual_validation_targets(row) for row in raw_train_rows]
+            split_count_by_horizon[int(horizon)] += 1
+            candidate_predictions, _summary = _candidate_predictions(
+                train_rows,
+                holdout_rows,
+                family=family,
+            )
+            carry_predictions = _annual_challenge_carry_forward_rows(raw_train_rows, holdout_rows)
+            candidate_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in candidate_predictions}
+            carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+            for holdout_row in holdout_rows:
+                quarter = str(holdout_row.get("quarter") or "")
+                candidate_row = candidate_by_quarter.get(quarter, {})
+                carry_row = carry_by_quarter.get(quarter, {})
+                provenance = dict(holdout_row.get("metric_provenance") or {})
+                for metric_name in OFFICIAL_ANNUAL_CHALLENGE_METRICS:
+                    target_value = _finite_float(holdout_row.get(metric_name))
+                    if target_value is None:
+                        continue
+                    metric_provenance = dict(provenance.get(metric_name) or {})
+                    if metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS and (
+                        str(metric_provenance.get("observation_role") or "")
+                        not in {"validation_only", "auxiliary_likelihood"}
+                        or str(metric_provenance.get("allowed_use") or "")
+                        not in {"validation_only", "held_out_validation_or_diagnostic_only", "auxiliary_likelihood"}
+                    ):
+                        leakage_rows.append(
+                            {
+                                "quarter": quarter,
+                                "metric_name": metric_name,
+                                "observation_role": str(metric_provenance.get("observation_role") or ""),
+                                "allowed_use": str(metric_provenance.get("allowed_use") or ""),
+                            }
+                        )
+                    candidate_value = _finite_float(candidate_row.get(metric_name))
+                    carry_value = _finite_float(carry_row.get(metric_name))
+                    scale = max(_annual_challenge_metric_scale(raw_train_rows, metric_name), float(np.finfo(np.float32).eps))
+                    if candidate_value is None:
+                        prediction_missing_counts[metric_name] += 1
+                    score_rows.append(
+                        {
+                            "candidate_family": family,
+                            "horizon_years": int(horizon),
+                            "train_end_year": train_end_year,
+                            "holdout_years": holdout_years,
+                            "quarter": quarter,
+                            "year": quarter_year(quarter),
+                            "metric_name": metric_name,
+                            "target_value": float(target_value),
+                            "candidate_value": None if candidate_value is None else float(candidate_value),
+                            "carry_forward_value": None if carry_value is None else float(carry_value),
+                            "scale": float(scale),
+                            "candidate_norm_error": None
+                            if candidate_value is None
+                            else abs(float(candidate_value) - float(target_value)) / scale,
+                            "carry_forward_norm_error": None
+                            if carry_value is None
+                            else abs(float(carry_value) - float(target_value)) / scale,
+                            "candidate_minus_carry_forward_norm_error": None
+                            if candidate_value is None or carry_value is None
+                            else (
+                                abs(float(candidate_value) - float(target_value))
+                                - abs(float(carry_value) - float(target_value))
+                            )
+                            / scale,
+                            "prediction_status": "not_predicted" if candidate_value is None else "scored",
+                            "observation_role": str(metric_provenance.get("observation_role") or ""),
+                            "allowed_use": str(metric_provenance.get("allowed_use") or ""),
+                            "source_id": str(metric_provenance.get("source_id") or ""),
+                            "source_tier": str(metric_provenance.get("source_tier") or metric_provenance.get("source_quality_tier") or ""),
+                            "support_partition": str(metric_provenance.get("support_partition") or ""),
+                            "measurement_semantics": str(metric_provenance.get("measurement_semantics") or ""),
+                            "training_use": "forbidden"
+                            if metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS
+                            else "challenge_scoring_only",
+                        }
+                    )
+    blockers: list[str] = []
+    for horizon in horizons:
+        if int(split_count_by_horizon.get(int(horizon)) or 0) == 0:
+            blockers.append(f"h{int(horizon)}_no_annual_challenge_splits")
+    if not score_rows:
+        blockers.append("no_annual_challenge_score_rows")
+    for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS:
+        if int(prediction_missing_counts.get(metric_name) or 0) > 0:
+            blockers.append(f"{metric_name}_model_head_missing")
+    if leakage_rows:
+        blockers.append("validation_only_role_leakage")
+    return score_rows, {
+        "candidate_family": family,
+        "score_record_count": len(score_rows),
+        "split_count_by_horizon": {str(key): int(value) for key, value in sorted(split_count_by_horizon.items())},
+        "prediction_missing_counts": dict(sorted(prediction_missing_counts.items())),
+        "leakage_violation_count": len(leakage_rows),
+        "leakage_rows": leakage_rows,
+        "status": "pass" if not blockers else "blocked",
+        "blockers": blockers,
+    }
+
+
+def _score_summary_by_fields(
+    rows: list[dict[str, Any]],
+    *,
+    group_fields: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grouped[tuple(row.get(field) for field in group_fields)].append(dict(row))
+    output: list[dict[str, Any]] = []
+    for key, values in sorted(grouped.items(), key=lambda item: tuple(str(value) for value in item[0])):
+        candidate_errors = [
+            float(row["candidate_norm_error"])
+            for row in values
+            if _finite_float(row.get("candidate_norm_error")) is not None
+        ]
+        carry_errors = [
+            float(row["carry_forward_norm_error"])
+            for row in values
+            if _finite_float(row.get("carry_forward_norm_error")) is not None
+        ]
+        missing_count = sum(1 for row in values if str(row.get("prediction_status") or "") == "not_predicted")
+        summary = {field: key[index] for index, field in enumerate(group_fields)}
+        candidate_mean = None if not candidate_errors else float(np.mean(np.asarray(candidate_errors, dtype=np.float64)))
+        carry_mean = None if not carry_errors else float(np.mean(np.asarray(carry_errors, dtype=np.float64)))
+        summary.update(
+            {
+                "entry_count": len(values),
+                "scored_candidate_entry_count": len(candidate_errors),
+                "missing_prediction_count": missing_count,
+                "candidate_mean_norm_error": candidate_mean,
+                "carry_forward_mean_norm_error": carry_mean,
+                "candidate_minus_carry_forward_mean_norm_error": None
+                if candidate_mean is None or carry_mean is None
+                else float(candidate_mean - carry_mean),
+            }
+        )
+        output.append(summary)
+    return output
+
+
+def _build_r12_official_annual_challenge_gate_report(
+    *,
+    rows: list[dict[str, Any]],
+    start_year: int,
+    end_year: int,
+    min_train_years: int,
+    candidate_families: tuple[str, ...],
+    horizons: tuple[int, ...] = R11_MULTI_HORIZON_YEARS,
+) -> dict[str, Any]:
+    all_score_rows: list[dict[str, Any]] = []
+    family_manifests: list[dict[str, Any]] = []
+    for family in candidate_families:
+        score_rows, manifest = _official_annual_challenge_metric_rows(
+            rows=rows,
+            start_year=start_year,
+            end_year=end_year,
+            min_train_years=min_train_years,
+            horizons=horizons,
+            family=family,
+        )
+        all_score_rows.extend(score_rows)
+        family_manifests.append(manifest)
+    metric_rows = _score_summary_by_fields(all_score_rows, group_fields=("candidate_family", "metric_name"))
+    horizon_rows = _score_summary_by_fields(all_score_rows, group_fields=("candidate_family", "horizon_years"))
+    family_rows = _score_summary_by_fields(all_score_rows, group_fields=("candidate_family",))
+    missing_required = sorted(
+        {
+            blocker
+            for manifest in family_manifests
+            for blocker in list(manifest.get("blockers") or [])
+            if str(blocker).endswith("_model_head_missing")
+        }
+    )
+    leakage = sum(int(manifest.get("leakage_violation_count") or 0) for manifest in family_manifests)
+    scored_required = [
+        row
+        for row in metric_rows
+        if str(row.get("metric_name") or "") in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS
+        and int(row.get("scored_candidate_entry_count") or 0) > 0
+    ]
+    cascade_rows = [
+        row
+        for row in metric_rows
+        if str(row.get("metric_name") or "") not in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS
+        and int(row.get("scored_candidate_entry_count") or 0) > 0
+    ]
+    blockers: list[str] = []
+    if not all_score_rows:
+        blockers.append("no_official_annual_challenge_rows")
+    if missing_required:
+        blockers.extend(missing_required)
+    if leakage:
+        blockers.append("validation_only_role_leakage")
+    if not scored_required:
+        blockers.append("no_required_incidence_death_plhiv_model_heads_scored")
+    decision = "keep_as_official_annual_challenge_gate"
+    status = "pass" if not blockers else ("cascade_only_available" if cascade_rows and not leakage else "blocked")
+    return {
+        "schema_version": "phase3_dynamic.r12_10a_official_annual_challenge_gate.v1",
+        "generated_at": _generated_at(),
+        "experiment_id": "R12-10A",
+        "status": status,
+        "decision": decision,
+        "candidate_families": list(candidate_families),
+        "horizons": list(horizons),
+        "metric_scope": list(OFFICIAL_ANNUAL_CHALLENGE_METRICS),
+        "required_model_heads": list(OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS),
+        "family_manifests": family_manifests,
+        "family_rows": family_rows,
+        "horizon_rows": horizon_rows,
+        "metric_rows": metric_rows,
+        "score_record_count": len(all_score_rows),
+        "scored_required_model_head_count": len(scored_required),
+        "scored_cascade_metric_count": len(cascade_rows),
+        "blockers": blockers,
+        "score_records": all_score_rows,
+        "contract": (
+            "Official annual challenge rows are held out as AEM/Spectrum-style validation: annual incidence, AIDS deaths, "
+            "estimated PLHIV, and annual cascade anchors are scored at annual Q4 only. Validation-only incidence/death rows "
+            "are stripped from training rows before candidate predictions. Missing annual model heads are reported as missing, "
+            "not replaced by quarterly diagnosis flow or cascade stocks."
+        ),
     }
 
 
@@ -3060,6 +3409,237 @@ def _r12_stock_cone_safe_annual_trajectory_predictions(
     }
 
 
+def _write_r12_official_annual_challenge_dashboard(path: Path, report: dict[str, Any]) -> None:
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return
+    metric_rows = [
+        dict(row)
+        for row in list(report.get("metric_rows") or [])
+        if isinstance(row, dict)
+    ]
+    family_rows = [
+        dict(row)
+        for row in list(report.get("family_rows") or [])
+        if isinstance(row, dict)
+    ]
+    manifests = [
+        dict(row)
+        for row in list(report.get("family_manifests") or [])
+        if isinstance(row, dict)
+    ]
+    if not metric_rows and not family_rows:
+        return
+    ensure_dir(path.parent)
+    fig, axes = plt.subplots(1, 3, figsize=(17.8, 5.2), constrained_layout=True)
+    families = [str(row.get("candidate_family") or "") for row in family_rows]
+    candidate_values = [
+        np.nan if _finite_float(row.get("candidate_mean_norm_error")) is None else float(row["candidate_mean_norm_error"])
+        for row in family_rows
+    ]
+    carry_values = [
+        np.nan if _finite_float(row.get("carry_forward_mean_norm_error")) is None else float(row["carry_forward_mean_norm_error"])
+        for row in family_rows
+    ]
+    x = np.arange(len(families), dtype=np.float64)
+    if len(families):
+        width = 0.38
+        axes[0].bar(x - width / 2.0, candidate_values, width=width, color="#2F6B59", label="candidate")
+        axes[0].bar(x + width / 2.0, carry_values, width=width, color="#B56B45", label="carry-forward")
+        axes[0].set_xticks(x)
+        axes[0].set_xticklabels([name.replace("_", "\n") for name in families], fontsize=7)
+        axes[0].set_ylabel("Mean normalized annual challenge error")
+        axes[0].set_title("Official annual challenge")
+        axes[0].legend(frameon=False, fontsize=8)
+    annual_required = set(OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS)
+    required_rows = [row for row in metric_rows if str(row.get("metric_name") or "") in annual_required]
+    cascade_rows = [row for row in metric_rows if str(row.get("metric_name") or "") not in annual_required]
+    required_missing = sum(int(row.get("missing_prediction_count") or 0) for row in required_rows)
+    cascade_missing = sum(int(row.get("missing_prediction_count") or 0) for row in cascade_rows)
+    required_scored = sum(int(row.get("scored_candidate_entry_count") or 0) for row in required_rows)
+    cascade_scored = sum(int(row.get("scored_candidate_entry_count") or 0) for row in cascade_rows)
+    axes[1].bar(
+        ["annual heads\nscored", "annual heads\nmissing", "cascade\nscored", "cascade\nmissing"],
+        [required_scored, required_missing, cascade_scored, cascade_missing],
+        color=["#4267A8", "#C44E52", "#55A868", "#C44E52"],
+    )
+    axes[1].set_title("Challenge support contract")
+    axes[1].set_ylabel("Metric-holdout entries")
+    axes[1].tick_params(axis="x", labelsize=8)
+    blocker_counts = [
+        len(list(row.get("blockers") or []))
+        for row in manifests
+    ]
+    manifest_families = [str(row.get("candidate_family") or "").replace("_", "\n") for row in manifests]
+    if manifest_families:
+        axes[2].bar(np.arange(len(manifest_families)), blocker_counts, color="#8C6BB1")
+        axes[2].set_xticks(np.arange(len(manifest_families)))
+        axes[2].set_xticklabels(manifest_families, fontsize=7)
+    axes[2].set_title(f"Gate status: {report.get('status')}")
+    axes[2].set_ylabel("Blocker count")
+    for ax in axes:
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.grid(axis="y", color="#D9D9D9", linewidth=0.7, alpha=0.7)
+    fig.suptitle(
+        "R12-10A annual challenge gate: validation-only annual heads are scored, not trained",
+        fontsize=12,
+    )
+    fig.savefig(path, dpi=220)
+    plt.close(fig)
+
+
+def _r12_metric_matches_lineage_ids(row: dict[str, Any], metric_name: str, lineage_ids: tuple[str, ...]) -> bool:
+    for lineage_id in lineage_ids:
+        lineage = _r12_lineage_by_id(str(lineage_id))
+        source_family = str(lineage.get("source_family") or "")
+        if source_family and _r12_metric_matches_source_family(row, metric_name, source_family):
+            return True
+    return False
+
+
+def _r12_is_program_row(row: dict[str, Any]) -> bool:
+    return any(
+        _r12_metric_matches_lineage_ids(row, metric_name, R12_PROGRAM_LINEAGE_IDS)
+        for metric_name in R12_PROGRAM_MUTATION_METRICS
+    )
+
+
+def _r12_program_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        dict(row)
+        for row in sorted(rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+        if _r12_is_program_row(row)
+    ]
+
+
+def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    program_train_rows = _r12_program_rows(train_rows)
+    if not program_train_rows:
+        return {
+            "status": "not_estimable",
+            "selected_family": "multi_horizon_weighted_process",
+            "reason": "no_train_program_rows",
+            "candidate_families": list(R12_PROGRAM_NOWCAST_CANDIDATE_FAMILIES),
+            "metric_scope": list(R12_PROGRAM_MUTATION_METRICS),
+        }
+    selector = _train_origin_family_scores(
+        program_train_rows,
+        candidate_families=R12_PROGRAM_NOWCAST_CANDIDATE_FAMILIES,
+        max_horizon_years=_holdout_max_horizon_years(program_train_rows, holdout_rows),
+        metrics=R12_PROGRAM_MUTATION_METRICS,
+    )
+    rows_by_family = {
+        str(row.get("family") or ""): dict(row)
+        for row in list(selector.get("family_rows") or [])
+        if isinstance(row, dict)
+    }
+    base_row = rows_by_family.get("multi_horizon_weighted_process", {})
+    selected_family = str(selector.get("selected_family") or "multi_horizon_weighted_process")
+    selected_row = rows_by_family.get(selected_family, {})
+    base_scoped = _finite_float(base_row.get("scoped_mean_mae"))
+    base_stock = _finite_float(base_row.get("primary_stock_mean_mae"))
+    selected_scoped = _finite_float(selected_row.get("scoped_mean_mae"))
+    selected_stock = _finite_float(selected_row.get("primary_stock_mean_mae"))
+    fail_closed_reason = ""
+    if selected_family != "multi_horizon_weighted_process":
+        if selected_scoped is None or base_scoped is None:
+            fail_closed_reason = "missing_program_scope_selector_score"
+        elif selected_scoped > base_scoped + FLOAT_NONREGRESSION_TOLERANCE:
+            fail_closed_reason = "program_scope_worse_than_r11_28"
+        elif selected_stock is None or base_stock is None:
+            fail_closed_reason = "missing_primary_stock_selector_score"
+        elif selected_stock > base_stock + FLOAT_NONREGRESSION_TOLERANCE:
+            fail_closed_reason = "primary_stock_worse_than_r11_28"
+    if fail_closed_reason:
+        selected_family = "multi_horizon_weighted_process"
+    output = dict(selector)
+    output["status"] = str(selector.get("status") or "not_estimable")
+    output["selected_family"] = selected_family
+    output["base_family"] = "multi_horizon_weighted_process"
+    output["program_train_row_count"] = len(program_train_rows)
+    output["program_holdout_row_count"] = len(_r12_program_rows(holdout_rows))
+    output["fail_closed_reason"] = fail_closed_reason
+    output["contract"] = (
+        "R12-10 selects a program-specific diagnosis/ART/diagnosis-flow family using DOH quarterly/monthly "
+        "train-origin rows only. A non-reference family must improve the program R10-scope score without worsening "
+        "primary D/A stock score versus R11-28; otherwise the selector fails closed to R11-28."
+    )
+    return output
+
+
+def _r12_program_nowcast_mixed_quarterly_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r12_stock_cone_safe_annual_trajectory_process",
+    )
+    selector = _fit_r12_program_nowcast_selector(train_rows, holdout_rows)
+    selected_family = str(selector.get("selected_family") or "multi_horizon_weighted_process")
+    program_train_rows = _r12_program_rows(train_rows)
+    program_holdout_rows = _r12_program_rows(holdout_rows)
+    selected_predictions: list[dict[str, Any]] = []
+    selected_summary: dict[str, Any] = {}
+    if program_train_rows and program_holdout_rows:
+        selected_predictions, selected_summary = _candidate_predictions(
+            program_train_rows,
+            program_holdout_rows,
+            family=selected_family,
+        )
+    selected_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in selected_predictions}
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    output: list[dict[str, Any]] = []
+    mutation_rows: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        quarter = str(holdout_row.get("quarter") or base_prediction.get("quarter") or "")
+        row = dict(base_prediction)
+        selected_row = selected_by_quarter.get(quarter, {})
+        mutated_metrics: list[str] = []
+        for metric_name in R12_PROGRAM_MUTATION_METRICS:
+            if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                continue
+            selected_value = _finite_float(selected_row.get(metric_name))
+            if selected_value is None:
+                continue
+            row[metric_name] = float(max(float(selected_value), 0.0))
+            mutated_metrics.append(metric_name)
+        row = _project_prediction_row(row)
+        row = _apply_back_half_rate_process(row, holdout_row, back_half_process)
+        output.append(row)
+        mutation_rows.append(
+            {
+                "quarter": quarter,
+                "program_row": _r12_is_program_row(holdout_row),
+                "selected_family": selected_family,
+                "mutated_metrics": mutated_metrics,
+            }
+        )
+    return output, {
+        "base_family": "r12_stock_cone_safe_annual_trajectory_process",
+        "base_summary": base_summary,
+        "program_selector": selector,
+        "program_selected_family": selected_family,
+        "program_selected_summary": selected_summary,
+        "program_train_row_count": len(program_train_rows),
+        "program_holdout_row_count": len(program_holdout_rows),
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R12-10 starts from the frozen R12-09 annual-anchor behavior and does not add any new annual-anchor mutation. "
+            "It overlays a train-selected "
+            "program-specific diagnosis/ART/diagnosis-flow head only on DOH quarterly/monthly rows, then re-projects "
+            "the cascade cone and regenerates VL/suppression from conditional rates."
+        ),
+    }
+
+
 def _diagnosis_flow_adjusted_base_predictions(
     train_rows: list[dict[str, Any]],
     holdout_rows: list[dict[str, Any]],
@@ -4741,6 +5321,18 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r12_program_nowcast_mixed_quarterly_process":
+        predictions, summary = _r12_program_nowcast_mixed_quarterly_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R12-10 targets the remaining R10 failure on DOH program nowcast and mixed quarterly D/A trajectory. "
+                "It keeps R12-09's annual-anchor behavior frozen and mutates only DOH quarterly/monthly diagnosed, ART, "
+                "and diagnosis-flow rows using a train-origin program selector."
+            ),
+        }
+
     if family == "r10_scope_teacher_stock_process":
         base_predictions, base_summary = _candidate_predictions(train_rows, holdout_rows, family="r10_style_readout_teacher")
         transition_predictions, transition_summary = _candidate_predictions(train_rows, holdout_rows, family="era_datv_transition_process")
@@ -5589,6 +6181,12 @@ def _r11_multi_horizon_report(
             "non-annual evidence, while slide annual-anchor diagnosed_plhiv/alive_on_art rows may use a train-selected "
             "annual stock head only if annual-anchor backtests improve mean D/A error without worsening worst-case "
             "D/A error versus R11-28 or carry-forward. Program nowcasting evidence is not mutated."
+        )
+    elif family == "r12_program_nowcast_mixed_quarterly_process":
+        branch_contract = (
+            "R12-10 freezes the R12-09 annual-anchor route and targets only DOH quarterly/monthly program evidence. "
+            "A train-origin selector may replace diagnosed_plhiv, alive_on_art, and new_diagnosed_cases_period on "
+            "program rows only; stock-cone and conditional-rate gates remain mandatory."
         )
     elif family == "r10_scope_teacher_stock_process":
         branch_contract = "R11-29 constrains R10-style readout shape with D/A stocks from the era transition process"
@@ -8084,6 +8682,7 @@ def _r12_07_route_manifest_rows(
         for row in rows
         if _finite_float(row.get("candidate_minus_r10_reference_mae")) is not None
     ]
+    r10_required = bool(route.get("r10_required")) or str(route.get("claim_role") or "") == "long_horizon_trajectory"
     candidate_beats_available_r10 = bool(
         r10_rows
         and all(float(row["candidate_minus_r10_reference_mae"]) < 0.0 for row in r10_rows)
@@ -8094,8 +8693,10 @@ def _r12_07_route_manifest_rows(
         blockers.extend([f"h{horizon}_no_route_score" for horizon in missing_horizons])
     if rows and not candidate_beats_carry:
         blockers.append("candidate_not_better_than_carry_forward_on_all_route_horizons")
-    if str(route.get("claim_role") or "") == "long_horizon_trajectory" and r10_rows and not candidate_beats_available_r10:
-        blockers.append("candidate_not_better_than_available_r10_on_all_trajectory_horizons")
+    if r10_required and not r10_rows:
+        blockers.append("no_available_r10_route_reference")
+    if r10_required and r10_rows and not candidate_beats_available_r10:
+        blockers.append("candidate_not_better_than_available_r10_on_all_route_horizons")
     return {
         "route_id": route_id,
         "route_label": str(route.get("route_label") or ""),
@@ -8103,6 +8704,7 @@ def _r12_07_route_manifest_rows(
         "lineage_ids": list(route.get("lineage_ids") or []),
         "horizons": horizons,
         "min_train_contract": str(route.get("min_train_contract") or ""),
+        "r10_required": r10_required,
         "score_record_count": len(route_records),
         "status": status,
         "missing_horizons": missing_horizons,
@@ -8395,6 +8997,14 @@ def _build_r12_08_route_aware_two_head_candidate_report(
         nowcast_manifests
         and all(bool(manifest.get("candidate_beats_available_r10_all_route_horizons")) for manifest in nowcast_manifests)
     )
+    nowcast_requires_r10 = bool(
+        nowcast_manifests
+        and any(bool(manifest.get("r10_required")) for manifest in nowcast_manifests)
+    )
+    nowcast_supported = bool(
+        nowcast_carry_supported
+        and (not nowcast_requires_r10 or nowcast_available_r10_supported)
+    )
     trajectory_carry_supported = bool(
         trajectory_manifests
         and all(bool(manifest.get("candidate_beats_carry_forward_all_route_horizons")) for manifest in trajectory_manifests)
@@ -8410,14 +9020,14 @@ def _build_r12_08_route_aware_two_head_candidate_report(
             "The route-aware two-head candidate cannot be adjudicated because at least one route lacks complete "
             "blocked scores."
         )
-    elif nowcast_carry_supported and trajectory_r10_supported:
+    elif nowcast_supported and trajectory_r10_supported:
         blocker_assessment = "route_aware_two_head_supports_nowcast_and_trajectory_claims"
         decision = "keep_as_route_aware_two_head_candidate"
         scientific_read = (
             "The route-aware two-head candidate clears the short-horizon nowcast carry-forward gate and the annual-anchor "
             "trajectory R10 gate. It can be promoted as a route-specific candidate subject to the full stock/rate checks."
         )
-    elif nowcast_carry_supported:
+    elif nowcast_supported:
         blocker_assessment = "route_aware_nowcast_head_supported_but_trajectory_head_still_r10_blocked"
         decision = "keep_as_route_aware_nowcast_candidate"
         scientific_read = (
@@ -8454,6 +9064,8 @@ def _build_r12_08_route_aware_two_head_candidate_report(
         "missing_route_ids": missing_route_ids,
         "nowcast_carry_gate_supported": nowcast_carry_supported,
         "nowcast_available_r10_gate_supported": nowcast_available_r10_supported,
+        "nowcast_requires_r10": nowcast_requires_r10,
+        "nowcast_gate_supported": nowcast_supported,
         "trajectory_carry_gate_supported": trajectory_carry_supported,
         "trajectory_r10_gate_supported": trajectory_r10_supported,
         "blocker_assessment": blocker_assessment,
@@ -8777,6 +9389,12 @@ def run_r12_reference_branch(
         source_run_id,
         baseline_source_run_id=baseline_source_run_id,
     )
+    validation_rows = build_observation_rows(
+        root,
+        source_run_id,
+        baseline_source_run_id=baseline_source_run_id,
+        include_validation_only=True,
+    )
     artifact_paths = _artifact_paths(phase3_root)
     reports = {name: _read_path_payload(path_text) for name, path_text in artifact_paths.items()}
     r10_horizon_replay = _build_r10_horizon_replay_report(
@@ -8872,6 +9490,17 @@ def run_r12_reference_branch(
         r10_reference_mae=r10_reference_mae,
         r10_horizon_replay=r10_horizon_replay,
     )
+    r12_10 = _r11_multi_horizon_report(
+        experiment_id="R12-10",
+        family="r12_program_nowcast_mixed_quarterly_process",
+        rows=rows,
+        start_year=start_year,
+        end_year=end_year,
+        min_train_years=min_train_years,
+        horizons=R11_MULTI_HORIZON_YEARS,
+        r10_reference_mae=r10_reference_mae,
+        r10_horizon_replay=r10_horizon_replay,
+    )
 
     benchmark_path = analysis_dir / "benchmark_manifest.json"
     split_path = analysis_dir / "split_manifest.json"
@@ -8897,6 +9526,11 @@ def run_r12_reference_branch(
     r12_09_full_path = analysis_dir / "r12_09_stock_cone_safe_annual_trajectory_full_report.json"
     r12_09_route_path = analysis_dir / "r12_09_stock_cone_safe_annual_trajectory_candidate_report.json"
     r12_09_dashboard_path = analysis_dir / "r12_09_stock_cone_safe_annual_trajectory_dashboard.png"
+    r12_10_annual_challenge_path = analysis_dir / "r12_10a_official_annual_challenge_gate_report.json"
+    r12_10_annual_challenge_dashboard_path = analysis_dir / "r12_10a_official_annual_challenge_gate_dashboard.png"
+    r12_10_full_path = analysis_dir / "r12_10b_program_nowcast_mixed_quarterly_full_report.json"
+    r12_10_route_path = analysis_dir / "r12_10b_program_nowcast_mixed_quarterly_candidate_report.json"
+    r12_10_dashboard_path = analysis_dir / "r12_10b_program_nowcast_mixed_quarterly_dashboard.png"
     comparison_path = analysis_dir / "r12_reference_branch_comparison.json"
     csv_path = analysis_dir / "r12_reference_branch_comparison.csv"
     md_path = analysis_dir / "r12_reference_branch_comparison.md"
@@ -8921,6 +9555,7 @@ def run_r12_reference_branch(
     write_json(r12_03_path, r12_03)
     write_json(r12_08_full_path, r12_08)
     write_json(r12_09_full_path, r12_09)
+    write_json(r12_10_full_path, r12_10)
     r12_03_source_report = _build_r12_03_residual_source_report(r12_03)
     write_json(r12_03_source_path, r12_03_source_report)
     r12_04_report = _build_r12_04_source_lineage_ablation_report(
@@ -8989,6 +9624,41 @@ def run_r12_reference_branch(
     )
     write_json(r12_09_route_path, r12_09_route_report)
     _write_r12_07_horizon_router_dashboard(r12_09_dashboard_path, r12_09_route_report)
+    r12_10_annual_challenge_report = _build_r12_official_annual_challenge_gate_report(
+        rows=validation_rows,
+        start_year=start_year,
+        end_year=end_year,
+        min_train_years=min_train_years,
+        candidate_families=(
+            "multi_horizon_weighted_process",
+            "r12_stock_cone_safe_annual_trajectory_process",
+            "r12_program_nowcast_mixed_quarterly_process",
+        ),
+    )
+    write_json(r12_10_annual_challenge_path, r12_10_annual_challenge_report)
+    _write_r12_official_annual_challenge_dashboard(
+        r12_10_annual_challenge_dashboard_path,
+        r12_10_annual_challenge_report,
+    )
+    r12_10_route_report = _build_r12_08_route_aware_two_head_candidate_report(
+        rows=rows,
+        start_year=start_year,
+        end_year=end_year,
+        r10_horizon_replay=r10_horizon_replay,
+        production_min_train_years=min_train_years,
+        candidate_family="r12_program_nowcast_mixed_quarterly_process",
+        routes=R12_PROGRAM_MIXED_QUARTERLY_ROUTES,
+        experiment_id="R12-10B",
+        schema_version="phase3_dynamic.r12_10b_program_nowcast_mixed_quarterly_candidate.v1",
+        prediction_mutation="enabled_program_nowcast_mixed_quarterly_head",
+        contract_text=(
+            "R12-10B targets the remaining R10 failure on DOH program nowcast and mixed quarterly diagnosis/ART "
+            "trajectory. It uses only DOH quarterly/monthly program lineages, requires carry-forward and available "
+            "matched R10 improvement on those routes, and leaves the slide annual-anchor route frozen."
+        ),
+    )
+    write_json(r12_10_route_path, r12_10_route_report)
+    _write_r12_07_horizon_router_dashboard(r12_10_dashboard_path, r12_10_route_report)
 
     r12_01_row = _apply_r12_reference_gate_to_row(
         _summarize_r11_multi_horizon_branch(
@@ -9314,6 +9984,105 @@ def run_r12_reference_branch(
         "blockers": r12_09_route_blockers + r12_09_full_reference_blockers,
         "contract": str(r12_09_route_report.get("contract") or ""),
     }
+    r12_10_full_row = _apply_r12_reference_gate_to_row(
+        _summarize_r11_multi_horizon_branch(
+            experiment_id="R12-10B-FULL",
+            title="Program nowcast and mixed-quarterly full-cascade replay",
+            path=r12_10_full_path,
+            report=r12_10,
+        ),
+        candidate_report=r12_10,
+        reference_report=r11_28_reference,
+    )
+    r12_10a_family_values = [
+        float(row["candidate_mean_norm_error"])
+        for row in list(r12_10_annual_challenge_report.get("family_rows") or [])
+        if isinstance(row, dict)
+        and _finite_float(row.get("candidate_mean_norm_error")) is not None
+    ]
+    r12_10a_carry_values = [
+        float(row["carry_forward_mean_norm_error"])
+        for row in list(r12_10_annual_challenge_report.get("family_rows") or [])
+        if isinstance(row, dict)
+        and _finite_float(row.get("carry_forward_mean_norm_error")) is not None
+    ]
+    r12_10a_row = {
+        "experiment_id": "R12-10A",
+        "title": "Official annual AEM/Spectrum-style challenge gate",
+        "family": "official_annual_challenge_gate",
+        "artifact_path": r12_10_annual_challenge_path.as_posix(),
+        "artifact_sha256": _sha256(r12_10_annual_challenge_path),
+        "one_year_status": "not_applicable",
+        "annual_status": str(r12_10_annual_challenge_report.get("status") or "not_evaluable"),
+        "lifted_status": "not_applicable",
+        "stock_consistency_status": "not_applicable",
+        "candidate_mae": None
+        if not r12_10a_family_values
+        else float(np.mean(np.asarray(r12_10a_family_values, dtype=np.float64))),
+        "carry_forward_mae": None
+        if not r12_10a_carry_values
+        else float(np.mean(np.asarray(r12_10a_carry_values, dtype=np.float64))),
+        "r10_reference_mae": None,
+        "decision": str(r12_10_annual_challenge_report.get("decision") or "keep_as_official_annual_challenge_gate"),
+        "kept_claim": "official_annual_validation_gate_not_training_target",
+        "blockers": list(r12_10_annual_challenge_report.get("blockers") or []),
+        "contract": str(r12_10_annual_challenge_report.get("contract") or ""),
+    }
+    r12_10_horizon_values = [
+        float(row["candidate_mean_norm_error"])
+        for row in list(r12_10_route_report.get("route_horizon_rows") or [])
+        if isinstance(row, dict)
+        and _finite_float(row.get("candidate_mean_norm_error")) is not None
+    ]
+    r12_10_carry_values = [
+        float(row["carry_forward_mean_norm_error"])
+        for row in list(r12_10_route_report.get("route_horizon_rows") or [])
+        if isinstance(row, dict)
+        and _finite_float(row.get("carry_forward_mean_norm_error")) is not None
+    ]
+    r12_10_r10_values = [
+        float(row["r10_horizon_reference_mae"])
+        for row in list(r12_10_route_report.get("route_horizon_rows") or [])
+        if isinstance(row, dict)
+        and _finite_float(row.get("r10_horizon_reference_mae")) is not None
+    ]
+    r12_10_route_blockers = [
+        str(item)
+        for manifest in list(r12_10_route_report.get("route_manifests") or [])
+        if isinstance(manifest, dict)
+        for item in list(manifest.get("blockers") or [])
+    ]
+    r12_10_full_reference_blockers = list(r12_10_full_row.get("blockers") or [])
+    r12_10_decision = str(r12_10_route_report.get("decision") or "reject_route_aware_candidate")
+    if (
+        r12_10_decision == "keep_as_route_aware_two_head_candidate"
+        and str(r12_10_full_row.get("decision") or "") == "keep_as_full_cascade_candidate"
+    ):
+        r12_10_decision = "keep_as_full_cascade_candidate"
+    r12_10_row = {
+        "experiment_id": "R12-10B",
+        "title": "DOH program nowcast and mixed-quarterly trajectory branch",
+        "family": "r12_program_nowcast_mixed_quarterly_process",
+        "artifact_path": r12_10_route_path.as_posix(),
+        "artifact_sha256": _sha256(r12_10_route_path),
+        "one_year_status": str(r12_10_full_row.get("one_year_status") or ""),
+        "annual_status": "not_applicable",
+        "lifted_status": str(r12_10_full_row.get("lifted_status") or ""),
+        "stock_consistency_status": str(r12_10_full_row.get("stock_consistency_status") or ""),
+        "candidate_mae": None
+        if not r12_10_horizon_values
+        else float(np.mean(np.asarray(r12_10_horizon_values, dtype=np.float64))),
+        "carry_forward_mae": None
+        if not r12_10_carry_values
+        else float(np.mean(np.asarray(r12_10_carry_values, dtype=np.float64))),
+        "r10_reference_mae": None
+        if not r12_10_r10_values
+        else float(np.mean(np.asarray(r12_10_r10_values, dtype=np.float64))),
+        "decision": r12_10_decision,
+        "kept_claim": str(r12_10_route_report.get("blocker_assessment") or "program_nowcast_mixed_quarterly_candidate"),
+        "blockers": r12_10_route_blockers + r12_10_full_reference_blockers,
+        "contract": str(r12_10_route_report.get("contract") or ""),
+    }
     rows_out = [
         _infrastructure_row(
             experiment_id="BM-00",
@@ -9352,6 +10121,8 @@ def run_r12_reference_branch(
         r12_07_row,
         r12_08_row,
         r12_09_row,
+        r12_10a_row,
+        r12_10_row,
     ]
     promoted_rows = [
         row
@@ -9370,8 +10141,8 @@ def run_r12_reference_branch(
             "experiment_count": len(rows_out),
             "full_cascade_champion": None if not promoted_rows else promoted_rows[0].get("experiment_id"),
             "reference_experiment_id": "R11-28",
-            "candidate_experiment_ids": ["R12-01", "R12-02", "R12-03", "R12-08", "R12-09"],
-            "diagnostic_experiment_ids": ["R12-04", "R12-05", "R12-06", "R12-07"],
+            "candidate_experiment_ids": ["R12-01", "R12-02", "R12-03", "R12-08", "R12-09", "R12-10B"],
+            "diagnostic_experiment_ids": ["R12-04", "R12-05", "R12-06", "R12-07", "R12-10A"],
             "claim_boundary": (
                 f"{promoted_rows[0].get('experiment_id')} promoted to full-cascade candidate"
                 if promoted_rows
@@ -9391,6 +10162,7 @@ def run_r12_reference_branch(
             "r12_03_da_residual_source_alignment_report": r12_03_source_path.as_posix(),
             "r12_08_route_aware_two_head_full_report": r12_08_full_path.as_posix(),
             "r12_09_stock_cone_safe_annual_trajectory_full_report": r12_09_full_path.as_posix(),
+            "r12_10b_program_nowcast_mixed_quarterly_full_report": r12_10_full_path.as_posix(),
             "r12_04_source_lineage_evaluation_ablation_report": r12_04_path.as_posix(),
             "r12_04_source_lineage_evaluation_ablation_dashboard": r12_04_dashboard_path.as_posix(),
             "r12_05_lineage_stratified_training_evaluation_contract_report": r12_05_path.as_posix(),
@@ -9403,6 +10175,10 @@ def run_r12_reference_branch(
             "r12_08_route_aware_two_head_candidate_dashboard": r12_08_dashboard_path.as_posix(),
             "r12_09_stock_cone_safe_annual_trajectory_candidate_report": r12_09_route_path.as_posix(),
             "r12_09_stock_cone_safe_annual_trajectory_dashboard": r12_09_dashboard_path.as_posix(),
+            "r12_10a_official_annual_challenge_gate_report": r12_10_annual_challenge_path.as_posix(),
+            "r12_10a_official_annual_challenge_gate_dashboard": r12_10_annual_challenge_dashboard_path.as_posix(),
+            "r12_10b_program_nowcast_mixed_quarterly_candidate_report": r12_10_route_path.as_posix(),
+            "r12_10b_program_nowcast_mixed_quarterly_dashboard": r12_10_dashboard_path.as_posix(),
             "comparison_json": comparison_path.as_posix(),
             "comparison_csv": csv_path.as_posix(),
             "comparison_markdown": md_path.as_posix(),

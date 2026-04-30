@@ -25,26 +25,32 @@ The historical root `src/epigraph_ph/phase3` tree is still useful for older TR-V
 src/epigraph_ph/Phase3(dynamic)
 ```
 
-The latest checked-in Phase3(dynamic) branch is `R12-09`, a stock-cone-safe annual trajectory head. It fixes one specific blocker: annual-anchor diagnosed/ART trajectory behaviour at 3-year and 5-year horizons, while preserving the full stock cone and conditional VL/suppression gates.
+The latest checked-in Phase3(dynamic) replay is `R12-10`, run `p3d-r12-official-annual-program-nowcast-20260430-s00`. It adds two gates on top of the R12-09 annual-anchor result:
 
-Latest R12-09 result, run `p3d-r12-stock-cone-annual-trajectory-20260430-s03`:
+- `R12-10A`: an official annual AEM/Spectrum-style challenge gate for annual incidence, AIDS deaths, estimated PLHIV, and cascade anchors.
+- `R12-10B`: a DOH quarterly/monthly program-nowcast and mixed quarterly diagnosis/ART trajectory branch.
+
+Current result: `R12-10A` is retained as a validation gate, but it blocks annual-head claims because annual incidence, AIDS deaths, and estimated PLHIV model heads are not yet implemented. `R12-10B` improves over carry-forward on DOH program routes, but still fails matched R10; it is rejected for promotion. `R11-28` remains the locked research reference, while `R12-09` remains a route-specific annual-anchor candidate rather than a full-cascade champion.
+
+Latest R12 summary:
 
 | Gate | Result |
 | --- | --- |
-| Full blocked carry-forward gate | Pass |
-| Full stock cone | Pass |
-| Conditional VL/suppression rates | Pass |
-| Annual-anchor trajectory vs matched R10 | Pass at 3y and 5y |
+| Official annual challenge gate | Retained, but `cascade_only_available` |
+| Annual incidence/deaths/PLHIV heads | Missing; annual-head claims blocked |
+| R12-10B DOH program route vs carry-forward | Improves on 1y, 2y, 3y, 5y route means |
+| R12-10B DOH program route vs matched R10 | Fails at 1y, 3y, 5y; 2y R10 unavailable |
+| R12-09 annual-anchor trajectory vs matched R10 | Still passes at 3y and 5y |
 | Full mixed-lineage R10 trajectory | Still fails at 3y and 5y |
 | Full-cascade champion | Not promoted |
 
-Key scores from the latest R12-09 report:
+Key scores from the latest replay:
 
-| Horizon | Candidate full MAE | Carry-forward full MAE | Candidate R10-scope MAE | Matched R10 MAE | Status |
+| Experiment/scope | Candidate MAE | Carry-forward MAE | Candidate R10-scope MAE | Matched R10 MAE | Status |
 | --- | ---: | ---: | ---: | ---: | --- |
-| 1y | 0.2226 | 0.2870 | 0.0851 | 0.0953 | beats carry and R10 |
-| 3y | 0.3016 | 0.5279 | 0.1531 | 0.1157 | beats carry, fails full R10 |
-| 5y | 0.5512 | 0.8388 | 0.2388 | 0.1294 | beats carry, fails full R10 |
+| R11-28 reference, all horizons mean | 0.3620 | 0.5512 | 0.1621 | 0.1135 | beats carry, fails R10 |
+| R12-09 route candidate mean | 0.1261 | 0.2613 | n/a | 0.1135 | route-specific pass, full replay still fails |
+| R12-10B program route mean | 0.5758 | 0.6204 | n/a | 0.1135 | beats carry, fails R10 |
 
 Annual-anchor route scores:
 
@@ -54,6 +60,8 @@ Annual-anchor route scores:
 | slide annual anchor | 5y | 0.0434 | 0.2729 | 0.1294 | pass |
 
 Interpretation: R12-09 is scientifically useful because it separates annual-anchor trajectory evidence from short-horizon program nowcasting evidence. It is not yet a final model because the full mixed-lineage trajectory still loses to R10 at longer horizons.
+
+R12-10 interpretation: the annual challenge gate is doing the right thing scientifically. It refuses to silently substitute quarterly diagnosis flow for annual incidence/deaths/PLHIV. The DOH program branch also shows that generic program-nowcast repair is not enough: it reduces error versus carry-forward but remains far from R10 trajectory shape, especially for mixed quarterly diagnosis/ART evidence.
 
 ## Repository Map
 
@@ -341,24 +349,32 @@ Key branches:
 - `R12-07`: horizon-specific evidence router
 - `R12-08`: route-aware two-head nowcast/trajectory candidate
 - `R12-09`: stock-cone-safe annual trajectory head
+- `R12-10A`: official annual AEM/Spectrum-style challenge gate
+- `R12-10B`: DOH program nowcast and mixed quarterly trajectory branch
 
 Scientific conclusion:
 
 - R12-09 supports a route-specific annual-anchor trajectory claim.
+- R12-10A blocks annual incidence/death/PLHIV claims until those heads are explicitly modeled.
+- R12-10B shows the remaining DOH program-nowcast gap is not solved by generic route-specific readout repair.
 - R12-09 does not yet support a full-cascade long-horizon champion claim.
 
-## Latest R12-09 Artifacts
+## Latest R12 Artifacts
 
-The compact latest R12-09 run is checked in under:
+The compact latest R12-10 run is checked in under:
 
 ```text
-src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-stock-cone-annual-trajectory-20260430-s03/analysis
+src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-official-annual-program-nowcast-20260430-s00/analysis
 ```
 
 High-value files:
 
 - `r12_reference_branch_comparison.json`
 - `r12_reference_branch_comparison.md`
+- `r12_10a_official_annual_challenge_gate_report.json`
+- `r12_10a_official_annual_challenge_gate_dashboard.png`
+- `r12_10b_program_nowcast_mixed_quarterly_candidate_report.json`
+- `r12_10b_program_nowcast_mixed_quarterly_dashboard.png`
 - `r12_09_stock_cone_safe_annual_trajectory_candidate_report.json`
 - `r12_09_stock_cone_safe_annual_trajectory_full_report.json`
 - `r12_09_stock_cone_safe_annual_trajectory_dashboard.png`
@@ -396,7 +412,7 @@ Replay the latest R12 branch:
 PYTHONPATH="src/epigraph_ph/Phase3(dynamic)/src:src" \
 uvx --from numpy --with matplotlib \
 python -m phase3_dynamic.cli r12-reference-branch \
-  --run-id p3d-r12-stock-cone-annual-trajectory-local \
+  --run-id p3d-r12-official-annual-program-nowcast-local \
   --start-year 2010 \
   --end-year 2025 \
   --min-train-years 5
@@ -430,9 +446,9 @@ The project is not yet publishable as a superior all-purpose HIV forecast model 
 
 The next high-value scientific steps are:
 
-1. Build an official annual challenge gate against AEM/Spectrum-like annual incidence, deaths, PLHIV, and cascade outputs with no target leakage.
-2. Keep R12-09 as a route-specific annual-anchor candidate, not a full champion.
-3. Repair the remaining full mixed-lineage R10 failure through a DOH monthly/quarterly program-nowcast state process, not another generic endpoint correction.
+1. Implement explicit annual incidence, AIDS-death, and estimated-PLHIV heads with measurement error, then rerun `R12-10A`; do not train on validation-only annual rows.
+2. Replace generic DOH program-nowcast correction with a true monthly reporting/state process for diagnosis and ART, because `R12-10B` beats carry-forward but remains far from R10.
+3. Keep R12-09 as a route-specific annual-anchor candidate, not a full champion.
 4. Promote Phase 2 determinants only after source-family re-estimation, time-window shift, placebo separation, and synthetic-recovery checks.
 5. Convert the current nested `Phase3(dynamic)` package into a cleaner `phase3_dynamic` layout only after import paths and artifact locators are migrated.
 
@@ -440,11 +456,12 @@ The next high-value scientific steps are:
 
 The project started as a broad evidence-to-graph system. It then learned that endpoint-style R10 models can look strong on old support but do not survive expanded HARP/HASP/HIV_Data cleanly. The current system therefore uses stricter observation roles, lineages, and blocked gates.
 
-As of R12-09, we can say:
+As of R12-10, we can say:
 
 - We have a strong route-specific annual-anchor trajectory repair.
 - We beat carry-forward broadly under the current blocked contract.
 - We preserve stock and conditional-rate gates.
-- We still do not beat R10 globally at 3y/5y mixed-lineage trajectory shape.
+- We now have an annual official-style challenge gate that prevents incidence/death/PLHIV overclaiming.
+- We still do not beat R10 globally at 3y/5y mixed-lineage trajectory shape or on DOH program-nowcast route shape.
 
 That is the honest current frontier.
