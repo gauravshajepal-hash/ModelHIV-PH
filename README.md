@@ -44,6 +44,10 @@ Latest R12 summary:
 | Full mixed-lineage R10 trajectory | Still fails at 3y and 5y |
 | Full-cascade champion | Not promoted |
 
+The latest exploratory queue is `R13`, run `p3d-r13-priority-queue-20260501-s00`. It materializes a research-council/auto-deep-researcher handoff as 50 predeclared, priority-ordered experiments. The queue is not a new champion claim; it is a bounded experiment program that scores annual conserved heads, DOH monthly/program routes, D/A transition processes, back-half conditional-rate claims, support partitions, and the Phase 2 determinant lockbox under blocked-time gates.
+
+R13 result: 11 experiments are promoted for next-wave investigation within their scoped claims, 27 are kept as diagnostics, 6 are rejected, and 6 are blocked by insufficient scoped splits. The dominant blocker remains the matched R10 gate, not carry-forward: 34 experiments improve over carry-forward but still do not beat horizon-matched R10.
+
 Key scores from the latest replay:
 
 | Experiment/scope | Candidate MAE | Carry-forward MAE | Candidate R10-scope MAE | Matched R10 MAE | Status |
@@ -382,6 +386,22 @@ High-value files:
 - `r10_horizon_matched_replay_report.json`
 
 The repository root `artifacts/` directory remains ignored because large Phase 0/Phase 1/Phase 15 replay artifacts can reach many gigabytes.
+
+## Latest R13 Artifacts
+
+The current 50-experiment queue is checked in under:
+
+```text
+src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r13-priority-queue-20260501-s00/analysis
+```
+
+High-value files:
+
+- `r13_priority_experiment_manifest.json`
+- `r13_priority_experiment_results.json`
+- `r13_priority_experiment_results.md`
+- `r13_priority_experiment_results.csv`
+- `r13_priority_experiment_dashboard.png`
 
 ## How To Run
 

@@ -20,6 +20,7 @@ from .revision_program import (
     run_rev_07_region_hierarchy,
 )
 from .r11_sparse_state_space import run_r11_first_batch, run_r12_reference_branch
+from .r13_priority_experiments import run_r13_priority_experiment_queue
 from .scientific_contracts import write_project_contract_artifacts
 
 
@@ -128,6 +129,15 @@ def main() -> None:
     r12_parser.add_argument("--start-year", type=int, default=2010)
     r12_parser.add_argument("--end-year", type=int, default=2025)
     r12_parser.add_argument("--min-train-years", type=int, default=5)
+    r13_parser = subparsers.add_parser("r13-priority-experiment-queue")
+    r13_parser.add_argument("--run-id", required=True)
+    r13_parser.add_argument("--source-run-id")
+    r13_parser.add_argument("--baseline-source-run-id")
+    r13_parser.add_argument("--epigraph-root")
+    r13_parser.add_argument("--start-year", type=int, default=2010)
+    r13_parser.add_argument("--end-year", type=int, default=2025)
+    r13_parser.add_argument("--min-train-years", type=int, default=5)
+    r13_parser.add_argument("--max-experiments", type=int)
 
     args = parser.parse_args()
     if args.command == "track-experiments":
@@ -203,6 +213,18 @@ def main() -> None:
             start_year=args.start_year,
             end_year=args.end_year,
             min_train_years=args.min_train_years,
+        )
+        return
+    if args.command == "r13-priority-experiment-queue":
+        run_r13_priority_experiment_queue(
+            run_id=args.run_id,
+            source_run_id=args.source_run_id,
+            baseline_source_run_id=args.baseline_source_run_id,
+            epigraph_root=Path(args.epigraph_root) if args.epigraph_root else None,
+            start_year=args.start_year,
+            end_year=args.end_year,
+            min_train_years=args.min_train_years,
+            max_experiments=args.max_experiments,
         )
         return
     if args.command == "rev-00-observation-role-ledger":

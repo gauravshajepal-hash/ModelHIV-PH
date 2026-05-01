@@ -1,0 +1,989 @@
+{
+  "auto_deep_researcher_contract": "bounded priority queue: experiments are predeclared, run sequentially by priority, and promoted only by blocked-time carry-forward/R10/stock semantics rather than open-ended optimizer budget",
+  "baseline_source_run_id": "harp-archive-wdi-standard-20260412-s19",
+  "end_year": 2025,
+  "experiment_count": 50,
+  "full_catalog_count": 50,
+  "generated_at": "2026-05-01T00:40:04.580997+00:00",
+  "min_train_years": 5,
+  "run_id": "p3d-r13-priority-queue-20260501-s00",
+  "schema_version": "phase3_dynamic.r13_priority_experiment_queue.v1",
+  "source_run_id": "tr-v3-current-champion-expanded-harp-compatibility-20260419-s00",
+  "specs": [
+    {
+      "candidate_family": "r12_stock_cone_safe_annual_trajectory_process",
+      "experiment_id": "R13-001",
+      "family": "official_annual_challenge_gate",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "The annual official-style head is publishable only if incidence, deaths, and PLHIV score as a conserved mass-balance triplet.",
+      "layer": "annual_official_measurement",
+      "metrics": [
+        "annual_new_infections",
+        "annual_aids_deaths",
+        "estimated_plhiv",
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed"
+      ],
+      "priority": 1,
+      "r10_required": false,
+      "row_scope": "official_annual_q4",
+      "title": "Conserved annual incidence/death/PLHIV gate on R12-09"
+    },
+    {
+      "experiment_id": "R13-002",
+      "family": "r12_program_nowcast_mixed_quarterly_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "If the latent reporting-intensity state is useful, it should improve 1y/2y diagnosis, ART, and diagnosis-flow nowcasts on DOH program rows.",
+      "layer": "monthly_program_state",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 2,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "Latent monthly program nowcast on DOH program evidence"
+    },
+    {
+      "experiment_id": "R13-003",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "R11-28 remains the minimum viable research reference unless a later branch beats it under carry-forward and matched R10 gates.",
+      "layer": "reference_lock",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 3,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Locked R11-28 full-support research reference"
+    },
+    {
+      "experiment_id": "R13-004",
+      "family": "r12_stock_cone_safe_annual_trajectory_process",
+      "horizons": [
+        3,
+        5
+      ],
+      "hypothesis": "The annual-anchor route should remain the cleanest trajectory claim because it avoids mixed monthly/quarterly support conflict.",
+      "layer": "annual_anchor_route",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 4,
+      "r10_required": true,
+      "row_scope": "annual_anchor",
+      "title": "Stock-cone-safe annual-anchor trajectory replay"
+    },
+    {
+      "experiment_id": "R13-005",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "DOH quarterly rows should be claim-grade only if the locked reference beats carry-forward and does not fall far behind R10 at short horizons.",
+      "layer": "support_adequacy",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 5,
+      "r10_required": true,
+      "row_scope": "doh_quarterly",
+      "title": "DOH quarterly short-horizon adequacy under R11-28"
+    },
+    {
+      "experiment_id": "R13-006",
+      "family": "r12_program_nowcast_mixed_quarterly_process",
+      "horizons": [
+        3,
+        5
+      ],
+      "hypothesis": "If the remaining R10 gap is a transition problem, it will remain visible on 3y/5y program D/A stock horizons.",
+      "layer": "program_route",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 6,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "Program route trajectory stress test"
+    },
+    {
+      "experiment_id": "R13-007",
+      "family": "r12_da_process_split_transition",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Separating diagnosed reporting/removal from ART linkage/retention should reduce diagnosed-stock and ART-stock drift if dynamics, not lineage, is the blocker.",
+      "layer": "transition_process",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 7,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "D/A process-split transition on full support"
+    },
+    {
+      "experiment_id": "R13-008",
+      "family": "r12_da_residual_source_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Source-family residual structure should not be promoted unless it generalizes without target leakage.",
+      "layer": "lineage_residual",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 8,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "D/A residual-source process replay"
+    },
+    {
+      "experiment_id": "R13-009",
+      "family": "era_datv_transition_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Era-stratified removals and reporting shifts are the strongest existing mechanistic D/A baseline.",
+      "layer": "transition_process",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 9,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Era-stratified D/A transition baseline"
+    },
+    {
+      "experiment_id": "R13-010",
+      "family": "datv_transition_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "If non-era dynamics match era-stratified dynamics, the extra reporting-shift structure is not scientifically carrying the result.",
+      "layer": "transition_process",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 10,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Non-era D/A transition baseline"
+    },
+    {
+      "experiment_id": "R13-011",
+      "family": "diagnosis_lag_stock_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Lagged diagnosis flow should improve D/A trajectory shape if same-quarter linkage is causing stock mismatch.",
+      "layer": "diagnosis_flow",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 11,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Diagnosis-flow lagged stock process"
+    },
+    {
+      "experiment_id": "R13-012",
+      "family": "stock_flow_reconciliation_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Diagnosis-flow repair is useful only if it reconciles diagnosed stock without worsening ART stock.",
+      "layer": "diagnosis_flow",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 12,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Stock-flow reconciliation process"
+    },
+    {
+      "experiment_id": "R13-013",
+      "family": "support_era_diagnosis_flow_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Support-era diagnosis-flow shifts are allowed only if they improve blocked flow/D/A alignment beyond carry-forward and R10.",
+      "layer": "diagnosis_flow",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 13,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Support-era diagnosis-flow reporting process"
+    },
+    {
+      "experiment_id": "R13-014",
+      "family": "diagnosed_reporting_bias_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "If diagnosed-stock residuals are observation-lineage artifacts, a D-only reporting operator should help without changing biological transitions.",
+      "layer": "diagnosed_observation",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 14,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Diagnosed-stock reporting-bias process"
+    },
+    {
+      "experiment_id": "R13-015",
+      "family": "art_horizon_selector_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "The ART trajectory may need a different process family from diagnosed stock or diagnosis flow.",
+      "layer": "art_process",
+      "metrics": [
+        "alive_on_art"
+      ],
+      "priority": 15,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "ART-specific horizon selector"
+    },
+    {
+      "experiment_id": "R13-016",
+      "family": "conditional_rate_horizon_selector",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Third-95 claims should be separated from count-level D/A failures and scored as conditional VL/suppression behavior.",
+      "layer": "back_half_rates",
+      "metrics": [
+        "tested_for_viral_load",
+        "virally_suppressed"
+      ],
+      "priority": 16,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Conditional VL/suppression horizon selector"
+    },
+    {
+      "experiment_id": "R13-017",
+      "family": "back_half_conditional_rates",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "VL and suppression should be modeled through conditional rates, not endpoint count corrections.",
+      "layer": "back_half_rates",
+      "metrics": [
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed"
+      ],
+      "priority": 17,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Back-half conditional-rate replay"
+    },
+    {
+      "experiment_id": "R13-018",
+      "family": "r10_style_readout_teacher",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "The R10-like readout teacher is a benchmark, not a mechanistic champion; it must be measured against true matched R10.",
+      "layer": "readout_teacher",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 18,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "R10-style train-origin readout teacher"
+    },
+    {
+      "experiment_id": "R13-019",
+      "family": "local_level_filter",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "A local-level filter must beat carry-forward internally before any smoother state-space variant is worth adding.",
+      "layer": "observation_filter",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 19,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Local-level state filter baseline"
+    },
+    {
+      "experiment_id": "R13-020",
+      "family": "support_reporting_bias",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "Support/reporting bias should be an observation operator, not a biological hazard.",
+      "layer": "observation_filter",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 20,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Support reporting-bias filter baseline"
+    },
+    {
+      "experiment_id": "R13-021",
+      "family": "support_partition_calibration",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "Support partition alone should not be trusted if it cannot beat carry-forward on held-out years.",
+      "layer": "observation_filter",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 21,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Support-partition calibration baseline"
+    },
+    {
+      "experiment_id": "R13-022",
+      "family": "transition_shrinkage",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "Shrinkage should stabilize sparse transitions but must not become a smoothed carry-forward clone.",
+      "layer": "transition_shrinkage",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 22,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Empirical-Bayes transition shrinkage baseline"
+    },
+    {
+      "experiment_id": "R13-023",
+      "family": "linkage_lag_kernel",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "A pure linkage lag should improve ART stock if ART initiation delay is the dominant failure mode.",
+      "layer": "linkage_delay",
+      "metrics": [
+        "alive_on_art"
+      ],
+      "priority": 23,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "ART linkage lag kernel baseline"
+    },
+    {
+      "experiment_id": "R13-024",
+      "family": "linkage_lag_plus_support_partition",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "Combining delay and support calibration should improve short horizons without damaging the stock cone.",
+      "layer": "linkage_delay",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 24,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Linkage lag plus support partition"
+    },
+    {
+      "experiment_id": "R13-025",
+      "family": "r12_long_horizon_stock_shape_process",
+      "horizons": [
+        3,
+        5
+      ],
+      "hypothesis": "Annual-anchor stock shape should be compared against R12-09 to see whether the stock-cone-safe head adds value.",
+      "layer": "annual_anchor_route",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 25,
+      "r10_required": true,
+      "row_scope": "annual_anchor",
+      "title": "R12 long-horizon stock shape on annual anchors"
+    },
+    {
+      "experiment_id": "R13-026",
+      "family": "r12_program_nowcast_mixed_quarterly_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "The monthly latent state should first win where monthly support exists: D/A program rows at short horizons.",
+      "layer": "program_route",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 26,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "Program D/A nowcast with latent monthly state"
+    },
+    {
+      "experiment_id": "R13-027",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "DOH quarterly D/A rows are the most direct test of program state nowcasting.",
+      "layer": "doh_quarterly",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 27,
+      "r10_required": true,
+      "row_scope": "doh_quarterly",
+      "title": "DOH quarterly D/A short-horizon reference"
+    },
+    {
+      "experiment_id": "R13-028",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "Monthly support should help nowcasts only if the monthly rows are stable enough to generalize.",
+      "layer": "doh_monthly",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 28,
+      "r10_required": true,
+      "row_scope": "doh_monthly",
+      "title": "DOH monthly D/A short-horizon reference"
+    },
+    {
+      "experiment_id": "R13-029",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        3,
+        5
+      ],
+      "hypothesis": "Q4-only scoring separates annual reporting cadence from mixed quarterly artifacts.",
+      "layer": "quarterly_anchors",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 29,
+      "r10_required": true,
+      "row_scope": "q4_only",
+      "title": "Q4-only long-horizon reference"
+    },
+    {
+      "experiment_id": "R13-030",
+      "family": "r12_program_nowcast_mixed_quarterly_process",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "The reporting process must handle the 2022-2025 rebound era without using COVID-specific hand labels.",
+      "layer": "shock_period",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 30,
+      "r10_required": true,
+      "row_scope": "post_2021_program",
+      "title": "Post-2021 program nowcast stress test"
+    },
+    {
+      "experiment_id": "R13-031",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        3
+      ],
+      "hypothesis": "If failures concentrate post-2021, the model is missing reporting/rebound dynamics rather than early-cascade structure.",
+      "layer": "shock_period",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 31,
+      "r10_required": true,
+      "row_scope": "post_2021",
+      "title": "Post-2021 full-support reference"
+    },
+    {
+      "experiment_id": "R13-032",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "Pre-2020 performance establishes whether the model fails only during reporting disruption/rebound periods.",
+      "layer": "shock_period",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 32,
+      "r10_required": false,
+      "row_scope": "pre_2020",
+      "title": "Pre-2020 stability reference"
+    },
+    {
+      "experiment_id": "R13-033",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "If common-support-only scoring improves sharply, mixed evidence lineage is a key blocker.",
+      "layer": "support_partition",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 33,
+      "r10_required": true,
+      "row_scope": "common_support",
+      "title": "Common-support only R11-28"
+    },
+    {
+      "experiment_id": "R13-034",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Exact-observed rows test whether model-estimated support is contaminating trajectory claims.",
+      "layer": "support_partition",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 34,
+      "r10_required": true,
+      "row_scope": "exact_observed",
+      "title": "Exact-observed only R11-28"
+    },
+    {
+      "experiment_id": "R13-035",
+      "family": "r12_stock_cone_safe_annual_trajectory_process",
+      "horizons": [
+        3,
+        5
+      ],
+      "hypothesis": "If non-program rows pass while program rows fail, the blocker is monthly/quarterly program observation dynamics.",
+      "layer": "non_program",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art"
+      ],
+      "priority": 35,
+      "r10_required": true,
+      "row_scope": "non_program",
+      "title": "Non-program annual trajectory route"
+    },
+    {
+      "experiment_id": "R13-036",
+      "family": "r12_route_aware_two_head_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Head separation should beat a single family only if evidence routes are genuinely different processes.",
+      "layer": "route_selector",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 36,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Route-aware two-head full replay"
+    },
+    {
+      "experiment_id": "R13-037",
+      "family": "constrained_trajectory_shape_head",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Constrained readout correction should be blocked if it wins by breaking stock or rate semantics.",
+      "layer": "shape_head",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 37,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Constrained trajectory-shape replay"
+    },
+    {
+      "experiment_id": "R13-038",
+      "family": "horizon_adaptive_constrained_shape_head",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Horizon-specific correction policies must be judged against exact horizon-matched R10, not a scalar R10 reference.",
+      "layer": "shape_head",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 38,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Horizon-adaptive constrained shape replay"
+    },
+    {
+      "experiment_id": "R13-039",
+      "family": "trajectory_shape_head",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Unconstrained shape gains are diagnostic only if they expose what constraints are blocking, not if they become a champion.",
+      "layer": "shape_head",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 39,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Unconstrained trajectory-shape placebo"
+    },
+    {
+      "experiment_id": "R13-040",
+      "family": "art_horizon_selector_process",
+      "horizons": [
+        1,
+        2,
+        3
+      ],
+      "hypothesis": "ART process repair should be judged on ART rows first before being allowed to move the whole cascade.",
+      "layer": "art_process",
+      "metrics": [
+        "alive_on_art"
+      ],
+      "priority": 40,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "ART-only horizon selector"
+    },
+    {
+      "experiment_id": "R13-041",
+      "family": "support_era_diagnosis_flow_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "A flow-only repair is allowed only if it improves diagnosis flow without hiding stock consequences.",
+      "layer": "diagnosis_flow",
+      "metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 41,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "Flow-only support-era repair"
+    },
+    {
+      "experiment_id": "R13-042",
+      "family": "stock_flow_reconciliation_process",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "Stock-flow reconciliation should be tested on flow alone and then separately against D/A stock guards.",
+      "layer": "diagnosis_flow",
+      "metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 42,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "Flow-only stock-flow reconciliation"
+    },
+    {
+      "experiment_id": "R13-043",
+      "family": "diagnosed_reporting_bias_process",
+      "horizons": [
+        1,
+        2,
+        3
+      ],
+      "hypothesis": "D-only reporting correction is safer than pushing source residuals into the full transition process.",
+      "layer": "diagnosed_observation",
+      "metrics": [
+        "diagnosed_plhiv"
+      ],
+      "priority": 43,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "Diagnosed-stock only reporting-bias repair"
+    },
+    {
+      "experiment_id": "R13-044",
+      "family": "linkage_lag_kernel",
+      "horizons": [
+        1,
+        2
+      ],
+      "hypothesis": "If ART lag alone fails, the ART gap is not just delayed linkage.",
+      "layer": "linkage_delay",
+      "metrics": [
+        "alive_on_art"
+      ],
+      "priority": 44,
+      "r10_required": true,
+      "row_scope": "program",
+      "title": "ART-only linkage lag repair"
+    },
+    {
+      "experiment_id": "R13-045",
+      "family": "back_half_conditional_rates",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "VL testing should be interpreted as service coverage conditional on ART, not a free count endpoint.",
+      "layer": "back_half_rates",
+      "metrics": [
+        "tested_for_viral_load"
+      ],
+      "priority": 45,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "VL-tested count conditional-rate replay"
+    },
+    {
+      "experiment_id": "R13-046",
+      "family": "back_half_conditional_rates",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "Suppression claims must remain conditional on VL testing evidence until third-95 support is stronger.",
+      "layer": "back_half_rates",
+      "metrics": [
+        "virally_suppressed"
+      ],
+      "priority": 46,
+      "r10_required": false,
+      "row_scope": "all",
+      "title": "Suppression count conditional-rate replay"
+    },
+    {
+      "candidate_family": "r12_program_nowcast_mixed_quarterly_process",
+      "experiment_id": "R13-047",
+      "family": "official_annual_challenge_gate",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "The monthly program branch must not degrade official annual incidence/death/PLHIV validation.",
+      "layer": "annual_official_measurement",
+      "metrics": [
+        "annual_new_infections",
+        "annual_aids_deaths",
+        "estimated_plhiv",
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed"
+      ],
+      "priority": 47,
+      "r10_required": false,
+      "row_scope": "official_annual_q4",
+      "title": "Conserved annual gate on R12 program branch"
+    },
+    {
+      "candidate_family": "multi_horizon_weighted_process",
+      "experiment_id": "R13-048",
+      "family": "official_annual_challenge_gate",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "The annual official-style validation head should be benchmarked against the locked R11-28 reference.",
+      "layer": "annual_official_measurement",
+      "metrics": [
+        "annual_new_infections",
+        "annual_aids_deaths",
+        "estimated_plhiv",
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed"
+      ],
+      "priority": 48,
+      "r10_required": false,
+      "row_scope": "official_annual_q4",
+      "title": "Conserved annual gate on R11-28 reference"
+    },
+    {
+      "experiment_id": "R13-049",
+      "family": "multi_horizon_weighted_process",
+      "horizons": [
+        1
+      ],
+      "hypothesis": "No Phase2 determinant bundle should enter hazards until source-family and time-window falsification pass.",
+      "layer": "phase2_lockbox",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "phase2_status": "locked_until_source_stable",
+      "priority": 49,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Phase2 determinant lockbox diagnostic"
+    },
+    {
+      "experiment_id": "R13-050",
+      "family": "r12_program_nowcast_mixed_quarterly_process",
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "The current publication blocker is removed only when the full cascade beats carry-forward and matched R10 without weakening stock or rate gates.",
+      "layer": "publication_gate",
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 50,
+      "r10_required": true,
+      "row_scope": "all",
+      "title": "Full publication gate sentinel"
+    }
+  ],
+  "start_year": 2010
+}

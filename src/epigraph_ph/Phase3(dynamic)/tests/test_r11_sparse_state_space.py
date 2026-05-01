@@ -28,6 +28,20 @@ from phase3_dynamic.r11_sparse_state_space import (
     project_cascade_stock_row,
     stock_consistency_gate,
 )
+from phase3_dynamic.r13_priority_experiments import _r13_priority_experiment_specs
+
+
+def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
+    specs = _r13_priority_experiment_specs()
+
+    assert len(specs) == 50
+    assert [spec["priority"] for spec in specs] == list(range(1, 51))
+    assert specs[0]["experiment_id"] == "R13-001"
+    assert specs[-1]["experiment_id"] == "R13-050"
+    assert all(spec.get("hypothesis") for spec in specs)
+    assert all(spec.get("metrics") for spec in specs)
+    assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
+    assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
 def test_project_cascade_stock_row_enforces_nonnegative_cascade_cone() -> None:
