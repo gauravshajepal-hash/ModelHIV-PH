@@ -41,6 +41,8 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert all(spec.get("hypothesis") for spec in specs)
     assert all(spec.get("metrics") for spec in specs)
     assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
+    assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
+    assert any(spec["family"] == "r14_program_long_horizon_calibrated_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
@@ -1537,3 +1539,35 @@ def test_r12_10_program_nowcast_branch_is_doh_program_scoped() -> None:
     assert mutation_by_quarter["2023-Q2"]["latent_reporting_intensity"] is not None
     assert mutation_by_quarter["2023-Q4"]["program_row"] is False
     assert mutation_by_quarter["2023-Q4"]["mutated_metrics"] == []
+
+    r14_predictions, r14_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r14_two_factor_program_process",
+    )
+
+    assert r14_predictions
+    assert r14_summary["family"] == "r14_two_factor_program_process"
+    assert r14_summary["two_factor_monthly_state_process"]["status"] == "completed"
+    r14_mutation_by_quarter = {row["quarter"]: row for row in r14_summary["mutation_rows"]}
+    assert r14_mutation_by_quarter["2023-Q2"]["latent_support_reporting_availability"] is not None
+    assert r14_mutation_by_quarter["2023-Q2"]["latent_program_volume_shock"] is not None
+    assert r14_mutation_by_quarter["2023-Q4"]["program_row"] is False
+
+    r14b_predictions, r14b_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r14_program_long_horizon_calibrated_process",
+    )
+
+    assert r14b_predictions
+    assert r14b_summary["family"] == "r14_program_long_horizon_calibrated_process"
+    assert r14b_summary["long_horizon_drift_model"]["reference_family"] == "r14_two_factor_program_process"
+    assert set(r14b_summary["long_horizon_drift_model"]["corrected_metrics"]) == {
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period",
+    }
+    r14b_mutation_by_quarter = {row["quarter"]: row for row in r14b_summary["mutation_rows"]}
+    assert r14b_mutation_by_quarter["2023-Q2"]["program_row"] is True
+    assert r14b_mutation_by_quarter["2023-Q4"]["program_row"] is False

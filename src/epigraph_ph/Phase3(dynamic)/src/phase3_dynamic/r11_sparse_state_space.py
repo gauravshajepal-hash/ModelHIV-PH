@@ -87,6 +87,11 @@ R12_STRATIFIED_OPERATOR_LINEAGES: tuple[dict[str, str], ...] = (
 )
 R12_SUPPORT_ADEQUACY_HORIZONS: tuple[int, ...] = (1, 2)
 R12_SUPPORT_ADEQUACY_MIN_TRAIN_YEARS = 1
+R14_LONG_HORIZON_CALIBRATION_METRICS: tuple[str, ...] = (
+    "diagnosed_plhiv",
+    "alive_on_art",
+    "new_diagnosed_cases_period",
+)
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -4397,6 +4402,891 @@ def _apply_r12_monthly_reporting_state_process(
     return output, state_rows
 
 
+def _fit_r14_program_volume_shock_process(
+    program_rows: list[dict[str, Any]],
+    availability_process: dict[str, Any],
+) -> dict[str, Any]:
+    sorted_rows = [
+        dict(row)
+        for row in sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+        if _finite_float(row.get("new_diagnosed_cases_period")) is not None
+    ]
+    if len(sorted_rows) < 3:
+        return {
+            "status": "not_estimable",
+            "reason": "insufficient_program_flow_rows",
+            "row_count": len(sorted_rows),
+            "latent_shock_by_ordinal": {},
+        }
+    x_rows: list[list[float]] = []
+    y_values: list[float] = []
+    ordinals: list[int] = []
+    quarters: list[str] = []
+    for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+        previous_flow = _finite_float(previous.get("new_diagnosed_cases_period"))
+        current_flow = _finite_float(current.get("new_diagnosed_cases_period"))
+        if previous_flow is None or current_flow is None:
+            continue
+        availability = _r12_latent_reporting_intensity_for_train_row(availability_process, current)
+        x_rows.append([np.log1p(max(float(previous_flow), 0.0)), 1.0, float(availability)])
+        y_values.append(np.log1p(max(float(current_flow), 0.0)))
+        ordinals.append(quarter_ordinal(str(current.get("quarter") or "")))
+        quarters.append(str(current.get("quarter") or ""))
+    if len(y_values) < 2:
+        return {
+            "status": "not_estimable",
+            "reason": "insufficient_program_flow_pairs",
+            "row_count": len(y_values),
+            "latent_shock_by_ordinal": {},
+        }
+    x = np.asarray(x_rows, dtype=np.float64)
+    y = np.asarray(y_values, dtype=np.float64)
+    coefficients, *_ = np.linalg.lstsq(x, y, rcond=None)
+    residuals = y - x @ coefficients
+    if residuals.size < 2:
+        return {
+            "status": "not_estimable",
+            "reason": "insufficient_residuals_for_shock_persistence",
+            "row_count": int(residuals.size),
+            "latent_shock_by_ordinal": {},
+        }
+    previous_residuals = residuals[:-1]
+    current_residuals = residuals[1:]
+    denominator = float(np.sum(previous_residuals ** 2))
+    persistence = (
+        0.0
+        if denominator <= float(np.finfo(np.float64).eps)
+        else float(np.clip(float(np.sum(previous_residuals * current_residuals) / denominator), -1.0, 1.0))
+    )
+    residual_diffs = np.diff(residuals)
+    process_variance = float(np.var(residual_diffs)) if residual_diffs.size else 0.0
+    measurement_variance = float(np.var(residuals - float(np.median(residuals)))) if residuals.size else 0.0
+    variance_denominator = process_variance + measurement_variance
+    update_gain = (
+        0.0
+        if variance_denominator <= float(np.finfo(np.float64).eps)
+        else float(process_variance / variance_denominator)
+    )
+    latent = float(residuals[0])
+    latent_by_ordinal: dict[int, float] = {}
+    latent_rows: list[dict[str, Any]] = []
+    for quarter, ordinal, residual in zip(quarters, ordinals, residuals):
+        prior = persistence * latent
+        latent = float(prior + update_gain * (float(residual) - prior))
+        latent_by_ordinal[int(ordinal)] = latent
+        latent_rows.append(
+            {
+                "quarter": quarter,
+                "observed_program_volume_residual": float(residual),
+                "latent_program_volume_shock": latent,
+            }
+        )
+    return {
+        "status": "completed",
+        "row_count": len(y_values),
+        "first_quarter": quarters[0],
+        "last_quarter": quarters[-1],
+        "last_ordinal": int(ordinals[-1]),
+        "flow_baseline_feature_names": [
+            "previous_log1p_diagnosis_flow",
+            "flow_intercept",
+            "support_reporting_availability",
+        ],
+        "flow_baseline_coefficients": [float(value) for value in coefficients],
+        "shock_persistence": persistence,
+        "process_variance": process_variance,
+        "measurement_variance": measurement_variance,
+        "update_gain": update_gain,
+        "last_latent_program_volume_shock": float(latent),
+        "median_program_volume_shock": float(np.median(residuals)),
+        "latent_shock_by_ordinal": {str(key): float(value) for key, value in sorted(latent_by_ordinal.items())},
+        "latent_rows": latent_rows,
+        "contract": (
+            "R14 program-volume shock is a train-origin latent residual from diagnosis-flow volume after removing "
+            "previous-flow persistence and support/reporting availability. Forecasts use empirical AR(1) persistence; "
+            "holdout diagnosis, ART, or flow targets are never used to update the shock."
+        ),
+    }
+
+
+def _r14_program_volume_shock_for_train_row(shock_process: dict[str, Any], row: dict[str, Any]) -> float:
+    ordinal = quarter_ordinal(str(row.get("quarter") or ""))
+    shock_by_ordinal = dict(shock_process.get("latent_shock_by_ordinal") or {})
+    value = _finite_float(shock_by_ordinal.get(str(ordinal)))
+    if value is not None:
+        return float(value)
+    fallback = _finite_float(shock_process.get("median_program_volume_shock"))
+    return 0.0 if fallback is None else float(fallback)
+
+
+def _predict_r14_program_volume_shock(shock_process: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
+    if str(shock_process.get("status") or "") != "completed":
+        return {
+            "latent_program_volume_shock": 0.0,
+            "prediction_status": "fallback_zero_program_volume_shock",
+        }
+    ordinal = quarter_ordinal(str(row.get("quarter") or ""))
+    last_ordinal = int(shock_process.get("last_ordinal") or ordinal)
+    step = max(int(ordinal - last_ordinal), 0)
+    persistence = float(shock_process.get("shock_persistence") or 0.0)
+    last_shock = float(shock_process.get("last_latent_program_volume_shock") or 0.0)
+    shock = float((persistence ** step) * last_shock)
+    return {
+        "latent_program_volume_shock": shock,
+        "shock_persistence": persistence,
+        "lead_quarters": step,
+        "prediction_status": "train_origin_ar1_program_volume_shock",
+    }
+
+
+def _fit_r14_monthly_program_flow_process(
+    program_rows: list[dict[str, Any]],
+    availability_process: dict[str, Any],
+    shock_process: dict[str, Any],
+) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    x_rows: list[list[float]] = []
+    y_values: list[float] = []
+    for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+        previous_flow = _finite_float(previous.get("new_diagnosed_cases_period"))
+        current_flow = _finite_float(current.get("new_diagnosed_cases_period"))
+        if previous_flow is None or current_flow is None:
+            continue
+        availability = _r12_latent_reporting_intensity_for_train_row(availability_process, current)
+        shock = _r14_program_volume_shock_for_train_row(shock_process, current)
+        x_rows.append([max(float(previous_flow), 0.0), 1.0, availability, shock])
+        y_values.append(max(float(current_flow), 0.0))
+    flow_upper = max(y_values) if y_values else 0.0
+    adjacent_growth_ratios = [
+        float(current_y) / float(row[0])
+        for row, current_y in zip(x_rows, y_values)
+        if float(row[0]) > float(np.finfo(np.float64).eps)
+    ]
+    retention_upper = (
+        1.0
+        if not adjacent_growth_ratios
+        else float(max(1.0, max(adjacent_growth_ratios)))
+    )
+    factor_bound = _latent_reporting_bound(y_values)
+    fit = _fit_bounded_transition_with_latent_intensity(
+        x_rows=x_rows,
+        y_values=y_values,
+        feature_names=(
+            "previous_diagnosis_flow",
+            "flow_innovation",
+            "support_reporting_availability",
+            "program_volume_shock",
+        ),
+        lower=(0.0, 0.0, -factor_bound, -factor_bound),
+        upper=(retention_upper, flow_upper, factor_bound, factor_bound),
+    )
+    if str(fit.get("status") or "") != "completed":
+        return fit
+    coefficients = list(fit.get("coefficients") or [])
+    return {
+        **fit,
+        "flow_retention_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
+        "flow_retention_upper_bound": retention_upper,
+        "flow_retention_bound_source": "max_train_adjacent_program_flow_ratio_with_neutral_growth_floor",
+        "flow_innovation": None if len(coefficients) < 2 else float(coefficients[1]),
+        "availability_coefficient": None if len(coefficients) < 3 else float(coefficients[2]),
+        "program_volume_shock_coefficient": None if len(coefficients) < 4 else float(coefficients[3]),
+        "equation": "F_t = rho_F F_{t-1} + b_F + k_avail a_t + k_vol v_t",
+    }
+
+
+def _fit_r14_monthly_program_diagnosed_transition(
+    program_rows: list[dict[str, Any]],
+    availability_process: dict[str, Any],
+    shock_process: dict[str, Any],
+) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    x_rows: list[list[float]] = []
+    y_values: list[float] = []
+    for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+        previous_diagnosed = _finite_float(previous.get("diagnosed_plhiv"))
+        current_diagnosed = _finite_float(current.get("diagnosed_plhiv"))
+        diagnosis_flow = _finite_float(current.get("new_diagnosed_cases_period"))
+        if previous_diagnosed is None or current_diagnosed is None or diagnosis_flow is None:
+            continue
+        availability = _r12_latent_reporting_intensity_for_train_row(availability_process, current)
+        shock = _r14_program_volume_shock_for_train_row(shock_process, current)
+        x_rows.append([max(float(diagnosis_flow), 0.0), -max(float(previous_diagnosed), 0.0), availability, shock])
+        y_values.append(float(current_diagnosed) - float(previous_diagnosed))
+    factor_bound = _latent_reporting_bound(y_values)
+    fit = _fit_bounded_transition_with_latent_intensity(
+        x_rows=x_rows,
+        y_values=y_values,
+        feature_names=(
+            "diagnosis_flow",
+            "diagnosed_removal_stock",
+            "support_reporting_availability",
+            "program_volume_shock",
+        ),
+        lower=(0.0, 0.0, -factor_bound, -factor_bound),
+        upper=(1.0, 1.0, factor_bound, factor_bound),
+    )
+    if str(fit.get("status") or "") != "completed":
+        return fit
+    coefficients = list(fit.get("coefficients") or [])
+    return {
+        **fit,
+        "diagnosis_flow_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
+        "diagnosed_removal_fraction": None if len(coefficients) < 2 else float(coefficients[1]),
+        "availability_coefficient": None if len(coefficients) < 3 else float(coefficients[2]),
+        "program_volume_shock_coefficient": None if len(coefficients) < 4 else float(coefficients[3]),
+        "equation": "D_t = D_{t-1} + gamma_D F_t - mu_D D_{t-1} + k_avail a_t + k_vol v_t",
+    }
+
+
+def _fit_r14_monthly_program_art_transition(
+    program_rows: list[dict[str, Any]],
+    availability_process: dict[str, Any],
+    shock_process: dict[str, Any],
+) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    by_ordinal = _train_row_by_ordinal(sorted_rows)
+    lag_rows: list[dict[str, Any]] = []
+    best: dict[str, Any] | None = None
+    for lag in TRANSITION_PROCESS_ART_LAGS:
+        x_rows: list[list[float]] = []
+        y_values: list[float] = []
+        for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
+            current_ord = quarter_ordinal(str(current.get("quarter") or ""))
+            if current_ord <= quarter_ordinal(str(previous.get("quarter") or "")):
+                continue
+            lag_row = current if int(lag) == 0 else by_ordinal.get(current_ord - int(lag))
+            previous_art = _finite_float(previous.get("alive_on_art"))
+            current_art = _finite_float(current.get("alive_on_art"))
+            previous_diagnosed = _finite_float(previous.get("diagnosed_plhiv"))
+            lagged_flow = _finite_float((lag_row or {}).get("new_diagnosed_cases_period"))
+            if previous_art is None or current_art is None or previous_diagnosed is None or lagged_flow is None:
+                continue
+            diagnosed_art_gap = max(float(previous_diagnosed) - float(previous_art), 0.0)
+            availability = _r12_latent_reporting_intensity_for_train_row(availability_process, current)
+            shock = _r14_program_volume_shock_for_train_row(shock_process, current)
+            x_rows.append(
+                [
+                    max(float(lagged_flow), 0.0),
+                    diagnosed_art_gap,
+                    -max(float(previous_art), 0.0),
+                    availability,
+                    shock,
+                ]
+            )
+            y_values.append(float(current_art) - float(previous_art))
+        factor_bound = _latent_reporting_bound(y_values)
+        fit = _fit_bounded_transition_with_latent_intensity(
+            x_rows=x_rows,
+            y_values=y_values,
+            feature_names=(
+                "lagged_diagnosis_flow",
+                "diagnosed_not_art_gap",
+                "art_removal_stock",
+                "support_reporting_availability",
+                "program_volume_shock",
+            ),
+            lower=(0.0, 0.0, 0.0, -factor_bound, -factor_bound),
+            upper=(1.0, 1.0, 1.0, factor_bound, factor_bound),
+        )
+        row = {
+            "lag_quarters": int(lag),
+            "status": str(fit.get("status") or "not_estimable"),
+            "row_count": int(fit.get("row_count") or 0),
+            "reporting_adjusted_sse": _finite_float(fit.get("reporting_adjusted_sse")),
+            "coefficients": list(fit.get("coefficients") or []),
+        }
+        lag_rows.append(row)
+        if row["status"] == "completed" and row["reporting_adjusted_sse"] is not None:
+            if best is None or float(row["reporting_adjusted_sse"]) < float(best.get("reporting_adjusted_sse") or float("inf")):
+                best = {**fit, "selected_lag_quarters": int(lag), "lag_rows": lag_rows}
+    if best is None:
+        return {
+            "status": "not_estimable",
+            "reason": "no_r14_monthly_program_art_pairs",
+            "candidate_lags": list(TRANSITION_PROCESS_ART_LAGS),
+            "lag_rows": lag_rows,
+        }
+    coefficients = list(best.get("coefficients") or [])
+    return {
+        **best,
+        "lag_rows": lag_rows,
+        "diagnosis_linkage_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
+        "diagnosed_gap_linkage_coefficient": None if len(coefficients) < 2 else float(coefficients[1]),
+        "art_removal_fraction": None if len(coefficients) < 3 else float(coefficients[2]),
+        "availability_coefficient": None if len(coefficients) < 4 else float(coefficients[3]),
+        "program_volume_shock_coefficient": None if len(coefficients) < 5 else float(coefficients[4]),
+        "equation": "A_t = A_{t-1} + gamma_A F_{t-lag} + eta_A max(D_{t-1}-A_{t-1},0) - mu_A A_{t-1} + k_avail a_t + k_vol v_t",
+    }
+
+
+def _fit_r14_two_factor_monthly_state_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    program_rows = _r12_program_rows(train_rows)
+    availability_process = _fit_r12_latent_reporting_intensity_process(program_rows)
+    shock_process = _fit_r14_program_volume_shock_process(program_rows, availability_process)
+    flow_model = _fit_r14_monthly_program_flow_process(program_rows, availability_process, shock_process)
+    diagnosed_model = _fit_r14_monthly_program_diagnosed_transition(program_rows, availability_process, shock_process)
+    art_model = _fit_r14_monthly_program_art_transition(program_rows, availability_process, shock_process)
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    flow_by_ordinal = {
+        quarter_ordinal(str(row.get("quarter") or "")): float(value)
+        for row in sorted_rows
+        for value in [_finite_float(row.get("new_diagnosed_cases_period"))]
+        if value is not None
+    }
+    return {
+        "status": "completed"
+        if str(availability_process.get("status") or "") == "completed"
+        and str(shock_process.get("status") or "") == "completed"
+        and str(flow_model.get("status") or "") == "completed"
+        and str(diagnosed_model.get("status") or "") == "completed"
+        and str(art_model.get("status") or "") == "completed"
+        else "not_estimable",
+        "program_train_row_count": len(program_rows),
+        "support_reporting_availability_process": availability_process,
+        "program_volume_shock_process": shock_process,
+        "flow_reporting_process": flow_model,
+        "diagnosed_stock_transition": diagnosed_model,
+        "art_stock_transition": art_model,
+        "last_quarter": "" if not sorted_rows else str(sorted_rows[-1].get("quarter") or ""),
+        "last_state": {
+            "diagnosed_plhiv": _last_metric_value(program_rows, "diagnosed_plhiv"),
+            "alive_on_art": _last_metric_value(program_rows, "alive_on_art"),
+            "new_diagnosed_cases_period": _last_metric_value(program_rows, "new_diagnosed_cases_period"),
+        },
+        "observed_diagnosis_flow_by_ordinal": {str(key): value for key, value in sorted(flow_by_ordinal.items())},
+        "contract": (
+            "R14 two-factor monthly state process separates support/reporting availability a_t from true program-volume "
+            "shock v_t. Availability is inferred from support metadata; volume shock is a train-window diagnosis-flow "
+            "residual forecast forward by empirical persistence. Both enter D/A/F transitions as bounded covariates."
+        ),
+    }
+
+
+def _apply_r14_two_factor_monthly_state_process(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    process: dict[str, Any],
+    back_half_process: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if str(process.get("status") or "") != "completed":
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    flow_model = dict(process.get("flow_reporting_process") or {})
+    diagnosed_model = dict(process.get("diagnosed_stock_transition") or {})
+    art_model = dict(process.get("art_stock_transition") or {})
+    availability_process = dict(process.get("support_reporting_availability_process") or {})
+    shock_process = dict(process.get("program_volume_shock_process") or {})
+    last_state = dict(process.get("last_state") or {})
+    current_flow = _finite_float(last_state.get("new_diagnosed_cases_period"))
+    current_diagnosed = _finite_float(last_state.get("diagnosed_plhiv"))
+    current_art = _finite_float(last_state.get("alive_on_art"))
+    if current_flow is None or current_diagnosed is None or current_art is None:
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    flow_by_ordinal = {
+        int(key): float(value)
+        for key, value in dict(process.get("observed_diagnosis_flow_by_ordinal") or {}).items()
+        if _finite_float(value) is not None
+    }
+    base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+    output: list[dict[str, Any]] = []
+    state_rows: list[dict[str, Any]] = []
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        base_prediction = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        availability_prediction = _predict_r12_latent_reporting_intensity(availability_process, holdout_row)
+        shock_prediction = _predict_r14_program_volume_shock(shock_process, holdout_row)
+        availability = float(availability_prediction.get("latent_reporting_intensity") or 0.0)
+        shock = float(shock_prediction.get("latent_program_volume_shock") or 0.0)
+        rho_f = _finite_float(flow_model.get("flow_retention_coefficient"))
+        innovation_f = _finite_float(flow_model.get("flow_innovation"))
+        flow_availability = _finite_float(flow_model.get("availability_coefficient"))
+        flow_shock = _finite_float(flow_model.get("program_volume_shock_coefficient"))
+        if rho_f is not None and innovation_f is not None:
+            next_flow = max(
+                float(rho_f) * max(float(current_flow), 0.0)
+                + float(innovation_f)
+                + (0.0 if flow_availability is None else float(flow_availability) * availability)
+                + (0.0 if flow_shock is None else float(flow_shock) * shock),
+                0.0,
+            )
+        else:
+            next_flow = _finite_float(base_prediction.get("new_diagnosed_cases_period")) or float(current_flow)
+        gamma_d = _finite_float(diagnosed_model.get("diagnosis_flow_coefficient"))
+        mu_d = _finite_float(diagnosed_model.get("diagnosed_removal_fraction"))
+        diagnosed_availability = _finite_float(diagnosed_model.get("availability_coefficient"))
+        diagnosed_shock = _finite_float(diagnosed_model.get("program_volume_shock_coefficient"))
+        if gamma_d is not None and mu_d is not None:
+            next_diagnosed = max(
+                float(current_diagnosed)
+                + float(gamma_d) * max(float(next_flow), 0.0)
+                - float(mu_d) * max(float(current_diagnosed), 0.0)
+                + (0.0 if diagnosed_availability is None else float(diagnosed_availability) * availability)
+                + (0.0 if diagnosed_shock is None else float(diagnosed_shock) * shock),
+                0.0,
+            )
+        else:
+            next_diagnosed = _finite_float(base_prediction.get("diagnosed_plhiv")) or float(current_diagnosed)
+        holdout_ord = quarter_ordinal(quarter)
+        lag = int(art_model.get("selected_lag_quarters") or 0)
+        lagged_flow = float(next_flow) if lag == 0 else flow_by_ordinal.get(holdout_ord - lag, float(current_flow))
+        gamma_a = _finite_float(art_model.get("diagnosis_linkage_coefficient"))
+        eta_a = _finite_float(art_model.get("diagnosed_gap_linkage_coefficient"))
+        mu_a = _finite_float(art_model.get("art_removal_fraction"))
+        art_availability = _finite_float(art_model.get("availability_coefficient"))
+        art_shock = _finite_float(art_model.get("program_volume_shock_coefficient"))
+        if gamma_a is not None and eta_a is not None and mu_a is not None:
+            diagnosed_gap = max(float(current_diagnosed) - float(current_art), 0.0)
+            next_art = max(
+                float(current_art)
+                + float(gamma_a) * max(float(lagged_flow), 0.0)
+                + float(eta_a) * diagnosed_gap
+                - float(mu_a) * max(float(current_art), 0.0)
+                + (0.0 if art_availability is None else float(art_availability) * availability)
+                + (0.0 if art_shock is None else float(art_shock) * shock),
+                0.0,
+            )
+        else:
+            next_art = _finite_float(base_prediction.get("alive_on_art")) or float(current_art)
+        next_art = float(min(max(float(next_art), 0.0), max(float(next_diagnosed), 0.0)))
+        row = dict(base_prediction)
+        mutated_metrics: list[str] = []
+        for metric_name, value in (
+            ("new_diagnosed_cases_period", next_flow),
+            ("diagnosed_plhiv", next_diagnosed),
+            ("alive_on_art", next_art),
+        ):
+            if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                continue
+            row[metric_name] = float(value)
+            mutated_metrics.append(metric_name)
+        row = _apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process)
+        output.append(row)
+        state_rows.append(
+            {
+                "quarter": quarter,
+                "program_row": _r12_is_program_row(holdout_row),
+                "observed_monthly_reporting_intensity": availability_prediction.get("observed_monthly_reporting_intensity"),
+                "latent_support_reporting_availability": availability,
+                "support_reporting_prediction_status": availability_prediction.get("prediction_status"),
+                "latent_program_volume_shock": shock,
+                "program_volume_shock_prediction_status": shock_prediction.get("prediction_status"),
+                "diagnosis_flow_state": float(next_flow),
+                "diagnosed_state": float(next_diagnosed),
+                "art_state": float(next_art),
+                "mutated_metrics": mutated_metrics,
+            }
+        )
+        current_flow = float(next_flow)
+        current_diagnosed = float(next_diagnosed)
+        current_art = float(next_art)
+        flow_by_ordinal[holdout_ord] = float(next_flow)
+    return output, state_rows
+
+
+def _r14_two_factor_program_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r12_stock_cone_safe_annual_trajectory_process",
+    )
+    program_train_rows = _r12_program_rows(train_rows)
+    program_holdout_rows = _r12_program_rows(holdout_rows)
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    two_factor_process = _fit_r14_two_factor_monthly_state_process(train_rows)
+    output, state_rows = _apply_r14_two_factor_monthly_state_process(
+        train_rows,
+        holdout_rows,
+        base_predictions,
+        two_factor_process,
+        back_half_process,
+    )
+    return output, {
+        "base_family": "r12_stock_cone_safe_annual_trajectory_process",
+        "base_summary": base_summary,
+        "two_factor_monthly_state_process": two_factor_process,
+        "program_selected_family": "r14_two_factor_monthly_state_process",
+        "program_selected_summary": two_factor_process,
+        "program_train_row_count": len(program_train_rows),
+        "program_holdout_row_count": len(program_holdout_rows),
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": state_rows,
+        "contract": (
+            "R14 keeps the R12-09 annual-anchor behavior frozen, then mutates only DOH quarterly/monthly program rows "
+            "using two latent monthly factors: support/reporting availability a_t and true program-volume shock v_t. "
+            "The shock is train-inferred and forecast forward; holdout targets never update it."
+        ),
+    }
+
+
+def _r14_metric_log_slope(train_rows: list[dict[str, Any]], metric_name: str) -> float:
+    points: list[tuple[float, float]] = []
+    for row in sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        value = _finite_float(row.get(metric_name))
+        quarter = str(row.get("quarter") or "")
+        if value is None or not quarter:
+            continue
+        points.append((float(quarter_ordinal(quarter)) / 4.0, float(np.log1p(max(float(value), 0.0)))))
+    if len(points) < 2:
+        return 0.0
+    x = np.asarray([point[0] for point in points], dtype=np.float64)
+    y = np.asarray([point[1] for point in points], dtype=np.float64)
+    centered_x = x - float(np.mean(x))
+    denom = float(np.dot(centered_x, centered_x))
+    if denom <= float(np.finfo(np.float64).eps):
+        return 0.0
+    return float(np.dot(centered_x, y - float(np.mean(y))) / denom)
+
+
+def _r14_program_stock_gap_ratio(train_rows: list[dict[str, Any]]) -> float:
+    diagnosed = _last_metric_value(train_rows, "diagnosed_plhiv")
+    art = _last_metric_value(train_rows, "alive_on_art")
+    if diagnosed is None or art is None or float(diagnosed) <= 0.0:
+        return 0.0
+    return float(max(float(diagnosed) - float(art), 0.0) / max(float(diagnosed), float(np.finfo(np.float64).eps)))
+
+
+def _r14_long_horizon_feature_vector(
+    train_rows: list[dict[str, Any]],
+    holdout_row: dict[str, Any],
+    *,
+    metric_name: str,
+    train_end_year: int,
+    process: dict[str, Any],
+) -> np.ndarray:
+    quarter = str(holdout_row.get("quarter") or "")
+    lead_years = max(quarter_year(quarter) - int(train_end_year), 1)
+    availability_process = dict(process.get("support_reporting_availability_process") or {})
+    shock_process = dict(process.get("program_volume_shock_process") or {})
+    availability_prediction = _predict_r12_latent_reporting_intensity(availability_process, holdout_row)
+    shock_prediction = _predict_r14_program_volume_shock(shock_process, holdout_row)
+    availability = _finite_float(availability_prediction.get("latent_reporting_intensity"))
+    shock = _finite_float(shock_prediction.get("latent_program_volume_shock"))
+    return np.asarray(
+        [
+            1.0,
+            float(lead_years),
+            _r14_metric_log_slope(train_rows, metric_name),
+            _r14_metric_log_slope(train_rows, "new_diagnosed_cases_period"),
+            _r14_program_stock_gap_ratio(train_rows),
+            0.0 if availability is None else float(availability),
+            0.0 if shock is None else float(shock),
+        ],
+        dtype=np.float64,
+    )
+
+
+def _r14_fit_linear_residual_coefficients(records: list[dict[str, Any]]) -> list[float]:
+    if not records:
+        return []
+    x = np.vstack([np.asarray(record["feature_vector"], dtype=np.float64) for record in records])
+    y = np.asarray([float(record["log_residual"]) for record in records], dtype=np.float64)
+    coefficients, *_unused = np.linalg.lstsq(x, y, rcond=None)
+    return [float(value) for value in coefficients.tolist()]
+
+
+def _r14_predict_linear_residual(coefficients: list[float], features: np.ndarray) -> float:
+    if not coefficients:
+        return 0.0
+    coeff = np.asarray(coefficients, dtype=np.float64)
+    width = min(int(coeff.shape[0]), int(features.shape[0]))
+    if width <= 0:
+        return 0.0
+    return float(np.dot(coeff[:width], features[:width]))
+
+
+def _r14_clamp_residual_to_support(value: float, records: list[dict[str, Any]]) -> float:
+    residuals = [float(record["log_residual"]) for record in records if _finite_float(record.get("log_residual")) is not None]
+    if not residuals:
+        return float(value)
+    return float(min(max(float(value), min(residuals)), max(residuals)))
+
+
+def _fit_r14_program_long_horizon_drift_model(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    program_rows = _r12_program_rows(train_rows)
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in program_rows if row.get("quarter")})
+    records_by_metric: dict[str, list[dict[str, Any]]] = {metric_name: [] for metric_name in R14_LONG_HORIZON_CALIBRATION_METRICS}
+    prediction_records_by_metric: dict[str, list[dict[str, Any]]] = {
+        metric_name: [] for metric_name in R14_LONG_HORIZON_CALIBRATION_METRICS
+    }
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in program_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in program_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions, _base_summary = _r14_two_factor_program_predictions(internal_train, internal_holdout)
+        carry_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        process = _fit_r14_two_factor_monthly_state_process(internal_train)
+        base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        origin_records: list[dict[str, Any]] = []
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            lead_years = max(quarter_year(quarter) - int(train_end_year), 1)
+            for metric_name in R14_LONG_HORIZON_CALIBRATION_METRICS:
+                if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                    continue
+                predicted = _finite_float(base_by_quarter.get(quarter, {}).get(metric_name))
+                carry = _finite_float(carry_by_quarter.get(quarter, {}).get(metric_name))
+                target = _finite_float(holdout_row.get(metric_name))
+                if predicted is None or carry is None or target is None:
+                    continue
+                record = {
+                    "origin_year": int(train_end_year),
+                    "quarter": quarter,
+                    "lead_years": int(lead_years),
+                    "metric_name": metric_name,
+                    "base_prediction": float(max(predicted, 0.0)),
+                    "carry_forward_prediction": float(max(carry, 0.0)),
+                    "target_value": float(max(target, 0.0)),
+                    "scale": float(_metric_scale(internal_train, metric_name)),
+                    "log_residual": float(np.log1p(max(float(target), 0.0)) - np.log1p(max(float(predicted), 0.0))),
+                    "feature_vector": _r14_long_horizon_feature_vector(
+                        internal_train,
+                        holdout_row,
+                        metric_name=metric_name,
+                        train_end_year=int(train_end_year),
+                        process=process,
+                    ),
+                }
+                records_by_metric[metric_name].append(record)
+                origin_records.append(record)
+        for record in origin_records:
+            metric_name = str(record.get("metric_name") or "")
+            leave_origin_pool = [
+                other
+                for other in records_by_metric.get(metric_name, [])
+                if int(other.get("origin_year") or 0) != int(record.get("origin_year") or 0)
+            ]
+            if not leave_origin_pool:
+                continue
+            coefficients = _r14_fit_linear_residual_coefficients(leave_origin_pool)
+            residual = _r14_clamp_residual_to_support(
+                _r14_predict_linear_residual(coefficients, np.asarray(record["feature_vector"], dtype=np.float64)),
+                leave_origin_pool,
+            )
+            selected_prediction = float(np.expm1(np.log1p(max(float(record["base_prediction"]), 0.0)) + residual))
+            prediction_records_by_metric[metric_name].append(
+                {
+                    **{key: record[key] for key in ("origin_year", "quarter", "lead_years", "metric_name", "base_prediction", "carry_forward_prediction", "target_value", "scale")},
+                    "selected_prediction": float(max(selected_prediction, 0.0)),
+                    "predicted_log_residual": float(residual),
+                }
+            )
+    coefficients_by_metric: dict[str, list[float]] = {
+        metric_name: _r14_fit_linear_residual_coefficients(records)
+        for metric_name, records in records_by_metric.items()
+        if records
+    }
+    residual_support_by_metric: dict[str, dict[str, float]] = {
+        metric_name: {
+            "min_log_residual": float(min(float(record["log_residual"]) for record in records)),
+            "max_log_residual": float(max(float(record["log_residual"]) for record in records)),
+        }
+        for metric_name, records in records_by_metric.items()
+        if records
+    }
+    selector_rows: list[dict[str, Any]] = []
+    selected_alpha_by_metric: dict[str, float] = {}
+    for metric_name, prediction_records in prediction_records_by_metric.items():
+        if not prediction_records:
+            selector_rows.append(
+                {
+                    "metric_name": metric_name,
+                    "status": "not_estimable",
+                    "record_count": 0,
+                    "selected_alpha": 0.0,
+                }
+            )
+            selected_alpha_by_metric[metric_name] = 0.0
+            continue
+        base_errors = [
+            abs(float(record["base_prediction"]) - float(record["target_value"]))
+            / max(float(record["scale"]), float(np.finfo(np.float32).eps))
+            for record in prediction_records
+        ]
+        carry_errors = [
+            abs(float(record["carry_forward_prediction"]) - float(record["target_value"]))
+            / max(float(record["scale"]), float(np.finfo(np.float32).eps))
+            for record in prediction_records
+        ]
+        base_mean = float(np.mean(np.asarray(base_errors, dtype=np.float64)))
+        base_worst = float(np.max(np.asarray(base_errors, dtype=np.float64)))
+        carry_mean = float(np.mean(np.asarray(carry_errors, dtype=np.float64)))
+        carry_worst = float(np.max(np.asarray(carry_errors, dtype=np.float64)))
+        alpha_rows: list[dict[str, Any]] = []
+        best_row: dict[str, Any] | None = None
+        for alpha in _r12_alpha_candidates(prediction_records):
+            corrected_errors = [
+                _r12_convex_error(
+                    float(record["base_prediction"]),
+                    float(record["selected_prediction"]),
+                    float(alpha),
+                    float(record["target_value"]),
+                    float(record["scale"]),
+                )
+                for record in prediction_records
+            ]
+            corrected_mean = float(np.mean(np.asarray(corrected_errors, dtype=np.float64)))
+            corrected_worst = float(np.max(np.asarray(corrected_errors, dtype=np.float64)))
+            eligible = (
+                corrected_mean < base_mean
+                and corrected_worst <= base_worst + FLOAT_NONREGRESSION_TOLERANCE
+                and corrected_mean <= carry_mean + FLOAT_NONREGRESSION_TOLERANCE
+                and corrected_worst <= carry_worst + FLOAT_NONREGRESSION_TOLERANCE
+            )
+            row = {
+                "alpha": float(alpha),
+                "corrected_mean_norm_error": corrected_mean,
+                "corrected_worst_norm_error": corrected_worst,
+                "eligible": eligible,
+            }
+            alpha_rows.append(row)
+            if eligible and (best_row is None or corrected_mean < float(best_row["corrected_mean_norm_error"])):
+                best_row = row
+        selected_alpha = 0.0 if best_row is None else float(best_row["alpha"])
+        selected_alpha_by_metric[metric_name] = selected_alpha
+        selector_rows.append(
+            {
+                "metric_name": metric_name,
+                "status": "completed" if best_row is not None else "failed_closed",
+                "record_count": len(prediction_records),
+                "base_mean_norm_error": base_mean,
+                "base_worst_norm_error": base_worst,
+                "carry_forward_mean_norm_error": carry_mean,
+                "carry_forward_worst_norm_error": carry_worst,
+                "selected_alpha": selected_alpha,
+                "selected_row": best_row,
+                "alpha_rows": alpha_rows,
+            }
+        )
+    return {
+        "status": "completed" if any(float(value) > 0.0 for value in selected_alpha_by_metric.values()) else "failed_closed",
+        "reference_family": "r14_two_factor_program_process",
+        "program_train_row_count": len(program_rows),
+        "max_horizon_years": int(max_horizon_years),
+        "corrected_metrics": list(R14_LONG_HORIZON_CALIBRATION_METRICS),
+        "feature_names": [
+            "intercept",
+            "lead_years",
+            "metric_log_slope_per_year",
+            "diagnosis_flow_log_slope_per_year",
+            "program_stock_gap_ratio",
+            "latent_support_reporting_availability",
+            "latent_program_volume_shock",
+        ],
+        "coefficients_by_metric": coefficients_by_metric,
+        "residual_support_by_metric": residual_support_by_metric,
+        "selected_alpha_by_metric": selected_alpha_by_metric,
+        "selector_rows": selector_rows,
+        "record_count": sum(len(records) for records in records_by_metric.values()),
+        "leave_origin_prediction_record_count": sum(len(records) for records in prediction_records_by_metric.values()),
+        "contract": (
+            "R14B fits a train-origin residual response for program diagnosis-flow, diagnosed-stock, and ART "
+            "long-horizon drift using only origin-available features: lead time, train-window metric/flow trends, "
+            "D/A stock gap, and forecast support/reporting and program-volume latent states. Each metric uses exact "
+            "convex shrinkage back to uncorrected R14 and fails closed unless leave-origin evidence improves mean "
+            "error without worsening worst-case error versus R14 or carry-forward."
+        ),
+    }
+
+
+def _r14_program_long_horizon_calibrated_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r14_two_factor_program_predictions(train_rows, holdout_rows)
+    train_years = [quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")]
+    train_end_year = max(train_years) if train_years else 0
+    model = _fit_r14_program_long_horizon_drift_model(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    process = dict(base_summary.get("two_factor_monthly_state_process") or _fit_r14_two_factor_monthly_state_process(train_rows))
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    coefficients_by_metric = {
+        metric_name: [float(value) for value in list(values or [])]
+        for metric_name, values in dict(model.get("coefficients_by_metric") or {}).items()
+    }
+    alpha_by_metric = {
+        metric_name: float(value)
+        for metric_name, value in dict(model.get("selected_alpha_by_metric") or {}).items()
+        if _finite_float(value) is not None
+    }
+    residual_support_by_metric = {
+        metric_name: dict(value or {})
+        for metric_name, value in dict(model.get("residual_support_by_metric") or {}).items()
+    }
+    output: list[dict[str, Any]] = []
+    mutation_rows: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(base_prediction)
+        quarter = str(holdout_row.get("quarter") or row.get("quarter") or "")
+        mutated_metrics: list[str] = []
+        for metric_name in R14_LONG_HORIZON_CALIBRATION_METRICS:
+            alpha = float(alpha_by_metric.get(metric_name, 0.0))
+            base_value = _finite_float(row.get(metric_name))
+            if alpha <= 0.0 or base_value is None:
+                continue
+            if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                continue
+            features = _r14_long_horizon_feature_vector(
+                train_rows,
+                holdout_row,
+                metric_name=metric_name,
+                train_end_year=int(train_end_year),
+                process=process,
+            )
+            residual = _r14_predict_linear_residual(coefficients_by_metric.get(metric_name, []), features)
+            support = residual_support_by_metric.get(metric_name, {})
+            min_residual = _finite_float(support.get("min_log_residual"))
+            max_residual = _finite_float(support.get("max_log_residual"))
+            if min_residual is not None and max_residual is not None:
+                residual = float(min(max(float(residual), float(min_residual)), float(max_residual)))
+            corrected_value = float(np.expm1(np.log1p(max(float(base_value), 0.0)) + residual))
+            row[metric_name] = float(
+                max((1.0 - alpha) * float(base_value) + alpha * max(float(corrected_value), 0.0), 0.0)
+            )
+            mutated_metrics.append(metric_name)
+        row = _project_prediction_row(row)
+        row = _apply_back_half_rate_process(row, holdout_row, back_half_process)
+        output.append(row)
+        mutation_rows.append(
+            {
+                "quarter": quarter,
+                "program_row": _r12_is_program_row(holdout_row),
+                "mutated_metrics": mutated_metrics,
+                "selected_alpha_by_metric": dict(alpha_by_metric),
+            }
+        )
+    return output, {
+        "base_family": "r14_two_factor_program_process",
+        "base_summary": base_summary,
+        "long_horizon_drift_model": model,
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R14B starts from the two-factor monthly R14 process and adds only a stock-cone-safe, train-origin "
+            "long-horizon diagnosis-flow/D/A drift calibration on DOH program rows. The calibration is shrunk "
+            "exactly toward zero unless leave-origin evidence supports it."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -6184,6 +7074,55 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r14_two_factor_program_process":
+        predictions, summary = _r14_two_factor_program_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R14 targets the same DOH program nowcast and mixed-quarterly D/A trajectory failure as R12-10B, "
+                "but separates support/reporting availability from train-inferred program-volume shock before "
+                "driving diagnosis-flow, diagnosed-stock, and ART-stock transitions."
+            ),
+        }
+
+    if family == "r14_program_long_horizon_calibrated_process":
+        predictions, summary = _r14_program_long_horizon_calibrated_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R14B targets the remaining 3y/5y program D/A trajectory drift after the two-factor monthly state "
+                "model. It keeps R14 as the base process and adds only train-origin residual-response calibration "
+                "for diagnosis-flow, diagnosed_plhiv, and alive_on_art on DOH program rows, with exact convex shrinkage and stock-cone "
+                "projection before the standard gates."
+            ),
+        }
+
+    if family == "r14_two_factor_horizon_selector_process":
+        predictions, selector_summary = _family_selector_predictions(
+            train_rows,
+            holdout_rows,
+            candidate_families=(
+                "r14_program_long_horizon_calibrated_process",
+                "r14_two_factor_program_process",
+                "multi_horizon_weighted_process",
+                "r12_da_process_split_transition",
+                "era_datv_transition_process",
+            ),
+            metrics=R10_COMPARABLE_METRICS,
+        )
+        return predictions, {
+            "family": family,
+            **selector_summary,
+            "contract": (
+                "R14 horizon selector chooses among the long-horizon calibrated R14B process, the raw two-factor "
+                "monthly R14 process, locked R11-28, R12 D/A process split, and era D/A transition process using "
+                "train-origin R10-comparable errors. It is intended to keep the short-horizon R14 gain while "
+                "avoiding unsafe 5y program drift."
+            ),
+        }
+
     if family == "r10_scope_teacher_stock_process":
         base_predictions, base_summary = _candidate_predictions(train_rows, holdout_rows, family="r10_style_readout_teacher")
         transition_predictions, transition_summary = _candidate_predictions(train_rows, holdout_rows, family="era_datv_transition_process")
@@ -7038,6 +7977,27 @@ def _r11_multi_horizon_report(
             "R12-10 freezes the R12-09 annual-anchor route and targets only DOH quarterly/monthly program evidence. "
             "A monthly-native reporting/state process may replace diagnosis flow, diagnosed stock, and ART stock on "
             "program rows only; stock-cone and conditional-rate gates remain mandatory."
+        )
+    elif family == "r14_two_factor_program_process":
+        branch_contract = (
+            "R14 freezes the R12-09 annual-anchor route and targets only DOH quarterly/monthly program evidence. "
+            "It separates support/reporting availability from train-inferred program-volume shock before replacing "
+            "diagnosis flow, diagnosed stock, and ART stock on program rows only; stock-cone and conditional-rate "
+            "gates remain mandatory."
+        )
+    elif family == "r14_program_long_horizon_calibrated_process":
+        branch_contract = (
+            "R14B keeps the R14 two-factor monthly program process as the base and targets only long-horizon "
+            "diagnosis-flow/diagnosed/ART program drift. A train-origin residual-response model may correct "
+            "new_diagnosed_cases_period, diagnosed_plhiv, and alive_on_art on DOH program rows only after exact "
+            "convex shrinkage proves non-regression against R14 and carry-forward; stock-cone and conditional-rate "
+            "gates remain mandatory."
+        )
+    elif family == "r14_two_factor_horizon_selector_process":
+        branch_contract = (
+            "R14 horizon selector preserves the two-factor monthly program process and R14B calibrated process as "
+            "candidates, but allows train-origin horizon evidence to select R14B, R14, R11-28, R12 D/A process "
+            "split, or era D/A transition before the standard stock/rate/R10 gates are applied."
         )
     elif family == "r10_scope_teacher_stock_process":
         branch_contract = "R11-29 constrains R10-style readout shape with D/A stocks from the era transition process"
