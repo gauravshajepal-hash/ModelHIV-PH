@@ -92,6 +92,17 @@ R14_LONG_HORIZON_CALIBRATION_METRICS: tuple[str, ...] = (
     "alive_on_art",
     "new_diagnosed_cases_period",
 )
+R15_VELOCITY_ENVELOPE_POLICIES: tuple[str, ...] = (
+    "identity",
+    "median_positive_velocity",
+    "last_positive_velocity",
+    "upper_median_positive_velocity",
+)
+R16_FLOW_SUPPORT_CADENCE_POLICIES: tuple[str, ...] = (
+    "identity",
+    "seasonal_multiplier",
+    "q4_anchor_seasonal_multiplier",
+)
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -5287,6 +5298,593 @@ def _r14_program_long_horizon_calibrated_predictions(
     }
 
 
+def _r15_positive_annual_velocity_values(train_rows: list[dict[str, Any]], metric_name: str) -> list[float]:
+    metric_rows = _available_metric_rows(train_rows, metric_name)
+    velocities: list[float] = []
+    for previous, current in zip(metric_rows[:-1], metric_rows[1:]):
+        previous_ordinal = quarter_ordinal(str(previous.get("quarter") or ""))
+        current_ordinal = quarter_ordinal(str(current.get("quarter") or ""))
+        years = float(current_ordinal - previous_ordinal) / 4.0
+        if years <= 0.0:
+            continue
+        previous_value = _finite_float(previous.get(metric_name))
+        current_value = _finite_float(current.get(metric_name))
+        if previous_value is None or current_value is None:
+            continue
+        velocity = (float(current_value) - float(previous_value)) / years
+        if velocity > 0.0:
+            velocities.append(float(velocity))
+    return velocities
+
+
+def _r15_velocity_for_policy(train_rows: list[dict[str, Any]], metric_name: str, policy: str) -> float | None:
+    if policy == "identity":
+        return None
+    velocities = _r15_positive_annual_velocity_values(train_rows, metric_name)
+    if not velocities:
+        return None
+    if policy == "median_positive_velocity":
+        return float(np.median(np.asarray(velocities, dtype=np.float64)))
+    if policy == "last_positive_velocity":
+        return float(velocities[-1])
+    if policy == "upper_median_positive_velocity":
+        median_velocity = float(np.median(np.asarray(velocities, dtype=np.float64)))
+        upper_values = [float(value) for value in velocities if float(value) >= median_velocity]
+        return median_velocity if not upper_values else float(np.median(np.asarray(upper_values, dtype=np.float64)))
+    return None
+
+
+def _r15_apply_velocity_policy_to_metric(
+    row: dict[str, Any],
+    holdout_row: dict[str, Any],
+    train_rows: list[dict[str, Any]],
+    *,
+    metric_name: str,
+    policy: str,
+    train_end_ordinal: int,
+) -> dict[str, Any]:
+    output = dict(row)
+    velocity = _r15_velocity_for_policy(train_rows, metric_name, policy)
+    last_value = _last_metric_value(train_rows, metric_name)
+    current_value = _finite_float(output.get(metric_name))
+    if velocity is None or last_value is None or current_value is None:
+        return output
+    lead_years = max(float(quarter_ordinal(str(holdout_row.get("quarter") or "")) - int(train_end_ordinal)) / 4.0, 0.0)
+    envelope_value = float(last_value) + float(velocity) * lead_years
+    output[metric_name] = float(max(float(current_value), envelope_value, 0.0))
+    return output
+
+
+def _r15_velocity_envelope_predictions_for_policies(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    *,
+    policies_by_metric: dict[str, str],
+    base_predictions: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    if base_predictions is None:
+        base_predictions, _summary = _r14_program_long_horizon_calibrated_predictions(train_rows, holdout_rows)
+    train_end_ordinal = max(
+        [quarter_ordinal(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")]
+        or [0]
+    )
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    output: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(base_prediction)
+        train_end_year = max([quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")] or [0])
+        lead_years = max(quarter_year(str(holdout_row.get("quarter") or "")) - int(train_end_year), 1)
+        metric_names = sorted({str(key).split("|lead", 1)[0] for key in policies_by_metric})
+        for metric_name in metric_names:
+            policy = str(
+                policies_by_metric.get(f"{metric_name}|lead{int(lead_years)}")
+                or policies_by_metric.get(metric_name)
+                or "identity"
+            )
+            row = _r15_apply_velocity_policy_to_metric(
+                row,
+                holdout_row,
+                train_rows,
+                metric_name=metric_name,
+                policy=policy,
+                train_end_ordinal=int(train_end_ordinal),
+            )
+        row = _project_prediction_row(row)
+        row = _apply_back_half_rate_process(row, holdout_row, back_half_process)
+        output.append(row)
+    return output
+
+
+def _fit_r15_velocity_envelope_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    selector_rows: list[dict[str, Any]] = []
+    selected_policy_by_metric: dict[str, str] = {}
+    selected_policy_by_metric_lead: dict[str, str] = {}
+    lead_selector_rows: list[dict[str, Any]] = []
+    for metric_name in R14_LONG_HORIZON_CALIBRATION_METRICS:
+        policy_scores: dict[str, list[float]] = {policy: [] for policy in R15_VELOCITY_ENVELOPE_POLICIES}
+        policy_worsts: dict[str, list[float]] = {policy: [] for policy in R15_VELOCITY_ENVELOPE_POLICIES}
+        lead_errors: dict[int, dict[str, list[float]]] = defaultdict(lambda: {policy: [] for policy in R15_VELOCITY_ENVELOPE_POLICIES})
+        for train_end_year in years[1:]:
+            internal_train = [
+                dict(row)
+                for row in train_rows
+                if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+            ]
+            internal_holdout = [
+                dict(row)
+                for row in train_rows
+                if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+            ]
+            if not internal_train or not internal_holdout:
+                continue
+            base_predictions, _base_summary = _r14_program_long_horizon_calibrated_predictions(internal_train, internal_holdout)
+            for policy in R15_VELOCITY_ENVELOPE_POLICIES:
+                predictions = _r15_velocity_envelope_predictions_for_policies(
+                    internal_train,
+                    internal_holdout,
+                    policies_by_metric={metric_name: policy},
+                    base_predictions=base_predictions,
+                )
+                score = _score_predictions(
+                    train_rows=internal_train,
+                    holdout_rows=internal_holdout,
+                    prediction_rows=predictions,
+                    metrics=(metric_name,),
+                )
+                mean_score = _finite_float(score.get("mean_mae"))
+                worst_score = _finite_float(score.get("worst_mae"))
+                if mean_score is not None:
+                    policy_scores[policy].append(float(mean_score))
+                if worst_score is not None:
+                    policy_worsts[policy].append(float(worst_score))
+                predictions_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in predictions}
+                scale = max(_metric_scale(internal_train, metric_name), float(np.finfo(np.float32).eps))
+                for holdout_row in internal_holdout:
+                    quarter = str(holdout_row.get("quarter") or "")
+                    predicted_value = _finite_float(predictions_by_quarter.get(quarter, {}).get(metric_name))
+                    target_value = _finite_float(holdout_row.get(metric_name))
+                    if predicted_value is None or target_value is None:
+                        continue
+                    lead_years = max(quarter_year(quarter) - int(train_end_year), 1)
+                    lead_errors[int(lead_years)][policy].append(abs(float(predicted_value) - float(target_value)) / scale)
+        identity_values = policy_scores.get("identity", [])
+        identity_worsts = policy_worsts.get("identity", [])
+        identity_mean = None if not identity_values else float(np.mean(np.asarray(identity_values, dtype=np.float64)))
+        identity_worst = None if not identity_worsts else float(np.max(np.asarray(identity_worsts, dtype=np.float64)))
+        identity_p90 = None if not identity_values else float(np.quantile(np.asarray(identity_values, dtype=np.float64), 0.9))
+        selected_policy = "identity"
+        selected_mean = identity_mean
+        policy_rows: list[dict[str, Any]] = []
+        for policy in R15_VELOCITY_ENVELOPE_POLICIES:
+            values = policy_scores.get(policy, [])
+            worst_values = policy_worsts.get(policy, [])
+            mean_score = None if not values else float(np.mean(np.asarray(values, dtype=np.float64)))
+            worst_score = None if not worst_values else float(np.max(np.asarray(worst_values, dtype=np.float64)))
+            p90_score = None if not values else float(np.quantile(np.asarray(values, dtype=np.float64), 0.9))
+            risk_nonregression = (
+                True
+                if metric_name == "new_diagnosed_cases_period"
+                else worst_score is not None
+                and identity_worst is not None
+                and worst_score <= identity_worst + FLOAT_NONREGRESSION_TOLERANCE
+            )
+            eligible = (
+                policy != "identity"
+                and mean_score is not None
+                and identity_mean is not None
+                and mean_score < identity_mean
+                and risk_nonregression
+            )
+            policy_rows.append(
+                {
+                    "policy": policy,
+                    "origin_count": len(values),
+                    "mean_norm_error": mean_score,
+                    "worst_norm_error": worst_score,
+                    "p90_norm_error": p90_score,
+                    "eligible": eligible,
+                    "mean_minus_identity": None
+                    if mean_score is None or identity_mean is None
+                    else float(mean_score - identity_mean),
+                    "worst_minus_identity": None
+                    if worst_score is None or identity_worst is None
+                    else float(worst_score - identity_worst),
+                    "p90_minus_identity": None
+                    if p90_score is None or identity_p90 is None
+                    else float(p90_score - identity_p90),
+                }
+            )
+            if eligible and (selected_mean is None or float(mean_score) < float(selected_mean)):
+                selected_policy = policy
+                selected_mean = mean_score
+        selected_policy_by_metric[metric_name] = selected_policy
+        selector_rows.append(
+            {
+                "metric_name": metric_name,
+                "selected_policy": selected_policy,
+                "identity_mean_norm_error": identity_mean,
+                "identity_worst_norm_error": identity_worst,
+                "policy_rows": policy_rows,
+            }
+        )
+        for lead_years, policy_error_map in sorted(lead_errors.items()):
+            identity_lead_errors = policy_error_map.get("identity", [])
+            identity_lead_mean = None if not identity_lead_errors else float(np.mean(np.asarray(identity_lead_errors, dtype=np.float64)))
+            identity_lead_worst = None if not identity_lead_errors else float(np.max(np.asarray(identity_lead_errors, dtype=np.float64)))
+            identity_lead_p90 = None if not identity_lead_errors else float(np.quantile(np.asarray(identity_lead_errors, dtype=np.float64), 0.9))
+            selected_lead_policy = "identity"
+            selected_lead_mean = identity_lead_mean
+            lead_policy_rows: list[dict[str, Any]] = []
+            for policy in R15_VELOCITY_ENVELOPE_POLICIES:
+                values = policy_error_map.get(policy, [])
+                mean_score = None if not values else float(np.mean(np.asarray(values, dtype=np.float64)))
+                worst_score = None if not values else float(np.max(np.asarray(values, dtype=np.float64)))
+                p90_score = None if not values else float(np.quantile(np.asarray(values, dtype=np.float64), 0.9))
+                risk_nonregression = (
+                    True
+                    if metric_name == "new_diagnosed_cases_period"
+                    else worst_score is not None
+                    and identity_lead_worst is not None
+                    and worst_score <= identity_lead_worst + FLOAT_NONREGRESSION_TOLERANCE
+                )
+                eligible = (
+                    policy != "identity"
+                    and mean_score is not None
+                    and identity_lead_mean is not None
+                    and mean_score < identity_lead_mean
+                    and risk_nonregression
+                )
+                lead_policy_rows.append(
+                    {
+                        "policy": policy,
+                        "entry_count": len(values),
+                        "mean_norm_error": mean_score,
+                        "worst_norm_error": worst_score,
+                        "p90_norm_error": p90_score,
+                        "eligible": eligible,
+                    }
+                )
+                if eligible and (selected_lead_mean is None or float(mean_score) < float(selected_lead_mean)):
+                    selected_lead_policy = policy
+                    selected_lead_mean = mean_score
+            if selected_lead_policy != "identity":
+                selected_policy_by_metric_lead[f"{metric_name}|lead{int(lead_years)}"] = selected_lead_policy
+            lead_selector_rows.append(
+                {
+                    "metric_name": metric_name,
+                    "lead_years": int(lead_years),
+                    "selected_policy": selected_lead_policy,
+                    "identity_mean_norm_error": identity_lead_mean,
+                    "identity_worst_norm_error": identity_lead_worst,
+                    "identity_p90_norm_error": identity_lead_p90,
+                    "policy_rows": lead_policy_rows,
+                }
+            )
+    return {
+        "status": "completed" if selector_rows else "not_estimable",
+        "reference_family": "r14_program_long_horizon_calibrated_process",
+        "max_horizon_years": int(max_horizon_years),
+        "candidate_policies": list(R15_VELOCITY_ENVELOPE_POLICIES),
+        "selected_policy_by_metric": selected_policy_by_metric,
+        "selected_policy_by_metric_lead": selected_policy_by_metric_lead,
+        "selector_rows": selector_rows,
+        "lead_selector_rows": lead_selector_rows,
+        "contract": (
+            "R15 selects a metric-specific nondecreasing stock/flow velocity envelope from train-origin evidence. "
+            "A velocity policy is eligible only if it improves mean error over unmodified R14B; stock metrics also "
+            "must not worsen the train-origin worst case. Diagnosis-flow counts are selected by the same mean-loss "
+            "objective used by the matched R10 gate because worst-case/p90 flow errors are dominated by reporting shocks. Velocity values "
+            "are empirical positive annual increments from the train window; policies may be selected globally by metric "
+            "or more narrowly by metric and forecast lead year."
+        ),
+    }
+
+
+def _r15_velocity_envelope_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r14_program_long_horizon_calibrated_predictions(train_rows, holdout_rows)
+    selector = _fit_r15_velocity_envelope_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    policies = {
+        str(metric_name): str(policy)
+        for metric_name, policy in dict(selector.get("selected_policy_by_metric") or {}).items()
+        if str(policy) != "identity"
+    }
+    policies.update(
+        {
+            str(metric_lead): str(policy)
+            for metric_lead, policy in dict(selector.get("selected_policy_by_metric_lead") or {}).items()
+            if str(policy) != "identity"
+        }
+    )
+    predictions = _r15_velocity_envelope_predictions_for_policies(
+        train_rows,
+        holdout_rows,
+        policies_by_metric=policies,
+        base_predictions=base_predictions,
+    )
+    return predictions, {
+        "base_family": "r14_program_long_horizon_calibrated_process",
+        "base_summary": base_summary,
+        "velocity_envelope_selector": selector,
+        "selected_policy_by_metric": dict(selector.get("selected_policy_by_metric") or {}),
+        "contract": (
+            "R15 starts from bounded R14B and applies only train-selected empirical velocity envelopes to "
+            "diagnosis flow, diagnosed stock, and ART stock. This is a structural long-horizon stock-flow floor, "
+            "not a residual target correction."
+        ),
+    }
+
+
+def _r16_quarter_number(quarter: str) -> int:
+    try:
+        return int(str(quarter).split("-Q", 1)[1])
+    except (IndexError, TypeError, ValueError):
+        return 4
+
+
+def _r16_flow_quarter_multipliers(train_rows: list[dict[str, Any]]) -> dict[int, float]:
+    rows_by_year: dict[int, list[tuple[int, float]]] = defaultdict(list)
+    for row in train_rows:
+        quarter = str(row.get("quarter") or "")
+        value = _finite_float(row.get("new_diagnosed_cases_period"))
+        if value is None or "-Q" not in quarter:
+            continue
+        rows_by_year[quarter_year(quarter)].append((_r16_quarter_number(quarter), float(value)))
+    ratios_by_quarter: dict[int, list[float]] = {quarter: [] for quarter in (1, 2, 3, 4)}
+    for rows in rows_by_year.values():
+        if len(rows) < 2:
+            continue
+        year_mean = float(np.mean(np.asarray([value for _quarter, value in rows], dtype=np.float64)))
+        if year_mean <= float(np.finfo(np.float64).eps):
+            continue
+        for quarter, value in rows:
+            ratios_by_quarter[int(quarter)].append(float(value) / year_mean)
+    raw = {
+        quarter: (1.0 if not values else float(np.median(np.asarray(values, dtype=np.float64))))
+        for quarter, values in ratios_by_quarter.items()
+    }
+    denominator = float(np.mean(np.asarray(list(raw.values()), dtype=np.float64)))
+    if denominator <= float(np.finfo(np.float64).eps):
+        return {quarter: 1.0 for quarter in (1, 2, 3, 4)}
+    return {quarter: float(value) / denominator for quarter, value in raw.items()}
+
+
+def _r16_apply_support_cadence_flow_policy(
+    row: dict[str, Any],
+    holdout_row: dict[str, Any],
+    *,
+    multipliers: dict[int, float],
+    policy: str,
+) -> dict[str, Any]:
+    if policy == "identity":
+        return dict(row)
+    value = _finite_float(row.get("new_diagnosed_cases_period"))
+    if value is None:
+        return dict(row)
+    quarter_multiplier = float(multipliers.get(_r16_quarter_number(str(holdout_row.get("quarter") or "")), 1.0))
+    if policy == "seasonal_multiplier":
+        multiplier = quarter_multiplier
+    elif policy == "q4_anchor_seasonal_multiplier":
+        q4_multiplier = float(multipliers.get(4, 1.0))
+        multiplier = 1.0 if abs(q4_multiplier) <= float(np.finfo(np.float64).eps) else quarter_multiplier / q4_multiplier
+    else:
+        multiplier = 1.0
+    output = dict(row)
+    output["new_diagnosed_cases_period"] = float(max(float(value) * multiplier, 0.0))
+    return output
+
+
+def _r16_apply_diagnosed_velocity_cap_policy(
+    row: dict[str, Any],
+    holdout_row: dict[str, Any],
+    train_rows: list[dict[str, Any]],
+    *,
+    policy: str,
+    train_end_ordinal: int,
+    train_end_year: int,
+) -> dict[str, Any]:
+    if policy == "identity":
+        return dict(row)
+    try:
+        start_lead = int(str(policy).replace("cap_from_lead", ""))
+    except ValueError:
+        return dict(row)
+    lead_year = max(quarter_year(str(holdout_row.get("quarter") or "")) - int(train_end_year), 1)
+    if lead_year < start_lead:
+        return dict(row)
+    current_value = _finite_float(row.get("diagnosed_plhiv"))
+    last_value = _last_metric_value(train_rows, "diagnosed_plhiv")
+    velocity = _r15_velocity_for_policy(train_rows, "diagnosed_plhiv", "upper_median_positive_velocity")
+    if current_value is None or last_value is None or velocity is None:
+        return dict(row)
+    lead_years = max(float(quarter_ordinal(str(holdout_row.get("quarter") or "")) - int(train_end_ordinal)) / 4.0, 0.0)
+    cap_value = float(last_value) + float(velocity) * lead_years
+    output = dict(row)
+    output["diagnosed_plhiv"] = float(max(min(float(current_value), cap_value), 0.0))
+    return output
+
+
+def _r16_apply_support_cadence_stock_policy(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    diagnosed_cap_policy: str,
+    flow_policy: str,
+) -> list[dict[str, Any]]:
+    train_end_ordinal = max(
+        [quarter_ordinal(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")]
+        or [0]
+    )
+    train_end_year = max([quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")] or [0])
+    multipliers = _r16_flow_quarter_multipliers(train_rows)
+    output: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = _r16_apply_support_cadence_flow_policy(
+            dict(base_prediction),
+            holdout_row,
+            multipliers=multipliers,
+            policy=flow_policy,
+        )
+        row = _r16_apply_diagnosed_velocity_cap_policy(
+            row,
+            holdout_row,
+            train_rows,
+            policy=diagnosed_cap_policy,
+            train_end_ordinal=int(train_end_ordinal),
+            train_end_year=int(train_end_year),
+        )
+        output.append(_project_prediction_row(row))
+    return output
+
+
+def _fit_r16_support_cadence_stock_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    diagnosed_policies = ("identity",) + tuple(f"cap_from_lead{lead}" for lead in range(1, int(max_horizon_years) + 1))
+    candidate_rows: list[dict[str, Any]] = []
+    score_by_candidate: dict[tuple[str, str], list[float]] = defaultdict(list)
+    stock_by_candidate: dict[tuple[str, str], list[float]] = defaultdict(list)
+    identity_key = ("identity", "identity")
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions, _base_summary = _r15_velocity_envelope_predictions(internal_train, internal_holdout)
+        for diagnosed_policy in diagnosed_policies:
+            for flow_policy in R16_FLOW_SUPPORT_CADENCE_POLICIES:
+                predictions = _r16_apply_support_cadence_stock_policy(
+                    internal_train,
+                    internal_holdout,
+                    base_predictions,
+                    diagnosed_cap_policy=str(diagnosed_policy),
+                    flow_policy=str(flow_policy),
+                )
+                r10_score = _mean_metric_score(
+                    train_rows=internal_train,
+                    holdout_rows=internal_holdout,
+                    prediction_rows=predictions,
+                    metrics=R10_COMPARABLE_METRICS,
+                )
+                stock_score = _mean_metric_score(
+                    train_rows=internal_train,
+                    holdout_rows=internal_holdout,
+                    prediction_rows=predictions,
+                    metrics=PRIMARY_STOCK_GUARD_METRICS,
+                )
+                key = (str(diagnosed_policy), str(flow_policy))
+                if r10_score is not None:
+                    score_by_candidate[key].append(float(r10_score))
+                if stock_score is not None:
+                    stock_by_candidate[key].append(float(stock_score))
+    identity_scores = score_by_candidate.get(identity_key, [])
+    identity_stock_scores = stock_by_candidate.get(identity_key, [])
+    identity_mean = None if not identity_scores else float(np.mean(np.asarray(identity_scores, dtype=np.float64)))
+    identity_stock_mean = None if not identity_stock_scores else float(np.mean(np.asarray(identity_stock_scores, dtype=np.float64)))
+    selected_key = identity_key
+    selected_score = identity_mean
+    for diagnosed_policy in diagnosed_policies:
+        for flow_policy in R16_FLOW_SUPPORT_CADENCE_POLICIES:
+            key = (str(diagnosed_policy), str(flow_policy))
+            scores = score_by_candidate.get(key, [])
+            stock_scores = stock_by_candidate.get(key, [])
+            mean_score = None if not scores else float(np.mean(np.asarray(scores, dtype=np.float64)))
+            stock_mean = None if not stock_scores else float(np.mean(np.asarray(stock_scores, dtype=np.float64)))
+            eligible = (
+                key == identity_key
+                or (
+                    mean_score is not None
+                    and identity_mean is not None
+                    and mean_score < identity_mean
+                    and (
+                        identity_stock_mean is None
+                        or (stock_mean is not None and stock_mean <= identity_stock_mean + FLOAT_NONREGRESSION_TOLERANCE)
+                    )
+                )
+            )
+            candidate_rows.append(
+                {
+                    "diagnosed_cap_policy": str(diagnosed_policy),
+                    "flow_support_cadence_policy": str(flow_policy),
+                    "origin_count": len(scores),
+                    "r10_scope_mean_mae": mean_score,
+                    "primary_stock_mean_mae": stock_mean,
+                    "r10_scope_minus_identity": None
+                    if mean_score is None or identity_mean is None
+                    else float(mean_score - identity_mean),
+                    "primary_stock_minus_identity": None
+                    if stock_mean is None or identity_stock_mean is None
+                    else float(stock_mean - identity_stock_mean),
+                    "eligible": eligible,
+                }
+            )
+            if eligible and mean_score is not None and (selected_score is None or float(mean_score) < float(selected_score)):
+                selected_key = key
+                selected_score = float(mean_score)
+    return {
+        "status": "completed" if candidate_rows else "not_estimable",
+        "reference_family": "r15_velocity_envelope_process",
+        "max_horizon_years": int(max_horizon_years),
+        "selected_diagnosed_cap_policy": selected_key[0],
+        "selected_flow_support_cadence_policy": selected_key[1],
+        "candidate_rows": candidate_rows,
+        "identity_r10_scope_mean_mae": identity_mean,
+        "selected_r10_scope_mean_mae": selected_score,
+        "quarter_flow_multipliers": _r16_flow_quarter_multipliers(train_rows),
+        "contract": (
+            "R16 selects a support-cadence flow correction and diagnosed-stock velocity cap using only internal "
+            "train-origin blocked replays. Flow policies are quarter-of-year reporting multipliers estimated from "
+            "multi-quarter train years. Diagnosed caps use only empirical upper-median positive stock velocity from "
+            "the train window. A candidate is eligible only if it improves R10-comparable internal mean error without "
+            "worsening the primary D/A stock score."
+        ),
+    }
+
+
+def _r16_support_cadence_stock_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r15_velocity_envelope_predictions(train_rows, holdout_rows)
+    selector = _fit_r16_support_cadence_stock_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    predictions = _r16_apply_support_cadence_stock_policy(
+        train_rows,
+        holdout_rows,
+        base_predictions,
+        diagnosed_cap_policy=str(selector.get("selected_diagnosed_cap_policy") or "identity"),
+        flow_policy=str(selector.get("selected_flow_support_cadence_policy") or "identity"),
+    )
+    return predictions, {
+        "base_family": "r15_velocity_envelope_process",
+        "base_summary": base_summary,
+        "support_cadence_stock_selector": selector,
+        "contract": "R16 applies the train-selected support-cadence flow and diagnosed-stock velocity-cap policies on top of R15.",
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -7099,11 +7697,38 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r15_velocity_envelope_process":
+        predictions, summary = _r15_velocity_envelope_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R15 wraps R14B with a train-origin metric-specific velocity envelope. Empirical positive annual "
+                "increments define the candidate stock/flow floors; each policy must improve internal mean error "
+                "before it can affect holdout predictions, with stock metrics additionally guarded by worst-case "
+                "nonregression in the selector."
+            ),
+        }
+
+    if family == "r16_support_cadence_stock_process":
+        predictions, summary = _r16_support_cadence_stock_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R16 wraps R15 with a train-origin support-cadence flow selector and diagnosed-stock velocity cap. "
+                "This targets mixed HARP quarterly support shifts and long-horizon D/A overshoot without using "
+                "holdout target values."
+            ),
+        }
+
     if family == "r14_two_factor_horizon_selector_process":
         predictions, selector_summary = _family_selector_predictions(
             train_rows,
             holdout_rows,
             candidate_families=(
+                "r16_support_cadence_stock_process",
+                "r15_velocity_envelope_process",
                 "r14_program_long_horizon_calibrated_process",
                 "r14_two_factor_program_process",
                 "multi_horizon_weighted_process",
@@ -7116,10 +7741,10 @@ def _candidate_predictions(
             "family": family,
             **selector_summary,
             "contract": (
-                "R14 horizon selector chooses among the long-horizon calibrated R14B process, the raw two-factor "
-                "monthly R14 process, locked R11-28, R12 D/A process split, and era D/A transition process using "
-                "train-origin R10-comparable errors. It is intended to keep the short-horizon R14 gain while "
-                "avoiding unsafe 5y program drift."
+                "R14/R15 horizon selector chooses among the velocity-envelope R15 process, long-horizon calibrated "
+                "R14B process, raw two-factor monthly R14 process, locked R11-28, R12 D/A process split, and era D/A "
+                "transition process using train-origin R10-comparable errors. It is intended to keep the short-horizon "
+                "R14 gain while avoiding unsafe 5y program drift."
             ),
         }
 
@@ -7993,11 +8618,24 @@ def _r11_multi_horizon_report(
             "convex shrinkage proves non-regression against R14 and carry-forward; stock-cone and conditional-rate "
             "gates remain mandatory."
         )
+    elif family == "r15_velocity_envelope_process":
+        branch_contract = (
+            "R15 keeps bounded R14B as the base and adds a train-origin velocity envelope for diagnosis flow, "
+            "diagnosed stock, and ART stock. The envelope is a structural stock-flow floor derived from empirical "
+            "positive annual train-window increments; each metric-specific policy must beat R14B internally, with "
+            "stock metrics still worst-case guarded, before the standard stock/rate/R10 gates are applied."
+        )
+    elif family == "r16_support_cadence_stock_process":
+        branch_contract = (
+            "R16 keeps R15 as the base and adds a train-origin selector over quarter-of-year support-cadence flow "
+            "multipliers and diagnosed-stock velocity caps. It targets mixed HARP support shifts and long-horizon "
+            "D/A overshoot without holdout target updates; stock/rate/R10 gates remain mandatory."
+        )
     elif family == "r14_two_factor_horizon_selector_process":
         branch_contract = (
-            "R14 horizon selector preserves the two-factor monthly program process and R14B calibrated process as "
-            "candidates, but allows train-origin horizon evidence to select R14B, R14, R11-28, R12 D/A process "
-            "split, or era D/A transition before the standard stock/rate/R10 gates are applied."
+            "R14/R15 horizon selector preserves the two-factor monthly program process, R14B calibrated process, "
+            "and R15 velocity envelope as candidates, but allows train-origin horizon evidence to select R15, R14B, "
+            "R14, R11-28, R12 D/A process split, or era D/A transition before the standard stock/rate/R10 gates are applied."
         )
     elif family == "r10_scope_teacher_stock_process":
         branch_contract = "R11-29 constrains R10-style readout shape with D/A stocks from the era transition process"

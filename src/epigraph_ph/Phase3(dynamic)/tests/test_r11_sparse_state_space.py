@@ -42,7 +42,7 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert all(spec.get("metrics") for spec in specs)
     assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
     assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
-    assert any(spec["family"] == "r14_program_long_horizon_calibrated_process" for spec in specs)
+    assert any(spec["family"] == "r16_support_cadence_stock_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
@@ -1571,3 +1571,30 @@ def test_r12_10_program_nowcast_branch_is_doh_program_scoped() -> None:
     r14b_mutation_by_quarter = {row["quarter"]: row for row in r14b_summary["mutation_rows"]}
     assert r14b_mutation_by_quarter["2023-Q2"]["program_row"] is True
     assert r14b_mutation_by_quarter["2023-Q4"]["program_row"] is False
+
+    r15_predictions, r15_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r15_velocity_envelope_process",
+    )
+
+    assert r15_predictions
+    assert r15_summary["family"] == "r15_velocity_envelope_process"
+    assert r15_summary["velocity_envelope_selector"]["reference_family"] == "r14_program_long_horizon_calibrated_process"
+    assert set(r15_summary["selected_policy_by_metric"]) == {
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period",
+    }
+
+    r16_predictions, r16_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r16_support_cadence_stock_process",
+    )
+
+    assert r16_predictions
+    assert r16_summary["family"] == "r16_support_cadence_stock_process"
+    assert r16_summary["support_cadence_stock_selector"]["reference_family"] == "r15_velocity_envelope_process"
+    assert r16_summary["support_cadence_stock_selector"]["selected_diagnosed_cap_policy"]
+    assert r16_summary["support_cadence_stock_selector"]["selected_flow_support_cadence_policy"]
