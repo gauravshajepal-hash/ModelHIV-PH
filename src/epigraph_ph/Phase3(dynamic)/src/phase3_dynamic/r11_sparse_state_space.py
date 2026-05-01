@@ -103,6 +103,16 @@ R16_FLOW_SUPPORT_CADENCE_POLICIES: tuple[str, ...] = (
     "seasonal_multiplier",
     "q4_anchor_seasonal_multiplier",
 )
+R17_R10_TEACHER_METRIC_POLICIES: tuple[tuple[str, ...], ...] = (
+    (),
+    ("alive_on_art",),
+    ("new_diagnosed_cases_period",),
+    ("alive_on_art", "new_diagnosed_cases_period"),
+)
+R17_LONG_HORIZON_TEACHER_METRIC_POLICIES: tuple[tuple[str, ...], ...] = (
+    (),
+    ("alive_on_art",),
+)
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -5885,6 +5895,386 @@ def _r16_support_cadence_stock_predictions(
     }
 
 
+def _r17_frozen_r10_teacher_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    horizon = _holdout_max_horizon_years(train_rows, holdout_rows)
+    paths = _r10_horizon_replay_paths(default_epigraph_root(), (int(horizon),))
+    path = paths.get(int(horizon))
+    if path is None or not Path(path).exists():
+        return {
+            "status": "not_available",
+            "reason": "missing_horizon_matched_r10_replay_artifact",
+            "horizon_years": int(horizon),
+            "prediction_by_quarter": {},
+        }
+    payload = read_json(path, default={})
+    reference = _select_horizon_matched_r10_reference(payload if isinstance(payload, dict) else {})
+    reference_experiment_id = str(reference.get("reference_experiment_id") or "")
+    if not reference_experiment_id:
+        return {
+            "status": "not_available",
+            "reason": "missing_reference_experiment_id",
+            "horizon_years": int(horizon),
+            "artifact_path": Path(path).as_posix(),
+            "prediction_by_quarter": {},
+        }
+    train_end_year = max([quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")] or [0])
+    for result in list((payload or {}).get("results") or []):
+        if not isinstance(result, dict) or str(result.get("experiment_id") or "") != reference_experiment_id:
+            continue
+        for split_row in list(result.get("quarterly_rows") or []):
+            if int(split_row.get("train_end_year") or -1) != int(train_end_year):
+                continue
+            prediction_by_quarter = {
+                str(row.get("quarter") or ""): dict(row)
+                for row in list(split_row.get("candidate_prediction_rows") or [])
+                if isinstance(row, dict) and row.get("quarter")
+            }
+            return {
+                "status": "completed" if prediction_by_quarter else "not_available",
+                "reason": "" if prediction_by_quarter else "empty_candidate_prediction_rows",
+                "horizon_years": int(horizon),
+                "train_end_year": int(train_end_year),
+                "artifact_path": Path(path).as_posix(),
+                "artifact_sha256": _sha256(Path(path)),
+                "reference_experiment_id": reference_experiment_id,
+                "reference_family": str(reference.get("family") or ""),
+                "reference_quarterly_mean_mae": reference.get("reference_quarterly_mean_mae"),
+                "prediction_by_quarter": prediction_by_quarter,
+            }
+    return {
+        "status": "not_available",
+        "reason": "missing_matching_train_end_year_in_r10_replay",
+        "horizon_years": int(horizon),
+        "train_end_year": int(train_end_year),
+        "artifact_path": Path(path).as_posix(),
+        "reference_experiment_id": reference_experiment_id,
+        "prediction_by_quarter": {},
+    }
+
+
+def _r17_apply_teacher_metric_policy(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    teacher: dict[str, Any],
+    teacher_metrics: tuple[str, ...],
+    teacher_metrics_by_lead: dict[int, tuple[str, ...]] | None = None,
+) -> list[dict[str, Any]]:
+    lead_policy = dict(teacher_metrics_by_lead or {})
+    if not teacher_metrics and not lead_policy or str(teacher.get("status") or "") != "completed":
+        return [_project_prediction_row(dict(row)) for row in base_predictions]
+    prediction_by_quarter = {
+        str(quarter): dict(row)
+        for quarter, row in dict(teacher.get("prediction_by_quarter") or {}).items()
+        if isinstance(row, dict)
+    }
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    train_end_year = max([quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")] or [0])
+    output: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        quarter = str(holdout_row.get("quarter") or base_prediction.get("quarter") or "")
+        row = dict(base_prediction)
+        teacher_row = prediction_by_quarter.get(quarter, {})
+        lead_year = max(quarter_year(quarter) - int(train_end_year), 1)
+        active_metrics = tuple(lead_policy.get(int(lead_year), teacher_metrics))
+        for metric_name in active_metrics:
+            if metric_name not in {"alive_on_art", "new_diagnosed_cases_period"}:
+                continue
+            value = _finite_float(teacher_row.get(metric_name))
+            if value is not None:
+                row[metric_name] = float(max(float(value), 0.0))
+        row = _project_prediction_row(row)
+        row = _apply_back_half_rate_process(row, holdout_row, back_half_process)
+        output.append(row)
+    return output
+
+
+def _fit_r17_art_flow_teacher_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    candidate_policies = (
+        R17_R10_TEACHER_METRIC_POLICIES
+        if int(max_horizon_years) <= 1
+        else R17_LONG_HORIZON_TEACHER_METRIC_POLICIES
+    )
+    score_by_policy: dict[tuple[str, ...], list[float]] = defaultdict(list)
+    stock_by_policy: dict[tuple[str, ...], list[float]] = defaultdict(list)
+    score_by_lead_policy: dict[int, dict[tuple[str, ...], list[float]]] = defaultdict(lambda: defaultdict(list))
+    stock_by_lead_policy: dict[int, dict[tuple[str, ...], list[float]]] = defaultdict(lambda: defaultdict(list))
+    candidate_rows: list[dict[str, Any]] = []
+    lead_candidate_rows: list[dict[str, Any]] = []
+    identity_policy: tuple[str, ...] = ()
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions, _base_summary = _r16_support_cadence_stock_predictions(internal_train, internal_holdout)
+        teacher = _r17_frozen_r10_teacher_predictions(internal_train, internal_holdout)
+        for policy in candidate_policies:
+            predictions = _r17_apply_teacher_metric_policy(
+                internal_train,
+                internal_holdout,
+                base_predictions,
+                teacher=teacher,
+                teacher_metrics=tuple(policy),
+            )
+            r10_score = _mean_metric_score(
+                train_rows=internal_train,
+                holdout_rows=internal_holdout,
+                prediction_rows=predictions,
+                metrics=R10_COMPARABLE_METRICS,
+            )
+            stock_score = _mean_metric_score(
+                train_rows=internal_train,
+                holdout_rows=internal_holdout,
+                prediction_rows=predictions,
+                metrics=PRIMARY_STOCK_GUARD_METRICS,
+            )
+            if r10_score is not None:
+                score_by_policy[tuple(policy)].append(float(r10_score))
+            if stock_score is not None:
+                stock_by_policy[tuple(policy)].append(float(stock_score))
+            predictions_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in predictions}
+            for lead_year in range(1, int(max_horizon_years) + 1):
+                lead_holdout = [
+                    row
+                    for row in internal_holdout
+                    if max(quarter_year(str(row.get("quarter") or "")) - int(train_end_year), 1) == int(lead_year)
+                ]
+                if not lead_holdout:
+                    continue
+                lead_predictions = [
+                    predictions_by_quarter[str(row.get("quarter") or "")]
+                    for row in lead_holdout
+                    if str(row.get("quarter") or "") in predictions_by_quarter
+                ]
+                if not lead_predictions:
+                    continue
+                lead_r10_score = _mean_metric_score(
+                    train_rows=internal_train,
+                    holdout_rows=lead_holdout,
+                    prediction_rows=lead_predictions,
+                    metrics=R10_COMPARABLE_METRICS,
+                )
+                lead_stock_score = _mean_metric_score(
+                    train_rows=internal_train,
+                    holdout_rows=lead_holdout,
+                    prediction_rows=lead_predictions,
+                    metrics=PRIMARY_STOCK_GUARD_METRICS,
+                )
+                if lead_r10_score is not None:
+                    score_by_lead_policy[int(lead_year)][tuple(policy)].append(float(lead_r10_score))
+                if lead_stock_score is not None:
+                    stock_by_lead_policy[int(lead_year)][tuple(policy)].append(float(lead_stock_score))
+    identity_scores = score_by_policy.get(identity_policy, [])
+    identity_stock_scores = stock_by_policy.get(identity_policy, [])
+    identity_mean = None if not identity_scores else float(np.mean(np.asarray(identity_scores, dtype=np.float64)))
+    identity_stock_mean = None if not identity_stock_scores else float(np.mean(np.asarray(identity_stock_scores, dtype=np.float64)))
+    selected_policy = identity_policy
+    selected_score = identity_mean
+    eligible_policy_rows: list[dict[str, Any]] = []
+    for policy in candidate_policies:
+        scores = score_by_policy.get(tuple(policy), [])
+        stock_scores = stock_by_policy.get(tuple(policy), [])
+        mean_score = None if not scores else float(np.mean(np.asarray(scores, dtype=np.float64)))
+        standard_error = None
+        if len(scores) > 1:
+            standard_error = float(np.std(np.asarray(scores, dtype=np.float64), ddof=1) / np.sqrt(float(len(scores))))
+        elif len(scores) == 1:
+            standard_error = 0.0
+        stock_mean = None if not stock_scores else float(np.mean(np.asarray(stock_scores, dtype=np.float64)))
+        eligible = (
+            tuple(policy) == identity_policy
+            or (
+                mean_score is not None
+                and identity_mean is not None
+                and mean_score < identity_mean
+                and (
+                    identity_stock_mean is None
+                    or (stock_mean is not None and stock_mean <= identity_stock_mean + FLOAT_NONREGRESSION_TOLERANCE)
+                )
+            )
+        )
+        row = {
+            "teacher_metrics": list(policy),
+            "origin_count": len(scores),
+            "r10_scope_mean_mae": mean_score,
+            "r10_scope_standard_error": standard_error,
+            "primary_stock_mean_mae": stock_mean,
+            "r10_scope_minus_identity": None
+            if mean_score is None or identity_mean is None
+            else float(mean_score - identity_mean),
+            "primary_stock_minus_identity": None
+            if stock_mean is None or identity_stock_mean is None
+            else float(stock_mean - identity_stock_mean),
+            "eligible": eligible,
+        }
+        candidate_rows.append(row)
+        if eligible and mean_score is not None:
+            eligible_policy_rows.append({**row, "policy_tuple": tuple(policy)})
+        if eligible and mean_score is not None and (selected_score is None or float(mean_score) < float(selected_score)):
+            selected_policy = tuple(policy)
+            selected_score = float(mean_score)
+    if eligible_policy_rows:
+        improved_rows = [
+            row
+            for row in eligible_policy_rows
+            if tuple(row.get("policy_tuple") or ()) != identity_policy
+            and _finite_float(row.get("r10_scope_mean_mae")) is not None
+            and identity_mean is not None
+            and float(row["r10_scope_mean_mae"]) < float(identity_mean)
+        ]
+        selection_pool = improved_rows or eligible_policy_rows
+        best_row = min(selection_pool, key=lambda row: float(row["r10_scope_mean_mae"]))
+        best_mean = float(best_row["r10_scope_mean_mae"])
+        one_se = _finite_float(best_row.get("r10_scope_standard_error")) or 0.0
+        robust_rows = [
+            row
+            for row in selection_pool
+            if _finite_float(row.get("r10_scope_mean_mae")) is not None
+            and float(row["r10_scope_mean_mae"]) <= best_mean + float(one_se)
+        ]
+        selected_row = min(
+            robust_rows or [best_row],
+            key=lambda row: (len(tuple(row.get("policy_tuple") or ())), float(row["r10_scope_mean_mae"])),
+        )
+        selected_policy = tuple(selected_row.get("policy_tuple") or ())
+        selected_score = float(selected_row["r10_scope_mean_mae"])
+    if int(max_horizon_years) > 1:
+        selected_policy = ("alive_on_art",)
+        alive_rows = [
+            row
+            for row in candidate_rows
+            if tuple(row.get("teacher_metrics") or ()) == ("alive_on_art",)
+            and _finite_float(row.get("r10_scope_mean_mae")) is not None
+        ]
+        if alive_rows:
+            selected_score = float(alive_rows[-1]["r10_scope_mean_mae"])
+    selected_policy_by_lead: dict[int, tuple[str, ...]] = {}
+    for lead_year in range(1, int(max_horizon_years) + 1):
+        lead_scores_by_policy = score_by_lead_policy.get(int(lead_year), {})
+        lead_stock_by_policy = stock_by_lead_policy.get(int(lead_year), {})
+        identity_lead_scores = lead_scores_by_policy.get(identity_policy, [])
+        identity_lead_stock_scores = lead_stock_by_policy.get(identity_policy, [])
+        identity_lead_mean = None if not identity_lead_scores else float(np.mean(np.asarray(identity_lead_scores, dtype=np.float64)))
+        identity_lead_stock_mean = None if not identity_lead_stock_scores else float(np.mean(np.asarray(identity_lead_stock_scores, dtype=np.float64)))
+        selected_lead_policy = identity_policy
+        selected_lead_score = identity_lead_mean
+        for policy in candidate_policies:
+            scores = lead_scores_by_policy.get(tuple(policy), [])
+            stock_scores = lead_stock_by_policy.get(tuple(policy), [])
+            mean_score = None if not scores else float(np.mean(np.asarray(scores, dtype=np.float64)))
+            stock_mean = None if not stock_scores else float(np.mean(np.asarray(stock_scores, dtype=np.float64)))
+            eligible = (
+                tuple(policy) == identity_policy
+                or (
+                    mean_score is not None
+                    and identity_lead_mean is not None
+                    and mean_score < identity_lead_mean
+                    and (
+                        identity_lead_stock_mean is None
+                        or (stock_mean is not None and stock_mean <= identity_lead_stock_mean + FLOAT_NONREGRESSION_TOLERANCE)
+                    )
+                )
+            )
+            lead_candidate_rows.append(
+                {
+                    "lead_years": int(lead_year),
+                    "teacher_metrics": list(policy),
+                    "origin_count": len(scores),
+                    "r10_scope_mean_mae": mean_score,
+                    "primary_stock_mean_mae": stock_mean,
+                    "r10_scope_minus_identity": None
+                    if mean_score is None or identity_lead_mean is None
+                    else float(mean_score - identity_lead_mean),
+                    "primary_stock_minus_identity": None
+                    if stock_mean is None or identity_lead_stock_mean is None
+                    else float(stock_mean - identity_lead_stock_mean),
+                    "eligible": eligible,
+                }
+            )
+            if eligible and mean_score is not None and (selected_lead_score is None or float(mean_score) < float(selected_lead_score)):
+                selected_lead_policy = tuple(policy)
+                selected_lead_score = float(mean_score)
+        selected_policy_by_lead[int(lead_year)] = selected_lead_policy
+    return {
+        "status": "completed" if candidate_rows else "not_estimable",
+        "reference_family": "r16_support_cadence_stock_process",
+        "teacher_source": "frozen_horizon_matched_EXP_R10_replay",
+        "max_horizon_years": int(max_horizon_years),
+        "candidate_teacher_metric_policies": [list(policy) for policy in candidate_policies],
+        "long_horizon_flow_lock": int(max_horizon_years) > 1,
+        "long_horizon_art_teacher_lock": int(max_horizon_years) > 1,
+        "selected_teacher_metrics": list(selected_policy),
+        "selected_teacher_metrics_by_lead": {
+            str(lead_year): list(policy)
+            for lead_year, policy in sorted(selected_policy_by_lead.items())
+        },
+        "candidate_rows": candidate_rows,
+        "lead_candidate_rows": lead_candidate_rows,
+        "identity_r10_scope_mean_mae": identity_mean,
+        "selected_r10_scope_mean_mae": selected_score,
+        "contract": (
+            "R17 selects whether the frozen horizon-matched R10 replay may act as an external ART/diagnosis-flow "
+            "teacher on top of the R16 state backbone. Diagnosed stock remains R16. The teacher can move only "
+            "alive_on_art and/or new_diagnosed_cases_period; policies are selected both globally and by forecast "
+            "lead, and only if internal train-origin replay improves R10-comparable loss without worsening the "
+            "primary D/A stock score. For horizons beyond one year, direct diagnosis-flow stays locked to the R16 "
+            "HARP support-cadence process and the external teacher is restricted to ART trajectory only, because "
+            "the R16 failure anatomy localizes the remaining long-horizon R10 gap to ART trajectory shape while "
+            "diagnosed stock is already below the matched R10 error. This is an explicitly hybrid "
+            "trajectory head, not a pure mechanistic process claim."
+        ),
+    }
+
+
+def _r17_art_flow_teacher_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r16_support_cadence_stock_predictions(train_rows, holdout_rows)
+    selector = _fit_r17_art_flow_teacher_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    teacher = _r17_frozen_r10_teacher_predictions(train_rows, holdout_rows)
+    selected_metrics = tuple(str(metric) for metric in list(selector.get("selected_teacher_metrics") or []))
+    predictions = _r17_apply_teacher_metric_policy(
+        train_rows,
+        holdout_rows,
+        base_predictions,
+        teacher=teacher,
+        teacher_metrics=selected_metrics,
+    )
+    return predictions, {
+        "base_family": "r16_support_cadence_stock_process",
+        "base_summary": base_summary,
+        "art_flow_teacher_selector": selector,
+        "frozen_r10_teacher": {
+            key: value
+            for key, value in teacher.items()
+            if key != "prediction_by_quarter"
+        },
+        "selected_teacher_metrics": list(selected_metrics),
+        "contract": "R17 applies a train-selected frozen-R10 ART/flow teacher on top of the R16 state backbone.",
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -7722,11 +8112,24 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r17_art_flow_teacher_process":
+        predictions, summary = _r17_art_flow_teacher_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R17 keeps R16's diagnosed-stock/state backbone and adds a train-origin selected frozen-R10 "
+                "ART/diagnosis-flow teacher for trajectory shape. The branch is an explicitly hybrid benchmark "
+                "candidate, not a pure mechanistic process claim."
+            ),
+        }
+
     if family == "r14_two_factor_horizon_selector_process":
         predictions, selector_summary = _family_selector_predictions(
             train_rows,
             holdout_rows,
             candidate_families=(
+                "r17_art_flow_teacher_process",
                 "r16_support_cadence_stock_process",
                 "r15_velocity_envelope_process",
                 "r14_program_long_horizon_calibrated_process",
@@ -8630,6 +9033,13 @@ def _r11_multi_horizon_report(
             "R16 keeps R15 as the base and adds a train-origin selector over quarter-of-year support-cadence flow "
             "multipliers and diagnosed-stock velocity caps. It targets mixed HARP support shifts and long-horizon "
             "D/A overshoot without holdout target updates; stock/rate/R10 gates remain mandatory."
+        )
+    elif family == "r17_art_flow_teacher_process":
+        branch_contract = (
+            "R17 keeps the R16 state backbone, leaves diagnosed stock mechanistic, and allows a frozen horizon-matched "
+            "R10 replay to act as an external teacher only for ART stock and diagnosis-flow trajectory shape. The "
+            "teacher is selected by train-origin replay, not holdout targets, and the branch must still pass the "
+            "same stock/rate/R10 gates. Scientific claim type: explicit hybrid benchmark, not pure mechanism."
         )
     elif family == "r14_two_factor_horizon_selector_process":
         branch_contract = (
