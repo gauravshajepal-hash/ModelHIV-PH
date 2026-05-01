@@ -113,6 +113,7 @@ R17_LONG_HORIZON_TEACHER_METRIC_POLICIES: tuple[tuple[str, ...], ...] = (
     (),
     ("alive_on_art",),
 )
+R18_ART_PROCESS_METRICS: tuple[str, ...] = ("alive_on_art",)
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -6275,6 +6276,541 @@ def _r17_art_flow_teacher_predictions(
     }
 
 
+def _fit_r18_evidence_backed_art_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    program_rows = _r12_program_rows(train_rows)
+    availability_process = _fit_r12_latent_reporting_intensity_process(program_rows)
+    shock_process = _fit_r14_program_volume_shock_process(program_rows, availability_process)
+    art_model = _fit_r14_monthly_program_art_transition(program_rows, availability_process, shock_process)
+    sorted_rows = sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    flow_by_ordinal = {
+        quarter_ordinal(str(row.get("quarter") or "")): float(value)
+        for row in sorted_rows
+        for value in [_finite_float(row.get("new_diagnosed_cases_period"))]
+        if value is not None
+    }
+    mu_a = _finite_float(art_model.get("art_removal_fraction"))
+    return {
+        "status": "completed"
+        if str(availability_process.get("status") or "") == "completed"
+        and str(shock_process.get("status") or "") == "completed"
+        and str(art_model.get("status") or "") == "completed"
+        else "not_estimable",
+        "program_train_row_count": len(program_rows),
+        "support_reporting_availability_process": availability_process,
+        "program_volume_shock_process": shock_process,
+        "art_stock_transition": art_model,
+        "art_retention_fraction": None if mu_a is None else float(max(1.0 - float(mu_a), 0.0)),
+        "last_quarter": "" if not sorted_rows else str(sorted_rows[-1].get("quarter") or ""),
+        "last_state": {
+            "diagnosed_plhiv": _last_metric_value(train_rows, "diagnosed_plhiv"),
+            "alive_on_art": _last_metric_value(train_rows, "alive_on_art"),
+            "new_diagnosed_cases_period": _last_metric_value(train_rows, "new_diagnosed_cases_period"),
+        },
+        "observed_diagnosis_flow_by_ordinal": {str(key): value for key, value in sorted(flow_by_ordinal.items())},
+        "contract": (
+            "R18 evidence-backed ART process: A_t = A_{t-1} + gamma_A F_{t-lag} "
+            "+ eta_A max(D_{t-1}-A_{t-1},0) - mu_A A_{t-1} + k_avail a_t + k_vol v_t. "
+            "The ART initiation, retention/removal, support/reporting availability, and program-volume shock "
+            "terms are fitted from train-origin DOH program rows only; no frozen R10 replay or holdout target "
+            "updates are used."
+        ),
+    }
+
+
+def _r18_art_coverage_signature(row: dict[str, Any], median_monthly_intensity: float | None) -> str:
+    return "|".join(
+        [
+            _support_signature(row, "alive_on_art"),
+            _monthly_intensity_label(_monthly_reporting_intensity(row), median_monthly_intensity),
+        ]
+    )
+
+
+def _fit_r18_art_coverage_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    rows = [
+        dict(row)
+        for row in sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+        if _finite_float(row.get("alive_on_art")) is not None
+        and _finite_float(row.get("diagnosed_plhiv")) is not None
+        and float(_finite_float(row.get("diagnosed_plhiv")) or 0.0) > 0.0
+    ]
+    if len(rows) < 2:
+        return {
+            "status": "not_estimable",
+            "reason": "insufficient_art_coverage_rows",
+            "row_count": len(rows),
+        }
+    intensities = [_monthly_reporting_intensity(row) for row in rows]
+    median_intensity = float(np.median(np.asarray(intensities, dtype=np.float64))) if intensities else None
+    eps = float(np.finfo(np.float64).eps)
+    ordinals = np.asarray([quarter_ordinal(str(row.get("quarter") or "")) for row in rows], dtype=np.float64)
+    logits: list[float] = []
+    for row in rows:
+        diagnosed = max(float(row.get("diagnosed_plhiv") or 0.0), eps)
+        art = max(float(row.get("alive_on_art") or 0.0), 0.0)
+        ratio = float(min(max(art / diagnosed, eps), 1.0 - eps))
+        logits.append(float(np.log(ratio / (1.0 - ratio))))
+    logit_values = np.asarray(logits, dtype=np.float64)
+    slopes: list[float] = []
+    for index in range(1, len(rows)):
+        step = max(float(ordinals[index] - ordinals[index - 1]), eps)
+        slopes.append(float((logit_values[index] - logit_values[index - 1]) / step))
+    median_slope = 0.0 if not slopes else float(np.median(np.asarray(slopes, dtype=np.float64)))
+    origin = float(ordinals[0])
+    detrended = logit_values - median_slope * (ordinals - origin)
+    global_center = float(np.median(detrended))
+    residuals_by_signature: dict[str, list[float]] = defaultdict(list)
+    for row, residual in zip(rows, detrended - global_center):
+        residuals_by_signature[_r18_art_coverage_signature(row, median_intensity)].append(float(residual))
+    signature_bias = {
+        signature: float(np.median(np.asarray(values, dtype=np.float64)))
+        for signature, values in sorted(residuals_by_signature.items())
+    }
+    last_row = rows[-1]
+    last_signature = _r18_art_coverage_signature(last_row, median_intensity)
+    last_canonical_logit = float(logit_values[-1] - signature_bias.get(last_signature, 0.0))
+    one_step_errors: list[float] = []
+    for index in range(1, len(rows)):
+        previous_signature = _r18_art_coverage_signature(rows[index - 1], median_intensity)
+        current_signature = _r18_art_coverage_signature(rows[index], median_intensity)
+        predicted = (
+            float(logit_values[index - 1])
+            - signature_bias.get(previous_signature, 0.0)
+            + median_slope * max(float(ordinals[index] - ordinals[index - 1]), 0.0)
+            + signature_bias.get(current_signature, 0.0)
+        )
+        one_step_errors.append(float(logit_values[index] - predicted))
+    return {
+        "status": "completed",
+        "row_count": len(rows),
+        "first_quarter": str(rows[0].get("quarter") or ""),
+        "last_quarter": str(last_row.get("quarter") or ""),
+        "last_ordinal": int(ordinals[-1]),
+        "last_canonical_logit_art_coverage": last_canonical_logit,
+        "median_quarterly_logit_slope": median_slope,
+        "median_monthly_reporting_intensity": median_intensity,
+        "signature_bias": signature_bias,
+        "signature_count": len(signature_bias),
+        "one_step_error_mean_abs": None
+        if not one_step_errors
+        else float(np.mean(np.abs(np.asarray(one_step_errors, dtype=np.float64)))),
+        "contract": (
+            "R18 ART coverage process models logit(alive_on_art / diagnosed_plhiv) with train-window median "
+            "logit trend and support/reporting-intensity signature residuals. It is an observation-supported "
+            "ART coverage process, not an R10 readout teacher."
+        ),
+    }
+
+
+def _predict_r18_art_coverage(process: dict[str, Any], holdout_row: dict[str, Any], diagnosed_value: float) -> float | None:
+    if str(process.get("status") or "") != "completed":
+        return None
+    ordinal = quarter_ordinal(str(holdout_row.get("quarter") or ""))
+    last_ordinal = int(process.get("last_ordinal") or ordinal)
+    step = max(int(ordinal - last_ordinal), 0)
+    median_intensity = _finite_float(process.get("median_monthly_reporting_intensity"))
+    signature = _r18_art_coverage_signature(holdout_row, median_intensity)
+    signature_bias = float(dict(process.get("signature_bias") or {}).get(signature, 0.0))
+    logit_value = (
+        float(process.get("last_canonical_logit_art_coverage") or 0.0)
+        + float(process.get("median_quarterly_logit_slope") or 0.0) * float(step)
+        + signature_bias
+    )
+    if logit_value >= 0:
+        ratio = 1.0 / (1.0 + float(np.exp(-logit_value)))
+    else:
+        exp_value = float(np.exp(logit_value))
+        ratio = exp_value / (1.0 + exp_value)
+    return float(min(max(ratio * max(float(diagnosed_value), 0.0), 0.0), max(float(diagnosed_value), 0.0)))
+
+
+def _r18_apply_art_coverage_process(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    process: dict[str, Any],
+    blend_weight: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    if str(process.get("status") or "") != "completed" or float(blend_weight) <= 0.0:
+        output = []
+        for row, holdout_row in zip(
+            base_predictions,
+            sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+        ):
+            output.append(_apply_back_half_rate_process(_project_prediction_row(dict(row)), holdout_row, back_half_process))
+        return output, []
+    alpha = float(min(max(float(blend_weight), 0.0), 1.0))
+    output: list[dict[str, Any]] = []
+    process_rows: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(base_prediction)
+        diagnosed = _finite_float(row.get("diagnosed_plhiv"))
+        base_art = _finite_float(row.get("alive_on_art"))
+        if diagnosed is None or base_art is None:
+            output.append(_apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process))
+            continue
+        process_art = _predict_r18_art_coverage(process, holdout_row, float(diagnosed))
+        if process_art is None:
+            output.append(_apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process))
+            continue
+        row["alive_on_art"] = float((1.0 - alpha) * float(base_art) + alpha * float(process_art))
+        row = _apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process)
+        output.append(row)
+        process_rows.append(
+            {
+                "quarter": str(holdout_row.get("quarter") or row.get("quarter") or ""),
+                "blend_weight": alpha,
+                "base_alive_on_art": base_art,
+                "process_alive_on_art": process_art,
+                "blended_alive_on_art": row.get("alive_on_art"),
+                "diagnosed_plhiv": diagnosed,
+                "coverage_signature": _r18_art_coverage_signature(
+                    holdout_row,
+                    _finite_float(process.get("median_monthly_reporting_intensity")),
+                ),
+            }
+        )
+    return output, process_rows
+
+
+def _r18_apply_art_process(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    process: dict[str, Any],
+    blend_weight: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    if str(process.get("status") or "") != "completed" or float(blend_weight) <= 0.0:
+        output = []
+        for row, holdout_row in zip(
+            base_predictions,
+            sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+        ):
+            output.append(_apply_back_half_rate_process(_project_prediction_row(dict(row)), holdout_row, back_half_process))
+        return output, []
+    art_model = dict(process.get("art_stock_transition") or {})
+    availability_process = dict(process.get("support_reporting_availability_process") or {})
+    shock_process = dict(process.get("program_volume_shock_process") or {})
+    last_state = dict(process.get("last_state") or {})
+    current_diagnosed = _finite_float(last_state.get("diagnosed_plhiv"))
+    current_art = _finite_float(last_state.get("alive_on_art"))
+    current_flow = _finite_float(last_state.get("new_diagnosed_cases_period"))
+    if current_diagnosed is None or current_art is None or current_flow is None:
+        output = []
+        for row, holdout_row in zip(
+            base_predictions,
+            sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+        ):
+            output.append(_apply_back_half_rate_process(_project_prediction_row(dict(row)), holdout_row, back_half_process))
+        return output, []
+    flow_by_ordinal = {
+        int(key): float(value)
+        for key, value in dict(process.get("observed_diagnosis_flow_by_ordinal") or {}).items()
+        if _finite_float(value) is not None
+    }
+    gamma_a = _finite_float(art_model.get("diagnosis_linkage_coefficient"))
+    eta_a = _finite_float(art_model.get("diagnosed_gap_linkage_coefficient"))
+    mu_a = _finite_float(art_model.get("art_removal_fraction"))
+    art_availability = _finite_float(art_model.get("availability_coefficient"))
+    art_shock = _finite_float(art_model.get("program_volume_shock_coefficient"))
+    if gamma_a is None or eta_a is None or mu_a is None:
+        output = []
+        for row, holdout_row in zip(
+            base_predictions,
+            sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+        ):
+            output.append(_apply_back_half_rate_process(_project_prediction_row(dict(row)), holdout_row, back_half_process))
+        return output, []
+    base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+    output: list[dict[str, Any]] = []
+    process_rows: list[dict[str, Any]] = []
+    alpha = float(min(max(float(blend_weight), 0.0), 1.0))
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        base_prediction = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        base_diagnosed = _finite_float(base_prediction.get("diagnosed_plhiv"))
+        base_art = _finite_float(base_prediction.get("alive_on_art"))
+        base_flow = _finite_float(base_prediction.get("new_diagnosed_cases_period"))
+        next_diagnosed = float(base_diagnosed) if base_diagnosed is not None else float(current_diagnosed)
+        next_flow = max(float(base_flow), 0.0) if base_flow is not None else max(float(current_flow), 0.0)
+        holdout_ord = quarter_ordinal(quarter)
+        lag = int(art_model.get("selected_lag_quarters") or 0)
+        lagged_flow = next_flow if lag == 0 else flow_by_ordinal.get(holdout_ord - lag, float(current_flow))
+        availability_prediction = _predict_r12_latent_reporting_intensity(availability_process, holdout_row)
+        shock_prediction = _predict_r14_program_volume_shock(shock_process, holdout_row)
+        availability = float(availability_prediction.get("latent_reporting_intensity") or 0.0)
+        shock = float(shock_prediction.get("latent_program_volume_shock") or 0.0)
+        diagnosed_gap = max(float(current_diagnosed) - float(current_art), 0.0)
+        initiation_from_flow = float(gamma_a) * max(float(lagged_flow), 0.0)
+        initiation_from_gap = float(eta_a) * diagnosed_gap
+        removal = float(mu_a) * max(float(current_art), 0.0)
+        reporting_component = (0.0 if art_availability is None else float(art_availability) * availability) + (
+            0.0 if art_shock is None else float(art_shock) * shock
+        )
+        process_art = float(
+            max(
+                float(current_art)
+                + initiation_from_flow
+                + initiation_from_gap
+                - removal
+                + reporting_component,
+                0.0,
+            )
+        )
+        process_art = float(min(process_art, max(float(next_diagnosed), 0.0)))
+        if base_art is None:
+            blended_art = process_art
+        else:
+            blended_art = float((1.0 - alpha) * float(base_art) + alpha * process_art)
+        prediction = dict(base_prediction)
+        prediction["alive_on_art"] = float(max(blended_art, 0.0))
+        prediction["new_diagnosed_cases_period"] = float(next_flow)
+        prediction["diagnosed_plhiv"] = float(max(next_diagnosed, prediction["alive_on_art"]))
+        prediction = _apply_back_half_rate_process(_project_prediction_row(prediction), holdout_row, back_half_process)
+        output.append(prediction)
+        process_rows.append(
+            {
+                "quarter": quarter,
+                "blend_weight": alpha,
+                "base_alive_on_art": base_art,
+                "process_alive_on_art": process_art,
+                "blended_alive_on_art": prediction.get("alive_on_art"),
+                "lag_quarters": lag,
+                "lagged_diagnosis_flow": float(lagged_flow),
+                "diagnosed_gap": diagnosed_gap,
+                "art_initiation_from_flow": initiation_from_flow,
+                "art_initiation_from_diagnosed_gap": initiation_from_gap,
+                "art_removal": removal,
+                "art_retention_fraction": float(max(1.0 - float(mu_a), 0.0)),
+                "support_reporting_availability": availability,
+                "program_volume_shock": shock,
+                "reporting_intensity_component": reporting_component,
+                "support_reporting_prediction_status": availability_prediction.get("prediction_status"),
+                "program_volume_shock_prediction_status": shock_prediction.get("prediction_status"),
+            }
+        )
+        current_art = float(prediction.get("alive_on_art") or process_art)
+        current_diagnosed = float(next_diagnosed)
+        current_flow = float(next_flow)
+        flow_by_ordinal[holdout_ord] = float(next_flow)
+    return output, process_rows
+
+
+def _fit_r18_art_process_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    replay_rows: list[dict[str, Any]] = []
+    process_manifests: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        carry_predictions = base_predictions
+        base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        process_candidates: tuple[tuple[str, dict[str, Any], Any], ...] = (
+            ("transition_process", _fit_r18_evidence_backed_art_process(internal_train), _r18_apply_art_process),
+            ("coverage_ratio_process", _fit_r18_art_coverage_process(internal_train), _r18_apply_art_coverage_process),
+        )
+        for process_family, process, apply_process in process_candidates:
+            process_predictions, _process_rows = apply_process(
+                internal_train,
+                internal_holdout,
+                base_predictions,
+                process=process,
+                blend_weight=1.0,
+            )
+            process_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in process_predictions}
+            process_manifests.append(
+                {
+                    "train_end_year": int(train_end_year),
+                    "process_family": process_family,
+                    "status": str(process.get("status") or ""),
+                    "program_train_row_count": process.get("program_train_row_count"),
+                    "art_transition_status": str(dict(process.get("art_stock_transition") or {}).get("status") or ""),
+                    "coverage_row_count": process.get("row_count"),
+                }
+            )
+            for holdout_row in internal_holdout:
+                quarter = str(holdout_row.get("quarter") or "")
+                target_value = _finite_float(holdout_row.get("alive_on_art"))
+                base_value = _finite_float(base_by_quarter.get(quarter, {}).get("alive_on_art"))
+                process_value = _finite_float(process_by_quarter.get(quarter, {}).get("alive_on_art"))
+                carry_value = _finite_float(carry_by_quarter.get(quarter, {}).get("alive_on_art"))
+                if target_value is None or base_value is None or process_value is None or carry_value is None:
+                    continue
+                records.append(
+                    {
+                        "origin_year": int(train_end_year),
+                        "quarter": quarter,
+                        "metric_name": "alive_on_art",
+                        "process_family": process_family,
+                        "base_prediction": float(base_value),
+                        "selected_prediction": float(process_value),
+                        "carry_forward_prediction": float(carry_value),
+                        "target_value": float(target_value),
+                        "scale": float(_metric_scale(internal_train, "alive_on_art")),
+                    }
+                )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "selected_blend_weight": 0.0,
+            "record_count": 0,
+            "reason": "no_train_origin_art_blend_records",
+            "process_manifests": process_manifests,
+        }
+    alpha_rows: list[dict[str, Any]] = []
+    best_row: dict[str, Any] | None = None
+    process_families = sorted({str(record.get("process_family") or "") for record in records})
+    identity_values: list[float] = []
+    carry_values: list[float] = []
+    for process_family in process_families:
+        family_records = [record for record in records if str(record.get("process_family") or "") == process_family]
+        if not family_records:
+            continue
+        base_errors = [
+            _r12_convex_error(
+                float(record["base_prediction"]),
+                float(record["selected_prediction"]),
+                0.0,
+                float(record["target_value"]),
+                float(record["scale"]),
+            )
+            for record in family_records
+        ]
+        carry_errors = [
+            abs(float(record["carry_forward_prediction"]) - float(record["target_value"]))
+            / max(float(record["scale"]), float(np.finfo(np.float32).eps))
+            for record in family_records
+        ]
+        identity_art_mean = float(np.mean(np.asarray(base_errors, dtype=np.float64)))
+        identity_art_worst = float(np.max(np.asarray(base_errors, dtype=np.float64)))
+        carry_art_mean = float(np.mean(np.asarray(carry_errors, dtype=np.float64)))
+        carry_art_worst = float(np.max(np.asarray(carry_errors, dtype=np.float64)))
+        identity_values.append(identity_art_mean)
+        carry_values.append(carry_art_mean)
+        for alpha in _r12_alpha_candidates(family_records):
+            corrected_errors = [
+                _r12_convex_error(
+                    float(record["base_prediction"]),
+                    float(record["selected_prediction"]),
+                    float(alpha),
+                    float(record["target_value"]),
+                    float(record["scale"]),
+                )
+                for record in family_records
+            ]
+            art_mean = float(np.mean(np.asarray(corrected_errors, dtype=np.float64)))
+            art_worst = float(np.max(np.asarray(corrected_errors, dtype=np.float64)))
+            eligible = (
+                float(alpha) > 0.0
+                and art_mean < identity_art_mean
+                and art_mean <= carry_art_mean + FLOAT_NONREGRESSION_TOLERANCE
+            )
+            row = {
+                "process_family": process_family,
+                "blend_weight": float(alpha),
+                "origin_count": len(family_records),
+                "art_mean_mae": art_mean,
+                "art_worst_mae": art_worst,
+                "identity_art_mean_mae": identity_art_mean,
+                "identity_art_worst_mae": identity_art_worst,
+                "carry_forward_art_mean_mae": carry_art_mean,
+                "carry_forward_art_worst_mae": carry_art_worst,
+                "art_mean_minus_identity": float(art_mean - identity_art_mean),
+                "art_worst_minus_identity": float(art_worst - identity_art_worst),
+                "art_mean_minus_carry_forward": float(art_mean - carry_art_mean),
+                "art_worst_minus_carry_forward": float(art_worst - carry_art_worst),
+                "eligible": eligible,
+            }
+            alpha_rows.append(row)
+            if eligible and (best_row is None or art_mean < float(best_row["art_mean_mae"])):
+                best_row = row
+    selected_alpha = 0.0 if best_row is None else float(best_row["blend_weight"])
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "reference_family": "r16_support_cadence_stock_process",
+        "selected_process_family": "transition_process" if best_row is None else str(best_row.get("process_family") or "transition_process"),
+        "selected_blend_weight": selected_alpha,
+        "identity_art_mean_mae": None if not identity_values else float(np.mean(np.asarray(identity_values, dtype=np.float64))),
+        "carry_forward_art_mean_mae": None if not carry_values else float(np.mean(np.asarray(carry_values, dtype=np.float64))),
+        "selected_art_mean_mae": None if best_row is None else best_row.get("art_mean_mae"),
+        "record_count": len(records),
+        "candidate_blend_rows": alpha_rows,
+        "replay_rows": replay_rows,
+        "process_manifests": process_manifests,
+        "contract": (
+            "R18 selects an exact convex blend from carry-forward ART stock to an evidence-backed ART process "
+            "inside train-origin selector replays, then applies the selected process weight to the R16 backbone "
+            "in the outer candidate. "
+            "Blend candidates are generated from absolute-error breakpoints in train-origin ART records, not a "
+            "hand grid. A nonzero blend is eligible only if train-origin ART mean error improves over carry-forward. "
+            "Worst-case ART errors are reported but not used as the selector because ART stock is strongly affected "
+            "by reporting shocks; the outer locked R13/R10 gate remains the final R10-scope promotion test."
+        ),
+    }
+
+
+def _r18_art_process_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r16_support_cadence_stock_predictions(train_rows, holdout_rows)
+    selector = _fit_r18_art_process_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    selected_process_family = str(selector.get("selected_process_family") or "transition_process")
+    if selected_process_family == "coverage_ratio_process":
+        process = _fit_r18_art_coverage_process(train_rows)
+        apply_process = _r18_apply_art_coverage_process
+    else:
+        process = _fit_r18_evidence_backed_art_process(train_rows)
+        apply_process = _r18_apply_art_process
+    selected_alpha = _finite_float(selector.get("selected_blend_weight"))
+    if selected_alpha is None:
+        selected_alpha = 0.0
+    predictions, process_rows = apply_process(
+        train_rows,
+        holdout_rows,
+        base_predictions,
+        process=process,
+        blend_weight=float(selected_alpha),
+    )
+    return predictions, {
+        "base_family": "r16_support_cadence_stock_process",
+        "base_summary": base_summary,
+        "art_process_selector": selector,
+        "selected_process_family": selected_process_family,
+        "evidence_backed_art_process": process,
+        "selected_blend_weight": float(selected_alpha),
+        "mutation_rows": process_rows,
+        "contract": (
+            "R18 replaces the frozen R10 ART teacher with a train-origin ART initiation/retention/removal/"
+            "reporting-intensity process. It can move alive_on_art only through the fitted process and exact "
+            "train-origin blend selector; diagnosed stock and diagnosis-flow remain governed by R16."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -8124,11 +8660,24 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r18_evidence_backed_art_process":
+        predictions, summary = _r18_art_process_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R18 keeps R16's diagnosed-stock and diagnosis-flow backbone, but replaces the frozen-R10 ART "
+                "teacher with an evidence-backed ART initiation, retention/removal, and reporting-intensity "
+                "process fitted only from train-origin program evidence."
+            ),
+        }
+
     if family == "r14_two_factor_horizon_selector_process":
         predictions, selector_summary = _family_selector_predictions(
             train_rows,
             holdout_rows,
             candidate_families=(
+                "r18_evidence_backed_art_process",
                 "r17_art_flow_teacher_process",
                 "r16_support_cadence_stock_process",
                 "r15_velocity_envelope_process",
@@ -12492,6 +13041,7 @@ def run_r12_reference_branch(
             "multi_horizon_weighted_process",
             "r12_stock_cone_safe_annual_trajectory_process",
             "r12_program_nowcast_mixed_quarterly_process",
+            "r18_evidence_backed_art_process",
         ),
     )
     write_json(r12_10_annual_challenge_path, r12_10_annual_challenge_report)
