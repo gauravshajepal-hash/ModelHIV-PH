@@ -1,0 +1,4498 @@
+{
+  "axis_row_count": 54,
+  "axis_rows": [
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.07167896905893432,
+      "candidate_mean_norm_error": 0.17353276359513267,
+      "candidate_minus_carry_forward_mean_norm_error": -0.09406837284614747,
+      "candidate_minus_r10_reference_mae": 0.05788218137397061,
+      "carry_forward_mean_norm_error": 0.26760113644128014,
+      "entry_count": 8,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "mean_signed_norm_residual": 0.010294316001594576,
+      "metric_names": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.7465651270897518,
+      "candidate_mean_norm_error": 0.1830291775599751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12898391863772457,
+      "candidate_minus_r10_reference_mae": 0.06737859533881305,
+      "carry_forward_mean_norm_error": 0.3120130961976997,
+      "entry_count": 79,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.12367585238813612,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.05441912466822143,
+      "candidate_mean_norm_error": 0.2321746963546609,
+      "candidate_minus_carry_forward_mean_norm_error": -0.15957790222198173,
+      "candidate_minus_r10_reference_mae": 0.10275360860445065,
+      "carry_forward_mean_norm_error": 0.39175259857664263,
+      "entry_count": 11,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "mean_signed_norm_residual": -0.10612097526649757,
+      "metric_names": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.7440632463631763,
+      "candidate_mean_norm_error": 0.2665597525635351,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2269708913009068,
+      "candidate_minus_r10_reference_mae": 0.13713866481332485,
+      "carry_forward_mean_norm_error": 0.4935306438644419,
+      "entry_count": 131,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.23039305768326512,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 1.0000000000000002,
+      "candidate_mean_norm_error": 0.1574615812594298,
+      "candidate_minus_carry_forward_mean_norm_error": -0.16122018924442624,
+      "candidate_minus_r10_reference_mae": 0.04181099903826774,
+      "carry_forward_mean_norm_error": 0.31868177050385604,
+      "entry_count": 123,
+      "horizon_years": 3,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.09348132877001819,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 1.0000000000000007,
+      "candidate_mean_norm_error": 0.24443015930672315,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2512852820172814,
+      "candidate_minus_r10_reference_mae": 0.11500907155651291,
+      "carry_forward_mean_norm_error": 0.4957154413240045,
+      "entry_count": 192,
+      "horizon_years": 5,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.20355872610419345,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.07167896905893432,
+      "candidate_mean_norm_error": 0.17353276359513267,
+      "candidate_minus_carry_forward_mean_norm_error": -0.09406837284614747,
+      "candidate_minus_r10_reference_mae": 0.05788218137397061,
+      "carry_forward_mean_norm_error": 0.26760113644128014,
+      "entry_count": 8,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "mean_signed_norm_residual": 0.010294316001594576,
+      "metric_names": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.7465651270897518,
+      "candidate_mean_norm_error": 0.1830291775599751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12898391863772457,
+      "candidate_minus_r10_reference_mae": 0.06737859533881305,
+      "carry_forward_mean_norm_error": 0.3120130961976997,
+      "entry_count": 79,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.12367585238813612,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.05441912466822143,
+      "candidate_mean_norm_error": 0.2321746963546609,
+      "candidate_minus_carry_forward_mean_norm_error": -0.15957790222198173,
+      "candidate_minus_r10_reference_mae": 0.10275360860445065,
+      "carry_forward_mean_norm_error": 0.39175259857664263,
+      "entry_count": 11,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.10612097526649757,
+      "metric_names": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.7440632463631763,
+      "candidate_mean_norm_error": 0.2665597525635351,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2269708913009068,
+      "candidate_minus_r10_reference_mae": 0.13713866481332485,
+      "carry_forward_mean_norm_error": 0.4935306438644419,
+      "entry_count": 131,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.23039305768326512,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.004659247452211871,
+      "candidate_mean_norm_error": 0.03007975132347428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27892350653661263,
+      "candidate_minus_r10_reference_mae": -0.08557083089768779,
+      "carry_forward_mean_norm_error": 0.3090032578600869,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "intraquarter_snapshot_bridge",
+      "mean_signed_norm_residual": 0.03007975132347428,
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.06701972160672245,
+      "candidate_mean_norm_error": 0.2596045709581277,
+      "candidate_minus_carry_forward_mean_norm_error": 0.01684470736813165,
+      "candidate_minus_r10_reference_mae": 0.14395398873696566,
+      "carry_forward_mean_norm_error": 0.24275986358999607,
+      "entry_count": 5,
+      "horizon_years": 3,
+      "lineage_value": "monthly_to_quarter_sum",
+      "mean_signed_norm_residual": -0.0015769451915332634,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.7465651270897518,
+      "candidate_mean_norm_error": 0.1830291775599751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12898391863772457,
+      "candidate_minus_r10_reference_mae": 0.06737859533881305,
+      "carry_forward_mean_norm_error": 0.3120130961976997,
+      "entry_count": 79,
+      "horizon_years": 3,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.12367585238813612,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.023237266308306952,
+      "candidate_mean_norm_error": 0.218107726294741,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3594539182762057,
+      "candidate_minus_r10_reference_mae": 0.08868663854453077,
+      "carry_forward_mean_norm_error": 0.5775616445709467,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "intraquarter_snapshot_bridge",
+      "mean_signed_norm_residual": -0.1942493037648924,
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.031181858359914476,
+      "candidate_mean_norm_error": 0.24389717140459413,
+      "candidate_minus_carry_forward_mean_norm_error": 0.0069854444898715395,
+      "candidate_minus_r10_reference_mae": 0.11447608365438389,
+      "carry_forward_mean_norm_error": 0.2369117269147226,
+      "entry_count": 6,
+      "horizon_years": 5,
+      "lineage_value": "monthly_to_quarter_sum",
+      "mean_signed_norm_residual": -0.03268070151783517,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.7440632463631763,
+      "candidate_mean_norm_error": 0.2665597525635351,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2269708913009068,
+      "candidate_minus_r10_reference_mae": 0.13713866481332485,
+      "carry_forward_mean_norm_error": 0.4935306438644419,
+      "entry_count": 131,
+      "horizon_years": 5,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.23039305768326512,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.000813569085707941,
+      "candidate_mean_norm_error": 0.015757022588021394,
+      "candidate_minus_carry_forward_mean_norm_error": -0.030891215145219798,
+      "candidate_minus_r10_reference_mae": -0.09989355963314067,
+      "carry_forward_mean_norm_error": 0.04664823773324119,
+      "entry_count": 1,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2019_2019_october_to_december",
+      "mean_signed_norm_residual": -0.015757022588021394,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.021706078855214837,
+      "candidate_mean_norm_error": 0.2101992202182661,
+      "candidate_minus_carry_forward_mean_norm_error": 0.03149368471636932,
+      "candidate_minus_r10_reference_mae": 0.09454863799710403,
+      "carry_forward_mean_norm_error": 0.17870553550189677,
+      "entry_count": 2,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2020_2020_december",
+      "mean_signed_norm_residual": 0.2101992202182661,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.045313642751507614,
+      "candidate_mean_norm_error": 0.2925414714513688,
+      "candidate_minus_carry_forward_mean_norm_error": 0.007078722469306464,
+      "candidate_minus_r10_reference_mae": 0.1768908892302067,
+      "carry_forward_mean_norm_error": 0.2854627489820623,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2022_2022_december",
+      "mean_signed_norm_residual": -0.1427610554647328,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.004659247452211871,
+      "candidate_mean_norm_error": 0.03007975132347428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27892350653661263,
+      "candidate_minus_r10_reference_mae": -0.08557083089768779,
+      "carry_forward_mean_norm_error": 0.3090032578600869,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_april",
+      "mean_signed_norm_residual": 0.03007975132347428,
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.07677537456303121,
+      "candidate_mean_norm_error": 0.2478280235498379,
+      "candidate_minus_carry_forward_mean_norm_error": -0.07386043150924143,
+      "candidate_minus_r10_reference_mae": 0.13217744132867584,
+      "carry_forward_mean_norm_error": 0.32168845505907934,
+      "entry_count": 6,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "mean_signed_norm_residual": -0.2396552483280687,
+      "metric_names": [
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.12349210066009741,
+      "candidate_mean_norm_error": 0.26575190638749735,
+      "candidate_minus_carry_forward_mean_norm_error": -0.18510610038980846,
+      "candidate_minus_r10_reference_mae": 0.1501013241663353,
+      "carry_forward_mean_norm_error": 0.4508580067773058,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.2611748913432385,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04393049592481555,
+      "candidate_mean_norm_error": 0.2836119795071281,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027227681547125238,
+      "candidate_minus_r10_reference_mae": 0.167961397285966,
+      "carry_forward_mean_norm_error": 0.3108396610542533,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_october_december",
+      "mean_signed_norm_residual": -0.2836119795071281,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.10696707420617,
+      "candidate_mean_norm_error": 0.23019046351171,
+      "candidate_minus_carry_forward_mean_norm_error": -0.17150089892859746,
+      "candidate_minus_r10_reference_mae": 0.11453988129054793,
+      "carry_forward_mean_norm_error": 0.40169136244030745,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.18450549034691413,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04692341496042719,
+      "candidate_mean_norm_error": 0.10097801327607041,
+      "candidate_minus_carry_forward_mean_norm_error": -0.10549146971584418,
+      "candidate_minus_r10_reference_mae": -0.014672568945091655,
+      "carry_forward_mean_norm_error": 0.2064694829919146,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": 0.00935275836284617,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.07324629660783837,
+      "candidate_mean_norm_error": 0.1576241950319883,
+      "candidate_minus_carry_forward_mean_norm_error": -0.21457732658393022,
+      "candidate_minus_r10_reference_mae": 0.04197361281082623,
+      "carry_forward_mean_norm_error": 0.3722015216159185,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.13250481359390084,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04301964951483735,
+      "candidate_mean_norm_error": 0.2777316235511428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.029397728149271052,
+      "candidate_minus_r10_reference_mae": 0.16208104132998072,
+      "carry_forward_mean_norm_error": 0.30712935170041383,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_october_december",
+      "mean_signed_norm_residual": -0.2777316235511428,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.06274014904310685,
+      "candidate_mean_norm_error": 0.13501522871599203,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1252371726607237,
+      "candidate_minus_r10_reference_mae": 0.019364646494829968,
+      "carry_forward_mean_norm_error": 0.26025240137671574,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": -0.02758085676537891,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.06738980694521178,
+      "candidate_mean_norm_error": 0.14502117601893028,
+      "candidate_minus_carry_forward_mean_norm_error": -0.09886536059884338,
+      "candidate_minus_r10_reference_mae": 0.029370593797768213,
+      "carry_forward_mean_norm_error": 0.24388653661777365,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": -0.03104968979751637,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.08327987726269374,
+      "candidate_mean_norm_error": 0.17921620919862485,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1602974570008026,
+      "candidate_minus_r10_reference_mae": 0.06356562697746279,
+      "carry_forward_mean_norm_error": 0.33951366619942747,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": -0.08708030986546916,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.017987318315814273,
+      "candidate_mean_norm_error": 0.11612477496961755,
+      "candidate_minus_carry_forward_mean_norm_error": 0.0012941779388545155,
+      "candidate_minus_r10_reference_mae": 0.0004741927484554903,
+      "carry_forward_mean_norm_error": 0.11483059703076304,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_oct_dec",
+      "mean_signed_norm_residual": -0.06726112559512125,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0003357516364267282,
+      "candidate_mean_norm_error": 0.015757022588021394,
+      "candidate_minus_carry_forward_mean_norm_error": -0.030891215145219798,
+      "candidate_minus_r10_reference_mae": -0.11366406516218885,
+      "carry_forward_mean_norm_error": 0.04664823773324119,
+      "entry_count": 1,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2019_2019_october_to_december",
+      "mean_signed_norm_residual": -0.015757022588021394,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.00895787662544274,
+      "candidate_mean_norm_error": 0.2101992202182661,
+      "candidate_minus_carry_forward_mean_norm_error": 0.03149368471636932,
+      "candidate_minus_r10_reference_mae": 0.08077813246805585,
+      "carry_forward_mean_norm_error": 0.17870553550189677,
+      "entry_count": 2,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2020_2020_december",
+      "mean_signed_norm_residual": 0.2101992202182661,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.02222398173447174,
+      "candidate_mean_norm_error": 0.26074614699775817,
+      "candidate_minus_carry_forward_mean_norm_error": -0.00526867562337735,
+      "candidate_minus_r10_reference_mae": 0.13132505924754792,
+      "carry_forward_mean_norm_error": 0.2660148226211355,
+      "entry_count": 4,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2022_2022_december",
+      "mean_signed_norm_residual": -0.1541206623858858,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.023237266308306952,
+      "candidate_mean_norm_error": 0.218107726294741,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3594539182762057,
+      "candidate_minus_r10_reference_mae": 0.08868663854453077,
+      "carry_forward_mean_norm_error": 0.5775616445709467,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_april",
+      "mean_signed_norm_residual": -0.1942493037648924,
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.05905262961548236,
+      "candidate_mean_norm_error": 0.2771374783563506,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1309652112183446,
+      "candidate_minus_r10_reference_mae": 0.14771639060614036,
+      "carry_forward_mean_norm_error": 0.4081026895746952,
+      "entry_count": 10,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "mean_signed_norm_residual": -0.27223381322328905,
+      "metric_names": [
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.11880858058975152,
+      "candidate_mean_norm_error": 0.37171712359115006,
+      "candidate_minus_carry_forward_mean_norm_error": -0.23984909293985646,
+      "candidate_minus_r10_reference_mae": 0.2422960358409398,
+      "carry_forward_mean_norm_error": 0.6115662165310065,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.3689709145645947,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.024661809038526942,
+      "candidate_mean_norm_error": 0.23147865262383824,
+      "candidate_minus_carry_forward_mean_norm_error": -0.060166848376284304,
+      "candidate_minus_r10_reference_mae": 0.10205756487362799,
+      "carry_forward_mean_norm_error": 0.29164550100012254,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_october_december",
+      "mean_signed_norm_residual": -0.21315438530990333,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.10817517312521431,
+      "candidate_mean_norm_error": 0.3384483174403644,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2500075147738764,
+      "candidate_minus_r10_reference_mae": 0.20902722969015416,
+      "carry_forward_mean_norm_error": 0.5884558322142408,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.3123684266219718,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.05255065518730809,
+      "candidate_mean_norm_error": 0.1644155522445617,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1994450725079495,
+      "candidate_minus_r10_reference_mae": 0.03499446449435145,
+      "carry_forward_mean_norm_error": 0.3638606247525112,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": -0.09973246256936615,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.08785999219972997,
+      "candidate_mean_norm_error": 0.27488808819286314,
+      "candidate_minus_carry_forward_mean_norm_error": -0.28572722353730573,
+      "candidate_minus_r10_reference_mae": 0.1454670004426529,
+      "carry_forward_mean_norm_error": 0.5606153117301689,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.2598164593300107,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.03351381207420533,
+      "candidate_mean_norm_error": 0.3145645986921056,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06977904072035135,
+      "candidate_minus_r10_reference_mae": 0.18514351094189538,
+      "carry_forward_mean_norm_error": 0.38434363941245697,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_october_december",
+      "mean_signed_norm_residual": -0.3145645986921056,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.07025593281775812,
+      "candidate_mean_norm_error": 0.21981016129135417,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2823968981525515,
+      "candidate_minus_r10_reference_mae": 0.09038907354114392,
+      "carry_forward_mean_norm_error": 0.5022070594439056,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": -0.15534953812098629,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.07260410002573622,
+      "candidate_mean_norm_error": 0.22715688621583302,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2552379086075038,
+      "candidate_minus_r10_reference_mae": 0.09773579846562278,
+      "carry_forward_mean_norm_error": 0.4823947948233368,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": -0.15877399448298474,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.08997841961437684,
+      "candidate_mean_norm_error": 0.281516024838519,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3148186422952999,
+      "candidate_minus_r10_reference_mae": 0.15209493708830876,
+      "carry_forward_mean_norm_error": 0.5963346671338189,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": -0.22623448523862558,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.026266390438659838,
+      "candidate_mean_norm_error": 0.2465394431744336,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06613573907835896,
+      "candidate_minus_r10_reference_mae": 0.11711835542422336,
+      "carry_forward_mean_norm_error": 0.31267518225279256,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_oct_dec",
+      "mean_signed_norm_residual": -0.21722125354973584,
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    }
+  ],
+  "blocker_assessment": "single_lineage_exclusion_can_flip_r10_failure",
+  "contract": "R12-04 does not change predictions. It recomputes locked R11-28 blocked-horizon residuals, stratifies R10-comparable D/A/diagnosis-flow errors by source family and support partition, and runs leave-one-lineage-out evaluation ablations to decide whether 3y/5y R10 failure is driven by mixed evidence lineage or by model dynamics.",
+  "decision": "keep_as_observation_lineage_diagnostic",
+  "decisive_leave_one_out_count": 3,
+  "decisive_leave_one_out_rows": [
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": -0.004094457955893194,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 79,
+      "excluded_error_share_within_horizon": 0.7465651270897516,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": -0.04590545699416093,
+      "flips_to_r10_pass_after_exclusion": true,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.11155612426526887,
+      "remaining_carry_forward_mean_norm_error": 0.33065507209900036,
+      "remaining_entry_count": 44
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": -0.004094457955893194,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 79,
+      "excluded_error_share_within_horizon": 0.7465651270897516,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": -0.04590545699416093,
+      "flips_to_r10_pass_after_exclusion": true,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.11155612426526887,
+      "remaining_carry_forward_mean_norm_error": 0.33065507209900036,
+      "remaining_entry_count": 44
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": -0.004094457955893194,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 79,
+      "excluded_error_share_within_horizon": 0.7465651270897516,
+      "excluded_lineage_value": "quarterly_observed",
+      "exclusion_delta_candidate_mean_norm_error": -0.04590545699416093,
+      "flips_to_r10_pass_after_exclusion": true,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.11155612426526887,
+      "remaining_carry_forward_mean_norm_error": 0.33065507209900036,
+      "remaining_entry_count": 44
+    }
+  ],
+  "experiment_id": "R12-04",
+  "generated_at": "2026-05-01T00:18:06.531442+00:00",
+  "horizon_rows": [
+    {
+      "candidate_mean_norm_error": 0.1574615812594298,
+      "candidate_minus_r10_reference_mae": 0.04181099903826774,
+      "carry_forward_mean_norm_error": 0.31868177050385604,
+      "entry_count": 123,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "r10_status": "fail"
+    },
+    {
+      "candidate_mean_norm_error": 0.24443015930672315,
+      "candidate_minus_r10_reference_mae": 0.11500907155651291,
+      "carry_forward_mean_norm_error": 0.4957154413240045,
+      "entry_count": 192,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "r10_status": "fail"
+    }
+  ],
+  "horizons": [
+    3,
+    5
+  ],
+  "leave_one_out_row_count": 54,
+  "leave_one_out_rows": [
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": 0.04069300374534929,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 8,
+      "excluded_error_share_within_horizon": 0.07167896905893431,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": -0.00111799529291845,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15634358596651135,
+      "remaining_carry_forward_mean_norm_error": 0.3222352059169048,
+      "remaining_entry_count": 115
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": -0.004094457955893194,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 79,
+      "excluded_error_share_within_horizon": 0.7465651270897516,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": -0.04590545699416093,
+      "flips_to_r10_pass_after_exclusion": true,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.11155612426526887,
+      "remaining_carry_forward_mean_norm_error": 0.33065507209900036,
+      "remaining_entry_count": 44
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": 0.06650536187078154,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 36,
+      "excluded_error_share_within_horizon": 0.18175590385131402,
+      "excluded_lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": 0.024694362832513805,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1821559440919436,
+      "remaining_carry_forward_mean_norm_error": 0.3079292378292933,
+      "remaining_entry_count": 87
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": 0.11575387869724593,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 11,
+      "excluded_error_share_within_horizon": 0.05441912466822139,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": 0.0007448071407330226,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24517496644745618,
+      "remaining_carry_forward_mean_norm_error": 0.5020336251373801,
+      "remaining_entry_count": 181
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": 0.0674848630869658,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 131,
+      "excluded_error_share_within_horizon": 0.7440632463631758,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": -0.04752420846954711,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.19690595083717605,
+      "remaining_carry_forward_mean_norm_error": 0.5004073834092949,
+      "remaining_entry_count": 61
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_family",
+      "candidate_minus_r10_after_exclusion": 0.134475033698553,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 50,
+      "excluded_error_share_within_horizon": 0.20151762896860276,
+      "excluded_lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "exclusion_delta_candidate_mean_norm_error": 0.019465962142040077,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.26389612144876323,
+      "remaining_carry_forward_mean_norm_error": 0.4856464290886264,
+      "remaining_entry_count": 142
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "support_partition",
+      "candidate_minus_r10_after_exclusion": null,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 123,
+      "excluded_error_share_within_horizon": 1.0,
+      "excluded_lineage_value": "common_support",
+      "exclusion_delta_candidate_mean_norm_error": null,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": null,
+      "remaining_carry_forward_mean_norm_error": null,
+      "remaining_entry_count": 0
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "support_partition",
+      "candidate_minus_r10_after_exclusion": null,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 192,
+      "excluded_error_share_within_horizon": 1.0,
+      "excluded_lineage_value": "common_support",
+      "exclusion_delta_candidate_mean_norm_error": null,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": null,
+      "remaining_carry_forward_mean_norm_error": null,
+      "remaining_entry_count": 0
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": 0.04069300374534929,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 8,
+      "excluded_error_share_within_horizon": 0.07167896905893431,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": -0.00111799529291845,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15634358596651135,
+      "remaining_carry_forward_mean_norm_error": 0.3222352059169048,
+      "remaining_entry_count": 115
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": -0.004094457955893194,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 79,
+      "excluded_error_share_within_horizon": 0.7465651270897516,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": -0.04590545699416093,
+      "flips_to_r10_pass_after_exclusion": true,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.11155612426526887,
+      "remaining_carry_forward_mean_norm_error": 0.33065507209900036,
+      "remaining_entry_count": 44
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": 0.06650536187078154,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 36,
+      "excluded_error_share_within_horizon": 0.18175590385131402,
+      "excluded_lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": 0.024694362832513805,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1821559440919436,
+      "remaining_carry_forward_mean_norm_error": 0.3079292378292933,
+      "remaining_entry_count": 87
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": 0.11575387869724593,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 11,
+      "excluded_error_share_within_horizon": 0.05441912466822139,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": 0.0007448071407330226,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24517496644745618,
+      "remaining_carry_forward_mean_norm_error": 0.5020336251373801,
+      "remaining_entry_count": 181
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": 0.0674848630869658,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 131,
+      "excluded_error_share_within_horizon": 0.7440632463631758,
+      "excluded_lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": -0.04752420846954711,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.19690595083717605,
+      "remaining_carry_forward_mean_norm_error": 0.5004073834092949,
+      "remaining_entry_count": 61
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_support",
+      "candidate_minus_r10_after_exclusion": 0.134475033698553,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 50,
+      "excluded_error_share_within_horizon": 0.20151762896860276,
+      "excluded_lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "exclusion_delta_candidate_mean_norm_error": 0.019465962142040077,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.26389612144876323,
+      "remaining_carry_forward_mean_norm_error": 0.4856464290886264,
+      "remaining_entry_count": 142
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.06650536187078154,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 36,
+      "excluded_error_share_within_horizon": 0.18175590385131402,
+      "excluded_lineage_value": "annual_anchor_to_q4",
+      "exclusion_delta_candidate_mean_norm_error": 0.024694362832513805,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1821559440919436,
+      "remaining_carry_forward_mean_norm_error": 0.3079292378292933,
+      "remaining_entry_count": 87
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.04499554478666662,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 3,
+      "excluded_error_share_within_horizon": 0.00465924745221187,
+      "excluded_lineage_value": "intraquarter_snapshot_bridge",
+      "exclusion_delta_candidate_mean_norm_error": 0.0031845457483988815,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.16064612700782868,
+      "remaining_carry_forward_mean_norm_error": 0.3189237333199503,
+      "remaining_entry_count": 120
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.03748290625442463,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 5,
+      "excluded_error_share_within_horizon": 0.06701972160672244,
+      "excluded_lineage_value": "monthly_to_quarter_sum",
+      "exclusion_delta_candidate_mean_norm_error": -0.004328092783843107,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1531334884755867,
+      "remaining_carry_forward_mean_norm_error": 0.32189880045783315,
+      "remaining_entry_count": 118
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": -0.004094457955893194,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 79,
+      "excluded_error_share_within_horizon": 0.7465651270897516,
+      "excluded_lineage_value": "quarterly_observed",
+      "exclusion_delta_candidate_mean_norm_error": -0.04590545699416093,
+      "flips_to_r10_pass_after_exclusion": true,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.11155612426526887,
+      "remaining_carry_forward_mean_norm_error": 0.33065507209900036,
+      "remaining_entry_count": 44
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.134475033698553,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 50,
+      "excluded_error_share_within_horizon": 0.20151762896860276,
+      "excluded_lineage_value": "annual_anchor_to_q4",
+      "exclusion_delta_candidate_mean_norm_error": 0.019465962142040077,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.26389612144876323,
+      "remaining_carry_forward_mean_norm_error": 0.4856464290886264,
+      "remaining_entry_count": 142
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.11571287992581722,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 5,
+      "excluded_error_share_within_horizon": 0.02323726630830693,
+      "excluded_lineage_value": "intraquarter_snapshot_bridge",
+      "exclusion_delta_candidate_mean_norm_error": 0.0007038083693043096,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24513396767602746,
+      "remaining_carry_forward_mean_norm_error": 0.4935270401676692,
+      "remaining_entry_count": 187
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.11502626471464605,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 6,
+      "excluded_error_share_within_horizon": 0.031181858359914456,
+      "excluded_lineage_value": "monthly_to_quarter_sum",
+      "exclusion_delta_candidate_mean_norm_error": 1.719315813314415e-05,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.2444473524648563,
+      "remaining_carry_forward_mean_norm_error": 0.5040639482404331,
+      "remaining_entry_count": 186
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "aggregation_mode",
+      "candidate_minus_r10_after_exclusion": 0.0674848630869658,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 131,
+      "excluded_error_share_within_horizon": 0.7440632463631758,
+      "excluded_lineage_value": "quarterly_observed",
+      "exclusion_delta_candidate_mean_norm_error": -0.04752420846954711,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.19690595083717605,
+      "remaining_carry_forward_mean_norm_error": 0.5004073834092949,
+      "remaining_entry_count": 61
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.0429725118142629,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 1,
+      "excluded_error_share_within_horizon": 0.0008135690857079407,
+      "excluded_lineage_value": "doh_hiv_sti_2019_2019_october_to_december",
+      "exclusion_delta_candidate_mean_norm_error": 0.0011615127759951605,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15862309403542496,
+      "remaining_carry_forward_mean_norm_error": 0.3209115535593529,
+      "remaining_entry_count": 122
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.04093930252655145,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 2,
+      "excluded_error_share_within_horizon": 0.021706078855214833,
+      "excluded_lineage_value": "doh_hiv_sti_2020_2020_december",
+      "exclusion_delta_candidate_mean_norm_error": -0.0008716965117162856,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15658988474771351,
+      "remaining_carry_forward_mean_norm_error": 0.3209954272807479,
+      "remaining_entry_count": 121
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.03843400178346926,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 3,
+      "excluded_error_share_within_horizon": 0.0453136427515076,
+      "excluded_lineage_value": "doh_hiv_sti_2022_2022_december",
+      "exclusion_delta_candidate_mean_norm_error": -0.0033769972547984806,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15408458400463132,
+      "remaining_carry_forward_mean_norm_error": 0.31951224604190087,
+      "remaining_entry_count": 120
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.04499554478666662,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 3,
+      "excluded_error_share_within_horizon": 0.00465924745221187,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_april",
+      "exclusion_delta_candidate_mean_norm_error": 0.0031845457483988815,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.16064612700782868,
+      "remaining_carry_forward_mean_norm_error": 0.3189237333199503,
+      "remaining_entry_count": 120
+    },
+    {
+      "affected_metrics": [
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.037176822510554514,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 6,
+      "excluded_error_share_within_horizon": 0.0767753745630312,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "exclusion_delta_candidate_mean_norm_error": -0.004634176527713224,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15282740473171658,
+      "remaining_carry_forward_mean_norm_error": 0.3185275815523061,
+      "remaining_entry_count": 117
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.033261762843946635,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.12349210066009739,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "exclusion_delta_candidate_mean_norm_error": -0.008549236194321103,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1489123450651087,
+      "remaining_carry_forward_mean_norm_error": 0.3082468044822678,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.03865723908207527,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 3,
+      "excluded_error_share_within_horizon": 0.043930495924815544,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_october_december",
+      "exclusion_delta_candidate_mean_norm_error": -0.0031537599561924645,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15430782130323734,
+      "remaining_carry_forward_mean_norm_error": 0.3188778232400961,
+      "remaining_entry_count": 120
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.0360692451762456,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.10696707420616998,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "exclusion_delta_candidate_mean_norm_error": -0.0057417538620221364,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15171982739740766,
+      "remaining_carry_forward_mean_norm_error": 0.31212838166676776,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.046270228089585586,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.04692341496042718,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "exclusion_delta_candidate_mean_norm_error": 0.004459229051317848,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.16192081031074765,
+      "remaining_carry_forward_mean_norm_error": 0.3275406353074304,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.04179816110885523,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.07324629660783835,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "exclusion_delta_candidate_mean_norm_error": -1.2837929412506943e-05,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1574487433300173,
+      "remaining_carry_forward_mean_norm_error": 0.31445652699500903,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.038804247980974926,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 3,
+      "excluded_error_share_within_horizon": 0.043019649514837346,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_october_december",
+      "exclusion_delta_candidate_mean_norm_error": -0.0030067510572928113,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.154454830202137,
+      "remaining_carry_forward_mean_norm_error": 0.3189705809739421,
+      "remaining_entry_count": 120
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.04358307950222334,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.06274014904310683,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "exclusion_delta_candidate_mean_norm_error": 0.0017720804639556054,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1592336617233854,
+      "remaining_carry_forward_mean_norm_error": 0.3232946154349461,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.04279313629409662,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.06738980694521177,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "exclusion_delta_candidate_mean_norm_error": 0.00098213725582888,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15844371851525868,
+      "remaining_carry_forward_mean_norm_error": 0.3245866573895994,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.04009352841148919,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 9,
+      "excluded_error_share_within_horizon": 0.08327987726269373,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "exclusion_delta_candidate_mean_norm_error": -0.0017174706267785445,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.15574411063265126,
+      "remaining_carry_forward_mean_norm_error": 0.3170371471594688,
+      "remaining_entry_count": 114
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.042844419195513045,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 3,
+      "excluded_error_share_within_horizon": 0.01798731831581427,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_oct_dec",
+      "exclusion_delta_candidate_mean_norm_error": 0.0010334201572453072,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1584950014166751,
+      "remaining_carry_forward_mean_norm_error": 0.32377804984068337,
+      "remaining_entry_count": 120
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.1574615812594298,
+      "all_carry_forward_mean_norm_error": 0.31868177050385604,
+      "all_entry_count": 123,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.06650536187078154,
+      "candidate_minus_r10_before": 0.04181099903826774,
+      "excluded_entry_count": 36,
+      "excluded_error_share_within_horizon": 0.18175590385131402,
+      "excluded_lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "exclusion_delta_candidate_mean_norm_error": 0.024694362832513805,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 3,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "remaining_candidate_mean_norm_error": 0.1821559440919436,
+      "remaining_carry_forward_mean_norm_error": 0.3079292378292933,
+      "remaining_entry_count": 87
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11620631311001392,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 1,
+      "excluded_error_share_within_horizon": 0.0003357516364267279,
+      "excluded_lineage_value": "doh_hiv_sti_2019_2019_october_to_december",
+      "exclusion_delta_candidate_mean_norm_error": 0.0011972415535010106,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24562740086022417,
+      "remaining_carry_forward_mean_norm_error": 0.49806657851557923,
+      "remaining_entry_count": 191
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11536939723112821,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 2,
+      "excluded_error_share_within_horizon": 0.008957876625442732,
+      "excluded_lineage_value": "doh_hiv_sti_2020_2020_december",
+      "exclusion_delta_candidate_mean_norm_error": 0.00036032567461530274,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24479048498133846,
+      "remaining_carry_forward_mean_norm_error": 0.4990523877010793,
+      "remaining_entry_count": 190
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11466192288223553,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 4,
+      "excluded_error_share_within_horizon": 0.022223981734471723,
+      "excluded_lineage_value": "doh_hiv_sti_2022_2022_december",
+      "exclusion_delta_candidate_mean_norm_error": -0.0003471486742773755,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24408301063244578,
+      "remaining_carry_forward_mean_norm_error": 0.5006026885304485,
+      "remaining_entry_count": 188
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11571287992581722,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 5,
+      "excluded_error_share_within_horizon": 0.02323726630830693,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_april",
+      "exclusion_delta_candidate_mean_norm_error": 0.0007038083693043096,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24513396767602746,
+      "remaining_carry_forward_mean_norm_error": 0.4935270401676692,
+      "remaining_entry_count": 187
+    },
+    {
+      "affected_metrics": [
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11321196611422565,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 10,
+      "excluded_error_share_within_horizon": 0.05905262961548231,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "exclusion_delta_candidate_mean_norm_error": -0.0017971054422872557,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.2426330538644359,
+      "remaining_carry_forward_mean_norm_error": 0.5005293287827578,
+      "remaining_entry_count": 182
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.10422204068495128,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.11880858058975144,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "exclusion_delta_candidate_mean_norm_error": -0.010787030871561631,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.23364312843516152,
+      "remaining_carry_forward_mean_norm_error": 0.4858975790183265,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11535536852664352,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 5,
+      "excluded_error_share_within_horizon": 0.024661809038526925,
+      "excluded_lineage_value": "doh_hiv_sti_2023_2023_october_december",
+      "exclusion_delta_candidate_mean_norm_error": 0.00034629697013061067,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24477645627685377,
+      "remaining_carry_forward_mean_norm_error": 0.5011718568406859,
+      "remaining_entry_count": 187
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.10704143103671274,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.10817517312521423,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "exclusion_delta_candidate_mean_norm_error": -0.007967640519800173,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.23646251878692298,
+      "remaining_carry_forward_mean_norm_error": 0.487856086163815,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.12178997046008586,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.052550655187308046,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "exclusion_delta_candidate_mean_norm_error": 0.006780898903572946,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.2512110582102961,
+      "remaining_carry_forward_mean_norm_error": 0.5068895783215888,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11242789114243323,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.0878599921997299,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "exclusion_delta_candidate_mean_norm_error": -0.0025811804140796757,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24184897889264348,
+      "remaining_carry_forward_mean_norm_error": 0.49021545230653296,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11313381916652937,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 5,
+      "excluded_error_share_within_horizon": 0.033513812074205306,
+      "excluded_lineage_value": "doh_hiv_sti_2024_2024_october_december",
+      "exclusion_delta_candidate_mean_norm_error": -0.0018752523899835394,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24255490691673962,
+      "remaining_carry_forward_mean_norm_error": 0.4986932969900887,
+      "remaining_entry_count": 187
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11709551206628988,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.07025593281775806,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "exclusion_delta_candidate_mean_norm_error": 0.0020864405097769656,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24651659981650012,
+      "remaining_carry_forward_mean_norm_error": 0.4951653041951993,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11647290825913065,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.07260410002573617,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "exclusion_delta_candidate_mean_norm_error": 0.001463836702617738,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.2458939960093409,
+      "remaining_carry_forward_mean_norm_error": 0.49684430967151866,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.1118662015961912,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 15,
+      "excluded_error_share_within_horizon": 0.08997841961437678,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "exclusion_delta_candidate_mean_norm_error": -0.0031428699603217036,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24128728934640145,
+      "remaining_carry_forward_mean_norm_error": 0.4871883882892745,
+      "remaining_entry_count": 177
+    },
+    {
+      "affected_metrics": [
+        "new_diagnosed_cases_period"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.11495267359213562,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 5,
+      "excluded_error_share_within_horizon": 0.026266390438659817,
+      "excluded_lineage_value": "doh_hiv_sti_2025_2025_oct_dec",
+      "exclusion_delta_candidate_mean_norm_error": -5.639796437728606e-05,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.24437376134234587,
+      "remaining_carry_forward_mean_norm_error": 0.5006095658981011,
+      "remaining_entry_count": 187
+    },
+    {
+      "affected_metrics": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "all_candidate_mean_norm_error": 0.24443015930672315,
+      "all_carry_forward_mean_norm_error": 0.4957154413240045,
+      "all_entry_count": 192,
+      "axis": "source_id",
+      "candidate_minus_r10_after_exclusion": 0.134475033698553,
+      "candidate_minus_r10_before": 0.11500907155651291,
+      "excluded_entry_count": 50,
+      "excluded_error_share_within_horizon": 0.20151762896860276,
+      "excluded_lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "exclusion_delta_candidate_mean_norm_error": 0.019465962142040077,
+      "flips_to_r10_pass_after_exclusion": false,
+      "horizon_years": 5,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "remaining_candidate_mean_norm_error": 0.26389612144876323,
+      "remaining_carry_forward_mean_norm_error": 0.4856464290886264,
+      "remaining_entry_count": 142
+    }
+  ],
+  "lineage_axes": [
+    "source_family",
+    "support_partition",
+    "source_support",
+    "aggregation_mode",
+    "source_id"
+  ],
+  "metric_axis_row_count": 112,
+  "metric_axis_rows": [
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.004659247452211871,
+      "candidate_mean_norm_error": 0.03007975132347428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27892350653661263,
+      "candidate_minus_r10_reference_mae": -0.08557083089768779,
+      "carry_forward_mean_norm_error": 0.3090032578600869,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "mean_signed_norm_residual": 0.03007975132347428,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.09552993056658408,
+      "candidate_mean_norm_error": 0.08810486441561893,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2491396106647396,
+      "candidate_minus_r10_reference_mae": -0.02754571780554313,
+      "carry_forward_mean_norm_error": 0.33724447508035854,
+      "entry_count": 21,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": 0.06653200341535292,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.07631208629627385,
+      "candidate_mean_norm_error": 0.08211084881235184,
+      "candidate_minus_carry_forward_mean_norm_error": -0.31025448772174335,
+      "candidate_minus_r10_reference_mae": -0.033539733408810224,
+      "carry_forward_mean_norm_error": 0.39236533653409517,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.013286583071590984,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.09513221648164884,
+      "candidate_mean_norm_error": 0.07677080483406341,
+      "candidate_minus_carry_forward_mean_norm_error": -0.16798500077606848,
+      "candidate_minus_r10_reference_mae": -0.03887977738709865,
+      "carry_forward_mean_norm_error": 0.24475580561013188,
+      "entry_count": 24,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.03598427615312984,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.1054438175550402,
+      "candidate_mean_norm_error": 0.11345622668269091,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1835125523846458,
+      "candidate_minus_r10_reference_mae": -0.0021943555384711516,
+      "carry_forward_mean_norm_error": 0.2969687790673367,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.08727817404297786,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.06701972160672245,
+      "candidate_mean_norm_error": 0.2596045709581277,
+      "candidate_minus_carry_forward_mean_norm_error": 0.01684470736813165,
+      "candidate_minus_r10_reference_mae": 0.14395398873696566,
+      "carry_forward_mean_norm_error": 0.24275986358999607,
+      "entry_count": 5,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "mean_signed_norm_residual": -0.0015769451915332634,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.5559029800415187,
+      "candidate_mean_norm_error": 0.31666481054389745,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027239933229266655,
+      "candidate_minus_r10_reference_mae": 0.20101422832273538,
+      "carry_forward_mean_norm_error": 0.3439047437731641,
+      "entry_count": 34,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.30305711125617796,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.023237266308306952,
+      "candidate_mean_norm_error": 0.218107726294741,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3594539182762057,
+      "candidate_minus_r10_reference_mae": 0.08868663854453077,
+      "carry_forward_mean_norm_error": 0.5775616445709467,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "mean_signed_norm_residual": -0.1942493037648924,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.14657379142305854,
+      "candidate_mean_norm_error": 0.19653698845839682,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4288774328185063,
+      "candidate_minus_r10_reference_mae": 0.06711590070818657,
+      "carry_forward_mean_norm_error": 0.6254144212769032,
+      "entry_count": 35,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.1049747819263734,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.1050171218517686,
+      "candidate_mean_norm_error": 0.1971406220095591,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4077268618419453,
+      "candidate_minus_r10_reference_mae": 0.06771953425934885,
+      "carry_forward_mean_norm_error": 0.6048674838515044,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.1470773835693335,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.1481579407247696,
+      "candidate_mean_norm_error": 0.17382849145877496,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26436424059168273,
+      "candidate_minus_r10_reference_mae": 0.04440740370856472,
+      "carry_forward_mean_norm_error": 0.43819273205045767,
+      "entry_count": 40,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.1493565742502148,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.0965005071168343,
+      "candidate_mean_norm_error": 0.18115303163709975,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26260235665635256,
+      "candidate_minus_r10_reference_mae": 0.05173194388688951,
+      "carry_forward_mean_norm_error": 0.4437553882934523,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.16230078153330388,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.031181858359914476,
+      "candidate_mean_norm_error": 0.24389717140459413,
+      "candidate_minus_carry_forward_mean_norm_error": 0.0069854444898715395,
+      "candidate_minus_r10_reference_mae": 0.11447608365438389,
+      "carry_forward_mean_norm_error": 0.2369117269147226,
+      "entry_count": 6,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot",
+      "mean_signed_norm_residual": -0.03268070151783517,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.4493315142153481,
+      "candidate_mean_norm_error": 0.3765605952040752,
+      "candidate_minus_carry_forward_mean_norm_error": -0.07406976764470996,
+      "candidate_minus_r10_reference_mae": 0.24713950745386495,
+      "carry_forward_mean_norm_error": 0.45063036284878516,
+      "entry_count": 56,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.36666268248350126,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 0.1765012643150698,
+      "candidate_mean_norm_error": 0.08139134965049413,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2774591219657322,
+      "candidate_minus_r10_reference_mae": -0.03425923257066793,
+      "carry_forward_mean_norm_error": 0.3588504716162263,
+      "entry_count": 42,
+      "horizon_years": 3,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": 0.0297203054858142,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 0.20057603403668903,
+      "candidate_mean_norm_error": 0.0924931284834752,
+      "candidate_minus_carry_forward_mean_norm_error": -0.174639665751173,
+      "candidate_minus_r10_reference_mae": -0.023157453737686864,
+      "carry_forward_mean_norm_error": 0.2671327942346482,
+      "entry_count": 42,
+      "horizon_years": 3,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.057967375248778985,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 0.6229227016482413,
+      "candidate_mean_norm_error": 0.3093493952123885,
+      "candidate_minus_carry_forward_mean_norm_error": -0.021588056229600194,
+      "candidate_minus_r10_reference_mae": 0.19369881299122646,
+      "carry_forward_mean_norm_error": 0.3309374514419887,
+      "entry_count": 39,
+      "horizon_years": 3,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.26440580791455687,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 0.2748281795831341,
+      "candidate_mean_norm_error": 0.19842844273471646,
+      "candidate_minus_carry_forward_mean_norm_error": -0.41540232747811356,
+      "candidate_minus_r10_reference_mae": 0.06900735498450622,
+      "carry_forward_mean_norm_error": 0.6138307702128301,
+      "entry_count": 65,
+      "horizon_years": 5,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.12803536116124414,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 0.2446584478416039,
+      "candidate_mean_norm_error": 0.1766456222965922,
+      "candidate_minus_carry_forward_mean_norm_error": -0.263686592924248,
+      "candidate_minus_r10_reference_mae": 0.04722453454638195,
+      "carry_forward_mean_norm_error": 0.4403322152208402,
+      "entry_count": 65,
+      "horizon_years": 5,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.15433511551294138,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 0.48051337257526266,
+      "candidate_mean_norm_error": 0.36372219935251254,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06622571485749246,
+      "candidate_minus_r10_reference_mae": 0.2343011116023023,
+      "carry_forward_mean_norm_error": 0.429947914210005,
+      "entry_count": 62,
+      "horizon_years": 5,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.3343418456158563,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.004659247452211871,
+      "candidate_mean_norm_error": 0.03007975132347428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27892350653661263,
+      "candidate_minus_r10_reference_mae": -0.08557083089768779,
+      "carry_forward_mean_norm_error": 0.3090032578600869,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "mean_signed_norm_residual": 0.03007975132347428,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.09552993056658408,
+      "candidate_mean_norm_error": 0.08810486441561893,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2491396106647396,
+      "candidate_minus_r10_reference_mae": -0.02754571780554313,
+      "carry_forward_mean_norm_error": 0.33724447508035854,
+      "entry_count": 21,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": 0.06653200341535292,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.07631208629627385,
+      "candidate_mean_norm_error": 0.08211084881235184,
+      "candidate_minus_carry_forward_mean_norm_error": -0.31025448772174335,
+      "candidate_minus_r10_reference_mae": -0.033539733408810224,
+      "carry_forward_mean_norm_error": 0.39236533653409517,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.013286583071590984,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.09513221648164884,
+      "candidate_mean_norm_error": 0.07677080483406341,
+      "candidate_minus_carry_forward_mean_norm_error": -0.16798500077606848,
+      "candidate_minus_r10_reference_mae": -0.03887977738709865,
+      "carry_forward_mean_norm_error": 0.24475580561013188,
+      "entry_count": 24,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.03598427615312984,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.1054438175550402,
+      "candidate_mean_norm_error": 0.11345622668269091,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1835125523846458,
+      "candidate_minus_r10_reference_mae": -0.0021943555384711516,
+      "carry_forward_mean_norm_error": 0.2969687790673367,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.08727817404297786,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.06701972160672245,
+      "candidate_mean_norm_error": 0.2596045709581277,
+      "candidate_minus_carry_forward_mean_norm_error": 0.01684470736813165,
+      "candidate_minus_r10_reference_mae": 0.14395398873696566,
+      "carry_forward_mean_norm_error": 0.24275986358999607,
+      "entry_count": 5,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.0015769451915332634,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.5559029800415187,
+      "candidate_mean_norm_error": 0.31666481054389745,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027239933229266655,
+      "candidate_minus_r10_reference_mae": 0.20101422832273538,
+      "carry_forward_mean_norm_error": 0.3439047437731641,
+      "entry_count": 34,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.30305711125617796,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.023237266308306952,
+      "candidate_mean_norm_error": 0.218107726294741,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3594539182762057,
+      "candidate_minus_r10_reference_mae": 0.08868663854453077,
+      "carry_forward_mean_norm_error": 0.5775616445709467,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.1942493037648924,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.14657379142305854,
+      "candidate_mean_norm_error": 0.19653698845839682,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4288774328185063,
+      "candidate_minus_r10_reference_mae": 0.06711590070818657,
+      "carry_forward_mean_norm_error": 0.6254144212769032,
+      "entry_count": 35,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.1049747819263734,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.1050171218517686,
+      "candidate_mean_norm_error": 0.1971406220095591,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4077268618419453,
+      "candidate_minus_r10_reference_mae": 0.06771953425934885,
+      "carry_forward_mean_norm_error": 0.6048674838515044,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.1470773835693335,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.1481579407247696,
+      "candidate_mean_norm_error": 0.17382849145877496,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26436424059168273,
+      "candidate_minus_r10_reference_mae": 0.04440740370856472,
+      "carry_forward_mean_norm_error": 0.43819273205045767,
+      "entry_count": 40,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.1493565742502148,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.0965005071168343,
+      "candidate_mean_norm_error": 0.18115303163709975,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26260235665635256,
+      "candidate_minus_r10_reference_mae": 0.05173194388688951,
+      "carry_forward_mean_norm_error": 0.4437553882934523,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.16230078153330388,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.031181858359914476,
+      "candidate_mean_norm_error": 0.24389717140459413,
+      "candidate_minus_carry_forward_mean_norm_error": 0.0069854444898715395,
+      "candidate_minus_r10_reference_mae": 0.11447608365438389,
+      "carry_forward_mean_norm_error": 0.2369117269147226,
+      "entry_count": 6,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|monthly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.03268070151783517,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.4493315142153481,
+      "candidate_mean_norm_error": 0.3765605952040752,
+      "candidate_minus_carry_forward_mean_norm_error": -0.07406976764470996,
+      "candidate_minus_r10_reference_mae": 0.24713950745386495,
+      "carry_forward_mean_norm_error": 0.45063036284878516,
+      "entry_count": 56,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.36666268248350126,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.07631208629627385,
+      "candidate_mean_norm_error": 0.08211084881235184,
+      "candidate_minus_carry_forward_mean_norm_error": -0.31025448772174335,
+      "candidate_minus_r10_reference_mae": -0.033539733408810224,
+      "carry_forward_mean_norm_error": 0.39236533653409517,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.013286583071590984,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.004659247452211871,
+      "candidate_mean_norm_error": 0.03007975132347428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27892350653661263,
+      "candidate_minus_r10_reference_mae": -0.08557083089768779,
+      "carry_forward_mean_norm_error": 0.3090032578600869,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "intraquarter_snapshot_bridge",
+      "mean_signed_norm_residual": 0.03007975132347428,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.09552993056658408,
+      "candidate_mean_norm_error": 0.08810486441561893,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2491396106647396,
+      "candidate_minus_r10_reference_mae": -0.02754571780554313,
+      "carry_forward_mean_norm_error": 0.33724447508035854,
+      "entry_count": 21,
+      "horizon_years": 3,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": 0.06653200341535292,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.1054438175550402,
+      "candidate_mean_norm_error": 0.11345622668269091,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1835125523846458,
+      "candidate_minus_r10_reference_mae": -0.0021943555384711516,
+      "carry_forward_mean_norm_error": 0.2969687790673367,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.08727817404297786,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.09513221648164884,
+      "candidate_mean_norm_error": 0.07677080483406341,
+      "candidate_minus_carry_forward_mean_norm_error": -0.16798500077606848,
+      "candidate_minus_r10_reference_mae": -0.03887977738709865,
+      "carry_forward_mean_norm_error": 0.24475580561013188,
+      "entry_count": 24,
+      "horizon_years": 3,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.03598427615312984,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.06701972160672245,
+      "candidate_mean_norm_error": 0.2596045709581277,
+      "candidate_minus_carry_forward_mean_norm_error": 0.01684470736813165,
+      "candidate_minus_r10_reference_mae": 0.14395398873696566,
+      "carry_forward_mean_norm_error": 0.24275986358999607,
+      "entry_count": 5,
+      "horizon_years": 3,
+      "lineage_value": "monthly_to_quarter_sum",
+      "mean_signed_norm_residual": -0.0015769451915332634,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.5559029800415187,
+      "candidate_mean_norm_error": 0.31666481054389745,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027239933229266655,
+      "candidate_minus_r10_reference_mae": 0.20101422832273538,
+      "carry_forward_mean_norm_error": 0.3439047437731641,
+      "entry_count": 34,
+      "horizon_years": 3,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.30305711125617796,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.1050171218517686,
+      "candidate_mean_norm_error": 0.1971406220095591,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4077268618419453,
+      "candidate_minus_r10_reference_mae": 0.06771953425934885,
+      "carry_forward_mean_norm_error": 0.6048674838515044,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.1470773835693335,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.023237266308306952,
+      "candidate_mean_norm_error": 0.218107726294741,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3594539182762057,
+      "candidate_minus_r10_reference_mae": 0.08868663854453077,
+      "carry_forward_mean_norm_error": 0.5775616445709467,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "intraquarter_snapshot_bridge",
+      "mean_signed_norm_residual": -0.1942493037648924,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.14657379142305854,
+      "candidate_mean_norm_error": 0.19653698845839682,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4288774328185063,
+      "candidate_minus_r10_reference_mae": 0.06711590070818657,
+      "carry_forward_mean_norm_error": 0.6254144212769032,
+      "entry_count": 35,
+      "horizon_years": 5,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.1049747819263734,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.0965005071168343,
+      "candidate_mean_norm_error": 0.18115303163709975,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26260235665635256,
+      "candidate_minus_r10_reference_mae": 0.05173194388688951,
+      "carry_forward_mean_norm_error": 0.4437553882934523,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.16230078153330388,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.1481579407247696,
+      "candidate_mean_norm_error": 0.17382849145877496,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26436424059168273,
+      "candidate_minus_r10_reference_mae": 0.04440740370856472,
+      "carry_forward_mean_norm_error": 0.43819273205045767,
+      "entry_count": 40,
+      "horizon_years": 5,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.1493565742502148,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.031181858359914476,
+      "candidate_mean_norm_error": 0.24389717140459413,
+      "candidate_minus_carry_forward_mean_norm_error": 0.0069854444898715395,
+      "candidate_minus_r10_reference_mae": 0.11447608365438389,
+      "carry_forward_mean_norm_error": 0.2369117269147226,
+      "entry_count": 6,
+      "horizon_years": 5,
+      "lineage_value": "monthly_to_quarter_sum",
+      "mean_signed_norm_residual": -0.03268070151783517,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.4493315142153481,
+      "candidate_mean_norm_error": 0.3765605952040752,
+      "candidate_minus_carry_forward_mean_norm_error": -0.07406976764470996,
+      "candidate_minus_r10_reference_mae": 0.24713950745386495,
+      "carry_forward_mean_norm_error": 0.45063036284878516,
+      "entry_count": 56,
+      "horizon_years": 5,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.36666268248350126,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.004659247452211871,
+      "candidate_mean_norm_error": 0.03007975132347428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27892350653661263,
+      "candidate_minus_r10_reference_mae": -0.08557083089768779,
+      "carry_forward_mean_norm_error": 0.3090032578600869,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_april",
+      "mean_signed_norm_residual": 0.03007975132347428,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.010670157843450483,
+      "candidate_mean_norm_error": 0.06888573697901423,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3706824682573398,
+      "candidate_minus_r10_reference_mae": -0.04676484524214783,
+      "carry_forward_mean_norm_error": 0.43956820523635404,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.06888573697901423,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.007220353674201959,
+      "candidate_mean_norm_error": 0.04661406057847914,
+      "candidate_minus_carry_forward_mean_norm_error": -0.30939349906982716,
+      "candidate_minus_r10_reference_mae": -0.06903652164268292,
+      "carry_forward_mean_norm_error": 0.3560075596483063,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": 0.04661406057847914,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.012291148801551114,
+      "candidate_mean_norm_error": 0.07935073275727453,
+      "candidate_minus_carry_forward_mean_norm_error": -0.20500706845898095,
+      "candidate_minus_r10_reference_mae": -0.036299849463887535,
+      "carry_forward_mean_norm_error": 0.2843578012162555,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": 0.07935073275727453,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.004217016256537525,
+      "candidate_mean_norm_error": 0.027224739965995916,
+      "candidate_minus_carry_forward_mean_norm_error": -0.40067447466544853,
+      "candidate_minus_r10_reference_mae": -0.08842584225516614,
+      "carry_forward_mean_norm_error": 0.4278992146314444,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": 0.01398618692216243,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.02128368233062275,
+      "candidate_mean_norm_error": 0.137405853266933,
+      "candidate_minus_carry_forward_mean_norm_error": -0.14110695468749823,
+      "candidate_minus_r10_reference_mae": 0.021755271045770935,
+      "carry_forward_mean_norm_error": 0.27851280795443123,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": 0.137405853266933,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.02152594069637887,
+      "candidate_mean_norm_error": 0.13896985506608966,
+      "candidate_minus_carry_forward_mean_norm_error": -0.10149102076662861,
+      "candidate_minus_r10_reference_mae": 0.023319272844927602,
+      "carry_forward_mean_norm_error": 0.24046087583271827,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": 0.13896985506608966,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.018321630963841366,
+      "candidate_mean_norm_error": 0.11828307229554587,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2156217887474548,
+      "candidate_minus_r10_reference_mae": 0.002632490074383806,
+      "carry_forward_mean_norm_error": 0.33390486104300066,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": 0.11828307229554587,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.07631208629627385,
+      "candidate_mean_norm_error": 0.08211084881235184,
+      "candidate_minus_carry_forward_mean_norm_error": -0.31025448772174335,
+      "candidate_minus_r10_reference_mae": -0.033539733408810224,
+      "carry_forward_mean_norm_error": 0.39236533653409517,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.013286583071590984,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.019797914618218778,
+      "candidate_mean_norm_error": 0.12781384859838027,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12049318147135751,
+      "candidate_minus_r10_reference_mae": 0.012163266377218207,
+      "carry_forward_mean_norm_error": 0.24830703006973778,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "mean_signed_norm_residual": -0.11146829815484183,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.021981014460381892,
+      "candidate_mean_norm_error": 0.1419077770793431,
+      "candidate_minus_carry_forward_mean_norm_error": -0.15740815136496034,
+      "candidate_minus_r10_reference_mae": 0.026257194858181038,
+      "carry_forward_mean_norm_error": 0.29931592844430344,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.12817673194656645,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.010664227552366685,
+      "candidate_mean_norm_error": 0.06884745146554751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.17571146956669426,
+      "candidate_minus_r10_reference_mae": -0.046803130755614555,
+      "carry_forward_mean_norm_error": 0.24455892103224178,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.025020653128118204,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.011081800900892053,
+      "candidate_mean_norm_error": 0.07154327361532208,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12433563459586248,
+      "candidate_minus_r10_reference_mae": -0.04410730860583999,
+      "carry_forward_mean_norm_error": 0.19587890821118456,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": -0.004609366766112714,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.01102636391019267,
+      "candidate_mean_norm_error": 0.07118537657047473,
+      "candidate_minus_carry_forward_mean_norm_error": -0.21365977693707122,
+      "candidate_minus_r10_reference_mae": -0.04446520565068733,
+      "carry_forward_mean_norm_error": 0.28484515350754597,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.03703815914437072,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0061402190068210625,
+      "candidate_mean_norm_error": 0.03964079235782325,
+      "candidate_minus_carry_forward_mean_norm_error": -0.18703509185903097,
+      "candidate_minus_r10_reference_mae": -0.07600978986333881,
+      "carry_forward_mean_norm_error": 0.22667588421685422,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": 0.007850616960150075,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.00622066149821507,
+      "candidate_mean_norm_error": 0.040160123035532534,
+      "candidate_minus_carry_forward_mean_norm_error": -0.14753558959425983,
+      "candidate_minus_r10_reference_mae": -0.07549045918562952,
+      "carry_forward_mean_norm_error": 0.18769571262979237,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": 0.023814625496529778,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.008220014534560628,
+      "candidate_mean_norm_error": 0.0530677959500839,
+      "candidate_minus_carry_forward_mean_norm_error": -0.21770111081931107,
+      "candidate_minus_r10_reference_mae": -0.06258278627107816,
+      "carry_forward_mean_norm_error": 0.27076890676939497,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": -0.013226242541708616,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.1054438175550402,
+      "candidate_mean_norm_error": 0.11345622668269091,
+      "candidate_minus_carry_forward_mean_norm_error": -0.1835125523846458,
+      "candidate_minus_r10_reference_mae": -0.0021943555384711516,
+      "carry_forward_mean_norm_error": 0.2969687790673367,
+      "entry_count": 18,
+      "horizon_years": 3,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.08727817404297786,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.000813569085707941,
+      "candidate_mean_norm_error": 0.015757022588021394,
+      "candidate_minus_carry_forward_mean_norm_error": -0.030891215145219798,
+      "candidate_minus_r10_reference_mae": -0.09989355963314067,
+      "carry_forward_mean_norm_error": 0.04664823773324119,
+      "entry_count": 1,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2019_2019_october_to_december",
+      "mean_signed_norm_residual": -0.015757022588021394,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.021706078855214837,
+      "candidate_mean_norm_error": 0.2101992202182661,
+      "candidate_minus_carry_forward_mean_norm_error": 0.03149368471636932,
+      "candidate_minus_r10_reference_mae": 0.09454863799710403,
+      "carry_forward_mean_norm_error": 0.17870553550189677,
+      "entry_count": 2,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2020_2020_december",
+      "mean_signed_norm_residual": 0.2101992202182661,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.045313642751507614,
+      "candidate_mean_norm_error": 0.2925414714513688,
+      "candidate_minus_carry_forward_mean_norm_error": 0.007078722469306464,
+      "candidate_minus_r10_reference_mae": 0.1768908892302067,
+      "carry_forward_mean_norm_error": 0.2854627489820623,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2022_2022_december",
+      "mean_signed_norm_residual": -0.1427610554647328,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.05697745994481245,
+      "candidate_mean_norm_error": 0.3678421985012956,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027227681547125238,
+      "candidate_minus_r10_reference_mae": 0.25219161628013353,
+      "carry_forward_mean_norm_error": 0.39506988004842086,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "mean_signed_norm_residual": -0.3678421985012956,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.09084092835626506,
+      "candidate_mean_norm_error": 0.5864622051041348,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027227681547125182,
+      "candidate_minus_r10_reference_mae": 0.47081162288297274,
+      "carry_forward_mean_norm_error": 0.61368988665126,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.5864622051041348,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04393049592481555,
+      "candidate_mean_norm_error": 0.2836119795071281,
+      "candidate_minus_carry_forward_mean_norm_error": -0.027227681547125238,
+      "candidate_minus_r10_reference_mae": 0.167961397285966,
+      "carry_forward_mean_norm_error": 0.3108396610542533,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_october_december",
+      "mean_signed_norm_residual": -0.2836119795071281,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.08908249297960134,
+      "candidate_mean_norm_error": 0.5751098784911033,
+      "candidate_minus_carry_forward_mean_norm_error": -0.029397728149271107,
+      "candidate_minus_r10_reference_mae": 0.4594592962699412,
+      "carry_forward_mean_norm_error": 0.6045076066403744,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.5751098784911033,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.023550465257984023,
+      "candidate_mean_norm_error": 0.1520400334556146,
+      "candidate_minus_carry_forward_mean_norm_error": 0.012868293907310813,
+      "candidate_minus_r10_reference_mae": 0.03638945123445253,
+      "carry_forward_mean_norm_error": 0.13917173954830378,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": -0.0466830909026233,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.058002916441108165,
+      "candidate_mean_norm_error": 0.3744624685594942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.029397728149270996,
+      "candidate_minus_r10_reference_mae": 0.2588118863383322,
+      "carry_forward_mean_norm_error": 0.4038601967087652,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.3744624685594942,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04301964951483735,
+      "candidate_mean_norm_error": 0.2777316235511428,
+      "candidate_minus_carry_forward_mean_norm_error": -0.029397728149271052,
+      "candidate_minus_r10_reference_mae": 0.16208104132998072,
+      "carry_forward_mean_norm_error": 0.30712935170041383,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_october_december",
+      "mean_signed_norm_residual": -0.2777316235511428,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.03531624770566303,
+      "candidate_mean_norm_error": 0.22799904052321981,
+      "candidate_minus_carry_forward_mean_norm_error": -0.0475694714356418,
+      "candidate_minus_r10_reference_mae": 0.11234845830205775,
+      "carry_forward_mean_norm_error": 0.2755685119588616,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": -0.22799904052321981,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.03964320475061784,
+      "candidate_mean_norm_error": 0.25593354995516854,
+      "candidate_minus_carry_forward_mean_norm_error": -0.04756947143564183,
+      "candidate_minus_r10_reference_mae": 0.14028296773400648,
+      "carry_forward_mean_norm_error": 0.30350302139081037,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": -0.25593354995516854,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.05673823176429175,
+      "candidate_mean_norm_error": 0.3662977593502448,
+      "candidate_minus_carry_forward_mean_norm_error": -0.04756947143564183,
+      "candidate_minus_r10_reference_mae": 0.2506471771290827,
+      "carry_forward_mean_norm_error": 0.4138672307858866,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": -0.3662977593502448,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.017987318315814273,
+      "candidate_mean_norm_error": 0.11612477496961755,
+      "candidate_minus_carry_forward_mean_norm_error": 0.0012941779388545155,
+      "candidate_minus_r10_reference_mae": 0.0004741927484554903,
+      "carry_forward_mean_norm_error": 0.11483059703076304,
+      "entry_count": 3,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2025_2025_oct_dec",
+      "mean_signed_norm_residual": -0.06726112559512125,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.023237266308306952,
+      "candidate_mean_norm_error": 0.218107726294741,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3594539182762057,
+      "candidate_minus_r10_reference_mae": 0.08868663854453077,
+      "carry_forward_mean_norm_error": 0.5775616445709467,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_april",
+      "mean_signed_norm_residual": -0.1942493037648924,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.033254105721264006,
+      "candidate_mean_norm_error": 0.3121269641875649,
+      "candidate_minus_carry_forward_mean_norm_error": -0.42278665935625515,
+      "candidate_minus_r10_reference_mae": 0.18270587643735467,
+      "carry_forward_mean_norm_error": 0.7349136235438201,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.3121269641875649,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.02275938609114861,
+      "candidate_mean_norm_error": 0.2136222861305345,
+      "candidate_minus_carry_forward_mean_norm_error": -0.41719668387863806,
+      "candidate_minus_r10_reference_mae": 0.08420119838032425,
+      "carry_forward_mean_norm_error": 0.6308189700091725,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.16167869267781404,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0223771916337006,
+      "candidate_mean_norm_error": 0.2100349638091202,
+      "candidate_minus_carry_forward_mean_norm_error": -0.33461355352361666,
+      "candidate_minus_r10_reference_mae": 0.08061387605890996,
+      "carry_forward_mean_norm_error": 0.5446485173327369,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": -0.11936020442485389,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.024356458775931657,
+      "candidate_mean_norm_error": 0.22861259899194644,
+      "candidate_minus_carry_forward_mean_norm_error": -0.488667743520388,
+      "candidate_minus_r10_reference_mae": 0.0991915112417362,
+      "carry_forward_mean_norm_error": 0.7172803425123344,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.20388604285905143,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.014598570095789612,
+      "candidate_mean_norm_error": 0.13702390326390593,
+      "candidate_minus_carry_forward_mean_norm_error": -0.43926301189161654,
+      "candidate_minus_r10_reference_mae": 0.007602815513695682,
+      "carry_forward_mean_norm_error": 0.5762869151555224,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": 0.0278631206564137,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.014359266382553335,
+      "candidate_mean_norm_error": 0.13477777034554303,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3945946654816034,
+      "candidate_minus_r10_reference_mae": 0.005356682595332785,
+      "carry_forward_mean_norm_error": 0.5293724358271464,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": 0.03198605573376456,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.014868812722670757,
+      "candidate_mean_norm_error": 0.1395604324801629,
+      "candidate_minus_carry_forward_mean_norm_error": -0.5050197120774259,
+      "candidate_minus_r10_reference_mae": 0.010139344729952648,
+      "carry_forward_mean_norm_error": 0.6445801445575888,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": 0.0023792542744921646,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.1050171218517686,
+      "candidate_mean_norm_error": 0.1971406220095591,
+      "candidate_minus_carry_forward_mean_norm_error": -0.4077268618419453,
+      "candidate_minus_r10_reference_mae": 0.06771953425934885,
+      "carry_forward_mean_norm_error": 0.6048674838515044,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.1470773835693335,
+      "metric_name": "alive_on_art",
+      "metric_names": [
+        "alive_on_art"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.027114605474986078,
+      "candidate_mean_norm_error": 0.25450088969432794,
+      "candidate_minus_carry_forward_mean_norm_error": -0.18343930674647002,
+      "candidate_minus_r10_reference_mae": 0.1250798019441177,
+      "carry_forward_mean_norm_error": 0.43794019644079796,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "mean_signed_norm_residual": -0.24469355942820487,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.029663857367216624,
+      "candidate_mean_norm_error": 0.2784284690657536,
+      "candidate_minus_carry_forward_mean_norm_error": -0.21826950377309456,
+      "candidate_minus_r10_reference_mae": 0.14900738131554334,
+      "carry_forward_mean_norm_error": 0.49669797283884815,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.2701898419860876,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.017753666895895606,
+      "candidate_mean_norm_error": 0.16663801450146265,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26304681972264,
+      "candidate_minus_r10_reference_mae": 0.037216926751252405,
+      "carry_forward_mean_norm_error": 0.42968483422410264,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.1403419354990051,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.01645637931794795,
+      "candidate_mean_norm_error": 0.15446152006263852,
+      "candidate_minus_carry_forward_mean_norm_error": -0.21930223651382946,
+      "candidate_minus_r10_reference_mae": 0.02504043231242828,
+      "carry_forward_mean_norm_error": 0.373763756576468,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": -0.11430117595311289,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.018882000325069124,
+      "candidate_mean_norm_error": 0.17722868534347164,
+      "candidate_minus_carry_forward_mean_norm_error": -0.29873488637117757,
+      "candidate_minus_r10_reference_mae": 0.04780759759326139,
+      "carry_forward_mean_norm_error": 0.4759635717146492,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.1567403548878092,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.012362801532166378,
+      "candidate_mean_norm_error": 0.11603871544261735,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3124737538629815,
+      "candidate_minus_r10_reference_mae": -0.013382372307592899,
+      "carry_forward_mean_norm_error": 0.42851246930559883,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": -0.08754386985183335,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.011448118213789547,
+      "candidate_mean_norm_error": 0.10745338977633698,
+      "candidate_minus_carry_forward_mean_norm_error": -0.27566513163785145,
+      "candidate_minus_r10_reference_mae": -0.021967697973873268,
+      "carry_forward_mean_norm_error": 0.38311852141418845,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": -0.06906854065709961,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.014476511597698284,
+      "candidate_mean_norm_error": 0.13587824778359095,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3439822861054169,
+      "candidate_minus_r10_reference_mae": 0.006457160033380704,
+      "carry_forward_mean_norm_error": 0.4798605338890079,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": -0.11197331573856577,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0965005071168343,
+      "candidate_mean_norm_error": 0.18115303163709975,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26260235665635256,
+      "candidate_minus_r10_reference_mae": 0.05173194388688951,
+      "carry_forward_mean_norm_error": 0.4437553882934523,
+      "entry_count": 25,
+      "horizon_years": 5,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.16230078153330388,
+      "metric_name": "diagnosed_plhiv",
+      "metric_names": [
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0003357516364267282,
+      "candidate_mean_norm_error": 0.015757022588021394,
+      "candidate_minus_carry_forward_mean_norm_error": -0.030891215145219798,
+      "candidate_minus_r10_reference_mae": -0.11366406516218885,
+      "carry_forward_mean_norm_error": 0.04664823773324119,
+      "entry_count": 1,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2019_2019_october_to_december",
+      "mean_signed_norm_residual": -0.015757022588021394,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.00895787662544274,
+      "candidate_mean_norm_error": 0.2101992202182661,
+      "candidate_minus_carry_forward_mean_norm_error": 0.03149368471636932,
+      "candidate_minus_r10_reference_mae": 0.08077813246805585,
+      "carry_forward_mean_norm_error": 0.17870553550189677,
+      "entry_count": 2,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2020_2020_december",
+      "mean_signed_norm_residual": 0.2101992202182661,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.02222398173447174,
+      "candidate_mean_norm_error": 0.26074614699775817,
+      "candidate_minus_carry_forward_mean_norm_error": -0.00526867562337735,
+      "candidate_minus_r10_reference_mae": 0.13132505924754792,
+      "carry_forward_mean_norm_error": 0.2660148226211355,
+      "entry_count": 4,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2022_2022_december",
+      "mean_signed_norm_residual": -0.1541206623858858,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.03193802414049628,
+      "candidate_mean_norm_error": 0.29977406701837317,
+      "candidate_minus_carry_forward_mean_norm_error": -0.07849111569021916,
+      "candidate_minus_r10_reference_mae": 0.17035297926816292,
+      "carry_forward_mean_norm_error": 0.37826518270859233,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_april_june",
+      "mean_signed_norm_residual": -0.29977406701837317,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0558906175012709,
+      "candidate_mean_norm_error": 0.5245959375201318,
+      "candidate_minus_carry_forward_mean_norm_error": -0.07849111569021916,
+      "candidate_minus_r10_reference_mae": 0.39517484976992157,
+      "carry_forward_mean_norm_error": 0.6030870532103509,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.5245959375201318,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.024661809038526942,
+      "candidate_mean_norm_error": 0.23147865262383824,
+      "candidate_minus_carry_forward_mean_norm_error": -0.060166848376284304,
+      "candidate_minus_r10_reference_mae": 0.10205756487362799,
+      "carry_forward_mean_norm_error": 0.29164550100012254,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_october_december",
+      "mean_signed_norm_residual": -0.21315438530990333,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.0676621201381701,
+      "candidate_mean_norm_error": 0.6350846516890962,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06977904072035113,
+      "candidate_minus_r10_reference_mae": 0.505663563938886,
+      "carry_forward_mean_norm_error": 0.7048636924094474,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.6350846516890962,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.013717084235659545,
+      "candidate_mean_norm_error": 0.12875017286192642,
+      "candidate_minus_carry_forward_mean_norm_error": -0.04441942748640215,
+      "candidate_minus_r10_reference_mae": -0.0006709148882838301,
+      "carry_forward_mean_norm_error": 0.17316960034832857,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_january_march",
+      "mean_signed_norm_residual": -0.06553600733013165,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04462153309872919,
+      "candidate_mean_norm_error": 0.4188229802431714,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06977904072035118,
+      "candidate_minus_r10_reference_mae": 0.2894018924929611,
+      "carry_forward_mean_norm_error": 0.48860202096352257,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_july_september",
+      "mean_signed_norm_residual": -0.4188229802431714,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.03351381207420533,
+      "candidate_mean_norm_error": 0.3145645986921056,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06977904072035135,
+      "candidate_minus_r10_reference_mae": 0.18514351094189538,
+      "carry_forward_mean_norm_error": 0.38434363941245697,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_october_december",
+      "mean_signed_norm_residual": -0.3145645986921056,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.043294561189802135,
+      "candidate_mean_norm_error": 0.4063678651675392,
+      "candidate_minus_carry_forward_mean_norm_error": -0.0954539287030568,
+      "candidate_minus_r10_reference_mae": 0.276946777417329,
+      "carry_forward_mean_norm_error": 0.501821793870596,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_april_jun",
+      "mean_signed_norm_residual": -0.4063678651675392,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.04679671542939334,
+      "candidate_mean_norm_error": 0.439239498525619,
+      "candidate_minus_carry_forward_mean_norm_error": -0.09545392870305675,
+      "candidate_minus_r10_reference_mae": 0.3098184107754087,
+      "carry_forward_mean_norm_error": 0.5346934272286757,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_january_march",
+      "mean_signed_norm_residual": -0.439239498525619,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.060633095294007774,
+      "candidate_mean_norm_error": 0.569109394251803,
+      "candidate_minus_carry_forward_mean_norm_error": -0.0954539287030568,
+      "candidate_minus_r10_reference_mae": 0.43968830650159274,
+      "carry_forward_mean_norm_error": 0.6645633229548598,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_jul_sep",
+      "mean_signed_norm_residual": -0.569109394251803,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.026266390438659838,
+      "candidate_mean_norm_error": 0.2465394431744336,
+      "candidate_minus_carry_forward_mean_norm_error": -0.06613573907835896,
+      "candidate_minus_r10_reference_mae": 0.11711835542422336,
+      "carry_forward_mean_norm_error": 0.31267518225279256,
+      "entry_count": 5,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2025_2025_oct_dec",
+      "mean_signed_norm_residual": -0.21722125354973584,
+      "metric_name": "new_diagnosed_cases_period",
+      "metric_names": [
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    }
+  ],
+  "prediction_mutation": "forbidden",
+  "reference_experiment_id": "R11-28",
+  "reference_family": "multi_horizon_weighted_process",
+  "schema_version": "phase3_dynamic.r12_04_source_lineage_evaluation_ablation.v1",
+  "scientific_read": "At least one source/support lineage is sufficient to flip an R11-28 3y/5y R10 failure under leave-one-lineage-out scoring. Treat the blocker as mixed observation lineage until that lineage is adjudicated.",
+  "score_record_count": 315,
+  "status": "completed",
+  "top_error_lineage_rows": [
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 1.0000000000000007,
+      "candidate_mean_norm_error": 0.24443015930672315,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2512852820172814,
+      "candidate_minus_r10_reference_mae": 0.11500907155651291,
+      "carry_forward_mean_norm_error": 0.4957154413240045,
+      "entry_count": 192,
+      "horizon_years": 5,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.20355872610419345,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "support_partition",
+      "candidate_error_share_within_horizon": 1.0000000000000002,
+      "candidate_mean_norm_error": 0.1574615812594298,
+      "candidate_minus_carry_forward_mean_norm_error": -0.16122018924442624,
+      "candidate_minus_r10_reference_mae": 0.04181099903826774,
+      "carry_forward_mean_norm_error": 0.31868177050385604,
+      "entry_count": 123,
+      "horizon_years": 3,
+      "lineage_value": "common_support",
+      "mean_signed_norm_residual": -0.09348132877001819,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.7465651270897518,
+      "candidate_mean_norm_error": 0.1830291775599751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12898391863772457,
+      "candidate_minus_r10_reference_mae": 0.06737859533881305,
+      "carry_forward_mean_norm_error": 0.3120130961976997,
+      "entry_count": 79,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.12367585238813612,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.7465651270897518,
+      "candidate_mean_norm_error": 0.1830291775599751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12898391863772457,
+      "candidate_minus_r10_reference_mae": 0.06737859533881305,
+      "carry_forward_mean_norm_error": 0.3120130961976997,
+      "entry_count": 79,
+      "horizon_years": 3,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.12367585238813612,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.7465651270897518,
+      "candidate_mean_norm_error": 0.1830291775599751,
+      "candidate_minus_carry_forward_mean_norm_error": -0.12898391863772457,
+      "candidate_minus_r10_reference_mae": 0.06737859533881305,
+      "carry_forward_mean_norm_error": 0.3120130961976997,
+      "entry_count": 79,
+      "horizon_years": 3,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.12367585238813612,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.7440632463631763,
+      "candidate_mean_norm_error": 0.2665597525635351,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2269708913009068,
+      "candidate_minus_r10_reference_mae": 0.13713866481332485,
+      "carry_forward_mean_norm_error": 0.4935306438644419,
+      "entry_count": 131,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot",
+      "mean_signed_norm_residual": -0.23039305768326512,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.7440632463631763,
+      "candidate_mean_norm_error": 0.2665597525635351,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2269708913009068,
+      "candidate_minus_r10_reference_mae": 0.13713866481332485,
+      "carry_forward_mean_norm_error": 0.4935306438644419,
+      "entry_count": 131,
+      "horizon_years": 5,
+      "lineage_value": "official_doh_archive|program_observed_harp|quarterly_snapshot::common_support",
+      "mean_signed_norm_residual": -0.23039305768326512,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.7440632463631763,
+      "candidate_mean_norm_error": 0.2665597525635351,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2269708913009068,
+      "candidate_minus_r10_reference_mae": 0.13713866481332485,
+      "carry_forward_mean_norm_error": 0.4935306438644419,
+      "entry_count": 131,
+      "horizon_years": 5,
+      "lineage_value": "quarterly_observed",
+      "mean_signed_norm_residual": -0.23039305768326512,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.20151762896860292,
+      "candidate_mean_norm_error": 0.18914682682332942,
+      "candidate_minus_carry_forward_mean_norm_error": -0.3351646092491489,
+      "candidate_minus_r10_reference_mae": 0.05972573907311918,
+      "carry_forward_mean_norm_error": 0.5243114360724783,
+      "entry_count": 50,
+      "horizon_years": 5,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.1546890825513187,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_family",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_support",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "official_user_provided_slide|program_observed_harp|annual_snapshot::common_support",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "aggregation_mode",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "annual_anchor_to_q4",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.18175590385131404,
+      "candidate_mean_norm_error": 0.09778353774752138,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2468835200531945,
+      "candidate_minus_r10_reference_mae": -0.01786704447364068,
+      "carry_forward_mean_norm_error": 0.3446670578007159,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "lineage_value": "doh_official_cascade_ground_truth_2018_2025",
+      "mean_signed_norm_residual": -0.05028237855728443,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.12349210066009741,
+      "candidate_mean_norm_error": 0.26575190638749735,
+      "candidate_minus_carry_forward_mean_norm_error": -0.18510610038980846,
+      "candidate_minus_r10_reference_mae": 0.1501013241663353,
+      "carry_forward_mean_norm_error": 0.4508580067773058,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.2611748913432385,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.11880858058975152,
+      "candidate_mean_norm_error": 0.37171712359115006,
+      "candidate_minus_carry_forward_mean_norm_error": -0.23984909293985646,
+      "candidate_minus_r10_reference_mae": 0.2422960358409398,
+      "carry_forward_mean_norm_error": 0.6115662165310065,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2023_2023_july_september",
+      "mean_signed_norm_residual": -0.3689709145645947,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.10817517312521431,
+      "candidate_mean_norm_error": 0.3384483174403644,
+      "candidate_minus_carry_forward_mean_norm_error": -0.2500075147738764,
+      "candidate_minus_r10_reference_mae": 0.20902722969015416,
+      "carry_forward_mean_norm_error": 0.5884558322142408,
+      "entry_count": 15,
+      "horizon_years": 5,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.3123684266219718,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "axis": "source_id",
+      "candidate_error_share_within_horizon": 0.10696707420617,
+      "candidate_mean_norm_error": 0.23019046351171,
+      "candidate_minus_carry_forward_mean_norm_error": -0.17150089892859746,
+      "candidate_minus_r10_reference_mae": 0.11453988129054793,
+      "carry_forward_mean_norm_error": 0.40169136244030745,
+      "entry_count": 9,
+      "horizon_years": 3,
+      "lineage_value": "doh_hiv_sti_2024_2024_april_june",
+      "mean_signed_norm_residual": -0.18450549034691413,
+      "metric_names": [
+        "alive_on_art",
+        "diagnosed_plhiv",
+        "new_diagnosed_cases_period"
+      ],
+      "r10_horizon_reference_mae": 0.11565058222116206
+    }
+  ]
+}

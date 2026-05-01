@@ -1,0 +1,508 @@
+{
+  "artifact_paths": {
+    "benchmark_manifest": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/benchmark_manifest.json",
+    "comparison_csv": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_reference_branch_comparison.csv",
+    "comparison_json": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_reference_branch_comparison.json",
+    "comparison_markdown": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_reference_branch_comparison.md",
+    "dashboard_png": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_reference_branch_dashboard.png",
+    "r10_horizon_matched_replay_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r10_horizon_matched_replay_report.json",
+    "r12_00_promoted_r11_28_reference_lock": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_00_promoted_r11_28_reference_lock.json",
+    "r12_00_promoted_r11_28_reference_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_00_promoted_r11_28_reference_report.json",
+    "r12_01_long_horizon_stock_shape_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_01_long_horizon_stock_shape_report.json",
+    "r12_02_da_process_split_residual_anatomy": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_02_da_process_split_residual_anatomy.json",
+    "r12_02_da_process_split_transition_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_02_da_process_split_transition_report.json",
+    "r12_03_da_residual_source_alignment_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_03_da_residual_source_alignment_report.json",
+    "r12_03_da_residual_source_process_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_03_da_residual_source_process_report.json",
+    "r12_04_source_lineage_evaluation_ablation_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_04_source_lineage_evaluation_ablation_dashboard.png",
+    "r12_04_source_lineage_evaluation_ablation_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_04_source_lineage_evaluation_ablation_report.json",
+    "r12_05_lineage_stratified_training_evaluation_contract_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_05_lineage_stratified_training_evaluation_contract_dashboard.png",
+    "r12_05_lineage_stratified_training_evaluation_contract_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_05_lineage_stratified_training_evaluation_contract_report.json",
+    "r12_06_doh_quarterly_support_adequacy_adjudication_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_06_doh_quarterly_support_adequacy_adjudication_dashboard.png",
+    "r12_06_doh_quarterly_support_adequacy_adjudication_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_06_doh_quarterly_support_adequacy_adjudication_report.json",
+    "r12_07_horizon_specific_evidence_router_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_07_horizon_specific_evidence_router_dashboard.png",
+    "r12_07_horizon_specific_evidence_router_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_07_horizon_specific_evidence_router_report.json",
+    "r12_08_route_aware_two_head_candidate_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_08_route_aware_two_head_candidate_dashboard.png",
+    "r12_08_route_aware_two_head_candidate_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_08_route_aware_two_head_candidate_report.json",
+    "r12_08_route_aware_two_head_full_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_08_route_aware_two_head_full_report.json",
+    "r12_09_stock_cone_safe_annual_trajectory_candidate_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_09_stock_cone_safe_annual_trajectory_candidate_report.json",
+    "r12_09_stock_cone_safe_annual_trajectory_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_09_stock_cone_safe_annual_trajectory_dashboard.png",
+    "r12_09_stock_cone_safe_annual_trajectory_full_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_09_stock_cone_safe_annual_trajectory_full_report.json",
+    "r12_10a_official_annual_challenge_gate_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10a_official_annual_challenge_gate_dashboard.png",
+    "r12_10a_official_annual_challenge_gate_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10a_official_annual_challenge_gate_report.json",
+    "r12_10b_program_nowcast_mixed_quarterly_candidate_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10b_program_nowcast_mixed_quarterly_candidate_report.json",
+    "r12_10b_program_nowcast_mixed_quarterly_dashboard": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10b_program_nowcast_mixed_quarterly_dashboard.png",
+    "r12_10b_program_nowcast_mixed_quarterly_full_report": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10b_program_nowcast_mixed_quarterly_full_report.json",
+    "split_manifest": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/split_manifest.json"
+  },
+  "baseline_source_run_id": "harp-archive-wdi-standard-20260412-s19",
+  "generated_at": "2026-05-01T00:18:35.526014+00:00",
+  "loop_variant": "benchmark-hardening-loop",
+  "rows": [
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/benchmark_manifest.json",
+      "artifact_sha256": "3937a6e89882a67f243ea6dee459df769f551e95c42259094b308529c7581fc6",
+      "blockers": [],
+      "candidate_mae": null,
+      "carry_forward_mae": null,
+      "contract": "R11 first-batch infrastructure experiment",
+      "decision": "keep_as_contract",
+      "experiment_id": "BM-00",
+      "family": "R11_observation_first_sparse_state_space_reconciliation",
+      "kept_claim": "benchmark_lock",
+      "lifted_status": "not_applicable",
+      "one_year_status": "not_applicable",
+      "r10_reference_mae": null,
+      "stock_consistency_status": "pass",
+      "title": "R12 benchmark manifest"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/split_manifest.json",
+      "artifact_sha256": "0295de8e4b6e0103e8cea341d335d6d1af46934b2fee887ab1b7c6f2db9c5902",
+      "blockers": [],
+      "candidate_mae": null,
+      "carry_forward_mae": null,
+      "contract": "R11 first-batch infrastructure experiment",
+      "decision": "keep_as_contract",
+      "experiment_id": "BM-01",
+      "family": "R11_observation_first_sparse_state_space_reconciliation",
+      "kept_claim": "split_lock",
+      "lifted_status": "not_applicable",
+      "one_year_status": "not_applicable",
+      "r10_reference_mae": null,
+      "stock_consistency_status": "pass",
+      "title": "R12 split manifest"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r10_horizon_matched_replay_report.json",
+      "artifact_sha256": "18360b4802ecebb00a8110a7f51017fd533fa3bac7915ab2f9358cf3f53ef89d",
+      "blockers": [],
+      "candidate_mae": null,
+      "carry_forward_mae": null,
+      "contract": "R11 first-batch infrastructure experiment",
+      "decision": "keep_as_benchmark",
+      "experiment_id": "BM-02",
+      "family": "R11_observation_first_sparse_state_space_reconciliation",
+      "kept_claim": "horizon_matched_r10_reference",
+      "lifted_status": "not_applicable",
+      "one_year_status": "not_applicable",
+      "r10_reference_mae": null,
+      "stock_consistency_status": "pass",
+      "title": "Horizon-matched R10 replay"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_00_promoted_r11_28_reference_report.json",
+      "artifact_sha256": "34d7fe8c06d6d3fba647ea9637c82b7bc3b678f3d1f5356eec3aecc6873c7cf7",
+      "blockers": [
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference"
+      ],
+      "candidate_mae": 0.3620179568964221,
+      "carry_forward_mae": 0.5512035229281876,
+      "contract": "R12 candidates must beat or explain this locked R11-28 reference under the same blocked horizon gates",
+      "decision": "promote_as_next_research_reference",
+      "experiment_id": "R12-00",
+      "family": "multi_horizon_weighted_process",
+      "kept_claim": "next_wave_reference_not_publication_champion",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "stock_consistency_status": "pass",
+      "title": "Promoted R11-28 research reference"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_01_long_horizon_stock_shape_report.json",
+      "artifact_sha256": "49e55a46404713794d933f61cae2c1c67e3472c35b12d8c5d36b58c2b0a6c803",
+      "blockers": [
+        "h5_stock_consistency_failed",
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference",
+        "h3_r10_scope_not_better_than_r11_28_reference",
+        "h3_full_path_worse_than_r11_28_reference",
+        "h5_r10_scope_not_better_than_r11_28_reference",
+        "h5_full_path_worse_than_r11_28_reference"
+      ],
+      "candidate_mae": 0.3701748709075723,
+      "carry_forward_mae": 0.5512035229281876,
+      "contract": "R12-01 promotes R11-28 as the frozen research reference and applies only leave-origin validated long-horizon stock-shape corrections to diagnosed_plhiv and alive_on_art; no diagnosis-flow, VL, or suppression endpoint correction is allowed, and the same stock/rate/R10 gates remain mandatory",
+      "decision": "reject_for_reference_regression",
+      "experiment_id": "R12-01",
+      "family": "r12_long_horizon_stock_shape_process",
+      "kept_claim": "diagnostic_only",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "r12_reference_gate": {
+        "blockers": [
+          "h3_r10_scope_not_better_than_r11_28_reference",
+          "h3_full_path_worse_than_r11_28_reference",
+          "h5_r10_scope_not_better_than_r11_28_reference",
+          "h5_full_path_worse_than_r11_28_reference"
+        ],
+        "contract": "R12 candidates must improve the locked R11-28 reference on both full and R10-scope 3y/5y horizons before being kept as next-wave candidates",
+        "horizon_rows": [
+          {
+            "blockers": [
+              "r10_scope_not_better_than_r11_28_reference",
+              "full_path_worse_than_r11_28_reference"
+            ],
+            "candidate_full_mae": 0.3248960814226332,
+            "candidate_minus_reference_full_mae": 0.01867952244807186,
+            "candidate_minus_reference_r10_scope_mae": 0.03172433079277118,
+            "candidate_r10_scope_mae": 0.18076758495930512,
+            "horizon_years": 3,
+            "reference_full_mae": 0.30621655897456135,
+            "reference_r10_scope_mae": 0.14904325416653394,
+            "status": "fail"
+          },
+          {
+            "blockers": [
+              "r10_scope_not_better_than_r11_28_reference",
+              "full_path_worse_than_r11_28_reference"
+            ],
+            "candidate_full_mae": 0.5620457014615152,
+            "candidate_minus_reference_full_mae": 0.0057912195853786486,
+            "candidate_minus_reference_r10_scope_mae": 0.07089274622931843,
+            "candidate_r10_scope_mae": 0.30330069826604455,
+            "horizon_years": 5,
+            "reference_full_mae": 0.5562544818761366,
+            "reference_r10_scope_mae": 0.23240795203672612,
+            "status": "fail"
+          }
+        ],
+        "schema_version": "phase3_dynamic.r12_reference_gate.v1",
+        "status": "fail"
+      },
+      "r12_reference_gate_status": "fail",
+      "stock_consistency_status": "fail",
+      "title": "Long-horizon stock-shape correction on promoted R11-28"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_02_da_process_split_transition_report.json",
+      "artifact_sha256": "76bd30556118ecfcc6e1bb2f0649b78ea3d6d4367512c58f05477b891bcac838",
+      "blockers": [
+        "h1_candidate_mean_not_better_than_r10_reference",
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference",
+        "h3_r10_scope_not_better_than_r11_28_reference",
+        "h3_full_path_worse_than_r11_28_reference",
+        "h5_full_path_worse_than_r11_28_reference"
+      ],
+      "candidate_mae": 0.39033596655017583,
+      "carry_forward_mae": 0.5512035229281876,
+      "contract": "R12-02 promotes R11-28 as the frozen research reference and tests a process-split D/A transition: diagnosed-stock inflow/removal/reporting shifts and ART delayed linkage, initiation capacity, retention/removal, and reporting shifts. Back-half VL/suppression rates remain conditional-rate observations and the same stock/rate/R10 gates remain mandatory.",
+      "decision": "reject_for_reference_regression",
+      "experiment_id": "R12-02",
+      "family": "r12_da_process_split_transition",
+      "kept_claim": "diagnostic_only",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "r12_reference_gate": {
+        "blockers": [
+          "h3_r10_scope_not_better_than_r11_28_reference",
+          "h3_full_path_worse_than_r11_28_reference",
+          "h5_full_path_worse_than_r11_28_reference"
+        ],
+        "contract": "R12 candidates must improve the locked R11-28 reference on both full and R10-scope 3y/5y horizons before being kept as next-wave candidates",
+        "horizon_rows": [
+          {
+            "blockers": [
+              "r10_scope_not_better_than_r11_28_reference",
+              "full_path_worse_than_r11_28_reference"
+            ],
+            "candidate_full_mae": 0.37320931101006855,
+            "candidate_minus_reference_full_mae": 0.0669927520355072,
+            "candidate_minus_reference_r10_scope_mae": 0.04044291057341742,
+            "candidate_r10_scope_mae": 0.18948616473995136,
+            "horizon_years": 3,
+            "reference_full_mae": 0.30621655897456135,
+            "reference_r10_scope_mae": 0.14904325416653394,
+            "status": "fail"
+          },
+          {
+            "blockers": [
+              "full_path_worse_than_r11_28_reference"
+            ],
+            "candidate_full_mae": 0.5691960724997494,
+            "candidate_minus_reference_full_mae": 0.012941590623612775,
+            "candidate_minus_reference_r10_scope_mae": -0.002114747158372371,
+            "candidate_r10_scope_mae": 0.23029320487835375,
+            "horizon_years": 5,
+            "reference_full_mae": 0.5562544818761366,
+            "reference_r10_scope_mae": 0.23240795203672612,
+            "status": "fail"
+          }
+        ],
+        "schema_version": "phase3_dynamic.r12_reference_gate.v1",
+        "status": "fail"
+      },
+      "r12_reference_gate_status": "fail",
+      "stock_consistency_status": "pass",
+      "title": "D/A process-split transition on promoted R11-28"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_03_da_residual_source_process_report.json",
+      "artifact_sha256": "b5558a090cd206d477c72f79aa9ec55dd48c60ca32189f6be31fe44ce56bc976",
+      "blockers": [
+        "h1_candidate_mean_not_better_than_r10_reference",
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference",
+        "h3_r10_scope_not_better_than_r11_28_reference",
+        "h3_full_path_worse_than_r11_28_reference",
+        "h5_full_path_worse_than_r11_28_reference"
+      ],
+      "candidate_mae": 0.39188528508027876,
+      "carry_forward_mae": 0.5512035229281876,
+      "contract": "R12-03 uses the R12-02 residual anatomy to test D/A residual alignment with source family, support signature, monthly reporting intensity, and train-derived backlog/rebound flow regime. Only selected train-validated residual-source corrections are fed back into the D/A process outputs; VL/suppression remain conditional-rate observations and the same stock/rate/R10/reference gates remain mandatory.",
+      "decision": "reject_for_reference_regression",
+      "experiment_id": "R12-03",
+      "family": "r12_da_residual_source_process",
+      "kept_claim": "diagnostic_only",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "r12_reference_gate": {
+        "blockers": [
+          "h3_r10_scope_not_better_than_r11_28_reference",
+          "h3_full_path_worse_than_r11_28_reference",
+          "h5_full_path_worse_than_r11_28_reference"
+        ],
+        "contract": "R12 candidates must improve the locked R11-28 reference on both full and R10-scope 3y/5y horizons before being kept as next-wave candidates",
+        "horizon_rows": [
+          {
+            "blockers": [
+              "r10_scope_not_better_than_r11_28_reference",
+              "full_path_worse_than_r11_28_reference"
+            ],
+            "candidate_full_mae": 0.3752372589009156,
+            "candidate_minus_reference_full_mae": 0.06902069992635423,
+            "candidate_minus_reference_r10_scope_mae": 0.04374731105159513,
+            "candidate_r10_scope_mae": 0.19279056521812907,
+            "horizon_years": 3,
+            "reference_full_mae": 0.30621655897456135,
+            "reference_r10_scope_mae": 0.14904325416653394,
+            "status": "fail"
+          },
+          {
+            "blockers": [
+              "full_path_worse_than_r11_28_reference"
+            ],
+            "candidate_full_mae": 0.5699383844991168,
+            "candidate_minus_reference_full_mae": 0.013683902622980249,
+            "candidate_minus_reference_r10_scope_mae": -0.0009178227547335382,
+            "candidate_r10_scope_mae": 0.23149012928199258,
+            "horizon_years": 5,
+            "reference_full_mae": 0.5562544818761366,
+            "reference_r10_scope_mae": 0.23240795203672612,
+            "status": "fail"
+          }
+        ],
+        "schema_version": "phase3_dynamic.r12_reference_gate.v1",
+        "status": "fail"
+      },
+      "r12_reference_gate_status": "fail",
+      "stock_consistency_status": "pass",
+      "title": "D/A residual-source process on promoted R11-28"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_04_source_lineage_evaluation_ablation_report.json",
+      "artifact_sha256": "204e5d774d2e8003fe5be3f69072619a2bdff8fc5f0b27aa6162b874ded96c52",
+      "blockers": [],
+      "candidate_mae": 0.20094587028307648,
+      "carry_forward_mae": null,
+      "contract": "R12-04 does not change predictions. It recomputes locked R11-28 blocked-horizon residuals, stratifies R10-comparable D/A/diagnosis-flow errors by source family and support partition, and runs leave-one-lineage-out evaluation ablations to decide whether 3y/5y R10 failure is driven by mixed evidence lineage or by model dynamics.",
+      "decision": "keep_as_observation_lineage_diagnostic",
+      "experiment_id": "R12-04",
+      "family": "source_lineage_evaluation_ablation",
+      "kept_claim": "single_lineage_exclusion_can_flip_r10_failure",
+      "lifted_status": "diagnostic_only",
+      "one_year_status": "not_applicable",
+      "r10_reference_mae": 0.12253583498568615,
+      "stock_consistency_status": "not_applicable",
+      "title": "Source-family/support-partition evaluation ablation"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_05_lineage_stratified_training_evaluation_contract_report.json",
+      "artifact_sha256": "5652ae4811744c55f492020b99fc702d06d643bae7ff819fc1a7c0d49cc702e7",
+      "blockers": [],
+      "candidate_mae": 0.3584765806206862,
+      "carry_forward_mae": null,
+      "contract": "R12-05 does not create a new model and does not feed residuals into dynamics. It materializes three forecast-origin-safe observation views: DOH HARP quarterly, DOH HARP monthly, and slide annual anchors. For each view, R11-28 is trained and evaluated only on observations from that lineage. The diagnostic tests whether a lineage-specific observation operator removes the 3y R10-scope failure; 5y remains a frozen dynamics claim and cannot be promoted by this observation contract.",
+      "decision": "keep_as_lineage_stratified_observation_operator_contract",
+      "experiment_id": "R12-05",
+      "family": "lineage_stratified_training_evaluation_contract",
+      "kept_claim": "lineage_stratified_operator_underpowered_and_does_not_remove_three_year_failure",
+      "lifted_status": "diagnostic_only",
+      "one_year_status": "not_applicable",
+      "r10_reference_mae": 0.12253583498568615,
+      "stock_consistency_status": "not_applicable",
+      "title": "Lineage-stratified R11-28 train/evaluate contract"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_06_doh_quarterly_support_adequacy_adjudication_report.json",
+      "artifact_sha256": "292ed4e753af58a6410a0b7d04f7ced472469713c1543b367ed5f8769fc2f8b3",
+      "blockers": [],
+      "candidate_mae": 0.13992875065996646,
+      "carry_forward_mae": 0.14881001385117149,
+      "contract": "R12-06 does not alter model predictions. It adjudicates whether the DOH-quarterly lineage that drove R12-04 can be used scientifically: first through 1y/2y lineage-only R11-28 checks under an explicitly relaxed diagnostic min-train window, then through bridge consistency against DOH-monthly and slide-anchor observations using only comparator-observed volatility as tolerance.",
+      "decision": "keep_as_doh_quarterly_support_adequacy_adjudication",
+      "experiment_id": "R12-06",
+      "family": "doh_quarterly_support_adequacy_adjudication",
+      "kept_claim": "doh_quarterly_is_short_horizon_evaluable_but_not_three_year_claim_grade",
+      "lifted_status": "diagnostic_only",
+      "one_year_status": "diagnostic_only",
+      "r10_reference_mae": 0.09530345873034501,
+      "stock_consistency_status": "not_applicable",
+      "title": "DOH-quarterly support adequacy and bridge adjudication"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_07_horizon_specific_evidence_router_report.json",
+      "artifact_sha256": "4dd8287a8781c4e403a1595f52ae9d42b3f8f2099d9e907a8ac6b6c815a78a5e",
+      "blockers": [
+        "candidate_not_better_than_available_r10_on_all_route_horizons"
+      ],
+      "candidate_mae": 0.16240422796561713,
+      "carry_forward_mae": 0.26129357360735933,
+      "contract": "R12-07 does not change predictions. It routes evidence by claim horizon: 1y/2y nowcasting uses DOH program lineages under an explicitly diagnostic short-horizon min-train contract, while 3y/5y trajectory claims use slide annual anchors under the production min-train contract. The route prevents quarterly program support from being over-interpreted as long-horizon trajectory validation.",
+      "decision": "keep_as_horizon_specific_evidence_router",
+      "experiment_id": "R12-07",
+      "family": "horizon_specific_evidence_router",
+      "kept_claim": "nowcast_route_supported_but_trajectory_route_still_r10_blocked",
+      "lifted_status": "diagnostic_only",
+      "one_year_status": "diagnostic_only",
+      "r10_reference_mae": 0.11345837623390577,
+      "stock_consistency_status": "not_applicable",
+      "title": "Horizon-specific evidence router"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_08_route_aware_two_head_candidate_report.json",
+      "artifact_sha256": "712d09e353bc7be79dcf48adf2537aa89e55625d80f453b4b5b7ca53d82c9dae",
+      "blockers": [
+        "candidate_not_better_than_available_r10_on_all_route_horizons",
+        "h5_stock_consistency_failed",
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference",
+        "h3_r10_scope_not_better_than_r11_28_reference",
+        "h3_full_path_worse_than_r11_28_reference",
+        "h5_r10_scope_not_better_than_r11_28_reference",
+        "h5_full_path_worse_than_r11_28_reference"
+      ],
+      "candidate_mae": 0.16240422796561713,
+      "carry_forward_mae": 0.26129357360735933,
+      "contract": "R12-08 is a model change built on the R12-07 evidence router. It evaluates a deterministic two-head candidate: R11-28 for 1y/2y program nowcasting and R12-01 for 3y/5y annual-anchor trajectory. Promotion is route-specific: nowcast claims require improvement over carry-forward on program evidence; trajectory claims require improvement over carry-forward and all available matched R10 references on annual-anchor evidence.",
+      "decision": "keep_as_route_aware_nowcast_candidate",
+      "experiment_id": "R12-08",
+      "family": "r12_route_aware_two_head_process",
+      "kept_claim": "route_aware_nowcast_head_supported_but_trajectory_head_still_r10_blocked",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "stock_consistency_status": "fail",
+      "title": "Route-aware two-head nowcast/trajectory candidate"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_09_stock_cone_safe_annual_trajectory_candidate_report.json",
+      "artifact_sha256": "6e8d3a469ec41e970f4309460de6890cedbb2d26bf1ce8f3abdebabede72e489",
+      "blockers": [
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference",
+        "h3_r10_scope_not_better_than_r11_28_reference",
+        "h5_r10_scope_not_better_than_r11_28_reference"
+      ],
+      "candidate_mae": 0.12614716742326404,
+      "carry_forward_mae": 0.26129357360735933,
+      "contract": "R12-09 is a model change built on the R12-07 evidence router. It keeps R11-28 for program-nowcast evidence and non-annual trajectory rows, while slide annual-anchor diagnosed_plhiv/alive_on_art rows may use a train-selected annual stock head. Promotion remains route-specific: nowcast claims require improvement over carry-forward on program evidence; trajectory claims require improvement over carry-forward and all available matched R10 references on annual-anchor evidence, with the full stock cone and conditional-rate gates still scored in the companion full report.",
+      "decision": "keep_as_route_aware_two_head_candidate",
+      "experiment_id": "R12-09",
+      "family": "r12_stock_cone_safe_annual_trajectory_process",
+      "kept_claim": "route_aware_two_head_supports_nowcast_and_trajectory_claims",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "stock_consistency_status": "pass",
+      "title": "Stock-cone-safe annual trajectory head"
+    },
+    {
+      "annual_status": "pass",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10a_official_annual_challenge_gate_report.json",
+      "artifact_sha256": "d4414ec72cf87c3e43f2132681d5905af1e6c36ad3b59f41df91028f64b9590d",
+      "blockers": [],
+      "candidate_mae": 0.38060777635128873,
+      "carry_forward_mae": 0.5924720011390459,
+      "contract": "Official annual challenge rows are held out as AEM/Spectrum-style validation: annual incidence, AIDS deaths, estimated PLHIV, and annual cascade anchors are scored at annual Q4 only. Validation-only incidence/death rows are stripped from quarterly state training rows before candidate predictions. Annual required metrics are predicted only by train-origin weak-measurement heads with empirical measurement variance, not by quarterly diagnosis flow or cascade stocks.",
+      "decision": "keep_as_official_annual_challenge_gate",
+      "experiment_id": "R12-10A",
+      "family": "official_annual_challenge_gate",
+      "kept_claim": "official_annual_validation_gate_not_training_target",
+      "lifted_status": "not_applicable",
+      "one_year_status": "not_applicable",
+      "r10_reference_mae": null,
+      "stock_consistency_status": "not_applicable",
+      "title": "Official annual AEM/Spectrum-style challenge gate"
+    },
+    {
+      "annual_status": "not_applicable",
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_10b_program_nowcast_mixed_quarterly_candidate_report.json",
+      "artifact_sha256": "a29bee4512b5342d89627e52443d0156e7d7d651ade073b6e02ef13c031bbd01",
+      "blockers": [
+        "candidate_not_better_than_available_r10_on_all_route_horizons",
+        "candidate_not_better_than_available_r10_on_all_route_horizons",
+        "h3_candidate_mean_not_better_than_r10_reference",
+        "h5_candidate_mean_not_better_than_r10_reference",
+        "h3_r10_scope_not_better_than_r11_28_reference",
+        "h3_full_path_worse_than_r11_28_reference",
+        "h5_r10_scope_not_better_than_r11_28_reference",
+        "h5_full_path_worse_than_r11_28_reference"
+      ],
+      "candidate_mae": 0.5690993641209486,
+      "carry_forward_mae": 0.6203793643117403,
+      "contract": "R12-10B targets the remaining R10 failure on DOH program nowcast and mixed quarterly diagnosis/ART trajectory. It uses only DOH quarterly/monthly program lineages, requires carry-forward and available matched R10 improvement on those routes, and leaves the slide annual-anchor route frozen.",
+      "decision": "reject_route_aware_candidate",
+      "experiment_id": "R12-10B",
+      "family": "r12_program_nowcast_mixed_quarterly_process",
+      "kept_claim": "route_aware_two_head_fails_nowcast_and_trajectory_promotion",
+      "lifted_status": "fail",
+      "one_year_status": "pass",
+      "r10_reference_mae": 0.11345837623390577,
+      "stock_consistency_status": "pass",
+      "title": "DOH program nowcast and mixed-quarterly trajectory branch"
+    }
+  ],
+  "run_id": "p3d-r12-joint-annual-latent-monthly-20260501-s00",
+  "schema_version": "phase3_dynamic.r12_reference_branch.v1",
+  "source_run_id": "tr-v3-current-champion-expanded-harp-compatibility-20260419-s00",
+  "summary": {
+    "candidate_experiment_ids": [
+      "R12-01",
+      "R12-02",
+      "R12-03",
+      "R12-08",
+      "R12-09",
+      "R12-10B"
+    ],
+    "claim_boundary": "R11-28 is locked as research reference; R12 candidates are accepted only if they improve long-horizon drift without failing stock/rate/R10 gates",
+    "diagnostic_experiment_ids": [
+      "R12-04",
+      "R12-05",
+      "R12-06",
+      "R12-07",
+      "R12-10A"
+    ],
+    "experiment_count": 15,
+    "full_cascade_champion": null,
+    "reference_experiment_id": "R11-28"
+  }
+}

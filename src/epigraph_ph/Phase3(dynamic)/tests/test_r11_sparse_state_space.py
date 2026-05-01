@@ -1438,6 +1438,15 @@ def test_r12_10_official_annual_challenge_keeps_required_heads_out_of_training()
     assert report["blockers"] == []
     assert report["scored_required_model_head_count"] > 0
     assert report["annual_measurement_head_rows"]
+    plhiv_head_rows = [
+        row
+        for row in report["annual_measurement_head_rows"]
+        if row["metric_name"] == "estimated_plhiv" and row.get("conservation_residual") is not None
+    ]
+    assert plhiv_head_rows
+    assert all(row["joint_conservation_status"] == "completed" for row in plhiv_head_rows)
+    assert all(abs(float(row["conservation_residual"])) <= 1e-9 for row in plhiv_head_rows)
+    assert all(row.get("mass_balance_plhiv") is not None for row in plhiv_head_rows)
     assert report["scored_cascade_metric_count"] > 0
 
 
@@ -1505,8 +1514,12 @@ def test_r12_10_program_nowcast_branch_is_doh_program_scoped() -> None:
     assert summary["family"] == "r12_program_nowcast_mixed_quarterly_process"
     assert summary["monthly_reporting_state_process"]["program_train_row_count"] > 0
     assert summary["monthly_reporting_state_process"]["status"] == "completed"
+    latent_process = summary["monthly_reporting_state_process"]["latent_reporting_intensity_process"]
+    assert latent_process["status"] == "completed"
+    assert latent_process["latent_intensity_by_ordinal"]
     mutation_by_quarter = {row["quarter"]: row for row in summary["mutation_rows"]}
     assert mutation_by_quarter["2023-Q2"]["program_row"] is True
     assert mutation_by_quarter["2023-Q3"]["program_row"] is True
+    assert mutation_by_quarter["2023-Q2"]["latent_reporting_intensity"] is not None
     assert mutation_by_quarter["2023-Q4"]["program_row"] is False
     assert mutation_by_quarter["2023-Q4"]["mutated_metrics"] == []

@@ -25,19 +25,19 @@ The historical root `src/epigraph_ph/phase3` tree is still useful for older TR-V
 src/epigraph_ph/Phase3(dynamic)
 ```
 
-The latest checked-in Phase3(dynamic) replay is `R12-10`, run `p3d-r12-annual-heads-monthly-state-20260430-s00`. It adds two gates on top of the R12-09 annual-anchor result:
+The latest checked-in Phase3(dynamic) replay is `R12-10`, run `p3d-r12-joint-annual-latent-monthly-20260501-s00`. It adds two gates on top of the R12-09 annual-anchor result:
 
 - `R12-10A`: an official annual AEM/Spectrum-style challenge gate for annual incidence, AIDS deaths, estimated PLHIV, and cascade anchors.
 - `R12-10B`: a DOH quarterly/monthly program-nowcast and mixed quarterly diagnosis/ART trajectory branch.
 
-Current result: `R12-10A` now passes because annual incidence, AIDS deaths, and estimated PLHIV have explicit train-origin weak-measurement heads. `R12-10B` now uses a monthly-native DOH reporting/state process for diagnosis flow, diagnosed stock, and ART stock; it improves over carry-forward on DOH program routes, but still fails matched R10 and is rejected for promotion. `R11-28` remains the locked research reference, while `R12-09` remains a route-specific annual-anchor candidate rather than a full-cascade champion.
+Current result: `R12-10A` now passes with a joint conserved annual head: annual incidence and AIDS deaths are weak-measurement heads, while estimated PLHIV is propagated by train-estimated mass balance. `R12-10B` now uses a latent monthly reporting-intensity state for diagnosis flow, diagnosed stock, and ART stock; it improves over carry-forward on DOH program routes, but still fails matched R10 and is rejected for promotion. `R11-28` remains the locked research reference, while `R12-09` remains a route-specific annual-anchor candidate rather than a full-cascade champion.
 
 Latest R12 summary:
 
 | Gate | Result |
 | --- | --- |
 | Official annual challenge gate | Pass |
-| Annual incidence/deaths/PLHIV heads | Explicit weak-measurement heads scored |
+| Annual incidence/deaths/PLHIV heads | Joint conserved weak-measurement/mass-balance heads scored |
 | R12-10B DOH program route vs carry-forward | Improves on 1y, 2y, 3y, 5y route means |
 | R12-10B DOH program route vs matched R10 | Fails at 1y, 3y, 5y; 2y R10 unavailable |
 | R12-09 annual-anchor trajectory vs matched R10 | Still passes at 3y and 5y |
@@ -50,8 +50,8 @@ Key scores from the latest replay:
 | --- | ---: | ---: | ---: | ---: | --- |
 | R11-28 reference, all horizons mean | 0.3620 | 0.5512 | 0.1621 | 0.1135 | beats carry, fails R10 |
 | R12-09 route candidate mean | 0.1261 | 0.2613 | n/a | 0.1135 | route-specific pass, full replay still fails |
-| R12-10A annual challenge mean | 0.4245 | 0.5925 | n/a | n/a | annual heads pass |
-| R12-10B program route mean | 0.5635 | 0.6204 | n/a | 0.1135 | beats carry, fails R10 |
+| R12-10A annual challenge mean | 0.3806 | 0.5925 | n/a | n/a | conserved annual heads pass |
+| R12-10B program route mean | 0.5691 | 0.6204 | n/a | 0.1135 | beats carry, fails R10 |
 
 Annual-anchor route scores:
 
@@ -62,7 +62,7 @@ Annual-anchor route scores:
 
 Interpretation: R12-09 is scientifically useful because it separates annual-anchor trajectory evidence from short-horizon program nowcasting evidence. It is not yet a final model because the full mixed-lineage trajectory still loses to R10 at longer horizons.
 
-R12-10 interpretation: the annual challenge gate is now operational with explicit weak-measurement annual heads, so annual incidence/deaths/PLHIV are no longer silently missing or replaced by quarterly diagnosis flow. The DOH program branch now uses a monthly-native reporting/state process rather than generic readout selection, but the result is still not enough: it reduces error versus carry-forward and improves the previous program route slightly, while remaining far from R10 trajectory shape, especially for mixed quarterly diagnosis/ART evidence.
+R12-10 interpretation: the annual challenge gate is now operational with conserved annual heads, so annual incidence/deaths/PLHIV are no longer silently missing, independent, or replaced by quarterly diagnosis flow. The DOH program branch now uses a monthly latent reporting-intensity state rather than generic residual-shift selection, but the result is still not enough: it reduces error versus carry-forward while remaining far from R10 trajectory shape, especially for mixed quarterly diagnosis/ART evidence.
 
 ## Repository Map
 
@@ -356,8 +356,8 @@ Key branches:
 Scientific conclusion:
 
 - R12-09 supports a route-specific annual-anchor trajectory claim.
-- R12-10A adds explicit annual incidence/death/PLHIV weak-measurement heads and passes the annual challenge gate.
-- R12-10B shows the remaining DOH program-nowcast gap is not solved by the first monthly-native reporting/state process.
+- R12-10A adds joint conserved annual incidence/death/PLHIV weak-measurement heads and passes the annual challenge gate.
+- R12-10B shows the remaining DOH program-nowcast gap is not solved by the first latent monthly reporting-intensity state process.
 - R12-09 does not yet support a full-cascade long-horizon champion claim.
 
 ## Latest R12 Artifacts
@@ -365,7 +365,7 @@ Scientific conclusion:
 The compact latest R12-10 run is checked in under:
 
 ```text
-src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-annual-heads-monthly-state-20260430-s00/analysis
+src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis
 ```
 
 High-value files:
@@ -413,7 +413,7 @@ Replay the latest R12 branch:
 PYTHONPATH="src/epigraph_ph/Phase3(dynamic)/src:src" \
 uvx --from numpy --with matplotlib \
 python -m phase3_dynamic.cli r12-reference-branch \
-  --run-id p3d-r12-annual-heads-monthly-state-local \
+  --run-id p3d-r12-joint-annual-latent-monthly-local \
   --start-year 2010 \
   --end-year 2025 \
   --min-train-years 5
@@ -447,8 +447,8 @@ The project is not yet publishable as a superior all-purpose HIV forecast model 
 
 The next high-value scientific steps are:
 
-1. Improve the annual heads into a joint incidence/death/PLHIV mass-balance head with interval calibration; the current weak-measurement heads pass but are still independent.
-2. Upgrade the DOH monthly process from reporting-signature residual shifts to a latent reporting-intensity state with smoother dynamics; the current monthly process beats carry-forward but remains far from R10.
+1. Calibrate the conserved annual head intervals against held-out official annual rows and report posterior predictive coverage, not only point error.
+2. Replace the current monthly latent-intensity scalar with a two-factor reporting/service state that separates support availability from program-volume shocks; the scalar latent process is cleaner than residual shifts but still far from R10.
 3. Keep R12-09 as a route-specific annual-anchor candidate, not a full champion.
 4. Promote Phase 2 determinants only after source-family re-estimation, time-window shift, placebo separation, and synthetic-recovery checks.
 5. Convert the current nested `Phase3(dynamic)` package into a cleaner `phase3_dynamic` layout only after import paths and artifact locators are migrated.
@@ -462,7 +462,8 @@ As of R12-10, we can say:
 - We have a strong route-specific annual-anchor trajectory repair.
 - We beat carry-forward broadly under the current blocked contract.
 - We preserve stock and conditional-rate gates.
-- We now have annual official-style weak-measurement heads for incidence, AIDS deaths, and estimated PLHIV.
+- We now have annual official-style conserved heads for incidence, AIDS deaths, and estimated PLHIV.
+- We now use a latent monthly reporting-intensity state instead of a program residual-shift table.
 - We still do not beat R10 globally at 3y/5y mixed-lineage trajectory shape or on DOH program-nowcast route shape.
 
 That is the honest current frontier.

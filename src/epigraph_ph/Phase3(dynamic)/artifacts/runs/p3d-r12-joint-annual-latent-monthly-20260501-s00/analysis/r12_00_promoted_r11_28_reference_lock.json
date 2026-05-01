@@ -1,0 +1,23 @@
+{
+  "baseline_source_run_id": "harp-archive-wdi-standard-20260412-s19",
+  "candidate_mean_mae_across_horizons": 0.3620179568964221,
+  "carry_forward_mean_mae_across_horizons": 0.5512035229281876,
+  "claim_boundary": "R11-28 is promoted as the R12 research reference because it is the best stock/rate-consistent next-wave branch, not because it is a publication champion. R10-superiority remains blocked.",
+  "contract": "R12 candidates must beat or explain this locked R11-28 reference under the same blocked horizon gates",
+  "decision": "promote_as_next_research_reference",
+  "experiment_id": "R12-00",
+  "generated_at": "2026-05-01T00:18:02.403525+00:00",
+  "promoted_reference_experiment_id": "R11-28",
+  "promoted_reference_family": "multi_horizon_weighted_process",
+  "r10_comparable_candidate_mean_mae_across_horizons": 0.15751218208858528,
+  "r10_gate_blockers": [
+    "h3_candidate_mean_not_better_than_r10_reference",
+    "h5_candidate_mean_not_better_than_r10_reference"
+  ],
+  "r10_gate_status": "fail",
+  "reference_report_path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r12_00_promoted_r11_28_reference_report.json",
+  "reference_report_sha256": "34d7fe8c06d6d3fba647ea9637c82b7bc3b678f3d1f5356eec3aecc6873c7cf7",
+  "run_id": "p3d-r12-joint-annual-latent-monthly-20260501-s00",
+  "schema_version": "phase3_dynamic.r12_00_reference_lock.v1",
+  "source_run_id": "tr-v3-current-champion-expanded-harp-compatibility-20260419-s00"
+}

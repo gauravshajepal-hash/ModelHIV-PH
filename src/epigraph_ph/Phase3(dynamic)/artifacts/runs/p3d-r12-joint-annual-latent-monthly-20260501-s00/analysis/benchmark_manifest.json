@@ -1,0 +1,86 @@
+{
+  "artifact_lock": {
+    "annual_incidence_claim_card": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_interval_r10_mechanistic_incidence_claim_card_20260429.json",
+      "sha256": "a8871b775762a361fb0d2f4a2245767ffd2518ada600e87b575837e3401a4fc8"
+    },
+    "frontdoor_coupling": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-frontdoor-coupling-20260429-s01/analysis/frontdoor_coupling_report.json",
+      "sha256": "c7b0cddc41beb80315b174f32014ba8868e0511650c4e55459de201fcb80983c"
+    },
+    "incidence_full_gate": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-incidence-readout-full-gate-20260429-s02/analysis/incidence_readout_full_gate_report.json",
+      "sha256": "22c45e03c69fcf41f316dce97e7fe2581b09ae47073860e3c575e3db95809408"
+    },
+    "phase2_determinant_robustness": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/phase0-2-incidence-official-augmented-20260429-s01/phase2/determinant_robustness_broad/phase2_determinant_robustness_report.json",
+      "sha256": "8d7f1f7da0cb6aba480bcd6a41f0bd6ae91a891d0c7e5880dfc736491e9039ec"
+    },
+    "r11_manifest": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r11_sparse_state_space_experiment_manifest_20260429.json",
+      "sha256": "8dac4e21c63b521733d038b816fbc5c38ff6ed20df53111525e3e59ed565c03c"
+    },
+    "r11_plan": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r11_sparse_state_space_council_plan_20260429.md",
+      "sha256": "8f2fb24df8b02e3e9c60bb93e6a0d02b6f83b5699426f3ed309496113d8ea995"
+    },
+    "u_to_d_coupling": {
+      "exists": true,
+      "path": "/media/gaurav/New_Volume/EpiGraph_PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-u-to-d-coupling-20260429-s03/analysis/u_to_d_coupling_report.json",
+      "sha256": "a8ca16b6f9e8059a727ba35ee5739c10b30801b6c048cf8d297f8439391876d3"
+    }
+  },
+  "baseline_source_run_id": "harp-archive-wdi-standard-20260412-s19",
+  "comparators": {
+    "aem_spectrum_like": {
+      "role": "annual_validation_only_external_comparator",
+      "training_use": "forbidden"
+    },
+    "carry_forward": {
+      "role": "hard_baseline",
+      "scores_obtained_from": "frozen branch reports and current lineage replay"
+    },
+    "r10": {
+      "horizon_matched_reference_rows": [
+        {
+          "horizon_years": 1,
+          "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+          "reference_quarterly_mean_mae": 0.09530345873034501,
+          "status": "pass"
+        },
+        {
+          "horizon_years": 3,
+          "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+          "reference_quarterly_mean_mae": 0.11565058222116206,
+          "status": "pass"
+        },
+        {
+          "horizon_years": 5,
+          "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+          "reference_quarterly_mean_mae": 0.12942108775021025,
+          "status": "pass"
+        }
+      ],
+      "horizon_matched_replay_status": "pass",
+      "reference_quarterly_mean_mae": 0.10601883888971031,
+      "role": "quarterly_readout_reference"
+    }
+  },
+  "generated_at": "2026-05-01T00:16:26.542812+00:00",
+  "run_id": "p3d-r12-joint-annual-latent-monthly-20260501-s00",
+  "schema_version": "phase3_dynamic.r11_benchmark_manifest.v1",
+  "source_run_id": "tr-v3-current-champion-expanded-harp-compatibility-20260419-s00",
+  "split_contract": {
+    "contract": "blocked-origin time splits; no validation-only leakage",
+    "end_year": 2025,
+    "horizon_years": 1,
+    "min_train_years": 5,
+    "start_year": 2010
+  }
+}

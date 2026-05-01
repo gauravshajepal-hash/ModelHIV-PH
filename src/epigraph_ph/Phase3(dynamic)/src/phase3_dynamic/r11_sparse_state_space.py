@@ -846,19 +846,156 @@ def _predict_annual_measurement_error_head(model: dict[str, Any], holdout_row: d
     }
 
 
+def _annual_train_metric_by_year(train_rows: list[dict[str, Any]]) -> dict[int, dict[str, float]]:
+    values_by_year_metric: dict[int, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for row in train_rows:
+        quarter = str(row.get("quarter") or "")
+        if not quarter.endswith("-Q4"):
+            continue
+        year = quarter_year(quarter)
+        for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS:
+            value = _finite_float(row.get(metric_name))
+            if value is not None:
+                values_by_year_metric[int(year)][metric_name].append(max(float(value), 0.0))
+    output: dict[int, dict[str, float]] = {}
+    for year, metric_values in sorted(values_by_year_metric.items()):
+        output[int(year)] = {
+            metric_name: float(np.median(np.asarray(values, dtype=np.float64)))
+            for metric_name, values in sorted(metric_values.items())
+            if values
+        }
+    return output
+
+
+def _fit_joint_annual_mass_balance_head(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    values_by_year = _annual_train_metric_by_year(train_rows)
+    years = sorted(values_by_year)
+    balance_rows: list[dict[str, float | int]] = []
+    for year in years:
+        previous = values_by_year.get(int(year) - 1, {})
+        current = values_by_year.get(int(year), {})
+        previous_plhiv = _finite_float(previous.get("estimated_plhiv"))
+        current_plhiv = _finite_float(current.get("estimated_plhiv"))
+        incidence = _finite_float(current.get("annual_new_infections"))
+        deaths = _finite_float(current.get("annual_aids_deaths"))
+        if previous_plhiv is None or current_plhiv is None or incidence is None or deaths is None:
+            continue
+        adjustment = float(current_plhiv) - float(previous_plhiv) - float(incidence) + float(deaths)
+        balance_rows.append(
+            {
+                "year": int(year),
+                "previous_plhiv": float(previous_plhiv),
+                "annual_new_infections": float(incidence),
+                "annual_aids_deaths": float(deaths),
+                "estimated_plhiv": float(current_plhiv),
+                "net_balance_adjustment": float(adjustment),
+            }
+        )
+    plhiv_years = [
+        int(year)
+        for year in years
+        if _finite_float(values_by_year.get(int(year), {}).get("estimated_plhiv")) is not None
+    ]
+    if not balance_rows or not plhiv_years:
+        return {
+            "status": "not_estimable",
+            "reason": "missing_consecutive_annual_mass_balance_triplets",
+            "balance_row_count": len(balance_rows),
+            "available_year_count": len(years),
+        }
+    adjustments = np.asarray([float(row["net_balance_adjustment"]) for row in balance_rows], dtype=np.float64)
+    adjustment_years = np.asarray([float(row["year"]) for row in balance_rows], dtype=np.float64)
+    slopes: list[float] = []
+    one_step_residuals: list[float] = []
+    for index in range(1, len(balance_rows)):
+        year_step = max(float(adjustment_years[index] - adjustment_years[index - 1]), float(np.finfo(np.float32).eps))
+        slope = float((adjustments[index] - adjustments[index - 1]) / year_step)
+        slopes.append(slope)
+        prior_slopes = slopes[:-1]
+        slope_prior = 0.0 if not prior_slopes else float(np.median(np.asarray(prior_slopes, dtype=np.float64)))
+        one_step_residuals.append(float(adjustments[index] - (adjustments[index - 1] + slope_prior * year_step)))
+    slope_array = np.asarray(slopes, dtype=np.float64)
+    residual_array = np.asarray(one_step_residuals, dtype=np.float64)
+    process_variance = float(np.var(slope_array)) if slope_array.size else 0.0
+    measurement_variance = float(np.var(residual_array)) if residual_array.size else float(np.var(adjustments))
+    variance_denominator = process_variance + measurement_variance
+    trend_weight = (
+        0.0
+        if variance_denominator <= float(np.finfo(np.float64).eps)
+        else float(process_variance / variance_denominator)
+    )
+    last_plhiv_year = max(plhiv_years)
+    last_plhiv_value = float(values_by_year[int(last_plhiv_year)]["estimated_plhiv"])
+    return {
+        "status": "completed",
+        "balance_row_count": len(balance_rows),
+        "first_balance_year": int(balance_rows[0]["year"]),
+        "last_balance_year": int(balance_rows[-1]["year"]),
+        "last_plhiv_year": int(last_plhiv_year),
+        "last_plhiv_value": last_plhiv_value,
+        "last_net_balance_adjustment": float(adjustments[-1]),
+        "median_net_balance_adjustment": float(np.median(adjustments)),
+        "median_annual_adjustment_slope": 0.0 if not slopes else float(np.median(slope_array)),
+        "process_variance": process_variance,
+        "measurement_variance": measurement_variance,
+        "trend_weight": trend_weight,
+        "balance_rows": balance_rows,
+        "contract": (
+            "joint annual mass balance: PLHIV_y = PLHIV_{y-1} + incidence_y - AIDS_deaths_y "
+            "+ train-estimated net_balance_adjustment_y. The adjustment absorbs non-AIDS removals, migration, "
+            "and measurement-system drift and is estimated only from train-origin annual triplets."
+        ),
+    }
+
+
+def _predict_annual_balance_adjustment(model: dict[str, Any], year: int) -> dict[str, Any]:
+    if str(model.get("status") or "") != "completed":
+        return {
+            "value": None,
+            "lower": None,
+            "upper": None,
+            "prediction_sd": None,
+        }
+    last_year = int(model.get("last_balance_year") or year)
+    lead_years = max(int(year) - int(last_year), 0)
+    slope = float(model.get("median_annual_adjustment_slope") or 0.0)
+    trend_weight = float(model.get("trend_weight") or 0.0)
+    value = float(model.get("last_net_balance_adjustment") or 0.0) + trend_weight * slope * float(lead_years)
+    prediction_variance = max(float(model.get("measurement_variance") or 0.0), 0.0) + float(lead_years) * max(
+        float(model.get("process_variance") or 0.0),
+        0.0,
+    )
+    prediction_sd = float(np.sqrt(max(prediction_variance, 0.0)))
+    return {
+        "value": value,
+        "lower": float(value - prediction_sd),
+        "upper": float(value + prediction_sd),
+        "prediction_sd": prediction_sd,
+    }
+
+
 def _fit_official_annual_measurement_error_heads(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
     heads = {
         metric_name: _fit_annual_measurement_error_head(train_rows, metric_name)
         for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS
     }
+    mass_balance = _fit_joint_annual_mass_balance_head(train_rows)
+    conserved_status = (
+        "completed"
+        if str(heads.get("annual_new_infections", {}).get("status") or "") == "completed"
+        and str(heads.get("annual_aids_deaths", {}).get("status") or "") == "completed"
+        and str(mass_balance.get("status") or "") == "completed"
+        else "not_estimable"
+    )
     return {
-        "status": "completed"
-        if any(str(head.get("status") or "") == "completed" for head in heads.values())
-        else "not_estimable",
+        "status": conserved_status,
         "heads": heads,
+        "joint_mass_balance_head": mass_balance,
+        "joint_conservation_status": conserved_status,
         "contract": (
-            "annual incidence, AIDS-death, and estimated-PLHIV heads are fitted only from train-origin annual "
-            "weak measurements. They emit annual predictions and uncertainty bands; they do not create quarterly truth."
+            "annual incidence and AIDS-death heads are fitted only from train-origin weak measurements. "
+            "Estimated PLHIV is then generated by a conserved joint mass-balance head, so incidence, deaths, "
+            "and PLHIV cannot move independently and no annual target becomes quarterly truth."
         ),
     }
 
@@ -869,6 +1006,10 @@ def _apply_official_annual_measurement_error_heads(
     annual_head_process: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     heads = dict(annual_head_process.get("heads") or {})
+    mass_balance = dict(annual_head_process.get("joint_mass_balance_head") or {})
+    previous_plhiv = _finite_float(mass_balance.get("last_plhiv_value"))
+    previous_plhiv_lower = previous_plhiv
+    previous_plhiv_upper = previous_plhiv
     output: list[dict[str, Any]] = []
     head_rows: list[dict[str, Any]] = []
     for prediction_row, holdout_row in zip(
@@ -878,9 +1019,11 @@ def _apply_official_annual_measurement_error_heads(
         row = dict(prediction_row)
         quarter = str(holdout_row.get("quarter") or row.get("quarter") or "")
         if quarter.endswith("-Q4"):
-            for metric_name in OFFICIAL_ANNUAL_REQUIRED_MODEL_HEADS:
+            annual_predictions: dict[str, dict[str, Any]] = {}
+            for metric_name in ("annual_new_infections", "annual_aids_deaths"):
                 head = dict(heads.get(metric_name) or {})
                 prediction = _predict_annual_measurement_error_head(head, row)
+                annual_predictions[metric_name] = prediction
                 value = _finite_float(prediction.get("value"))
                 if value is not None:
                     row[metric_name] = float(value)
@@ -900,6 +1043,84 @@ def _apply_official_annual_measurement_error_heads(
                         "train_count": head.get("train_count"),
                     }
                 )
+            metric_name = "estimated_plhiv"
+            balance_prediction = _predict_annual_balance_adjustment(mass_balance, quarter_year(quarter))
+            incidence = _finite_float(annual_predictions.get("annual_new_infections", {}).get("value"))
+            deaths = _finite_float(annual_predictions.get("annual_aids_deaths", {}).get("value"))
+            adjustment = _finite_float(balance_prediction.get("value"))
+            plhiv_prediction: dict[str, Any]
+            mass_balance_plhiv = None
+            conservation_residual = None
+            if (
+                str(mass_balance.get("status") or "") == "completed"
+                and previous_plhiv is not None
+                and incidence is not None
+                and deaths is not None
+                and adjustment is not None
+            ):
+                diagnosed_floor = _finite_float(row.get("diagnosed_plhiv"))
+                floor_value = 0.0 if diagnosed_floor is None else max(float(diagnosed_floor), 0.0)
+                mass_balance_plhiv = float(previous_plhiv) + float(incidence) - float(deaths) + float(adjustment)
+                value = float(max(mass_balance_plhiv, floor_value, 0.0))
+                inc_lower = _finite_float(annual_predictions.get("annual_new_infections", {}).get("lower"))
+                inc_upper = _finite_float(annual_predictions.get("annual_new_infections", {}).get("upper"))
+                death_lower = _finite_float(annual_predictions.get("annual_aids_deaths", {}).get("lower"))
+                death_upper = _finite_float(annual_predictions.get("annual_aids_deaths", {}).get("upper"))
+                adjustment_lower = _finite_float(balance_prediction.get("lower"))
+                adjustment_upper = _finite_float(balance_prediction.get("upper"))
+                lower = value
+                upper = value
+                if (
+                    previous_plhiv_lower is not None
+                    and previous_plhiv_upper is not None
+                    and inc_lower is not None
+                    and inc_upper is not None
+                    and death_lower is not None
+                    and death_upper is not None
+                    and adjustment_lower is not None
+                    and adjustment_upper is not None
+                ):
+                    lower = float(max(float(previous_plhiv_lower) + inc_lower - death_upper + adjustment_lower, floor_value, 0.0))
+                    upper = float(max(float(previous_plhiv_upper) + inc_upper - death_lower + adjustment_upper, value))
+                conservation_residual = float(value - float(previous_plhiv) - float(incidence) + float(deaths) - float(adjustment))
+                plhiv_prediction = {
+                    "value": value,
+                    "lower": lower,
+                    "upper": upper,
+                    "measurement_sd": None,
+                    "prediction_sd": balance_prediction.get("prediction_sd"),
+                }
+                previous_plhiv = value
+                previous_plhiv_lower = lower
+                previous_plhiv_upper = upper
+            else:
+                head = dict(heads.get(metric_name) or {})
+                plhiv_prediction = _predict_annual_measurement_error_head(head, row)
+            value = _finite_float(plhiv_prediction.get("value"))
+            if value is not None:
+                row[metric_name] = float(value)
+                row[f"{metric_name}_measurement_lower"] = plhiv_prediction.get("lower")
+                row[f"{metric_name}_measurement_upper"] = plhiv_prediction.get("upper")
+            head = dict(heads.get(metric_name) or {})
+            head_rows.append(
+                {
+                    "quarter": quarter,
+                    "metric_name": metric_name,
+                    "head_status": str(mass_balance.get("status") or head.get("status") or "not_estimable"),
+                    "predicted": value is not None,
+                    "prediction_value": value,
+                    "prediction_lower": plhiv_prediction.get("lower"),
+                    "prediction_upper": plhiv_prediction.get("upper"),
+                    "measurement_sd": plhiv_prediction.get("measurement_sd"),
+                    "prediction_sd": plhiv_prediction.get("prediction_sd"),
+                    "train_count": mass_balance.get("balance_row_count") or head.get("train_count"),
+                    "mass_balance_plhiv": mass_balance_plhiv,
+                    "balance_adjustment": adjustment,
+                    "balance_residual_sd": balance_prediction.get("prediction_sd"),
+                    "conservation_residual": conservation_residual,
+                    "joint_conservation_status": str(annual_head_process.get("joint_conservation_status") or ""),
+                }
+            )
         output.append(row)
     return output, head_rows
 
@@ -3746,27 +3967,170 @@ def _r12_monthly_program_reporting_shift(
     return float(shifts.get(signature, model.get("global_reporting_shift") or 0.0))
 
 
-def _fit_r12_monthly_program_flow_process(program_rows: list[dict[str, Any]], median_intensity: float | None) -> dict[str, Any]:
+def _fit_r12_latent_reporting_intensity_process(program_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    if not sorted_rows:
+        return {
+            "status": "not_estimable",
+            "reason": "no_program_rows",
+            "latent_intensity_by_ordinal": {},
+        }
+    observations = np.asarray([_monthly_reporting_intensity(row) for row in sorted_rows], dtype=np.float64)
+    ordinals = np.asarray([quarter_ordinal(str(row.get("quarter") or "")) for row in sorted_rows], dtype=np.int64)
+    slopes: list[float] = []
+    for index in range(1, len(sorted_rows)):
+        step = max(float(ordinals[index] - ordinals[index - 1]), float(np.finfo(np.float32).eps))
+        slopes.append(float((observations[index] - observations[index - 1]) / step))
+    slope_array = np.asarray(slopes, dtype=np.float64)
+    median_slope = 0.0 if not slopes else float(np.median(slope_array))
+    process_variance = float(np.var(slope_array)) if slope_array.size else 0.0
+    measurement_variance = float(np.var(observations - float(np.median(observations)))) if observations.size else 0.0
+    denominator = process_variance + measurement_variance
+    update_gain = 0.0 if denominator <= float(np.finfo(np.float64).eps) else float(process_variance / denominator)
+    latent = float(observations[0])
+    latent_by_ordinal: dict[int, float] = {int(ordinals[0]): latent}
+    latent_rows: list[dict[str, Any]] = [
+        {
+            "quarter": str(sorted_rows[0].get("quarter") or ""),
+            "observed_monthly_reporting_intensity": float(observations[0]),
+            "latent_reporting_intensity": latent,
+        }
+    ]
+    for index in range(1, len(sorted_rows)):
+        step = max(float(ordinals[index] - ordinals[index - 1]), 0.0)
+        predicted = latent + median_slope * step
+        latent = float(predicted + update_gain * (float(observations[index]) - predicted))
+        latent = float(min(max(latent, 0.0), 1.0))
+        latent_by_ordinal[int(ordinals[index])] = latent
+        latent_rows.append(
+            {
+                "quarter": str(sorted_rows[index].get("quarter") or ""),
+                "observed_monthly_reporting_intensity": float(observations[index]),
+                "latent_reporting_intensity": latent,
+            }
+        )
+    return {
+        "status": "completed",
+        "row_count": len(sorted_rows),
+        "median_observed_monthly_reporting_intensity": float(np.median(observations)),
+        "median_quarterly_intensity_slope": median_slope,
+        "process_variance": process_variance,
+        "measurement_variance": measurement_variance,
+        "update_gain": update_gain,
+        "first_quarter": str(sorted_rows[0].get("quarter") or ""),
+        "last_quarter": str(sorted_rows[-1].get("quarter") or ""),
+        "last_ordinal": int(ordinals[-1]),
+        "last_latent_reporting_intensity": float(latent),
+        "latent_intensity_by_ordinal": {str(key): float(value) for key, value in sorted(latent_by_ordinal.items())},
+        "latent_rows": latent_rows,
+        "contract": (
+            "latent monthly reporting-intensity local-level state fitted from train-origin support metadata. "
+            "It is a reporting/service-observation process, not a biological hazard and not a target residual table."
+        ),
+    }
+
+
+def _r12_latent_reporting_intensity_for_train_row(latent_process: dict[str, Any], row: dict[str, Any]) -> float:
+    ordinal = quarter_ordinal(str(row.get("quarter") or ""))
+    latent_by_ordinal = dict(latent_process.get("latent_intensity_by_ordinal") or {})
+    value = _finite_float(latent_by_ordinal.get(str(ordinal)))
+    if value is not None:
+        return float(value)
+    return float(_monthly_reporting_intensity(row))
+
+
+def _predict_r12_latent_reporting_intensity(latent_process: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
+    observed = float(_monthly_reporting_intensity(row))
+    if str(latent_process.get("status") or "") != "completed":
+        return {
+            "observed_monthly_reporting_intensity": observed,
+            "latent_reporting_intensity": observed,
+            "prediction_status": "fallback_to_observed_support_intensity",
+        }
+    ordinal = quarter_ordinal(str(row.get("quarter") or ""))
+    last_ordinal = int(latent_process.get("last_ordinal") or ordinal)
+    step = max(float(ordinal - last_ordinal), 0.0)
+    predicted = float(latent_process.get("last_latent_reporting_intensity") or 0.0) + float(
+        latent_process.get("median_quarterly_intensity_slope") or 0.0
+    ) * step
+    process_variance = max(float(latent_process.get("process_variance") or 0.0), 0.0)
+    measurement_variance = max(float(latent_process.get("measurement_variance") or 0.0), 0.0)
+    denominator = process_variance + measurement_variance
+    update_gain = 0.0 if denominator <= float(np.finfo(np.float64).eps) else float(process_variance / denominator)
+    latent = float(predicted + update_gain * (observed - predicted))
+    latent = float(min(max(latent, 0.0), 1.0))
+    return {
+        "observed_monthly_reporting_intensity": observed,
+        "predicted_prior_reporting_intensity": float(min(max(predicted, 0.0), 1.0)),
+        "latent_reporting_intensity": latent,
+        "update_gain": update_gain,
+        "prediction_status": "latent_local_level_update",
+    }
+
+
+def _fit_bounded_transition_with_latent_intensity(
+    *,
+    x_rows: list[list[float]],
+    y_values: list[float],
+    feature_names: tuple[str, ...],
+    lower: tuple[float, ...],
+    upper: tuple[float, ...],
+) -> dict[str, Any]:
+    if not x_rows or not y_values or len(x_rows) != len(y_values):
+        return {
+            "status": "not_estimable",
+            "reason": "empty_or_misaligned_latent_intensity_design",
+            "feature_names": list(feature_names),
+        }
+    fit = _bounded_least_squares(
+        np.asarray(x_rows, dtype=np.float64),
+        np.asarray(y_values, dtype=np.float64),
+        lower=lower,
+        upper=upper,
+    )
+    if str(fit.get("status") or "") != "completed":
+        return {
+            "status": "not_estimable",
+            "reason": str(fit.get("reason") or "bounded_fit_failed"),
+            "feature_names": list(feature_names),
+        }
+    return {
+        "status": "completed",
+        "feature_names": list(feature_names),
+        "coefficients": [float(value) for value in list(fit.get("coefficient") or [])],
+        "row_count": int(fit.get("row_count") or 0),
+        "raw_sse": _finite_float(fit.get("sse")),
+        "reporting_adjusted_sse": _finite_float(fit.get("sse")),
+        "active_set": list(fit.get("active_set") or []),
+        "contract": "bounded transition coefficients with latent reporting-intensity as a continuous train-estimated state covariate",
+    }
+
+
+def _latent_reporting_bound(y_values: list[float]) -> float:
+    values = [abs(float(value)) for value in y_values if _finite_float(value) is not None]
+    return max(values) if values else 0.0
+
+
+def _fit_r12_monthly_program_flow_process(program_rows: list[dict[str, Any]], latent_process: dict[str, Any]) -> dict[str, Any]:
     sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
     x_rows: list[list[float]] = []
     y_values: list[float] = []
-    era_labels: list[str] = []
     for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
         previous_flow = _finite_float(previous.get("new_diagnosed_cases_period"))
         current_flow = _finite_float(current.get("new_diagnosed_cases_period"))
         if previous_flow is None or current_flow is None:
             continue
-        x_rows.append([max(float(previous_flow), 0.0), 1.0])
+        latent_intensity = _r12_latent_reporting_intensity_for_train_row(latent_process, current)
+        x_rows.append([max(float(previous_flow), 0.0), 1.0, latent_intensity])
         y_values.append(max(float(current_flow), 0.0))
-        era_labels.append(_r12_monthly_program_signature(current, median_intensity))
     flow_upper = max(y_values) if y_values else 0.0
-    fit = _fit_delta_transition_with_reporting_shifts(
+    intensity_bound = _latent_reporting_bound(y_values)
+    fit = _fit_bounded_transition_with_latent_intensity(
         x_rows=x_rows,
         y_values=y_values,
-        era_labels=era_labels,
-        feature_names=("previous_diagnosis_flow", "flow_innovation"),
-        lower=(0.0, 0.0),
-        upper=(1.0, flow_upper),
+        feature_names=("previous_diagnosis_flow", "flow_innovation", "latent_reporting_intensity"),
+        lower=(0.0, 0.0, -intensity_bound),
+        upper=(1.0, flow_upper, intensity_bound),
     )
     if str(fit.get("status") or "") != "completed":
         return fit
@@ -3775,31 +4139,31 @@ def _fit_r12_monthly_program_flow_process(program_rows: list[dict[str, Any]], me
         **fit,
         "flow_retention_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
         "flow_innovation": None if len(coefficients) < 2 else float(coefficients[1]),
-        "equation": "F_t = rho_F F_{t-1} + b_F + reporting_shift_F(monthly_program_signature_t)",
+        "reporting_intensity_coefficient": None if len(coefficients) < 3 else float(coefficients[2]),
+        "equation": "F_t = rho_F F_{t-1} + b_F + k_F z_t, z_t=latent monthly reporting intensity",
     }
 
 
-def _fit_r12_monthly_program_diagnosed_transition(program_rows: list[dict[str, Any]], median_intensity: float | None) -> dict[str, Any]:
+def _fit_r12_monthly_program_diagnosed_transition(program_rows: list[dict[str, Any]], latent_process: dict[str, Any]) -> dict[str, Any]:
     sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
     x_rows: list[list[float]] = []
     y_values: list[float] = []
-    era_labels: list[str] = []
     for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
         previous_diagnosed = _finite_float(previous.get("diagnosed_plhiv"))
         current_diagnosed = _finite_float(current.get("diagnosed_plhiv"))
         diagnosis_flow = _finite_float(current.get("new_diagnosed_cases_period"))
         if previous_diagnosed is None or current_diagnosed is None or diagnosis_flow is None:
             continue
-        x_rows.append([max(float(diagnosis_flow), 0.0), -max(float(previous_diagnosed), 0.0)])
+        latent_intensity = _r12_latent_reporting_intensity_for_train_row(latent_process, current)
+        x_rows.append([max(float(diagnosis_flow), 0.0), -max(float(previous_diagnosed), 0.0), latent_intensity])
         y_values.append(float(current_diagnosed) - float(previous_diagnosed))
-        era_labels.append(_r12_monthly_program_signature(current, median_intensity))
-    fit = _fit_delta_transition_with_reporting_shifts(
+    intensity_bound = _latent_reporting_bound(y_values)
+    fit = _fit_bounded_transition_with_latent_intensity(
         x_rows=x_rows,
         y_values=y_values,
-        era_labels=era_labels,
-        feature_names=("diagnosis_flow", "diagnosed_removal_stock"),
-        lower=(0.0, 0.0),
-        upper=(1.0, 1.0),
+        feature_names=("diagnosis_flow", "diagnosed_removal_stock", "latent_reporting_intensity"),
+        lower=(0.0, 0.0, -intensity_bound),
+        upper=(1.0, 1.0, intensity_bound),
     )
     if str(fit.get("status") or "") != "completed":
         return fit
@@ -3808,11 +4172,12 @@ def _fit_r12_monthly_program_diagnosed_transition(program_rows: list[dict[str, A
         **fit,
         "diagnosis_flow_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
         "diagnosed_removal_fraction": None if len(coefficients) < 2 else float(coefficients[1]),
-        "equation": "D_t = D_{t-1} + gamma_D F_t - mu_D D_{t-1} + reporting_shift_D(monthly_program_signature_t)",
+        "reporting_intensity_coefficient": None if len(coefficients) < 3 else float(coefficients[2]),
+        "equation": "D_t = D_{t-1} + gamma_D F_t - mu_D D_{t-1} + k_D z_t, z_t=latent monthly reporting intensity",
     }
 
 
-def _fit_r12_monthly_program_art_transition(program_rows: list[dict[str, Any]], median_intensity: float | None) -> dict[str, Any]:
+def _fit_r12_monthly_program_art_transition(program_rows: list[dict[str, Any]], latent_process: dict[str, Any]) -> dict[str, Any]:
     sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
     by_ordinal = _train_row_by_ordinal(sorted_rows)
     lag_rows: list[dict[str, Any]] = []
@@ -3820,7 +4185,6 @@ def _fit_r12_monthly_program_art_transition(program_rows: list[dict[str, Any]], 
     for lag in TRANSITION_PROCESS_ART_LAGS:
         x_rows: list[list[float]] = []
         y_values: list[float] = []
-        era_labels: list[str] = []
         for previous, current in zip(sorted_rows[:-1], sorted_rows[1:]):
             current_ord = quarter_ordinal(str(current.get("quarter") or ""))
             if current_ord <= quarter_ordinal(str(previous.get("quarter") or "")):
@@ -3833,16 +4197,16 @@ def _fit_r12_monthly_program_art_transition(program_rows: list[dict[str, Any]], 
             if previous_art is None or current_art is None or previous_diagnosed is None or lagged_flow is None:
                 continue
             diagnosed_art_gap = max(float(previous_diagnosed) - float(previous_art), 0.0)
-            x_rows.append([max(float(lagged_flow), 0.0), diagnosed_art_gap, -max(float(previous_art), 0.0)])
+            latent_intensity = _r12_latent_reporting_intensity_for_train_row(latent_process, current)
+            x_rows.append([max(float(lagged_flow), 0.0), diagnosed_art_gap, -max(float(previous_art), 0.0), latent_intensity])
             y_values.append(float(current_art) - float(previous_art))
-            era_labels.append(_r12_monthly_program_signature(current, median_intensity))
-        fit = _fit_delta_transition_with_reporting_shifts(
+        intensity_bound = _latent_reporting_bound(y_values)
+        fit = _fit_bounded_transition_with_latent_intensity(
             x_rows=x_rows,
             y_values=y_values,
-            era_labels=era_labels,
-            feature_names=("lagged_diagnosis_flow", "diagnosed_not_art_gap", "art_removal_stock"),
-            lower=(0.0, 0.0, 0.0),
-            upper=(1.0, 1.0, 1.0),
+            feature_names=("lagged_diagnosis_flow", "diagnosed_not_art_gap", "art_removal_stock", "latent_reporting_intensity"),
+            lower=(0.0, 0.0, 0.0, -intensity_bound),
+            upper=(1.0, 1.0, 1.0, intensity_bound),
         )
         row = {
             "lag_quarters": int(lag),
@@ -3869,7 +4233,8 @@ def _fit_r12_monthly_program_art_transition(program_rows: list[dict[str, Any]], 
         "diagnosis_linkage_coefficient": None if len(coefficients) < 1 else float(coefficients[0]),
         "diagnosed_gap_linkage_coefficient": None if len(coefficients) < 2 else float(coefficients[1]),
         "art_removal_fraction": None if len(coefficients) < 3 else float(coefficients[2]),
-        "equation": "A_t = A_{t-1} + gamma_A F_{t-lag} + eta_A max(D_{t-1}-A_{t-1},0) - mu_A A_{t-1} + reporting_shift_A(monthly_program_signature_t)",
+        "reporting_intensity_coefficient": None if len(coefficients) < 4 else float(coefficients[3]),
+        "equation": "A_t = A_{t-1} + gamma_A F_{t-lag} + eta_A max(D_{t-1}-A_{t-1},0) - mu_A A_{t-1} + k_A z_t, z_t=latent monthly reporting intensity",
     }
 
 
@@ -3877,9 +4242,10 @@ def _fit_r12_monthly_reporting_state_process(train_rows: list[dict[str, Any]]) -
     program_rows = _r12_program_rows(train_rows)
     intensities = [_monthly_reporting_intensity(row) for row in program_rows]
     median_intensity = None if not intensities else float(np.median(np.asarray(intensities, dtype=np.float64)))
-    flow_model = _fit_r12_monthly_program_flow_process(program_rows, median_intensity)
-    diagnosed_model = _fit_r12_monthly_program_diagnosed_transition(program_rows, median_intensity)
-    art_model = _fit_r12_monthly_program_art_transition(program_rows, median_intensity)
+    latent_process = _fit_r12_latent_reporting_intensity_process(program_rows)
+    flow_model = _fit_r12_monthly_program_flow_process(program_rows, latent_process)
+    diagnosed_model = _fit_r12_monthly_program_diagnosed_transition(program_rows, latent_process)
+    art_model = _fit_r12_monthly_program_art_transition(program_rows, latent_process)
     sorted_rows = sorted(program_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
     flow_by_ordinal = {
         quarter_ordinal(str(row.get("quarter") or "")): float(value)
@@ -3889,12 +4255,14 @@ def _fit_r12_monthly_reporting_state_process(train_rows: list[dict[str, Any]]) -
     }
     return {
         "status": "completed"
-        if str(flow_model.get("status") or "") == "completed"
+        if str(latent_process.get("status") or "") == "completed"
+        and str(flow_model.get("status") or "") == "completed"
         and str(diagnosed_model.get("status") or "") == "completed"
         and str(art_model.get("status") or "") == "completed"
         else "not_estimable",
         "program_train_row_count": len(program_rows),
         "median_monthly_reporting_intensity": median_intensity,
+        "latent_reporting_intensity_process": latent_process,
         "flow_reporting_process": flow_model,
         "diagnosed_stock_transition": diagnosed_model,
         "art_stock_transition": art_model,
@@ -3907,8 +4275,9 @@ def _fit_r12_monthly_reporting_state_process(train_rows: list[dict[str, Any]]) -
         "observed_diagnosis_flow_by_ordinal": {str(key): value for key, value in sorted(flow_by_ordinal.items())},
         "contract": (
             "R12 monthly-native program process over DOH quarterly/monthly support: diagnosis flow, diagnosed stock, "
-            "and ART stock are propagated as states with empirical monthly/reporting-signature residual shifts. "
-            "It replaces generic readout-family selection for DOH program rows."
+            "and ART stock are propagated as states with a latent monthly reporting-intensity state. "
+            "The latent state is fitted from support metadata and enters transition equations as a bounded driver, "
+            "replacing generic residual-shift readout tables for DOH program rows."
         ),
     }
 
@@ -3925,6 +4294,7 @@ def _apply_r12_monthly_reporting_state_process(
     flow_model = dict(process.get("flow_reporting_process") or {})
     diagnosed_model = dict(process.get("diagnosed_stock_transition") or {})
     art_model = dict(process.get("art_stock_transition") or {})
+    latent_process = dict(process.get("latent_reporting_intensity_process") or {})
     median_intensity = _finite_float(process.get("median_monthly_reporting_intensity"))
     last_state = dict(process.get("last_state") or {})
     current_flow = _finite_float(last_state.get("new_diagnosed_cases_period"))
@@ -3943,22 +4313,29 @@ def _apply_r12_monthly_reporting_state_process(
     for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
         quarter = str(holdout_row.get("quarter") or "")
         base_prediction = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        latent_prediction = _predict_r12_latent_reporting_intensity(latent_process, holdout_row)
+        latent_intensity = float(latent_prediction.get("latent_reporting_intensity") or 0.0)
         rho_f = _finite_float(flow_model.get("flow_retention_coefficient"))
         innovation_f = _finite_float(flow_model.get("flow_innovation"))
+        flow_reporting_coefficient = _finite_float(flow_model.get("reporting_intensity_coefficient"))
         if rho_f is not None and innovation_f is not None:
-            flow_shift = _r12_monthly_program_reporting_shift(flow_model, holdout_row, median_intensity)
-            next_flow = max(float(rho_f) * max(float(current_flow), 0.0) + float(innovation_f) + flow_shift, 0.0)
+            next_flow = max(
+                float(rho_f) * max(float(current_flow), 0.0)
+                + float(innovation_f)
+                + (0.0 if flow_reporting_coefficient is None else float(flow_reporting_coefficient) * latent_intensity),
+                0.0,
+            )
         else:
             next_flow = _finite_float(base_prediction.get("new_diagnosed_cases_period")) or float(current_flow)
         gamma_d = _finite_float(diagnosed_model.get("diagnosis_flow_coefficient"))
         mu_d = _finite_float(diagnosed_model.get("diagnosed_removal_fraction"))
+        diagnosed_reporting_coefficient = _finite_float(diagnosed_model.get("reporting_intensity_coefficient"))
         if gamma_d is not None and mu_d is not None:
-            diagnosed_shift = _r12_monthly_program_reporting_shift(diagnosed_model, holdout_row, median_intensity)
             next_diagnosed = max(
                 float(current_diagnosed)
                 + float(gamma_d) * max(float(next_flow), 0.0)
                 - float(mu_d) * max(float(current_diagnosed), 0.0)
-                + diagnosed_shift,
+                + (0.0 if diagnosed_reporting_coefficient is None else float(diagnosed_reporting_coefficient) * latent_intensity),
                 0.0,
             )
         else:
@@ -3972,15 +4349,15 @@ def _apply_r12_monthly_reporting_state_process(
         gamma_a = _finite_float(art_model.get("diagnosis_linkage_coefficient"))
         eta_a = _finite_float(art_model.get("diagnosed_gap_linkage_coefficient"))
         mu_a = _finite_float(art_model.get("art_removal_fraction"))
+        art_reporting_coefficient = _finite_float(art_model.get("reporting_intensity_coefficient"))
         if gamma_a is not None and eta_a is not None and mu_a is not None:
             diagnosed_gap = max(float(current_diagnosed) - float(current_art), 0.0)
-            art_shift = _r12_monthly_program_reporting_shift(art_model, holdout_row, median_intensity)
             next_art = max(
                 float(current_art)
                 + float(gamma_a) * max(float(lagged_flow), 0.0)
                 + float(eta_a) * diagnosed_gap
                 - float(mu_a) * max(float(current_art), 0.0)
-                + art_shift,
+                + (0.0 if art_reporting_coefficient is None else float(art_reporting_coefficient) * latent_intensity),
                 0.0,
             )
         else:
@@ -4004,6 +4381,9 @@ def _apply_r12_monthly_reporting_state_process(
                 "quarter": quarter,
                 "program_row": _r12_is_program_row(holdout_row),
                 "monthly_program_signature": _r12_monthly_program_signature(holdout_row, median_intensity),
+                "observed_monthly_reporting_intensity": latent_prediction.get("observed_monthly_reporting_intensity"),
+                "latent_reporting_intensity": latent_prediction.get("latent_reporting_intensity"),
+                "latent_reporting_prediction_status": latent_prediction.get("prediction_status"),
                 "diagnosis_flow_state": float(next_flow),
                 "diagnosed_state": float(next_diagnosed),
                 "art_state": float(next_art),
