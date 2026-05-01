@@ -67,12 +67,24 @@ def utc_now_iso() -> str:
 
 def write_json(path: Path, payload: Any) -> None:
     ensure_dir(path.parent)
-    text = json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True)
+    tmp_path = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
-        path.write_text(text, encoding="utf-8")
+        with tmp_path.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2, ensure_ascii=False, sort_keys=True)
+            handle.write("\n")
+        os.replace(tmp_path, path)
     except FileNotFoundError:
         ensure_dir(path.parent)
-        path.write_text(text, encoding="utf-8")
+        with tmp_path.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2, ensure_ascii=False, sort_keys=True)
+            handle.write("\n")
+        os.replace(tmp_path, path)
+    finally:
+        try:
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except OSError:
+            pass
 
 
 def read_json(path: Path, default: Any = None) -> Any:

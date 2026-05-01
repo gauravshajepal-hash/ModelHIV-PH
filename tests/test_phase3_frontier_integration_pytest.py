@@ -162,12 +162,14 @@ def _evaluate_variant(
     baseline_hazards: dict[str, dict[str, float]],
     direct_summary: dict[str, object],
     direct_adjustments: dict[str, dict[str, float]],
+    hidden_summary: dict[str, object] | None = None,
+    hidden_adjustments: dict[str, dict[str, float]] | None = None,
 ) -> dict[str, object]:
     _forecast_rows, _hazard_rows, evaluation = tr_v2._simulate_holdout(
         dataset=dataset,
         baseline_hazards=baseline_hazards,
         direct_adjustments=direct_adjustments,
-        hidden_adjustments={},
+        hidden_adjustments=hidden_adjustments or {},
         peak_gates={},
     )
     return {
@@ -175,6 +177,9 @@ def _evaluate_variant(
         "smape": float(evaluation["model_smape"]),
         "feature_count": int(
             sum(int((direct_summary.get(transition) or {}).get("feature_count") or 0) for transition in tr_v2.TRANSITION_NAMES)
+        ),
+        "hidden_rank_used": int(
+            sum(int((hidden_summary or {}).get(transition, {}).get("rank_used") or 0) for transition in tr_v2.TRANSITION_NAMES)
         ),
     }
 
@@ -208,12 +213,32 @@ def test_tr_v2_smoke_latent_blocks_explicit_target_map_benchmark() -> None:
         direct_summary=legacy["summary"],
         direct_adjustments=legacy["quarter_adjustments"],
     )
-    explicit = tr_v2._fit_direct_transition_effects(structural_inputs=structural_inputs, dataset=dataset)
+    explicit = tr_v2._fit_direct_transition_effects(structural_inputs=structural_inputs, dataset=dataset, include_multiscale=False)
     explicit_metrics = _evaluate_variant(
         dataset=dataset,
         baseline_hazards=baseline_hazards,
         direct_summary=explicit["summary"],
         direct_adjustments=explicit["quarter_adjustments"],
+    )
+    explicit_multiscale = tr_v2._fit_direct_transition_effects(structural_inputs=structural_inputs, dataset=dataset, include_multiscale=True)
+    explicit_multiscale_metrics = _evaluate_variant(
+        dataset=dataset,
+        baseline_hazards=baseline_hazards,
+        direct_summary=explicit_multiscale["summary"],
+        direct_adjustments=explicit_multiscale["quarter_adjustments"],
+    )
+    hidden_only = tr_v2._fit_hidden_transition_effects(
+        structural_inputs=structural_inputs,
+        dataset=dataset,
+        direct_adjustments={},
+    )
+    hidden_only_metrics = _evaluate_variant(
+        dataset=dataset,
+        baseline_hazards=baseline_hazards,
+        direct_summary={transition: {"feature_count": 0, "coefficients": []} for transition in tr_v2.TRANSITION_NAMES},
+        direct_adjustments={},
+        hidden_summary=hidden_only["summary"],
+        hidden_adjustments=hidden_only["quarter_adjustments"],
     )
 
     assert explicit_metrics["feature_count"] > 0
@@ -222,3 +247,150 @@ def test_tr_v2_smoke_latent_blocks_explicit_target_map_benchmark() -> None:
     assert explicit_metrics["smape"] < no_prior["smape"]
     assert explicit_metrics["mae"] <= legacy_metrics["mae"] + 1e-9
     assert explicit_metrics["smape"] <= legacy_metrics["smape"] + 1e-9
+    assert explicit_multiscale_metrics["feature_count"] == explicit_metrics["feature_count"]
+    assert any(
+        float((explicit_multiscale["summary"].get(transition) or {}).get("multiscale_support", {}).get("multiplier") or 1.0) > 1.0
+        for transition in tr_v2.TRANSITION_NAMES
+    )
+    assert hidden_only_metrics["hidden_rank_used"] > 0
+    assert abs(hidden_only_metrics["mae"] - no_prior["mae"]) > 1e-9
+
+
+@pytest.mark.slow
+@pytest.mark.integration
+@pytest.mark.skipif(not SLOW_INTEGRATION_ENABLED, reason="Set EPIGRAPH_RUN_SLOW_INTEGRATION=1 to run slow integration benchmarks")
+@pytest.mark.skipif(not SMOKE_LATENT_BLOCKS_DIR.exists(), reason="smoke-latent-blocks artifacts are required for this benchmark")
+def test_tr_v2_smoke_latent_blocks_rolling_origin_forward_benchmark() -> None:
+    ctx = build_transition_research_context(
+        run_id="pytest-tr-v2-rolling-origin",
+        plugin_id="hiv",
+        experiment_id="TR-V2-03-phase2-ablation-suite",
+        source_run_id="smoke-latent-blocks",
+    )
+    structural_inputs = tr_v2.load_phase2_structural_inputs(ctx)
+    splits = tr_v2._rolling_origin_holdout_splits(
+        ctx,
+        start_year=2010,
+        end_year=2025,
+        min_train_years=5,
+        horizon_years=1,
+    )
+    assert splits
+
+    rows: list[dict[str, float]] = []
+    for split in splits:
+        dataset = tr_v2._empirical_transition_dataset_for_holdout_years(ctx, list(split["holdout_years"]))
+        if not list(dataset["train_transition_rows"]) or not list(dataset["holdout_rows"]):
+            continue
+        baseline_hazards = tr_v2._train_based_baseline_hazard_map(dataset, mode="last_train")
+        no_prior = _evaluate_variant(
+            dataset=dataset,
+            baseline_hazards=baseline_hazards,
+            direct_summary={transition: {"feature_count": 0, "coefficients": []} for transition in tr_v2.TRANSITION_NAMES},
+            direct_adjustments={},
+        )
+        explicit = tr_v2._fit_direct_transition_effects(structural_inputs=structural_inputs, dataset=dataset, include_multiscale=False)
+        explicit_metrics = _evaluate_variant(
+            dataset=dataset,
+            baseline_hazards=baseline_hazards,
+            direct_summary=explicit["summary"],
+            direct_adjustments=explicit["quarter_adjustments"],
+        )
+        explicit_multiscale = tr_v2._fit_direct_transition_effects(structural_inputs=structural_inputs, dataset=dataset, include_multiscale=True)
+        explicit_multiscale_metrics = _evaluate_variant(
+            dataset=dataset,
+            baseline_hazards=baseline_hazards,
+            direct_summary=explicit_multiscale["summary"],
+            direct_adjustments=explicit_multiscale["quarter_adjustments"],
+        )
+        rows.append(
+            {
+                "train_end_year": float(split["train_end_year"]),
+                "no_prior_mae": float(no_prior["mae"]),
+                "explicit_mae": float(explicit_metrics["mae"]),
+                "explicit_multiscale_mae": float(explicit_multiscale_metrics["mae"]),
+            }
+        )
+
+    assert rows
+    assert all(np.isfinite(list(row.values())).all() for row in rows)
+    assert any(float(row["explicit_mae"]) < float(row["no_prior_mae"]) for row in rows)
+    latest_row = max(rows, key=lambda row: float(row["train_end_year"]))
+    assert float(latest_row["explicit_mae"]) < float(latest_row["no_prior_mae"])
+    assert float(latest_row["explicit_multiscale_mae"]) < float(latest_row["no_prior_mae"])
+
+
+@pytest.mark.slow
+@pytest.mark.integration
+@pytest.mark.skipif(not SLOW_INTEGRATION_ENABLED, reason="Set EPIGRAPH_RUN_SLOW_INTEGRATION=1 to run slow integration benchmarks")
+@pytest.mark.skipif(not SMOKE_LATENT_BLOCKS_DIR.exists(), reason="smoke-latent-blocks artifacts are required for this benchmark")
+def test_tr_v2_smoke_latent_blocks_rolling_origin_report_artifacts() -> None:
+    paths = tr_v2.write_tr_v2_rolling_origin_report(
+        run_id="pytest-tr-v2-rolling-origin-report",
+        plugin_id="hiv",
+        source_run_id="smoke-latent-blocks",
+        start_year=2010,
+        end_year=2025,
+        min_train_years=5,
+        horizon_years=1,
+    )
+    for path_text in paths.values():
+        path = Path(str(path_text))
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
+@pytest.mark.slow
+@pytest.mark.integration
+@pytest.mark.skipif(not SLOW_INTEGRATION_ENABLED, reason="Set EPIGRAPH_RUN_SLOW_INTEGRATION=1 to run slow integration benchmarks")
+@pytest.mark.skipif(not SMOKE_LATENT_BLOCKS_DIR.exists(), reason="smoke-latent-blocks artifacts are required for this benchmark")
+def test_tr_v2_smoke_latent_blocks_early_history_partial_report_artifacts() -> None:
+    paths = tr_v2.write_tr_v2_early_history_partial_report(
+        run_id="pytest-tr-v2-early-history-partial-report",
+        plugin_id="hiv",
+        source_run_id="smoke-latent-blocks",
+        start_year=2010,
+        end_year=2016,
+        min_train_years=3,
+        horizon_years=1,
+    )
+    for path_text in paths.values():
+        path = Path(str(path_text))
+        assert path.exists()
+        assert path.stat().st_size > 0
+
+
+@pytest.mark.slow
+@pytest.mark.integration
+@pytest.mark.skipif(not SLOW_INTEGRATION_ENABLED, reason="Set EPIGRAPH_RUN_SLOW_INTEGRATION=1 to run slow integration benchmarks")
+@pytest.mark.skipif(not SMOKE_LATENT_BLOCKS_DIR.exists(), reason="smoke-latent-blocks artifacts are required for this benchmark")
+def test_tr_v2_smoke_latent_blocks_combined_dashboard_report_artifacts() -> None:
+    rolling = tr_v2.write_tr_v2_rolling_origin_report(
+        run_id="pytest-tr-v2-rolling-origin-report-dashboard",
+        plugin_id="hiv",
+        source_run_id="smoke-latent-blocks",
+        start_year=2010,
+        end_year=2025,
+        min_train_years=5,
+        horizon_years=1,
+    )
+    early = tr_v2.write_tr_v2_early_history_partial_report(
+        run_id="pytest-tr-v2-early-history-partial-report-dashboard",
+        plugin_id="hiv",
+        source_run_id="smoke-latent-blocks",
+        start_year=2010,
+        end_year=2016,
+        min_train_years=3,
+        horizon_years=1,
+    )
+    paths = tr_v2.write_tr_v2_benchmark_dashboard_report(
+        run_id="pytest-tr-v2-benchmark-dashboard-report",
+        plugin_id="hiv",
+        source_run_id="smoke-latent-blocks",
+        rolling_origin_run_id=Path(str(rolling["json"])).parents[1].name,
+        early_history_run_id=Path(str(early["json"])).parents[1].name,
+    )
+    for path_text in paths.values():
+        path = Path(str(path_text))
+        assert path.exists()
+        assert path.stat().st_size > 0

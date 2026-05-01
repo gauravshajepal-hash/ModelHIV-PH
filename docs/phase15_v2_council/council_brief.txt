@@ -1,0 +1,28 @@
+
+Repo: D:\EpiGraph_PH
+Task: Find the best scientifically serious Phase 15 v2 mathematical specification for this repo.
+Current weak points to replace:
+- heuristic annual fan-out into monthly cells
+- top-down national-first shrinkage into provinces
+- heuristic sign/loadings
+- fixed shrinkage precisions and loading scale clips
+- same-month-only smoothing instead of proper dynamics
+Required target capabilities:
+- explicit mixed-frequency observation operators
+- bottom-up national aggregation from province latents
+- learned signed loadings
+- estimated shrinkage precisions
+- dynamic temporal smoothing
+Important files:
+- src/epigraph_ph/phase15/latent_measurements.py
+- src/epigraph_ph/phase15/national_factor_model.py
+- src/epigraph_ph/phase15/province_factor_graph.py
+- src/epigraph_ph/phase15/pipeline.py
+- src/epigraph_ph/phase1/latent_observability.py
+- src/epigraph_ph/latent_blocks.py
+- src/epigraph_ph/plugins/hiv.py
+Important artifacts:
+- artifacts/runs/smoke-latent-blocks/analysis/extraction_quality_audit.json
+- artifacts/runs/smoke-latent-blocks/phase15/national_block_measurement_spec.json
+- artifacts/runs/smoke-latent-blocks/phase15/province_block_identification_report.json
+- artifacts/runs/smoke-latent-blocks/phase15/augmented_latent_observability_audit.json

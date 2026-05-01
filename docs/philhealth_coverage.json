@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "source": "PhilHealth Stats and Charts 1st Semester 2025 (Official Data)",
+    "reportingPeriod": "January 1 - June 30, 2025",
+    "lastUpdated": "2025-11-14",
+    "currency": "PHP",
+    "note": "With UHC Act (RA11223), all Filipinos are automatically included under NHIP"
+  },
+  "overview": {
+    "totalBeneficiaries": 106235882,
+    "registeredMembers": 61519044,
+    "registeredDependents": 44716838,
+    "populationCovered": 113863084,
+    "coverageRate": 100,
+    "registrationRate": 93,
+    "universalCoverage": true
+  },
+  "membershipByCategory": {
+    "directContributors": {
+      "total": 65038381,
+      "members": 37041945,
+      "dependents": 27996436,
+      "percentage": 61.2,
+      "subcategories": {
+        "employedPrivate": {
+          "members": 19101735,
+          "dependents": 12634586,
+          "total": 31736321
+        },
+        "employedGovernment": {
+          "members": 3032507,
+          "dependents": 4018755,
+          "total": 7051262
+        },
+        "informal": {
+          "members": 10531587,
+          "dependents": 8182524,
+          "total": 18714111
+        },
+        "ofws": {
+          "members": 2962731,
+          "dependents": 2010651,
+          "total": 4973382
+        },
+        "lifetimeMembers": {
+          "members": 1330129,
+          "dependents": 1101659,
+          "total": 2431788
+        },
+        "kasambahay": {
+          "members": 71528,
+          "dependents": 43485,
+          "total": 115013
+        },
+        "others": {
+          "members": 11728,
+          "dependents": 4776,
+          "total": 16504
+        }
+      }
+    },
+    "indirectContributors": {
+      "total": 41197501,
+      "members": 24477099,
+      "dependents": 16720402,
+      "percentage": 38.8,
+      "subcategories": {
+        "indigents": {
+          "members": 12555686,
+          "dependents": 11680766,
+          "total": 24236452
+        },
+        "seniorCitizens": {
+          "members": 10207858,
+          "dependents": 3354194,
+          "total": 13562052
+        },
+        "sponsored": {
+          "members": 1713555,
+          "dependents": 1685442,
+          "total": 3398997
+        }
+      }
+    }
+  }
+}

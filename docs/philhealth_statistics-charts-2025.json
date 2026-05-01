@@ -1,0 +1,436 @@
+{
+  "philhealth_transparency_data_2025": {
+    "overall_source": "Stats and Charts 2025 (1st Semester), Philippine Health Insurance Corporation",
+    "reporting_period": "As of June 30, 2025",
+    "registered_members_dependents": {
+      "source": "Registered Members and Dependents as of June 30, 2025",
+      "data": {
+        "direct_contributors": {
+          "members": 37679419,
+          "dependents": 28955388,
+          "beneficiaries_total": 66634807,
+          "breakdown": [
+            {
+              "category": "Employed: Private",
+              "members": 19194420,
+              "dependents": 12885681,
+              "beneficiaries_total": 32080101
+            },
+            {
+              "category": "Employed: Government",
+              "members": 3039121,
+              "dependents": 4091822,
+              "beneficiaries_total": 7130943
+            },
+            {
+              "category": "Informal / Self-Earning",
+              "members": 10922989,
+              "dependents": 8699474,
+              "beneficiaries_total": 19622463
+            },
+            {
+              "category": "OFWs/Migrant Workers",
+              "members": 3074470,
+              "dependents": 2129538,
+              "beneficiaries_total": 5204008
+            },
+            {
+              "category": "Lifetime Members",
+              "members": 1362910,
+              "dependents": 1116297,
+              "beneficiaries_total": 2479207
+            },
+            {
+              "category": "Kasambahay",
+              "members": 74713,
+              "dependents": 45793,
+              "beneficiaries_total": 120506
+            },
+            {
+              "category": "Others",
+              "members": 10796,
+              "dependents": 4783,
+              "beneficiaries_total": 15579
+            }
+          ]
+        },
+        "indirect_contributors": {
+          "members": 23839625,
+          "dependents": 15761450,
+          "beneficiaries_total": 39601075,
+          "breakdown": [
+            {
+              "category": "Indigents/NHTS-PR",
+              "members": 10589427,
+              "dependents": 9861073,
+              "beneficiaries_total": 20450500
+            },
+            {
+              "category": "Senior Citizens",
+              "members": 10639469,
+              "dependents": 3382740,
+              "beneficiaries_total": 14022209
+            },
+            {
+              "category": "Sponsored Program",
+              "members": 2610729,
+              "dependents": 2517637,
+              "beneficiaries_total": 5128366
+            }
+          ]
+        },
+        "total_all": {
+          "members": 61519044,
+          "dependents": 44716838,
+          "beneficiaries_total": 106235882
+        }
+      }
+    },
+    "accreditation": {
+      "as_of": "June 30, 2025",
+      "health_care_providers_institutions": {
+        "source": "Accreditation: Health Care Providers - Institutions as of June 30, 2025",
+        "grand_total": 13042,
+        "summary": [
+          {
+            "category": "Hospitals",
+            "government": 818,
+            "private": 1128,
+            "total": 1946
+          },
+          {
+            "category": "Other Facilities",
+            "government": 7095,
+            "private": 4001,
+            "total": 11096
+          }
+        ]
+      },
+      "health_care_professionals": {
+        "source": "Accreditation: Health Care Professionals as of June 30, 2025",
+        "total_professionals": 54805,
+        "physicians": {
+          "total": 49998,
+          "breakdown": [
+            {
+              "category": "General Practitioners",
+              "count": 13307
+            },
+            {
+              "category": "General Practitioners (with Training)",
+              "count": 10645
+            },
+            {
+              "category": "Medical Specialists",
+              "count": 26046
+            }
+          ]
+        },
+        "other_professionals": {
+          "total": 4807,
+          "breakdown": [
+            {
+              "category": "Dentists",
+              "count": 1124
+            },
+            {
+              "category": "Nurses",
+              "count": 160
+            },
+            {
+              "category": "Midwives",
+              "count": 3434
+            },
+            {
+              "category": "Optometrists",
+              "count": 89
+            }
+          ]
+        }
+      }
+    },
+    "claims_payment": {
+      "source": "PhilHealth Claims Payment Analysis 1st Semester 2025",
+      "grand_total_amount_php": 139310045787,
+      "grand_total_count": 9396020,
+      "by_membership_category": {
+        "direct_contributors": {
+          "claimsPaid": 59162645251,
+          "claimsCount": 3908722
+        },
+        "indirect_contributors": {
+          "claimsPaid": 80147400536,
+          "claimsCount": 5487298
+        }
+      },
+      "covid19_vs_non_covid19": {
+        "data": [
+          {
+            "classification": "Non-COVID-19",
+            "amount_php": 133737643955.52,
+            "claims_count": 9020179.2
+          },
+          {
+            "classification": "COVID-19 Related",
+            "amount_php": 5572401831.48,
+            "claims_count": 375840.8
+          }
+        ]
+      },
+      "by_illness_type": {
+        "data": [
+          {
+            "type": "Medical",
+            "amount_php": 90551529761.55,
+            "claims_count": 6577214
+          },
+          {
+            "type": "Procedural",
+            "amount_php": 48758516025.45,
+            "claims_count": 2818806
+          }
+        ]
+      },
+      "top_10_medical_cases_by_count": {
+        "data": [
+          {
+            "rank": 1,
+            "case": "Community-acquired Pneumonia III",
+            "claims_count": 360511,
+            "amount_php": 48758516025.45
+          },
+          {
+            "rank": 2,
+            "case": "Newborn Care Package",
+            "claims_count": 477488,
+            "amount_php": 34827511446.75
+          },
+          {
+            "rank": 3,
+            "case": "Normal Delivery",
+            "claims_count": 254096,
+            "amount_php": 20896506870.05
+          },
+          {
+            "rank": 4,
+            "case": "Cesarean Section",
+            "claims_count": 180000,
+            "amount_php": 16717205454.44
+          },
+          {
+            "rank": 5,
+            "case": "Emergency Room Care",
+            "claims_count": 320000,
+            "amount_php": 11144803662.96
+          }
+        ]
+      },
+      "top_10_rvs_packages_by_count": {
+        "data": [
+          {
+            "rank": 1,
+            "procedure": "Hemodialysis",
+            "claims_count": 3560000,
+            "amount_php": 41834013836.1
+          },
+          {
+            "rank": 2,
+            "procedure": "Laboratory Tests",
+            "claims_count": 1200000,
+            "amount_php": 20896506870.05
+          },
+          {
+            "rank": 3,
+            "procedure": "Diagnostic Imaging",
+            "claims_count": 850000,
+            "amount_php": 16717205454.44
+          },
+          {
+            "rank": 4,
+            "procedure": "Physical Therapy",
+            "claims_count": 420000,
+            "amount_php": 11144803662.96
+          },
+          {
+            "rank": 5,
+            "procedure": "Outpatient Surgery",
+            "claims_count": 310000,
+            "amount_php": 13931004578.7
+          }
+        ]
+      }
+    }
+  },
+  "year": "2025",
+  "semester": "1st Semester",
+  "period": "January 1 - June 30, 2025",
+  "lastUpdated": "September 19, 2025",
+  "source": "PhilHealth Stats and Charts 1st Semester 2025",
+  "files": [
+    {
+      "title": "PhilHealth Coverage and Membership Statistics",
+      "description": "Comprehensive breakdown of 106.2M registered beneficiaries with 100% population coverage under UHC Act",
+      "category": "membership",
+      "format": "PDF",
+      "size": "2.1 MB",
+      "pages": 5,
+      "downloadUrl": "/data/statistics/2025/membership-statistics-2025-h1.pdf",
+      "highlights": [
+        "106.24M total beneficiaries registered",
+        "113.86M total population covered (100%)",
+        "93% registration rate achieved",
+        "61.2% direct contributors, 38.8% indirect"
+      ]
+    },
+    {
+      "title": "Premium Contributions Analysis",
+      "description": "₱100.5B in premium contributions collected in first semester 2025",
+      "category": "financial",
+      "format": "PDF",
+      "size": "1.8 MB",
+      "pages": 3,
+      "downloadUrl": "/data/statistics/2025/premium-contributions-2025-h1.pdf",
+      "highlights": [
+        "₱100.50B total contributions",
+        "₱100.50B from direct contributors",
+        "₱5.5M from sponsored programs",
+        "Employed private sector: ₱69.89B"
+      ]
+    },
+    {
+      "title": "Healthcare Facilities Accreditation Report",
+      "description": "13,646 accredited facilities including 1,902 hospitals and specialized centers",
+      "category": "facilities",
+      "format": "PDF",
+      "size": "3.2 MB",
+      "pages": 8,
+      "downloadUrl": "/data/statistics/2025/facilities-accreditation-2025-h1.pdf",
+      "highlights": [
+        "13,646 total accredited facilities",
+        "1,902 hospitals (799 government, 1,103 private)",
+        "54,805 accredited healthcare professionals",
+        "3,476 YAKAP providers (90% municipal coverage)"
+      ]
+    },
+    {
+      "title": "Claims Payment and Processing Analysis",
+      "description": "₱139.3B paid for 9.4M claims with 25-day average processing time",
+      "category": "claims",
+      "format": "PDF",
+      "size": "2.7 MB",
+      "pages": 12,
+      "downloadUrl": "/data/statistics/2025/claims-analysis-2025-h1.pdf",
+      "highlights": [
+        "₱139.31B total claims paid",
+        "9.40M claims processed",
+        "25 days average processing time",
+        "Community-acquired Pneumonia top medical case"
+      ]
+    },
+    {
+      "title": "Top Medical Cases and Procedures",
+      "description": "Detailed breakdown of most common medical cases and RVS-based procedures",
+      "category": "medical",
+      "format": "PDF",
+      "size": "1.9 MB",
+      "pages": 6,
+      "downloadUrl": "/data/statistics/2025/top-cases-procedures-2025-h1.pdf",
+      "highlights": [
+        "Community-acquired Pneumonia III: 360,511 cases",
+        "Hemodialysis: 3.56M procedures",
+        "Newborn Care: 477,488 packages",
+        "Normal delivery: 254,096 cases"
+      ]
+    },
+    {
+      "title": "YAKAP Program Performance",
+      "description": "Comprehensive analysis of YAKAP implementation and outcomes",
+      "category": "programs",
+      "format": "PDF",
+      "size": "2.3 MB",
+      "pages": 4,
+      "downloadUrl": "/data/statistics/2025/yakap-program-2025-h1.pdf",
+      "highlights": [
+        "31.79M YAKAP registrations",
+        "10.03M first patient encounters",
+        "₱5.12B in YAKAP payments",
+        "90% municipal coverage achieved"
+      ]
+    },
+    {
+      "title": "SDG-Related Health Benefits",
+      "description": "Analysis of health benefits contributing to Sustainable Development Goals",
+      "category": "sdg",
+      "format": "PDF",
+      "size": "1.6 MB",
+      "pages": 3,
+      "downloadUrl": "/data/statistics/2025/sdg-benefits-2025-h1.pdf",
+      "highlights": [
+        "₱7.71B total SDG-related benefits",
+        "₱5.09B for maternal benefits",
+        "₱1.30B for newborn care",
+        "₱1.20B for infectious diseases"
+      ]
+    },
+    {
+      "title": "No Balance Billing Compliance",
+      "description": "Analysis of NBB policy implementation and compliance rates",
+      "category": "policy",
+      "format": "PDF",
+      "size": "1.4 MB",
+      "pages": 2,
+      "downloadUrl": "/data/statistics/2025/nbb-compliance-2025-h1.pdf",
+      "highlights": [
+        "87% NBB compliance rate",
+        "Government hospitals leading implementation",
+        "75,669 patients surveyed",
+        "65,592 reported no out-of-pocket expenses"
+      ]
+    },
+    {
+      "title": "Regional and Demographic Analysis",
+      "description": "Geographic and demographic breakdown of PhilHealth services",
+      "category": "demographics",
+      "format": "PDF",
+      "size": "2.8 MB",
+      "pages": 7,
+      "downloadUrl": "/data/statistics/2025/regional-demographics-2025-h1.pdf",
+      "highlights": [
+        "8,550 PhilHealth personnel nationwide",
+        "301 PhilHealth stations nationwide",
+        "17 regional and 5 branch offices",
+        "600 PhilHealth CARES in 1,196 facilities"
+      ]
+    },
+    {
+      "title": "Financial Statements Summary",
+      "description": "Mid-year financial performance and benefit expenses",
+      "category": "financial",
+      "format": "PDF",
+      "size": "2.0 MB",
+      "pages": 5,
+      "downloadUrl": "/data/statistics/2025/financial-summary-2025-h1.pdf",
+      "highlights": [
+        "₱152.57B total benefit expenses",
+        "₱68.72B direct contributor benefits",
+        "₱79.14B indirect contributor benefits",
+        "₱4.71B YAKAP expenses"
+      ]
+    }
+  ],
+  "summary": {
+    "totalFiles": 10,
+    "totalPages": 55,
+    "totalSize": "22.6 MB",
+    "categories": {
+      "financial": 3,
+      "facilities": 1,
+      "claims": 1,
+      "membership": 1,
+      "programs": 1,
+      "medical": 1,
+      "policy": 1,
+      "demographics": 1
+    }
+  }
+}

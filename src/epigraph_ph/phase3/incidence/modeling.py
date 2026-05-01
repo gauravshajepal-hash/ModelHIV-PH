@@ -8,7 +8,7 @@ import numpy as np
 
 from epigraph_ph.phase3._lineage.national_reset_core import quarter_sort_key
 from epigraph_ph.phase3.frontier.transition_engine import _discover_latest_transition_experiment
-from epigraph_ph.runtime import read_json, write_json
+from epigraph_ph.runtime import ROOT_DIR, read_json, write_json
 
 from .artifacts import IncidenceResearchContext, write_experiment_artifacts
 from .audits import DIRECT_INFLOW_METRICS, _base_numeric_policy, _metric_rows, _year_from_row
@@ -18,6 +18,7 @@ from .sources import load_incidence_audit_inputs
 
 INC01B_EXPERIMENT_ID = "INC-01B-backlog-vs-incidence-swap-stress-test"
 INC01D_EXPERIMENT_ID = "INC-01D-diagnosis-locked-incidence-branch"
+INCV201_EXPERIMENT_ID = "INC-V2-01-observed-denominator-explicit-incidence"
 AGE01B_EXPERIMENT_ID = "AGE-01B-youth-diagnosis-modifier"
 MECH01E_EXPERIMENT_ID = "MECH-01E-anchored-downstream-residual-helpers"
 STATE_NAMES: tuple[str, ...] = ("U", "D", "A", "V", "L")
@@ -28,7 +29,7 @@ def _quarter_year(quarter: str) -> int:
 
 
 def _discover_latest_incidence_experiment(experiment_id: str) -> tuple[str, Path]:
-    runs_root = Path("D:/EpiGraph_PH/artifacts/runs")
+    runs_root = ROOT_DIR / "artifacts" / "runs"
     candidates: list[tuple[float, str, Path]] = []
     for run_dir in runs_root.iterdir():
         if not run_dir.is_dir():
@@ -182,6 +183,69 @@ def _annual_validation_rows(
             }
         )
     return validation_rows
+
+
+def _official_population_lookup(inputs: Any) -> tuple[dict[int, float], str | None]:
+    rows = [dict(row) for row in list(getattr(inputs, "official_population_denominator_rows", []) or [])]
+    lookup: dict[int, float] = {}
+    for row in rows:
+        year = row.get("year")
+        population_total = row.get("population_total")
+        if year in (None, "") or population_total in (None, ""):
+            continue
+        try:
+            lookup[int(year)] = float(population_total)
+        except (TypeError, ValueError):
+            continue
+    path = getattr(inputs, "official_population_denominator_path", None)
+    return lookup, (str(path) if path is not None else None)
+
+
+def _build_explicit_incidence_rows(
+    incidence_flow_rows: list[dict[str, Any]],
+    population_lookup: dict[int, float],
+) -> tuple[list[dict[str, Any]], list[int]]:
+    rows: list[dict[str, Any]] = []
+    missing_years: list[int] = []
+    for row in incidence_flow_rows:
+        year_value = int(row["year"])
+        denominator = population_lookup.get(year_value)
+        if denominator is None:
+            missing_years.append(year_value)
+            rows.append(
+                {
+                    "year": year_value,
+                    "quarter": str(row.get("quarter") or ""),
+                    "latent_incidence_inflow": float(row.get("latent_incidence_inflow") or 0.0),
+                    "diagnosis_flow": float(row.get("diagnosis_flow") or 0.0),
+                    "population_denominator": None,
+                    "incidence_hazard": None,
+                }
+            )
+            continue
+        inflow = float(row.get("latent_incidence_inflow") or 0.0)
+        hazard = inflow / safe_floor(denominator)
+        rows.append(
+            {
+                "year": year_value,
+                "quarter": str(row.get("quarter") or ""),
+                "latent_incidence_inflow": inflow,
+                "diagnosis_flow": float(row.get("diagnosis_flow") or 0.0),
+                "population_denominator": float(denominator),
+                "incidence_hazard": float(hazard),
+            }
+        )
+    return rows, sorted(set(missing_years))
+
+
+def _population_denominator_summary_rows(population_lookup: dict[int, float]) -> list[dict[str, Any]]:
+    return [
+        {
+            "year": int(year),
+            "population_denominator": float(value),
+        }
+        for year, value in sorted(population_lookup.items())
+    ]
 
 
 def _save_state_npz(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -350,6 +414,158 @@ def run_inc_01d(ctx: IncidenceResearchContext) -> dict[str, Any]:
             "estimation_method": "non-negative compartment flow constraint",
             "uncertainty": "none",
             "why_needed": "INC-01D splits the U mass-balance term into non-negative inflow and non-negative residual clearance without handwritten thresholds.",
+        }
+    ]
+    write_experiment_artifacts(
+        ctx=ctx,
+        experiment_spec=experiment_spec,
+        coverage_summary=coverage_summary,
+        decision=decision,
+        numeric_justification=numeric_justification,
+    )
+    return {
+        "baseline_comparison": baseline_summary,
+        "evaluation": evaluation,
+        "fit_artifact": fit_artifact,
+        "decision": decision,
+    }
+
+
+def run_inc_v2_01(ctx: IncidenceResearchContext) -> dict[str, Any]:
+    inputs = load_incidence_audit_inputs(ctx)
+    lineage = _combined_locked_state_rows()
+    age_01b_reference = dict(lineage["age_01b_reference"])
+    combined_state_rows = [dict(row) for row in list(lineage["combined_state_rows"])]
+    holdout_quarters = [str(value) for value in list(lineage["holdout_quarters"])]
+    incidence_flow_rows = _build_incidence_flow_rows(combined_state_rows)
+    annual_validation_rows = _annual_validation_rows(incidence_flow_rows, inputs.historical_metric_rows)
+    population_lookup, population_source_path = _official_population_lookup(inputs)
+    explicit_incidence_rows, missing_denominator_years = _build_explicit_incidence_rows(incidence_flow_rows, population_lookup)
+    denominator_summary_rows = _population_denominator_summary_rows(population_lookup)
+
+    holdout_rows = [dict(row) for row in list((age_01b_reference.get("evaluation") or {}).get("holdout_rows") or [])]
+    baseline_comparison = dict(age_01b_reference.get("baseline_comparison") or {})
+    model_mae = float(baseline_comparison.get("model_mean_absolute_error") or 0.0)
+    model_smape = float(baseline_comparison.get("model_smape") or 0.0)
+    diagnosis_flow_mae = float(baseline_comparison.get("diagnosis_flow_mean_absolute_error") or 0.0)
+    annual_validation_errors = [float(row["absolute_error"]) for row in annual_validation_rows if row.get("absolute_error") is not None]
+    annual_validation_mae = float(np.mean(annual_validation_errors)) if annual_validation_errors else 0.0
+    hazard_values = [float(row["incidence_hazard"]) for row in explicit_incidence_rows if row.get("incidence_hazard") is not None]
+    denominator_covered_years = sorted({int(row["year"]) for row in explicit_incidence_rows if row.get("population_denominator") is not None})
+    flow_years = sorted({int(row["year"]) for row in incidence_flow_rows})
+    denominator_coverage_complete = denominator_covered_years == flow_years
+
+    baseline_summary = {
+        "branch_reference_experiment_id": AGE01B_EXPERIMENT_ID,
+        "branch_reference_label": "AGE-01B",
+        "branch_reference_mean_absolute_error": model_mae,
+        "branch_reference_diagnosis_flow_mean_absolute_error": diagnosis_flow_mae,
+        "carry_forward_mean_absolute_error": float(baseline_comparison.get("carry_forward_mean_absolute_error") or 0.0),
+        "simple_compartmental_mean_absolute_error": float(baseline_comparison.get("simple_compartmental_mean_absolute_error") or 0.0),
+        "model_mean_absolute_error": model_mae,
+        "model_smape": model_smape,
+        "diagnosis_flow_mean_absolute_error": diagnosis_flow_mae,
+        "annual_incidence_validation_mean_absolute_error": round(float(annual_validation_mae), 6),
+        "denominator_coverage_complete": bool(denominator_coverage_complete),
+    }
+    evaluation = {
+        "mode": "observed_denominator_explicit_incidence",
+        "comparison_reference_run_id": str(age_01b_reference["reference_run_id"]),
+        "holdout_quarters": holdout_quarters,
+        "holdout_rows": holdout_rows,
+        "annual_incidence_validation": annual_validation_rows,
+        "denominator_covered_years": denominator_covered_years,
+        "missing_denominator_years": missing_denominator_years,
+    }
+    fit_artifact = {
+        "population_source_path": population_source_path,
+        "denominator_row_count": int(len(denominator_summary_rows)),
+        "denominator_covered_year_count": int(len(denominator_covered_years)),
+        "missing_denominator_year_count": int(len(missing_denominator_years)),
+        "missing_denominator_years": missing_denominator_years,
+        "annual_validation_row_count": int(len(annual_validation_errors)),
+        "annual_validation_mean_absolute_error": round(float(annual_validation_mae), 6),
+        "minimum_incidence_hazard": round(float(min(hazard_values)), 12) if hazard_values else None,
+        "maximum_incidence_hazard": round(float(max(hazard_values)), 12) if hazard_values else None,
+        "mean_incidence_hazard": round(float(np.mean(hazard_values)), 12) if hazard_values else None,
+        "denominator_coverage_complete": bool(denominator_coverage_complete),
+    }
+    flow_summary = {
+        "population_denominator_rows": denominator_summary_rows,
+        "explicit_incidence_rows": explicit_incidence_rows,
+        "annual_validation_rows": annual_validation_rows,
+    }
+    explicit_summary = {
+        "reference_experiment_id": AGE01B_EXPERIMENT_ID,
+        "reference_run_id": str(age_01b_reference["reference_run_id"]),
+        "population_source_path": population_source_path,
+        "population_source_provider": "World Bank WDI SP.POP.TOTL",
+        "denominator_covered_years": denominator_covered_years,
+        "missing_denominator_years": missing_denominator_years,
+        "incidence_hazard_row_count": int(len(hazard_values)),
+        "denominator_coverage_complete": bool(denominator_coverage_complete),
+    }
+
+    _save_state_npz(ctx.experiment_dir / "state_estimates.npz", combined_state_rows)
+    holdout_state_rows = [row for row in combined_state_rows if str(row.get("quarter") or "") in set(holdout_quarters)]
+    _save_state_npz(ctx.experiment_dir / "forecast_states.npz", holdout_state_rows)
+    write_json(ctx.experiment_dir / "population_denominator_series.json", {"rows": denominator_summary_rows, "source_path": population_source_path})
+    write_json(ctx.experiment_dir / "explicit_incidence_hazard_summary.json", explicit_summary)
+    write_json(ctx.experiment_dir / "incidence_flow_summary.json", flow_summary)
+    write_json(ctx.experiment_dir / "fit_artifact.json", fit_artifact)
+    write_json(ctx.experiment_dir / "evaluation.json", evaluation)
+    write_json(ctx.experiment_dir / "baseline_comparison.json", baseline_summary)
+    _plot_locked_baseline_vs_incidence(
+        ctx.experiment_dir / "forecast_vs_locked_baseline.png",
+        holdout_rows=holdout_rows,
+        annual_validation_rows=annual_validation_rows,
+    )
+
+    experiment_spec = {
+        "experiment_id": INCV201_EXPERIMENT_ID,
+        "description": ctx.experiment.description,
+        "source_run_id": ctx.source_run_id,
+        "expected_outputs": list(ctx.experiment.expected_outputs),
+        "reference_experiment_id": AGE01B_EXPERIMENT_ID,
+        "population_source_provider": "World Bank WDI SP.POP.TOTL",
+    }
+    coverage_summary = {
+        "combined_state_row_count": int(len(combined_state_rows)),
+        "incidence_flow_row_count": int(len(incidence_flow_rows)),
+        "holdout_quarter_count": int(len(holdout_quarters)),
+        "denominator_row_count": int(len(denominator_summary_rows)),
+        "denominator_covered_year_count": int(len(denominator_covered_years)),
+        "missing_denominator_year_count": int(len(missing_denominator_years)),
+    }
+    decision = {
+        "completed": True,
+        "keep": bool(denominator_coverage_complete) and float(annual_validation_mae) == 0.0,
+        "reason": "INC-V2-01 makes incidence explicit as I_t = N_t * lambda_t using an observed official denominator. The branch is rejected unless denominator coverage is complete for all modeled years and the implied annual inflow remains exactly compatible with the annual incidence series.",
+        "checks": [
+            {
+                "name": "observed_denominator_coverage_complete",
+                "passed": bool(denominator_coverage_complete),
+                "actual": bool(denominator_coverage_complete),
+                "target": True,
+            },
+            {
+                "name": "annual_incidence_exact_compatibility",
+                "passed": float(annual_validation_mae) == 0.0,
+                "actual": round(float(annual_validation_mae), 6),
+                "target": 0.0,
+            },
+        ],
+    }
+    numeric_justification = _base_numeric_policy() + [
+        {
+            "name": "non_negative_undiagnosed_mass_boundary",
+            "value": 0,
+            "role": "Boundary used when converting mass-balance terms into non-negative latent inflow and non-negative undiagnosed-clearance components.",
+            "source_type": "physical_constraint",
+            "estimation_data": "Negative incidence and negative undiagnosed clearance are not physically meaningful in the explicit incidence branch.",
+            "estimation_method": "non-negative compartment flow constraint",
+            "uncertainty": "none",
+            "why_needed": "INC-V2-01 keeps explicit inflow and residual clearance physically interpretable without handwritten thresholds.",
         }
     ]
     write_experiment_artifacts(

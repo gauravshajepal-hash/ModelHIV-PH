@@ -1,0 +1,657 @@
+{
+  "philhealth_stats_and_charts_2023_data": {
+    "date_of_data": "As of December 31, 2023 (Claims Data: Jan 1 to Dec 31, 2023)",
+    "population_and_coverage": {
+      "source": "Page 2",
+      "registered_beneficiaries_total": 108505167,
+      "registered_members_total": 62236523,
+      "registered_dependents_total": 46268644,
+      "psa_projected_population_2023": 112892781,
+      "registered_percentage_of_population": "96%"
+    },
+    "membership_details": {
+      "source": "Page 2",
+      "direct_contributors": {
+        "members": 36895531,
+        "dependents": 29770581,
+        "beneficiaries_total": 66666112,
+        "employed_private": {
+          "members": 18115215,
+          "dependents": 12645478,
+          "beneficiaries_total": 30760693
+        },
+        "employed_government": {
+          "members": 2936619,
+          "dependents": 4081707,
+          "beneficiaries_total": 7018326
+        },
+        "informal_self_earning": {
+          "members": 11132556,
+          "dependents": 9542930,
+          "beneficiaries_total": 20675486
+        },
+        "ofws_migrant_workers": {
+          "members": 3173450,
+          "dependents": 2310831,
+          "beneficiaries_total": 5484281
+        },
+        "lifetime_members": {
+          "members": 1453692,
+          "dependents": 1138628,
+          "beneficiaries_total": 2592320
+        },
+        "kasambahay": {
+          "members": 74462,
+          "dependents": 46815,
+          "beneficiaries_total": 121277
+        },
+        "others": {
+          "members": 9537,
+          "dependents": 4192,
+          "beneficiaries_total": 13729
+        }
+      },
+      "indirect_contributors": {
+        "members": 25340992,
+        "dependents": 16498063,
+        "beneficiaries_total": 41839055,
+        "indigents_nhts_pr": {
+          "members": 14168031,
+          "dependents": 12022852,
+          "beneficiaries_total": 26190883
+        },
+        "senior_citizens": {
+          "members": 9651725,
+          "dependents": 2931958,
+          "beneficiaries_total": 12583683
+        },
+        "sponsored_program": {
+          "members": 1521236,
+          "dependents": 1543253,
+          "beneficiaries_total": 3064489
+        }
+      }
+    },
+    "premium_contributions": {
+      "source": "Page 4, 2023 Financial Statements",
+      "total_contributions": 237173437775,
+      "direct_contributors_total": 158367821777,
+      "direct_contributors_breakdown": {
+        "employed_private": 106776137294,
+        "employed_government": 42448992903,
+        "informal_economy": 9142691580
+      },
+      "indirect_contributors_total": 78805615998,
+      "indirect_contributors_breakdown": {
+        "indigents_nhts_pr": 35256167000,
+        "senior_citizens": 42931355000,
+        "sponsored": 618093998
+      }
+    },
+    "accreditation_institutions": {
+      "source": "Page 5, as of December 31, 2023",
+      "total_facilities": 11904,
+      "total_hospitals": 1879,
+      "total_other_facilities": 10025,
+      "breakdown_by_ownership": {
+        "government": 7099,
+        "private": 4805
+      },
+      "hospital_levels": {
+        "level_1": {
+          "government": 334,
+          "private": 460,
+          "total": 794,
+          "percentage": "42%"
+        },
+        "level_2": {
+          "government": 52,
+          "private": 318,
+          "total": 370,
+          "percentage": "20%"
+        },
+        "level_3": {
+          "government": 59,
+          "private": 64,
+          "total": 123,
+          "percentage": "7%"
+        },
+        "infirmary": {
+          "government": 340,
+          "private": 252,
+          "total": 592,
+          "percentage": "31%"
+        }
+      },
+      "other_facilities_details": {
+        "animal_bite_ctrs": {
+          "government": 563,
+          "private": 48
+        },
+        "ambulatory_surgical_clinics": {
+          "government": 3,
+          "private": 182
+        },
+        "drug_rehab_ctrs": {
+          "government": 12,
+          "private": 0
+        },
+        "tb_dots": {
+          "government": 1518,
+          "private": 85
+        },
+        "free_standing_dialysis_clinics": {
+          "government": 27,
+          "private": 597
+        },
+        "family_planning_providers": {
+          "government": 352,
+          "private": 613
+        },
+        "mcp_providers": {
+          "government": 1143,
+          "private": 1682
+        },
+        "op_hiv_aids_ctrs": {
+          "government": 143,
+          "private": 56
+        },
+        "op_malaria": {
+          "government": 50,
+          "private": 0
+        },
+        "konsulta_providers": {
+          "government": 2267,
+          "private": 344
+        },
+        "sars_cov2_testing_labs": {
+          "government": 115,
+          "private": 88
+        },
+        "community_isolation_units": {
+          "government": 84,
+          "private": 6
+        },
+        "home_isolation_ben_package": {
+          "government": 37,
+          "private": 10
+        }
+      },
+      "outpatient_clinic_accreditation": {
+        "source": "Page 6",
+        "total_cities_municipalities_nationwide": 1634,
+        "konsulta_providers": {
+          "accredited_clinics": 2611,
+          "cities_municipalities_with_clinics": 1324,
+          "percent_coverage": "81%"
+        },
+        "maternity_care_package": {
+          "accredited_clinics": 2825,
+          "cities_municipalities_with_clinics": 1089,
+          "percent_coverage": "67%"
+        },
+        "tb_dots_package": {
+          "accredited_clinics": 1603,
+          "cities_municipalities_with_clinics": 976,
+          "percent_coverage": "60%"
+        }
+      }
+    },
+    "accreditation_professionals": {
+      "source": "Page 7, as of December 31, 2023",
+      "total_professionals": 49179,
+      "breakdown": {
+        "physicians_total": 45150,
+        "physicians_general_practitioners": 11644,
+        "physicians_general_practitioners_with_training": 9866,
+        "physicians_medical_specialists": 23640,
+        "other_professionals_total": 4029,
+        "dentists": 716,
+        "nurses": 103,
+        "midwives": 3210
+      }
+    },
+    "claims_payment_summary": {
+      "source": "Page 8, Jan 1 to Dec 31, 2023",
+      "total_claims_amount_php": 122383003091,
+      "total_claims_count": 12675634,
+      "by_contributor_type": {
+        "direct_contributor_claims_amount": 62045524816,
+        "direct_contributor_claims_count": 6287618,
+        "indirect_contributor_claims_amount": 60337478276,
+        "indirect_contributor_claims_count": 6388016
+      },
+      "direct_contributor_breakdown": {
+        "employed_private": {
+          "amount_php": 22021316640,
+          "claims_count": 2139785
+        },
+        "employed_government": {
+          "amount_php": 8829831816,
+          "claims_count": 949652
+        },
+        "informal_self_earning": {
+          "amount_php": 22232262203,
+          "claims_count": 2409192
+        },
+        "ofws_migrant_workers": {
+          "amount_php": 1153327993,
+          "claims_count": 104029
+        },
+        "lifetime_members": {
+          "amount_php": 7720793661,
+          "claims_count": 676129
+        },
+        "kasambahay": {
+          "amount_php": 53940889,
+          "claims_count": 4717
+        },
+        "others": {
+          "amount_php": 34051613,
+          "claims_count": 4114
+        }
+      },
+      "indirect_contributor_breakdown": {
+        "indigent_nhts_pr": {
+          "amount_php": 14303917078,
+          "claims_count": 1638248
+        },
+        "senior_citizen": {
+          "amount_php": 26279897266,
+          "claims_count": 2344525
+        },
+        "sponsored": {
+          "amount_php": 19753663932,
+          "claims_count": 2405243
+        }
+      }
+    },
+    "claims_payment_covid19": {
+      "source": "Page 9, Jan 1 to Dec 31, 2023",
+      "covid19_total_claims_amount_php": 16692287836,
+      "covid19_total_claims_count": 929498,
+      "claims_by_category": {
+        "isolation": {
+          "amount_php": 86634130,
+          "claims_count": 4208
+        },
+        "inpatient": {
+          "amount_php": 14631490044,
+          "claims_count": 72511
+        },
+        "testing": {
+          "amount_php": 1974163662,
+          "claims_count": 852779
+        }
+      },
+      "non_covid_vs_covid_totals": {
+        "source": "Page 10, Jan 1 to Dec 31, 2023",
+        "non_covid19": {
+          "claims_amount_php": 105690715256,
+          "claims_count": 11746136
+        },
+        "covid19_related": {
+          "claims_amount_php": 16692287836,
+          "claims_count": 929498
+        }
+      }
+    },
+    "claims_paid_distribution": {
+      "source": "Page 10 & 11, Jan 1 to Dec 31, 2023",
+      "by_patient_type": {
+        "member": {
+          "claims_amount_php": 93811098954,
+          "claims_count": 9279897
+        },
+        "dependent": {
+          "claims_amount_php": 28571904138,
+          "claims_count": 3395737
+        }
+      },
+      "by_sex": {
+        "female": {
+          "claims_amount_php": 67636566275,
+          "claims_count": 6971552
+        },
+        "male": {
+          "claims_amount_php": 54746436816,
+          "claims_count": 5704082
+        }
+      },
+      "by_sector": {
+        "private": {
+          "claims_amount_php": 68711633806,
+          "claims_count": 7070786
+        },
+        "government": {
+          "claims_amount_php": 53669272096,
+          "claims_count": 5604747
+        },
+        "international": {
+          "claims_amount_php": 2097189,
+          "claims_count": 10
+        }
+      },
+      "by_illness_type": {
+        "procedural": {
+          "claims_amount_php": 84634755783,
+          "claims_count": 9391310
+        },
+        "medical": {
+          "claims_amount_php": 36658958293,
+          "claims_count": 3237205
+        },
+        "others_z_benefits": {
+          "claims_amount_php": 1089289016,
+          "claims_count": 47119
+        }
+      }
+    },
+    "claims_paid_by_age_group": {
+      "source": "Page 11, Jan 1 to Dec 31, 2023",
+      "age_groups": [
+        {
+          "range": "< 1",
+          "claims_amount_php": 22803000,
+          "claims_count": 226
+        },
+        {
+          "range": "1- 4",
+          "claims_amount_php": 1933222000,
+          "claims_count": 13301
+        },
+        {
+          "range": "5- 9",
+          "claims_amount_php": 301863000,
+          "claims_count": 2779
+        },
+        {
+          "range": "10 - 14",
+          "claims_amount_php": 197387000,
+          "claims_count": 1897
+        },
+        {
+          "range": "15 - 19",
+          "claims_amount_php": 363358000,
+          "claims_count": 3277
+        },
+        {
+          "range": "20 - 24",
+          "claims_amount_php": 670511000,
+          "claims_count": 5850
+        },
+        {
+          "range": "25 - 29",
+          "claims_amount_php": 925652000,
+          "claims_count": 8637
+        },
+        {
+          "range": "30 - 34",
+          "claims_amount_php": 950587000,
+          "claims_count": 9135
+        },
+        {
+          "range": "35 - 39",
+          "claims_amount_php": 813860000,
+          "claims_count": 7875
+        },
+        {
+          "range": "40 - 44",
+          "claims_amount_php": 752498000,
+          "claims_count": 7363
+        },
+        {
+          "range": "45 - 49",
+          "claims_amount_php": 748788000,
+          "claims_count": 7366
+        },
+        {
+          "range": "50 - 54",
+          "claims_amount_php": 846772000,
+          "claims_count": 8556
+        },
+        {
+          "range": "55 - 59",
+          "claims_amount_php": 912079000,
+          "claims_count": 9396
+        },
+        {
+          "range": "≥ 60",
+          "claims_amount_php": 3236254000,
+          "claims_count": 36708
+        }
+      ]
+    },
+    "claims_paid_by_hci_class": {
+      "source": "Page 12, Jan 1 to Dec 31, 2023",
+      "details": [
+        {
+          "hci_class": "Level 3 Hospital",
+          "claims_amount_php": 45552567270,
+          "claims_count": 3761541,
+          "percentage_claims_count": "30%"
+        },
+        {
+          "hci_class": "Level 2 Hospital",
+          "claims_amount_php": 32707014624,
+          "claims_count": 3441351,
+          "percentage_claims_count": "27%"
+        },
+        {
+          "hci_class": "Level 1 Hospital",
+          "claims_amount_php": 25832733317,
+          "claims_count": 2830426,
+          "percentage_claims_count": "22%"
+        },
+        {
+          "hci_class": "Free Standing Dialysis Clinic",
+          "claims_amount_php": 8806694853,
+          "claims_count": 1117882,
+          "percentage_claims_count": "9%"
+        },
+        {
+          "hci_class": "MCP Provider",
+          "claims_amount_php": 2650292852,
+          "claims_count": 492552,
+          "percentage_claims_count": "4%"
+        },
+        {
+          "hci_class": "Infirmary / Dispensary",
+          "claims_amount_php": 2536621268,
+          "claims_count": 467676,
+          "percentage_claims_count": "4%"
+        },
+        {
+          "hci_class": "Ambulatory Surgical Clinic",
+          "claims_amount_php": 2918766189,
+          "claims_count": 209959,
+          "percentage_claims_count": "2%"
+        },
+        {
+          "hci_class": "Animal Bite Package Provider",
+          "claims_amount_php": 355310923,
+          "claims_count": 115891,
+          "percentage_claims_count": "1%"
+        },
+        {
+          "hci_class": "Diagnostic Service Provider",
+          "claims_amount_php": 280875743,
+          "claims_count": 111962,
+          "percentage_claims_count": "1%"
+        },
+        {
+          "hci_class": "TB DOTS Package Provider",
+          "claims_amount_php": 359535953,
+          "claims_count": 78382,
+          "percentage_claims_count": "1%"
+        },
+        {
+          "hci_class": "HIV Treatment Hub",
+          "claims_amount_php": 268287835,
+          "claims_count": 37705,
+          "percentage_claims_count": "0.3%"
+        },
+        {
+          "hci_class": "Family Planning Clinic",
+          "claims_amount_php": 15318800,
+          "claims_count": 5206,
+          "percentage_claims_count": "0.04%"
+        },
+        {
+          "hci_class": "Community Isolation Unit",
+          "claims_amount_php": 82952943,
+          "claims_count": 4097,
+          "percentage_claims_count": "0.03%"
+        },
+        {
+          "hci_class": "Facility Confinement Abroad",
+          "claims_amount_php": 13067387,
+          "claims_count": 683,
+          "percentage_claims_count": "0.005%"
+        },
+        {
+          "hci_class": "Drug Abuse Treatment And Rehabilitation Center",
+          "claims_amount_php": 2899381,
+          "claims_count": 310,
+          "percentage_claims_count": "0.002%"
+        },
+        {
+          "hci_class": "Primary Health Clinic",
+          "claims_amount_php": 63753,
+          "claims_count": 11,
+          "percentage_claims_count": "0.0001%"
+        }
+      ]
+    },
+    "top_10_medical_cases": {
+      "source": "Page 13, Jan 1 to Dec 31, 2023",
+      "ranking_by_claims_count": [
+        {
+          "rank": 1,
+          "illness_description": "Pneumonia Moderate and High Risk",
+          "claims_amount_php": 7105761517,
+          "claims_count": 479632
+        },
+        {
+          "rank": 2,
+          "illness_description": "Acute Gastroenteritis",
+          "claims_amount_php": 1228862893,
+          "claims_count": 225809
+        },
+        {
+          "rank": 3,
+          "illness_description": "Dengue Fever (Mild and Severe)",
+          "claims_amount_php": 1529379271,
+          "claims_count": 163209
+        },
+        {
+          "rank": 4,
+          "illness_description": "Urinary Tract Infection Admissible",
+          "claims_amount_php": 1070129494,
+          "claims_count": 160548
+        },
+        {
+          "rank": 5,
+          "illness_description": "Peptic Ulcer Disease With / Without Hemorrhage",
+          "claims_amount_php": 940713421,
+          "claims_count": 150215
+        },
+        {
+          "rank": 6,
+          "illness_description": "Hypertensive Emergency/Urgency",
+          "claims_amount_php": 1158655165,
+          "claims_count": 141436
+        },
+        {
+          "rank": 7,
+          "illness_description": "Stroke Infarction (Hemorrhagic / Non Hemorrhagic)",
+          "claims_amount_php": 3565152999,
+          "claims_count": 128054
+        },
+        {
+          "rank": 8,
+          "illness_description": "Asthma (in Acute Exacerbation)",
+          "claims_amount_php": 716998093,
+          "claims_count": 90080
+        },
+        {
+          "rank": 9,
+          "illness_description": "Upper Respiratory Tract Infection",
+          "claims_amount_php": 283451909,
+          "claims_count": 75935
+        },
+        {
+          "rank": 10,
+          "illness_description": "Covid - 19 Pneumonia Package",
+          "claims_amount_php": 14631490044,
+          "claims_count": 72511
+        }
+      ]
+    },
+    "top_10_rvs_procedures": {
+      "source": "Page 14, Jan 1 to Dec 31, 2023",
+      "ranking_by_claims_count": [
+        {
+          "rank": 1,
+          "procedure_description": "Hemodialysis Procedure",
+          "claims_amount_php": 17435331944,
+          "claims_count": 3627350
+        },
+        {
+          "rank": 2,
+          "procedure_description": "Expanded Newborn Care Package",
+          "claims_amount_php": 2494273578,
+          "claims_count": 885174
+        },
+        {
+          "rank": 3,
+          "procedure_description": "Covid-19 Testing Package",
+          "claims_amount_php": 1974163662,
+          "claims_count": 852779
+        },
+        {
+          "rank": 4,
+          "procedure_description": "Routine Obstetric Care Including Antepartum Care, Vaginal Delivery and/or Postpartum Care (Normal Spontaneous Delivery Package) for Hospitals",
+          "claims_amount_php": 2578069190,
+          "claims_count": 500573
+        },
+        {
+          "rank": 5,
+          "procedure_description": "Caesarian Section Delivery",
+          "claims_amount_php": 6782380539,
+          "claims_count": 345294
+        },
+        {
+          "rank": 6,
+          "procedure_description": "Chemotherapy Administration",
+          "claims_amount_php": 1804125046,
+          "claims_count": 276540
+        },
+        {
+          "rank": 7,
+          "procedure_description": "Routine Obstetric Care Including Prenatal, Delivery And Newborn Services of Non-hospital Facilities(Maternity Care Package), 1st Claim",
+          "claims_amount_php": 2030883503,
+          "claims_count": 258757
+        },
+        {
+          "rank": 8,
+          "procedure_description": "Intensity Modulated Treatment Delivery, Single or Multiple Fields/Arcs, Via Narrow Spatially And Temporally Modulated Beams, Binary, Dynamic MLC Per Session",
+          "claims_amount_php": 1522102251,
+          "claims_count": 186623
+        },
+        {
+          "rank": 9,
+          "procedure_description": "Outpatient HIV / Aids Packages",
+          "claims_amount_php": 1261604619,
+          "claims_count": 179636
+        },
+        {
+          "rank": 10,
+          "procedure_description": "Cataract Extraction",
+          "claims_amount_php": 2589611235,
+          "claims_count": 163478
+        }
+      ]
+    }
+  }
+}

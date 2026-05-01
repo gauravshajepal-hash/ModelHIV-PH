@@ -1,0 +1,608 @@
+FILE: C:\Users\gaura\OneDrive\Desktop\2025 PH HIV Estimates_Core team_for WHO.pdf
+PAGES: 29
+
+===== PAGE 1 =====
+2025 PHILIPPINE HIV ESTIMATES
+Core Team Meeting
+April 14, 2024
+
+
+===== PAGE 2 =====
+Discuss the initial results of the 2025 HIV Estimates
+Finalize data inputs and assumptions
+2025 Philippine HIV Estimates Core Team Meeting 
+Objectives
+01
+02
+ 30-day vs 90-day ART
+Projections: ART only vs ART + PrEP
+
+===== PAGE 3 =====
+Overview and recap of the HIV 
+estimates modelling process
+2025 Philippine HIV 
+Estimates Core Team 
+Meeting Objectives
+1. Discuss the initial results of 
+the 2025 HIV Estimates
+2. Finalize the modelling inputs 
+and assumptions
+GAM 2025 HIV Estimates 
+Submission
+2025 HIV Estimates Updates: 
+A Closer look into the data trends & 
+modelling inputs
+01
+03
+02
+
+===== PAGE 4 =====
+Overview and recap of the HIV 
+estimates modelling process
+2025 Philippine HIV 
+Estimates Core Team 
+Meeting Objectives
+1. Discuss the initial results of 
+the 2025 HIV Estimates
+2. Finalize the modelling inputs 
+and assumptions
+GAM 2025 HIV Estimates 
+Submission
+2025 HIV Estimates Updates: 
+A Closer look into the data trends & 
+modelling inputs
+01
+03
+02
+
+===== PAGE 5 =====
+Overview of the HIV Estimates Modelling Process
+• It is impossible to count the exact number of PLHIV, new 
+infections, and AIDS-related deaths
+• No single data source alone provides a complete picture of the 
+HIV epidemic
+• Synthesize and triangulate data to estimate PLHIV, new 
+infections, deaths
+Why do we estimate the number of PLHIV?
+?
+
+
+===== PAGE 6 =====
+HARP & Other Program Data
+Diagnosed Cases
+ART data
+Outreach
+PMTCT
+Special Studies & Research
+HIV Dynamics
+KP Behavior
+What data do we use for estimation? 
+Key Population Size Estimates
+PSA Census
+IHBSS
+HIV Prevalence
+Behavior
+Access to Services
+Program data
+CHD, LGU, etc.
+Overview of the HIV Estimates Modelling Process
+
+===== PAGE 7 =====
+Input data in modelling tools
+How do we model PLHIV estimates?
+Overview of the HIV Estimates Modelling Process
+Analysis of surveillance 
+& program data
+Latest available data from 
+IHBSS, HARP, other surveys and 
+program data are analyzed & 
+triangulated
+Models are developed using 
+analyzed & triangulated data on 
+current surveillance trends, 
+programmatic accomplishments, 
+and projections
+01
+02
+03
+04 Validation and Vetting of Results
+Inputs and results are further 
+validated and vetted to the technical 
+experts, HIV Estimates Core Team, and 
+country stakeholders
+HIV Estimates for 
+Programmatic Use
+Results are reported to GAM and 
+disseminated to national, regional, 
+and local stakeholders and 
+partners for program use
+
+===== PAGE 8 =====
+PLHIV EstimatesPLHIV EstimatesSpectrumSpectrum
+What estimation tools do we utilize to develop the PLHIV estimates? 
++
+• Developed by East West Center, 
+Hawaii
+• KP specific –simulates 
+transmission between KP
+• 7 subnational models
+• Results: 15 y/o and above
+• Developed by Avenir Health
+• Models MTCT and estimates 
+across age groups
+• Results: All ages including 
+children below 15 y/o, 
+PMTCT
+AIDS Epidemic Model (AEM)
+• Estimated PLHIV
+• New infections
+• AIDS deaths
+• Estimated mothers 
+needing PMTCT
+Overview of the HIV Estimates Modelling Process
+Data Inputs
+KP Size, Behavior, & Dynamics
+Condom use, needle sharing
+HIV Prevalence
+Treatment Coverage
+Prevention Coverage
+AIDS Epidemic Model (AEM)
+
+===== PAGE 9 =====
+“Estimated PLHIV in 2022 is 
+projected to increase by more 
+than two-fold by 2030.”
+“The Philippines is the 
+country with the fastest 
+growing HIV epidemic in the 
+Asia and the Pacific region.”
+Overview of the HIV Estimates Modelling Process
+• To determine the state and trend of the PH 
+HIV epidemic
+• Development of national strategic plans, 
+including targets for country response
+• To monitor the gains in the HIV care cascade 
+and other relevant indicators
+• Input and reference for ARV forecasting for 
+PLHIV, including prophylaxis for newborns
+• Development of country grant proposals, 
+lobbying for investments and resources
+Where do we use our PLHIV estimates? 
+“Nearly half (47%) of new 
+HIV infections are from the 
+youth ages 15-24 years old.”
+
+
+===== PAGE 10 =====
+Overview and recap of the HIV 
+estimates modelling process
+2025 Philippine HIV 
+Estimates Core Team 
+Meeting Objectives
+1. Discuss the initial results of 
+the 2025 HIV Estimates
+2. Finalize the modelling inputs 
+and assumptions
+GAM 2025 HIV Estimates 
+Submission
+2025 HIV Estimates Updates: 
+A Closer look into the data trends & 
+modelling inputs
+01
+03
+02
+
+===== PAGE 11 =====
+HIV PROJECTION
+(2025-2050)
+Based on current surveillance trends 
+and programmatic accomplishments
+GAM ESTIMATES SUBMISSION
+(2010-2024)
+BASELINE INTERVENTION
+Varies minimally with previous 
+projections, usually due to updates in 
+modelling tools, and adjustments in 
+inputs (e.g. population, behavioral 
+inputs)
+Based on specified assumptions and 
+parameters
+Highly variable on the observed 
+trend and accomplishment during 
+modelling (treatment and prevention 
+coverage)
+
+
+===== PAGE 12 =====
+2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024
+Spectrum 2024 4,400 5,300 6,300 7,500 8,600 9,900 11,400 13,000 14,800 16,600 18,700 21,500 24,900 28,600 32,400
+Spectrum 2025 4,600 5,600 6,700 7,900 9,000 10,300 11,800 13,400 14,900 16,400 18,300 20,900 23,900 26,900 29,800
+4,600
+29,800
+0
+5,000
+10,000
+15,000
+20,000
+25,000
+30,000
+35,000
+Annual New Infections
+Annual new HIV infections, 2010-2024
+121,200
+140,700
+163,200
+189,000
+220,500
+19000 24100 30200 37400 45700
+55300
+66200
+78700
+92500
+107700
+124600
+143700
+165500
+189900
+216900
+0
+50,000
+100,000
+150,000
+200,000
+250,000
+2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024
+Estimated PLHIV
+Number of estimated PLHIV, 2010-2024
+Spectrum 2024 Spectrum 2025
+• Estimated PLHIV in 2024 was at 216,900
+• New infections have increased by 542% from 2010 to 2024
+• There were 2,100 total AIDS deaths in 2024
+GAM 2025 Estimates Submission
+Key Results of 2025 Spectrum
+Source:
+AIDS Epidemic Model (AEM) -Spectrum, May 2024
+AIDS Epidemic Model (AEM) -Spectrum, May 2025
+2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024
+Spectrum 2024 300 300 300 400 500 600 700 800 900 1000 1100 1400 1700 2000 2300
+Spectrum 2025 300 400 500 600 600 600 600 700 800 900 1100 1300 1600 1900 2100
+300
+2100
+0
+500
+1000
+1500
+2000
+Annual AIDS deaths
+Annual AIDS Deaths, 2010-2024
+535% 
+increase
+542% 
+increase
+
+
+===== PAGE 13 =====
+Philippine HIV Care Cascade
+as of December 2024
+GAM 2025 Estimates Submission
+Source:
+HIV, AIDS & ART Registry of the Philippines, December 2024
+AIDS Epidemic Model (AEM) -Spectrum, April 2025
+216,900 
+135,026 
+90,854 
+43,534 41,164
+Estimated PLHIV Diagnosed PLHIV Alive on ART Tested for Viral Load Virally Suppressed
+62% 67% 48% 95%
+Range: 179,700 - 251,800
+<1000 copies/mL
+
+===== PAGE 14 =====
+2020 2021 2022 2023 2024 2025 2026 2027
+Spectrum 2024 lb 102,300 118,200 136,700 157,800 182,200 208,300 236,600 265,400
+Spectrum 2024 122,500 142,200 164,900 190,900 220,500 252,800 288,000 325,400
+Spectrum 2024 ub 142,200 164,700 191,000 221,300 256,200 294,100 336,200 380,000
+Spectrum 2025 124,600 143,700 165,500 189,900 216,900 246,700 279,300 314,300
+0
+50,000
+100,000
+150,000
+200,000
+250,000
+300,000
+350,000
+400,000
+Estimated number of PLHIV, 2020-2027
+Sources:
+AIDS Epidemic Model (AEM)-Spectrum, April 2025
+AIDS Epidemic Model (AEM)-Spectrum, May 2024
+2025 Philippine HIV Estimates: Estimated PLHIV
+
+===== PAGE 15 =====
+Overview and recap of the HIV 
+estimates modelling process
+2025 Philippine HIV 
+Estimates Core Team 
+Meeting Objectives
+1. Discuss the initial results of 
+the 2025 HIV Estimates
+2. Finalize the modelling inputs 
+and assumptions
+GAM 2025 HIV Estimates 
+Submission
+2025 HIV Estimates Updates: 
+A Closer look into the data trends & 
+modelling inputs
+01
+03
+02
+
+===== PAGE 16 =====
+• Fitted the subnational models’ 
+population to WPP 2024 using 
+the Baseline Combiner with 
+Pop adjust to align the 
+population with Spectrum
+• Retained inputs from last 
+year’s round of estimation
+(2022 IHBSS)
+Key Updates in the 2025 Philippine HIV Estimates
+Behavioral & 
+Prevalence DataPopulation
+• Updated diagnosis & ART data 
+using HARP data as of 
+December 2024 for all 
+subnational models
+• Updated PrEP coverage
+• PMTCT Coverage (ART coverage 
+among pregnant women) was 
+updated for 2024
+Programmatic 
+Coverage
+• Used 0.9 ART effect (reduction in HIV transmission when on ART)
+AEM & Spectrum
+
+===== PAGE 17 =====
+• Definition and inputs for program coverage were based on data from the 2022 IHBSS.
+2025 HIV Estimates Updates Inputs:
+Concept Review of Programmatic Coverages
+• Proportion of key population who received the 
+package of services/intervention that will yield 
+the highest changes (behavior)
+• Prevention coverage definition:
+1. Received HIV information
+2. With access to condoms
+3. Tested for HIV
+Prevention Program Coverage
+Increase in prevention coverage
+Increased condom use
+Decrease in new infections
+Total KP 
+Population
+Prevention 
+Coverage
+KP who use 
+condoms
+
+===== PAGE 18 =====
+However, only 1 out of 4 (26%) MSM & TGW received the prevention 
+package based on analysis and triangulation of the 2022 IHBSS data
+Highlights
+• Prevention coverage 
+among MSM & TGW 
+varies across areas and 
+category sites and was 
+observed to be lowest in 
+Category B and C cities
+Subnational 
+Model
+Prevention 
+Coverage
+MSM & TGW 
+Estimates (2025)
+NCR 27% 324,600
+Cebu City 29% 19,000
+Cebu Province 24% 51,100
+Angeles City 39% 10,000
+Category A 28% 291,600
+Category B 12% 358,500
+Category C 8% 360,700
+National 26% 1, 415,500
+Note: MSM & TGW Estimates are among 15+ and were rounded off to the nearest hundreds.
+Sources:
+AIDS Epidemic Model, April 2025
+2022 Integrated HIV Behavioral and Serologic Surveillance (IHBSS)
+Input in the estimation tool
+• Updated coverage based on 
+202 IHBSS
+
+===== PAGE 19 =====
+2025 HIV Estimates Updates Inputs:
+Concept Review of Programmatic Coverages
+Three (3) Main Inputs:
+1. Coverage - % of people on PrEP, specifically % of person risk 
+years where a person is on PrEP
+2. Effective Use - refers to the appropriate use of PrEP during 
+periods of HIV risk to achieve high levels of protection against HIV 
+acquisition
+3. Efficacy - how well PrEP performs under ideal and controlled 
+circumstances
+Increase in PrEP coverage
+Decrease in new infections
+Pre-exposure prophylaxis
+
+
+===== PAGE 20 =====
+𝑪𝒐𝒗𝒆𝒓𝒂𝒈𝒆
+#𝒐𝒇𝒑𝒆𝒐𝒑𝒍𝒆𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅𝒕𝒐𝑷𝒓𝑬𝑷 (#𝒐𝒇𝒎𝒐𝒏𝒕𝒉𝒔𝒔𝒕𝒂𝒚𝒆𝒅𝒐𝒏𝑷𝒓𝑬𝑷)
+#𝒐𝒇𝒑𝒆𝒐𝒑𝒍𝒆𝒏𝒆𝒆𝒅𝒆𝒅𝒕𝒐𝒄𝒐𝒗𝒆𝒓
+People needed to cover = (MSM PSE –est PLHIV) * % of high-risk MSM * UNAIDS target coverage recommendation
+Proxy: #𝒐𝒇𝒎𝒐𝒏𝒕𝒉𝒔 𝒔𝒕𝒂𝒚𝒆𝒅𝒐𝒏𝑷𝒓𝑬𝑷 = 𝒏𝒖𝒎𝒃𝒆𝒓𝒐𝒇𝒃𝒐𝒕𝒕𝒍𝒆𝒔 𝒈𝒊𝒗𝒆𝒏
+2025 HIV Estimates Updates Inputs:
+Concept Review of Programmatic Coverages
+
+===== PAGE 21 =====
+PrEP coverage increased across all subnational models
+
+
+===== PAGE 22 =====
+2025 HIV Estimates Updates Inputs:
+Concept Review of Programmatic Coverages
+Pre-exposure Effective Use
+*Assumption: 1 bottle of PrEP = 1 month of protection
+Limitations: For Event-Driven PrEP users, 1 bottle = 1 month assumption may not be valid. Possible proxy computation: at least 4 x a week
+𝑬𝒇𝒇𝒆𝒄𝒕𝒊𝒗𝒆𝒏𝒆𝒔𝒔= 𝟏 −𝑹𝒊𝒔𝒌𝑹𝒂𝒕𝒊𝒐
+𝑹𝒊𝒔𝒌𝑹𝒂𝒕𝒊𝒐 = 𝟏 − 𝒊𝒏𝒄𝒊𝒅𝒆𝒏𝒄𝒆𝒐𝒓𝒔𝒆𝒓𝒐𝒄𝒐𝒏𝒗𝒆𝒓𝒔𝒊𝒐𝒏𝒐𝒇𝒕𝒉𝒐𝒔𝒆𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅𝒕𝒐𝑷𝒓𝑬𝑷
+𝒊𝒏𝒄𝒊𝒅𝒆𝒏𝒄𝒆𝒐𝒓𝒔𝒆𝒓𝒐𝒄𝒐𝒏𝒗𝒆𝒓𝒔𝒊𝒐𝒏𝒐𝒇𝒕𝒉𝒐𝒔𝒆𝑵𝑶𝑻𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅𝒕𝒐𝑷𝒓𝑬𝑷
+𝑬𝒇𝒇𝒊𝒄𝒂𝒄𝒚 = 𝟗𝟓%
+𝑬𝒇𝒇𝒆𝒄𝒕𝒊𝒗𝒆𝑼𝒔𝒆 =
+𝟏 − 𝒊𝒏𝒄𝒊𝒅𝒆𝒏𝒄𝒆𝒐𝒓𝒔𝒆𝒓𝒐𝒄𝒐𝒏𝒗𝒆𝒓𝒔𝒊𝒐𝒏𝒐𝒇𝒕𝒉𝒐𝒔𝒆𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅𝒕𝒐𝑷𝒓𝑬𝑷
+𝒊𝒏𝒄𝒊𝒅𝒆𝒏𝒄𝒆𝒐𝒓𝒔𝒆𝒓𝒐𝒄𝒐𝒏𝒗𝒆𝒓𝒔𝒊𝒐𝒏𝒐𝒇𝒕𝒉𝒐𝒔𝒆𝑵𝑶𝑻𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅𝒕𝒐𝑷𝒓𝑬𝑷
+𝟗𝟓%
+𝑬𝒇𝒇𝒆𝒄𝒕𝒊𝒗𝒆𝑼𝒔𝒆 =
+𝟏 − 𝟏.𝟒𝟔%𝒔𝒆𝒓𝒐𝒄𝒐𝒏𝒗𝒆𝒓𝒕𝒆𝒅𝒂𝒎𝒐𝒏𝒈𝑷𝒓𝑬𝑷𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅(𝒏= 𝟓,𝟒𝟗𝟕)
+𝟕.𝟖𝟑%𝒔𝒆𝒓𝒐𝒄𝒐𝒏𝒗𝒆𝒓𝒕𝒆𝒅𝒂𝒎𝒐𝒏𝒈𝑵𝑶𝑻𝒆𝒏𝒓𝒐𝒍𝒍𝒆𝒅𝒕𝒐𝑷𝒓𝑬𝑷(𝒏= 𝟒,𝟕𝟓𝟓)
+𝟗𝟓%
+𝑬𝒇𝒇𝒆𝒄𝒕𝒊𝒗𝒆𝑼𝒔𝒆 = 𝟏 −𝟏𝟖.𝟔𝟒%
+𝟗𝟓%
+𝑬𝒇𝒇𝒆𝒄𝒕𝒊𝒗𝒆𝑼𝒔𝒆 = 𝟖𝟏.𝟑𝟓%
+𝟗𝟓%
+𝑬𝒇𝒇𝒆𝒄𝒕𝒊𝒗𝒆𝑼𝒔𝒆 = 𝟖𝟓.𝟔𝟒%
+Calculation:
+
+===== PAGE 23 =====
+ART Coverage
+Increase in ART coverage
+Decrease in new infections
+2025 HIV Estimates Updates Inputs:
+Concept Review of ART Coverage
+• Proportion of estimated PLHIV currently on treatment
+• Currently defined as PLHIV who accessed ARVs/refill within 90 days from expected pill run-out
+
+===== PAGE 24 =====
+66,200
+78,700
+92,500
+107,700
+124,600
+143,700
+165,500
+189,900
+216,900
+246,700
+279,300
+27%
+31%
+36%
+40% 40% 40% 41% 43% 42%
+44%
+49%
+53%
+42% 44%
+48%
+2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026
+Year
+Comparison of treatment coverage, AEM-Spectrum 2024 vs. 2025
+Estimated PLHIV
+Accomplished treatment coverage
+2024 ART Projection
+2025 ART Projection
+Source:
+AIDS Epidemic Model (AEM)-Spectrum, April 2025
+HIV/AIDS & ART Registry of the Philippines, December 2024
+Highlights
+• Pre-COVID-19 pandemic, it was 
+observed that ART coverage 
+increases by 4-5% point per year
+• However, it plateaued at 40-43% 
+from 2019 to 2024.
+Input in the estimation tool
+• Looking at the historical trend, it 
+is projected that ART coverage 
+in 2025 will be at 44%.
+• From 2025 onwards, annual 
+increase in ART coverage is 
+projected to slowly increase 
+back to pre-pandemic trends
+ART coverage among estimated PLHIV by the end of 
+2024 was 42%, 2% short of the projected ART coverage
+
+===== PAGE 25 =====
+If we used the 30-day LTFU definition, there would be an additional 
+31,700 adults living with HIV and 7,900 new infections for 2024 
+246,351
+502,919
+214,725
+424,127
+Current adults living with HIV for PH Intervention 
+30day vs 90day
+PLHIV 15+ PH 30day
+PLHIV 15+ PH 90day
+37,407
+53,760
+29,491
+44,441
+New infections among adults for PH 
+Intervention 30day vs 90day
+Incidence PH 30day
+Incidence PH 90day
+
+===== PAGE 26 =====
+Median time to viral rebound ≥ 1000 HIV RNA copies/mL was 22 days
+26
+Median time to viral rebound >20 copies/mL was 26 days
+Median time to detectable plasma VL >75 copies/mL was 14 days
+
+===== PAGE 27 =====
+Projections: ART coverage projection only vs ART + PrEP coverage 
+projections
+276,506
+311,036
+424,127
+618,929
+276,429 308,937
+402,792
+544,144279,274318,559
+466,540
+800,757
+Estimated PLHIV
+Baseline
+ART only
+ART & PrEP
+39,093 45,047
+63,527
+90,804
+36,191 37,482 36,305 34,249
+36,37438,995
+44,441 44,684
+New Infections
+Baseline
+ART & PrEP
+ART only
+• Baseline: No intervention scale up
+• ART only: ART scale up based on historical increase (target 90% coverage)
+• ART & PrEP: ART and PrEP scale up based on historical increase (target 50% on high incidence areas, 15% for lower incidence)
+
+===== PAGE 28 =====
+Ways Forward
+Next AEM Core 
+Team Meeting
+Special TWG 
+Vetting
+Submission of 
+Final Estimates 
+Files to UNAIDS
+Official Release of 
+HIV Estimates
+April  xx, 2025 April xx, 2025 April 30, 2025 June 2025 (For 
+2026 Use)
+
+===== PAGE 29 =====
+National HIV & STI Surveillance & Strategic 
+Information Unit (NHSSS)
+Department of Health –Epidemiology Bureau
+2nd Floor, Bldg. 19, San Lazaro Compound, Sta. Cruz, Manila 1003, Philippines
+nhsss@doh.gov.ph
+www.facebook.com/hivepicenter
+
+

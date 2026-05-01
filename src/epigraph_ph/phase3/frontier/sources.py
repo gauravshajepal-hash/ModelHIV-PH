@@ -17,6 +17,7 @@ class TransitionResearchInputs:
     analysis_years: list[int]
     month_axis: list[str]
     region_axis: list[str]
+    province_axis: list[str]
     factor_axis: list[str]
     retained_factor_rows: list[dict[str, Any]]
     retained_factor_lookup: dict[str, dict[str, Any]]
@@ -25,6 +26,7 @@ class TransitionResearchInputs:
     factor_index: dict[str, int]
     national_tensor: np.ndarray
     region_tensor: np.ndarray
+    province_tensor: np.ndarray
     factor_support_counts: dict[str, int]
     phase3_target_blankets: dict[str, Any]
     archive_support: dict[str, Any]
@@ -67,11 +69,13 @@ def load_transition_research_inputs(ctx: TransitionResearchContext) -> Transitio
     factor_axis = [str(value) for value in list(axes.get("factor", []))]
     month_axis = [str(value) for value in list(axes.get("month", []))]
     region_axis = [str(value) for value in list(axes.get("region", []))]
+    province_axis = [str(value) for value in list(axes.get("province", []))]
     factor_index = {factor_id: idx for idx, factor_id in enumerate(factor_axis)}
     retained_factor_rows = _merge_retained_factor_rows(ctx.phase2_dir)
     retained_factor_lookup = {str(row.get("factor_id") or ""): dict(row) for row in retained_factor_rows}
     national_tensor = np.asarray(load_tensor_artifact(ctx.phase15_dir / "multiscale_national_factor_tensor.npz"), dtype=np.float32)
     region_tensor = np.asarray(load_tensor_artifact(ctx.phase15_dir / "multiscale_region_factor_tensor.npz"), dtype=np.float32)
+    province_tensor = np.asarray(load_tensor_artifact(ctx.phase15_dir / "multiscale_province_factor_tensor.npz"), dtype=np.float32)
     phase3_target_blankets = read_json(ctx.phase2_dir / "multiscale_phase3_target_blankets.json", default={})
     factor_support_counts = {
         str(row.get("factor_id") or ""): int(row.get("support_count") or 0)
@@ -87,6 +91,7 @@ def load_transition_research_inputs(ctx: TransitionResearchContext) -> Transitio
         analysis_years=analysis_years,
         month_axis=month_axis,
         region_axis=region_axis,
+        province_axis=province_axis,
         factor_axis=factor_axis,
         retained_factor_rows=retained_factor_rows,
         retained_factor_lookup=retained_factor_lookup,
@@ -95,6 +100,7 @@ def load_transition_research_inputs(ctx: TransitionResearchContext) -> Transitio
         factor_index=factor_index,
         national_tensor=national_tensor,
         region_tensor=region_tensor,
+        province_tensor=province_tensor,
         factor_support_counts=factor_support_counts,
         phase3_target_blankets=phase3_target_blankets,
         archive_support=archive_support,

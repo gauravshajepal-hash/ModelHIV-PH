@@ -42,8 +42,14 @@ class Phase2StructuralInputs:
     hidden_mode_tensor: np.ndarray
     hidden_mode_quarter_tensor: np.ndarray
     direct_edge_rows: list[dict[str, Any]]
+    direct_edge_scale_rows: list[dict[str, Any]]
+    direct_edge_summary_rows: list[dict[str, Any]]
     hidden_driver_rows: list[dict[str, Any]]
+    hidden_driver_scale_rows: list[dict[str, Any]]
+    hidden_driver_summary_rows: list[dict[str, Any]]
     multiscale_support_rows: list[dict[str, Any]]
+    hidden_mode_summary: dict[str, Any]
+    optimizer_diagnostics: dict[str, Any]
 
 
 def load_phase2_structural_inputs(ctx: TransitionResearchContext) -> Phase2StructuralInputs:
@@ -58,13 +64,20 @@ def load_phase2_structural_inputs(ctx: TransitionResearchContext) -> Phase2Struc
     national_state_tensor = np.asarray(load_tensor_artifact(national_state_path), dtype=np.float32)
     month_axis = [str(value) for value in list(payload.get("month_axis") or [])]
     quarter_axis, national_quarter_tensor = _quarterize_tensor(national_state_tensor, month_axis)
-    hidden_mode_path = Path(str(artifact_paths.get("hidden_mode_score_tensor") or ""))
-    if hidden_mode_path.exists():
+    hidden_mode_path_text = str(artifact_paths.get("hidden_mode_score_tensor") or "").strip()
+    hidden_mode_path = Path(hidden_mode_path_text) if hidden_mode_path_text else None
+    if hidden_mode_path is not None and hidden_mode_path.exists():
         hidden_mode_tensor = np.asarray(load_tensor_artifact(hidden_mode_path), dtype=np.float32)
         _hidden_quarter_axis, hidden_mode_quarter_tensor = _quarterize_tensor(hidden_mode_tensor, month_axis)
     else:
         hidden_mode_tensor = np.zeros((1, len(month_axis), 0), dtype=np.float32)
         hidden_mode_quarter_tensor = np.zeros((1, len(quarter_axis), 0), dtype=np.float32)
+    direct_edge_scale_rows = [dict(row) for row in list(payload.get("direct_temporal_edge_scale_rows") or [])]
+    direct_edge_summary_rows = [dict(row) for row in list(payload.get("direct_temporal_edge_rows") or [])]
+    hidden_driver_scale_rows = [dict(row) for row in list(payload.get("hidden_driver_scale_rows") or [])]
+    hidden_driver_summary_rows = [dict(row) for row in list(payload.get("hidden_driver_rows") or [])]
+    national_direct_rows = [dict(row) for row in direct_edge_scale_rows if str(row.get("scale") or "") == "national"]
+    national_hidden_rows = [dict(row) for row in hidden_driver_scale_rows if str(row.get("scale") or "") == "national"]
     return Phase2StructuralInputs(
         payload=payload,
         month_axis=month_axis,
@@ -74,11 +87,16 @@ def load_phase2_structural_inputs(ctx: TransitionResearchContext) -> Phase2Struc
         national_quarter_tensor=national_quarter_tensor,
         hidden_mode_tensor=hidden_mode_tensor,
         hidden_mode_quarter_tensor=hidden_mode_quarter_tensor,
-        direct_edge_rows=[dict(row) for row in list(payload.get("direct_temporal_edge_rows") or [])],
-        hidden_driver_rows=[dict(row) for row in list(payload.get("hidden_driver_rows") or [])],
+        direct_edge_rows=national_direct_rows or direct_edge_summary_rows,
+        direct_edge_scale_rows=direct_edge_scale_rows,
+        direct_edge_summary_rows=direct_edge_summary_rows,
+        hidden_driver_rows=national_hidden_rows or hidden_driver_summary_rows,
+        hidden_driver_scale_rows=hidden_driver_scale_rows,
+        hidden_driver_summary_rows=hidden_driver_summary_rows,
         multiscale_support_rows=[dict(row) for row in list(payload.get("multiscale_support_rows") or [])],
+        hidden_mode_summary=dict(payload.get("hidden_mode_summary") or {}),
+        optimizer_diagnostics=dict(payload.get("optimizer_diagnostics") or {}),
     )
 
 
 __all__ = ["Phase2StructuralInputs", "load_phase2_structural_inputs"]
-

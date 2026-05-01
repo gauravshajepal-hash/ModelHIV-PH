@@ -6,6 +6,7 @@ from typing import Any
 
 from epigraph_ph.core.disease_plugin import get_disease_plugin
 from epigraph_ph.phase0.models import Phase0BackendStatus
+from epigraph_ph.phase0.phase3_target_contract import build_phase2_phase3_bridge_audit
 from epigraph_ph.phase15 import PHASE15_PROFILE_ID
 from epigraph_ph.phase2.latent_temporal_graph import build_latent_temporal_graph_outputs
 from epigraph_ph.phase2.multiscale_dag import build_multiscale_dag_outputs
@@ -27,6 +28,12 @@ def _phase2_required_section(key: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise KeyError(f"Missing HIV phase2 constraint setting: {key}")
     return dict(value)
+
+
+def _phase3_transition_prior_map() -> dict[str, Any]:
+    phase3_cfg = dict((_HIV_PLUGIN.constraint_settings or {}).get("phase3", {}) or {})
+    frontier_cfg = dict(phase3_cfg.get("frontier") or {})
+    return dict(frontier_cfg.get("phase2_transition_prior_map") or {})
 
 
 def _empty_multiscale_bundle() -> tuple[dict[str, Any], dict[str, Any]]:
@@ -168,6 +175,12 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
         multiscale_bundle=multiscale_bundle,
         multiscale_blankets=multiscale_blankets,
     )
+    structural_payload = read_json(phase2_dir / "phase2_structural_payload.json", default={})
+    phase3_bridge_audit = build_phase2_phase3_bridge_audit(
+        structural_payload=structural_payload if isinstance(structural_payload, dict) else {},
+        transition_prior_map=_phase3_transition_prior_map(),
+    )
+    write_json(phase2_dir / "phase3_target_bridge_audit.json", phase3_bridge_audit)
 
     artifact_paths = {
         "multiscale_dag_bundle": str(phase2_dir / "multiscale_dag_bundle.json"),
@@ -180,6 +193,7 @@ def run_phase2_build(*, run_id: str, plugin_id: str, profile: str = "legacy") ->
     }
     artifact_paths.update(compat_paths)
     artifact_paths.update(structural_paths)
+    artifact_paths["phase3_target_bridge_audit"] = str(phase2_dir / "phase3_target_bridge_audit.json")
     compatibility_manifest = {
         "family": "legacy_phase3_phase4_compatibility_bridge",
         "scientific_role": "non_core_compatibility_only",

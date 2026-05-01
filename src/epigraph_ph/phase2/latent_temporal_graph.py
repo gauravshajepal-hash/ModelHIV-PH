@@ -732,13 +732,19 @@ def _blanket_summary(
     block_axis: list[str],
     indicator_names_by_block: dict[str, list[str]],
 ) -> dict[str, Any]:
-    blanket: set[str] = set(target_block_ids)
+    target_set = {str(block_id) for block_id in list(target_block_ids)}
+    blanket: set[str] = set()
+    active_targets: set[str] = set()
     for row in edges + hidden_rows:
         source = str(row.get("source") or "")
         target = str(row.get("target") or "")
-        if source in blanket or target in blanket:
+        if source in target_set or target in target_set:
             blanket.add(source)
             blanket.add(target)
+            if source in target_set:
+                active_targets.add(source)
+            if target in target_set:
+                active_targets.add(target)
     index = {block_id: idx for idx, block_id in enumerate(block_axis)}
     canonical_names: set[str] = set()
     for block_id in blanket:
@@ -746,7 +752,7 @@ def _blanket_summary(
             canonical_names.add(str(canonical_name))
     blanket_ids = [block_id for block_id in block_axis if block_id in blanket]
     return {
-        "target_block_ids": [block_id for block_id in block_axis if block_id in set(target_block_ids)],
+        "target_block_ids": [block_id for block_id in block_axis if block_id in active_targets],
         "blanket_block_ids": blanket_ids,
         "blanket_indices": [int(index[block_id]) for block_id in blanket_ids if block_id in index],
         "phase3_member_canonical_names": sorted(canonical_names),
@@ -906,7 +912,25 @@ def estimate_latent_temporal_scale_graph(
     )
     rank_threshold = min(float(null_thresholds["rank_threshold"]), float(cfg.get("rank_threshold", null_thresholds["rank_threshold"])))
     combined_matrix = sparse_matrix + low_rank_matrix
-    stability_matrix, hidden_rank_mean = _stability_from_bootstrap(
+    sparse_stability_matrix, hidden_rank_mean = _stability_from_bootstrap(
+        design_matrix=standardized_design,
+        response_matrix=standardized_response,
+        sample_weights=sample_arrays["sample_weights"],
+        sample_pairs=sample_arrays["sample_pairs"],
+        reference_matrix=sparse_matrix,
+        cfg={
+            **cfg,
+            **selected_cfg,
+            "edge_threshold": float(sparse_edge_threshold),
+            "rank_threshold": float(rank_threshold),
+        },
+        unit_count=int(tensor.shape[0]),
+        month_count=int(tensor.shape[1]),
+        block_count=len(block_axis),
+        max_lag=max_lag,
+        reference_component="sparse",
+    )
+    combined_stability_matrix, _combined_hidden_rank_mean = _stability_from_bootstrap(
         design_matrix=standardized_design,
         response_matrix=standardized_response,
         sample_weights=sample_arrays["sample_weights"],
@@ -924,13 +948,27 @@ def estimate_latent_temporal_scale_graph(
         max_lag=max_lag,
         reference_component="combined",
     )
-    direct_edges = _matrix_rows(
+    sparse_support_threshold = min(float(sparse_edge_threshold), max(1e-6, 0.25 * float(direct_edge_threshold)))
+    sparse_support_rows = _matrix_rows(
+        sparse_matrix,
+        block_axis=block_axis,
+        max_lag=max_lag,
+        threshold=float(sparse_support_threshold),
+        stability_matrix=sparse_stability_matrix,
+    )
+    combined_operator_rows = _matrix_rows(
         combined_matrix,
         block_axis=block_axis,
         max_lag=max_lag,
         threshold=float(direct_edge_threshold),
-        stability_matrix=stability_matrix,
+        stability_matrix=combined_stability_matrix,
     )
+    sparse_support_keys = {(str(row["source"]), str(row["target"]), int(row["lag"])) for row in sparse_support_rows}
+    direct_edges = [
+        row
+        for row in combined_operator_rows
+        if (str(row["source"]), str(row["target"]), int(row["lag"])) in sparse_support_keys
+    ]
     hidden_rows = _matrix_rows(
         low_rank_matrix,
         block_axis=block_axis,
@@ -995,14 +1033,18 @@ def estimate_latent_temporal_scale_graph(
         "feature_rows": _feature_rows(block_axis, max_lag),
         "effective_sample_count": effective_samples,
         "decomposition_objective": objective,
-        "direct_surface_kind": "combined_temporal_operator_nonoverlapping_hidden",
+        "direct_surface_kind": "sparse_supported_combined_temporal_operator",
+        "diagnostic_combined_surface_kind": "combined_temporal_operator",
         "sparse_adjacency": np.round(sparse_matrix.astype(np.float32), 6).tolist(),
         "combined_adjacency": np.round((sparse_matrix + low_rank_matrix).astype(np.float32), 6).tolist(),
         "low_rank_adjacency": np.round(low_rank_matrix.astype(np.float32), 6).tolist(),
+        "sparse_support_rows": sparse_support_rows,
+        "combined_operator_rows": combined_operator_rows,
         "estimated_hidden_rank": estimated_hidden_rank,
         "bootstrap_draws": int(cfg.get("bootstrap_draws", 0)),
         "bootstrap_hidden_rank_mean": round(hidden_rank_mean, 6),
         "edge_threshold": float(direct_edge_threshold),
+        "sparse_support_threshold": float(sparse_support_threshold),
         "hidden_edge_threshold": float(hidden_edge_threshold),
         "rank_threshold": float(rank_threshold),
         "selected_hyperparameters": {

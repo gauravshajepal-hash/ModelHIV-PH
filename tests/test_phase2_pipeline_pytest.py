@@ -101,6 +101,7 @@ def test_phase2_restored_outputs_feed_phase3_compatibility_aliases(rescue_v2_run
     assert isinstance(hidden_edge_scores, list)
     assert isinstance(multiscale_edge_scores, list)
     assert set(eligibility_surfaces.keys()) == {"direct_temporal", "hidden_driver", "multiscale_support"}
+    assert frozen_payload.get("compatibility_contract", {}).get("scientific_status") == "historical_bridge_only"
     assert frozen_payload.get("core_feature_tensor_path")
     assert promoted == retained_predictive
     assert supporting == retained_context
@@ -112,6 +113,7 @@ def test_phase2_frozen_compatibility_payload_preserves_separated_surfaces(rescue
     payload = load_phase2_compatibility_payload(rescue_v2_run_dir)
 
     assert payload.get("compatibility_payload_source") == "frozen_artifact"
+    assert payload.get("compatibility_contract", {}).get("scientific_status") == "historical_bridge_only"
     assert payload.get("eligibility_surfaces", {}).get("direct_temporal", {}).get("blanket_nodes", []) == payload.get("markov_blanket", {}).get("blanket_nodes", [])
     assert payload.get("core_feature_tensor_array") is not None
     assert payload.get("direct_feature_tensor_array").shape == payload.get("core_feature_tensor_array").shape

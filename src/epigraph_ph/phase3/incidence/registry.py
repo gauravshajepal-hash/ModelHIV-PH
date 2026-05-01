@@ -10,6 +10,7 @@ INCIDENCE_EXPERIMENT_IDS: tuple[str, ...] = (
     "INC-00C-incidence-identifiability-audit",
     "INC-01B-backlog-vs-incidence-swap-stress-test",
     "INC-01D-diagnosis-locked-incidence-branch",
+    "INC-V2-01-observed-denominator-explicit-incidence",
     "SHOCK-00A-covid-shock-subparameter-audit",
 )
 
@@ -67,6 +68,21 @@ EXPERIMENT_REGISTRY: dict[str, ExperimentDefinition] = {
         expected_outputs=(
             "incidence_flow_summary.json",
             "diagnosis_locked_incidence_summary.json",
+            "fit_artifact.json",
+            "evaluation.json",
+            "forecast_vs_locked_baseline.png",
+            "state_estimates.npz",
+            "forecast_states.npz",
+        ),
+    ),
+    "INC-V2-01-observed-denominator-explicit-incidence": ExperimentDefinition(
+        experiment_id="INC-V2-01-observed-denominator-explicit-incidence",
+        cli_name="inc-v2-01",
+        description="Make incidence explicit as I_t = N_t * lambda_t using an observed official denominator while keeping the diagnosis path locked to the current transition winner.",
+        expected_outputs=(
+            "population_denominator_series.json",
+            "explicit_incidence_hazard_summary.json",
+            "incidence_flow_summary.json",
             "fit_artifact.json",
             "evaluation.json",
             "forecast_vs_locked_baseline.png",

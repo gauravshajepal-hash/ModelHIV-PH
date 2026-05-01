@@ -1,0 +1,306 @@
+{
+  "metadata": {
+    "source": "PhilHealth Stats and Charts 1st Semester 2025 (Official Data)",
+    "reportingPeriod": "January 1 - June 30, 2025",
+    "lastUpdated": "2025-11-14",
+    "currency": "PHP"
+  },
+  "overview": {
+    "totalClaims": 9396020,
+    "totalAmountPaid": 139310045787,
+    "averageProcessingDays": 25,
+    "processingPolicy": "Average Turn-Around-Time for Claims Received/Re-filed and Paid",
+    "benefitExpense": 152569912080,
+    "benefitExpenseNote": "1st Semester 2025 Distribution by Membership Category"
+  },
+  "byMembershipCategory": {
+    "directContributors": {
+      "totalAmount": 59162645251,
+      "totalCount": 3908722,
+      "percentage": 41.6,
+      "breakdown": {
+        "employedPrivate": {
+          "amount": 22822648057,
+          "count": 1464627,
+          "amountPercentage": 16.4,
+          "countPercentage": 15.6
+        },
+        "employedGovernment": {
+          "amount": 8800720494,
+          "count": 603473,
+          "amountPercentage": 6.3,
+          "countPercentage": 6.4
+        },
+        "informalSelfEarning": {
+          "amount": 18747456216,
+          "count": 1245946,
+          "amountPercentage": 13.5,
+          "countPercentage": 13.3
+        },
+        "ofws": {
+          "amount": 1041746391,
+          "count": 64872,
+          "amountPercentage": 0.7,
+          "countPercentage": 0.7
+        },
+        "lifetimeMembers": {
+          "amount": 7657857620,
+          "count": 523774,
+          "amountPercentage": 6,
+          "countPercentage": 5
+        },
+        "kasambahay": {
+          "amount": 53940889,
+          "count": 4717,
+          "amountPercentage": 0.04,
+          "countPercentage": 0.04
+        },
+        "others": {
+          "amount": 34051613,
+          "count": 4114,
+          "amountPercentage": 0.03,
+          "countPercentage": 0.03
+        }
+      }
+    },
+    "indirectContributors": {
+      "totalAmount": 60337478276,
+      "totalCount": 6388016,
+      "percentage": 50.4,
+      "breakdown": {
+        "indigents": {
+          "amount": 14303917078,
+          "count": 1638248,
+          "amountPercentage": 12,
+          "countPercentage": 13
+        },
+        "seniorCitizens": {
+          "amount": 26279897266,
+          "count": 2344525,
+          "amountPercentage": 21,
+          "countPercentage": 18
+        },
+        "sponsored": {
+          "amount": 19753663932,
+          "count": 2405243,
+          "amountPercentage": 16,
+          "countPercentage": 19
+        }
+      }
+    }
+  },
+  "byPatientType": {
+    "member": {
+      "count": 9279897,
+      "percentage": 73
+    },
+    "dependent": {
+      "count": 3395737,
+      "percentage": 27
+    }
+  },
+  "bySex": {
+    "female": {
+      "count": 6971552,
+      "percentage": 55
+    },
+    "male": {
+      "count": 5704082,
+      "percentage": 45
+    }
+  },
+  "byAgeGroup": [
+    {
+      "ageRange": "< 1",
+      "count": 22803
+    },
+    {
+      "ageRange": "1-4",
+      "count": 1933222
+    },
+    {
+      "ageRange": "5-9",
+      "count": 301863
+    },
+    {
+      "ageRange": "10-14",
+      "count": 197387
+    },
+    {
+      "ageRange": "15-19",
+      "count": 363358
+    },
+    {
+      "ageRange": "20-24",
+      "count": 670511
+    },
+    {
+      "ageRange": "25-29",
+      "count": 925652
+    },
+    {
+      "ageRange": "30-34",
+      "count": 950587
+    },
+    {
+      "ageRange": "35-39",
+      "count": 813860
+    },
+    {
+      "ageRange": "40-44",
+      "count": 752498
+    },
+    {
+      "ageRange": "45-49",
+      "count": 748788
+    },
+    {
+      "ageRange": "50-54",
+      "count": 846772
+    },
+    {
+      "ageRange": "55-59",
+      "count": 912079
+    },
+    {
+      "ageRange": "≥ 60",
+      "count": 3236254
+    }
+  ],
+  "byIllnessType": {
+    "procedural": {
+      "percentage": 74,
+      "description": "Surgical and procedural cases"
+    },
+    "medical": {
+      "percentage": 26,
+      "description": "Medical management cases"
+    }
+  },
+  "bySector": {
+    "private": {
+      "percentage": 56
+    },
+    "government": {
+      "percentage": 44
+    },
+    "international": {
+      "percentage": 8e-05,
+      "description": "Negligible international sector claims"
+    }
+  },
+  "covidAnalysis": {
+    "totalCovidClaims": {
+      "amount": 16692287836,
+      "count": 929498,
+      "amountPercentage": 14,
+      "countPercentage": 7
+    },
+    "totalNonCovidClaims": {
+      "amount": 105690715256,
+      "count": 11746136,
+      "amountPercentage": 86,
+      "countPercentage": 93
+    },
+    "covidBreakdown": {
+      "isolation": {
+        "amount": 86634130,
+        "count": 4208,
+        "amountPercentage": 0.52,
+        "countPercentage": 0.2
+      },
+      "inpatient": {
+        "amount": 14631490044,
+        "count": 72511,
+        "amountPercentage": 88,
+        "countPercentage": 8
+      },
+      "testing": {
+        "amount": 1974163662,
+        "count": 852779,
+        "amountPercentage": 12,
+        "countPercentage": 92
+      }
+    }
+  },
+  "byHCIClass": [
+    {
+      "class": "Level 3 Hospital",
+      "percentage": 31.8
+    },
+    {
+      "class": "Level 2 Hospital",
+      "percentage": 20.7
+    },
+    {
+      "class": "Infirmary/Level 1 Hospital",
+      "percentage": 15.7
+    },
+    {
+      "class": "Primary Care Facility",
+      "percentage": 8.5
+    },
+    {
+      "class": "TB-DOTS Facility",
+      "percentage": 6.2
+    },
+    {
+      "class": "Lying-in Clinic",
+      "percentage": 4.8
+    },
+    {
+      "class": "Ambulatory Surgical Clinic",
+      "percentage": 3.4
+    },
+    {
+      "class": "Free-Standing Dialysis Clinic",
+      "percentage": 2.9
+    },
+    {
+      "class": "Birthing Home",
+      "percentage": 2.1
+    },
+    {
+      "class": "Animal Bite Treatment Center",
+      "percentage": 1.6
+    },
+    {
+      "class": "Konsulta Provider",
+      "percentage": 1.2
+    },
+    {
+      "class": "COVID-19 Testing Laboratory",
+      "percentage": 0.7
+    },
+    {
+      "class": "Drug Rehabilitation Center",
+      "percentage": 0.3
+    },
+    {
+      "class": "Community Isolation Unit",
+      "percentage": 0.1
+    },
+    {
+      "class": "Others",
+      "percentage": 0.0
+    }
+  ],
+  "benefitExpenseDistribution": {
+    "description": "Benefit expense by membership category for CY 2023",
+    "total": 74207188265,
+    "breakdown": {
+      "directContributors": {
+        "amount": 34473633624,
+        "percentage": 46
+      },
+      "indirectContributors": {
+        "amount": 39303979133,
+        "percentage": 53
+      },
+      "konsulta": {
+        "amount": 429575508,
+        "percentage": 1
+      }
+    }
+  }
+}

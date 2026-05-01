@@ -118,15 +118,15 @@ def infer_candidate_block(canonical_name: str, plugin_id: str) -> tuple[str, str
     if token in lookup:
         return str(lookup[token]["block_id"]), "latent_block_spec"
     lowered = token.lower()
-    if any(part in lowered for part in ("testing", "diagnos", "knowledge", "prevention", "stigma")):
-        return "testing_engagement", "heuristic_token"
-    if any(part in lowered for part in ("linkage", "retention", "treatment", "art", "philhealth")):
+    if any(part in lowered for part in ("testing", "diagnos", "knowledge", "prevention", "stigma", "education", "cd4", "self_testing", "community_testing")):
+        return "testing_prevention_reach", "heuristic_token"
+    if any(part in lowered for part in ("linkage", "retention", "treatment", "art", "philhealth", "ltfu", "reengagement", "appointment")):
         return "care_access_continuity", "heuristic_token"
-    if any(part in lowered for part in ("suppression", "viral", "clinic", "service", "policy")):
+    if any(part in lowered for part in ("suppression", "viral", "clinic", "service", "policy", "lab", "reagent", "documentation")):
         return "suppression_capacity", "heuristic_token"
-    if any(part in lowered for part in ("mobility", "migration", "sexual_risk", "risk_behavior", "mixing")):
+    if any(part in lowered for part in ("mobility", "migration", "sexual_risk", "risk_behavior", "mixing", "key_population", "msm", "tgw", "fsw", "pwid", "geosocial", "partner_seeking", "population_density", "urbanization")):
         return "mobility_exposure_pressure", "heuristic_token"
-    if any(part in lowered for part in ("poverty", "friction", "travel", "remoteness", "precarity", "cash", "education", "social_capital", "constraint")):
+    if any(part in lowered for part in ("poverty", "friction", "travel", "remoteness", "precarity", "cash", "social_capital", "constraint", "stockout", "backlog", "reporting_delay")):
         return "structural_barrier_pressure", "heuristic_token"
     return "unassigned", "unassigned"
 
@@ -137,9 +137,9 @@ def infer_expected_sign(canonical_name: str, plugin_id: str) -> tuple[str, str]:
     if token in lookup:
         return str(lookup[token]["expected_sign"]), "latent_block_spec"
     lowered = token.lower()
-    if any(part in lowered for part in ("uptake", "coverage", "knowledge", "suppression", "retention", "linkage", "clinic", "access")):
+    if any(part in lowered for part in ("uptake", "coverage", "knowledge", "suppression", "retention", "linkage", "clinic", "access", "capacity", "completeness", "reengagement", "refill", "education")):
         return "positive", "heuristic_token"
-    if any(part in lowered for part in ("barrier", "friction", "cost", "poverty", "precarity", "weakness", "delay", "travel", "remoteness")):
+    if any(part in lowered for part in ("barrier", "friction", "cost", "poverty", "precarity", "weakness", "delay", "travel", "remoteness", "lapse", "stockout", "interruption", "loss_to_follow_up", "backlog", "fear")):
         return "negative", "heuristic_token"
     return "neutral", "unassigned"
 
