@@ -1,0 +1,188 @@
+{
+  "artifact_paths": {
+    "candidate_gate_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r29-strict-ledger-matched-r10-gate-20260502-s00/analysis/r29_candidate_gate_rows.csv",
+    "dashboard_png": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r29-strict-ledger-matched-r10-gate-20260502-s00/analysis/r29_strict_ledger_matched_r10_gate_dashboard.png",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r29-strict-ledger-matched-r10-gate-20260502-s00/analysis/r29_strict_ledger_matched_r10_gate.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r29-strict-ledger-matched-r10-gate-20260502-s00/analysis/r29_strict_ledger_matched_r10_gate.md",
+    "strict_reference_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r29-strict-ledger-matched-r10-gate-20260502-s00/analysis/r29_strict_reference_rows.csv"
+  },
+  "baseline_source_run_id": "harp-archive-wdi-standard-20260412-s19",
+  "blockers": [
+    "candidate_not_better_than_strict_mapped_r10",
+    "candidate_not_better_than_strict_program_r10"
+  ],
+  "candidate_gate_rows": [
+    {
+      "blockers": [],
+      "candidate_family": "r19_joint_service_cascade_process",
+      "candidate_mean_mae": 0.07472894582132304,
+      "candidate_minus_strict_r10": -0.02599942682787329,
+      "candidate_scope": "full_sentinel_r19",
+      "carry_forward_mean_mae": 0.28697436438140306,
+      "horizon_years": 1,
+      "mapped_reference_entry_count": 79,
+      "mapped_share": 0.6810344827586207,
+      "reference_scope": "all_mapped",
+      "status": "pass",
+      "strict_matched_r10_mean_mae": 0.10072837264919633
+    },
+    {
+      "blockers": [],
+      "candidate_family": "r19_joint_service_cascade_process",
+      "candidate_mean_mae": 0.11196855677854647,
+      "candidate_minus_strict_r10": -0.005131043890052173,
+      "candidate_scope": "full_sentinel_r19",
+      "carry_forward_mean_mae": 0.5278718299428302,
+      "horizon_years": 3,
+      "mapped_reference_entry_count": 204,
+      "mapped_share": 0.6496815286624203,
+      "reference_scope": "all_mapped",
+      "status": "pass",
+      "strict_matched_r10_mean_mae": 0.11709960066859865
+    },
+    {
+      "blockers": [
+        "candidate_not_better_than_strict_mapped_r10"
+      ],
+      "candidate_family": "r19_joint_service_cascade_process",
+      "candidate_mean_mae": 0.13705411438672369,
+      "candidate_minus_strict_r10": 0.010242920123925553,
+      "candidate_scope": "full_sentinel_r19",
+      "carry_forward_mean_mae": 0.8387643744603296,
+      "horizon_years": 5,
+      "mapped_reference_entry_count": 295,
+      "mapped_share": 0.6276595744680851,
+      "reference_scope": "all_mapped",
+      "status": "fail",
+      "strict_matched_r10_mean_mae": 0.12681119426279813
+    },
+    {
+      "blockers": [
+        "candidate_not_better_than_strict_program_r10"
+      ],
+      "candidate_family": "r23_recent_origin_program_coupled_process",
+      "candidate_mean_mae": 0.14260437987295446,
+      "candidate_minus_strict_r10": 0.009121557411780667,
+      "candidate_scope": "program_best_phase3",
+      "carry_forward_mean_mae": 0.5365953883119511,
+      "horizon_years": 3,
+      "mapped_reference_entry_count": 156,
+      "mapped_share": 0.6496815286624203,
+      "reference_scope": "program_mapped",
+      "status": "fail",
+      "strict_matched_r10_mean_mae": 0.1334828224611738
+    },
+    {
+      "blockers": [
+        "candidate_not_better_than_strict_program_r10"
+      ],
+      "candidate_family": "r22_program_metric_coupled_process",
+      "candidate_mean_mae": 0.17970006331209143,
+      "candidate_minus_strict_r10": 0.048343605411189094,
+      "candidate_scope": "program_best_phase3",
+      "carry_forward_mean_mae": 0.9671842817967539,
+      "horizon_years": 5,
+      "mapped_reference_entry_count": 217,
+      "mapped_share": 0.6276595744680851,
+      "reference_scope": "program_mapped",
+      "status": "fail",
+      "strict_matched_r10_mean_mae": 0.13135645790090233
+    }
+  ],
+  "generated_at": "2026-05-02T12:06:14.349887+00:00",
+  "official_annual_gate": {
+    "annual_max_conservation_residual": 2.7853275241795927e-11,
+    "available": true,
+    "candidate_family": "r19_joint_service_cascade_process",
+    "candidate_mean_mae": 0.3966555315147762,
+    "carry_forward_mean_mae": 0.5924720011390459,
+    "decision": "promote_for_next_wave",
+    "status": "pass",
+    "stock_cone_violation_count": 0
+  },
+  "promotion_eligible": false,
+  "run_id": "p3d-r29-strict-ledger-matched-r10-gate-20260502-s00",
+  "schema_version": "phase3_dynamic.r29_strict_ledger_matched_r10_gate.v1",
+  "source_run_id": "tr-v3-current-champion-expanded-harp-compatibility-20260419-s00",
+  "strict_reference_rows": [
+    {
+      "carry_forward_mean_mae": 0.12071958873600984,
+      "carry_forward_worst_mae": 0.7564935064935064,
+      "horizon_years": 1,
+      "mapped_entry_count": 79,
+      "mapped_share": 0.6810344827586207,
+      "matched_r10_better_share": 0.5822784810126582,
+      "matched_r10_mean_mae": 0.10072837264919633,
+      "matched_r10_worst_mae": 0.5120332584431206,
+      "scope": "all_mapped",
+      "scored_entry_count": 79,
+      "total_replay_entry_count": 116
+    },
+    {
+      "carry_forward_mean_mae": 0.1334048395420518,
+      "carry_forward_worst_mae": 0.7564935064935064,
+      "horizon_years": 1,
+      "mapped_entry_count": 79,
+      "mapped_share": 0.6810344827586207,
+      "matched_r10_better_share": 0.5714285714285714,
+      "matched_r10_mean_mae": 0.1159526173028096,
+      "matched_r10_worst_mae": 0.5120332584431206,
+      "scope": "program_mapped",
+      "scored_entry_count": 63,
+      "total_replay_entry_count": 116
+    },
+    {
+      "carry_forward_mean_mae": 0.20490931231601917,
+      "carry_forward_worst_mae": 1.0,
+      "horizon_years": 3,
+      "mapped_entry_count": 204,
+      "mapped_share": 0.6496815286624203,
+      "matched_r10_better_share": 0.6421568627450981,
+      "matched_r10_mean_mae": 0.11709960066859865,
+      "matched_r10_worst_mae": 0.6476456231636116,
+      "scope": "all_mapped",
+      "scored_entry_count": 204,
+      "total_replay_entry_count": 314
+    },
+    {
+      "carry_forward_mean_mae": 0.23028346071558117,
+      "carry_forward_worst_mae": 1.0,
+      "horizon_years": 3,
+      "mapped_entry_count": 204,
+      "mapped_share": 0.6496815286624203,
+      "matched_r10_better_share": 0.6538461538461539,
+      "matched_r10_mean_mae": 0.1334828224611738,
+      "matched_r10_worst_mae": 0.6476456231636116,
+      "scope": "program_mapped",
+      "scored_entry_count": 156,
+      "total_replay_entry_count": 314
+    },
+    {
+      "carry_forward_mean_mae": 0.2550709328385502,
+      "carry_forward_worst_mae": 0.9999999999999999,
+      "horizon_years": 5,
+      "mapped_entry_count": 295,
+      "mapped_share": 0.6276595744680851,
+      "matched_r10_better_share": 0.6508474576271186,
+      "matched_r10_mean_mae": 0.12681119426279813,
+      "matched_r10_worst_mae": 0.8828513918674469,
+      "scope": "all_mapped",
+      "scored_entry_count": 295,
+      "total_replay_entry_count": 470
+    },
+    {
+      "carry_forward_mean_mae": 0.2873029311736656,
+      "carry_forward_worst_mae": 0.9999999999999999,
+      "horizon_years": 5,
+      "mapped_entry_count": 295,
+      "mapped_share": 0.6276595744680851,
+      "matched_r10_better_share": 0.6866359447004609,
+      "matched_r10_mean_mae": 0.13135645790090233,
+      "matched_r10_worst_mae": 0.8828513918674469,
+      "scope": "program_mapped",
+      "scored_entry_count": 217,
+      "total_replay_entry_count": 470
+    }
+  ],
+  "verdict": "R29 strict-ledger gate fails. Even after excluding unmapped R10 rows, Phase 3 does not beat strict mapped R10 on every required route."
+}

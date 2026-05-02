@@ -45,6 +45,10 @@ from phase3_dynamic.r28_r10_contract_lineage_audit import (
     _lineage_id as _r28_lineage_id,
     _provenance_coverage_rows as _r28_provenance_coverage_rows,
 )
+from phase3_dynamic.r29_strict_ledger_matched_r10_gate import (
+    _is_program_lineage as _r29_is_program_lineage,
+    _score_records as _r29_score_records,
+)
 
 
 def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
@@ -154,6 +158,29 @@ def test_r28_provenance_coverage_flags_unmapped_entries() -> None:
     assert by_horizon[5]["unknown_provenance_count"] == 1
     assert by_horizon[5]["unknown_provenance_share"] == 0.5
     assert by_horizon[3]["unknown_provenance_share"] == 1.0
+
+
+def test_r29_program_lineage_filter_accepts_only_doh_program_rows() -> None:
+    assert _r29_is_program_lineage(
+        {"source_lineage": "official_doh_archive|program_observed_harp|quarterly_snapshot"}
+    )
+    assert not _r29_is_program_lineage(
+        {"source_lineage": "official_user_provided_slide|program_observed_harp|annual_snapshot"}
+    )
+
+
+def test_r29_score_records_computes_strict_mapped_r10_reference() -> None:
+    score = _r29_score_records(
+        [
+            {"r10_norm_error": 0.1, "carry_forward_norm_error": 0.3},
+            {"r10_norm_error": 0.2, "carry_forward_norm_error": 0.1},
+        ]
+    )
+
+    assert score["entry_count"] == 2
+    assert score["matched_r10_mean_mae"] == pytest.approx(0.15)
+    assert score["carry_forward_mean_mae"] == pytest.approx(0.2)
+    assert score["matched_r10_better_share"] == pytest.approx(0.5)
 
 
 def test_project_cascade_stock_row_enforces_nonnegative_cascade_cone() -> None:
