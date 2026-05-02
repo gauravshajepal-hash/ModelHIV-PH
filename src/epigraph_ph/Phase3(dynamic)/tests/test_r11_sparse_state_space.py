@@ -13,6 +13,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _fit_linkage_lag_kernel,
     _fit_r19_lineage_rate_state_model,
     _fit_r20_service_capacity_transition,
+    _fit_r21_diagnosis_flow_selector,
     _fit_trajectory_shape_head,
     _build_r12_04_source_lineage_ablation_report,
     _build_r12_05_lineage_stratified_contract_report,
@@ -48,6 +49,7 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
     assert any(spec["family"] == "r19_joint_service_cascade_process" for spec in specs)
     assert any(spec["family"] == "r20_service_capacity_process" for spec in specs)
+    assert any(spec["family"] == "r21_diagnosis_flow_guarded_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
@@ -390,6 +392,47 @@ def test_r20_service_capacity_transition_predicts_bounded_stock() -> None:
     assert prediction is not None
     assert 0.0 <= prediction <= 130.0
     assert detail["service_gap"] == pytest.approx(60.0)
+
+
+def test_r21_diagnosis_flow_selector_is_lead_aware_and_guarded() -> None:
+    provenance = {
+        metric: {
+            "source_tier": "official_doh_archive",
+            "measurement_class": "program_observed_harp",
+            "series_kind": "quarterly_snapshot",
+            "support_partition": "common_support",
+            "aggregation_mode": "quarterly",
+        }
+        for metric in [
+            "diagnosed_plhiv",
+            "alive_on_art",
+            "tested_for_viral_load",
+            "virally_suppressed",
+            "new_diagnosed_cases_period",
+        ]
+    }
+    rows = []
+    for index, year in enumerate(range(2018, 2024)):
+        flow = 10.0 + 2.0 * index
+        diagnosed = 100.0 + 12.0 * index
+        art = 70.0 + 9.0 * index
+        rows.append(
+            {
+                "quarter": f"{year}-Q4",
+                "diagnosed_plhiv": diagnosed,
+                "alive_on_art": art,
+                "tested_for_viral_load": 0.6 * art,
+                "virally_suppressed": 0.72 * 0.6 * art,
+                "new_diagnosed_cases_period": flow,
+                "metric_provenance": provenance,
+            }
+        )
+
+    selector = _fit_r21_diagnosis_flow_selector(rows, max_horizon_years=3)
+
+    assert selector["reference_family"] == "r19_joint_service_cascade_process"
+    assert selector["record_count"] > 0
+    assert "global" in selector["policy_by_lead"]
 
 
 def test_back_half_conditional_rates_preserve_front_half_and_cascade() -> None:

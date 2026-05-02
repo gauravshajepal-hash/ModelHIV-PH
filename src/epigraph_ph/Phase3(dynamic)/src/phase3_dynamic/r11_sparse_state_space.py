@@ -126,6 +126,13 @@ R20_SERVICE_CAPACITY_METRICS: tuple[str, ...] = (
     "virally_suppressed",
     "new_diagnosed_cases_period",
 )
+R21_DIAGNOSIS_FLOW_VARIANTS: tuple[str, ...] = (
+    "carry_forward",
+    "support_partition_flow",
+    "monthly_service_flow",
+    "r19_shape_flow",
+    "lagged_flow",
+)
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -8345,6 +8352,450 @@ def _r20_service_capacity_predictions(
     }
 
 
+def _fit_r21_diagnosis_flow_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    sorted_rows = sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    program_rows = _r12_program_rows(sorted_rows)
+    fit_rows = program_rows or sorted_rows
+    intensities = [_monthly_reporting_intensity(row) for row in fit_rows]
+    median_intensity = float(np.median(np.asarray(intensities, dtype=np.float64))) if intensities else None
+    availability_process = _fit_r12_latent_reporting_intensity_process(fit_rows)
+    shock_process = _fit_r14_program_volume_shock_process(fit_rows, availability_process)
+    monthly_service_flow_process = _fit_r14_monthly_program_flow_process(
+        fit_rows,
+        availability_process,
+        shock_process,
+    )
+    support_flow_model = _fit_support_partition_calibration_model(fit_rows, "new_diagnosed_cases_period")
+    r19_shape_flow_process = _fit_r19_diagnosis_flow_shape_process(
+        fit_rows,
+        median_monthly_intensity=median_intensity,
+    )
+    lag_model = _fit_linkage_lag_kernel(fit_rows)
+    flow_by_ordinal: dict[int, float] = {}
+    train_flow_values: list[float] = []
+    for row in sorted_rows:
+        value = _finite_float(row.get("new_diagnosed_cases_period"))
+        if value is not None:
+            flow_by_ordinal[quarter_ordinal(str(row.get("quarter") or ""))] = float(value)
+            train_flow_values.append(float(value))
+    median_flow = None if not train_flow_values else float(np.median(np.asarray(train_flow_values, dtype=np.float64)))
+    last_flow = _last_metric_value(sorted_rows, "new_diagnosed_cases_period")
+    return {
+        "status": "completed" if flow_by_ordinal else "not_estimable",
+        "program_train_row_count": len(program_rows),
+        "fit_row_count": len(fit_rows),
+        "median_monthly_reporting_intensity": median_intensity,
+        "support_reporting_availability_process": availability_process,
+        "program_volume_shock_process": shock_process,
+        "monthly_service_flow_process": monthly_service_flow_process,
+        "support_flow_model": support_flow_model,
+        "r19_shape_flow_process": r19_shape_flow_process,
+        "lag_model": lag_model,
+        "last_flow": last_flow,
+        "median_train_flow": median_flow,
+        "origin_flow_regime": _flow_regime_label(last_flow, median_flow),
+        "observed_diagnosis_flow_by_ordinal": {str(key): float(value) for key, value in sorted(flow_by_ordinal.items())},
+        "candidate_variants": list(R21_DIAGNOSIS_FLOW_VARIANTS),
+        "contract": (
+            "R21 diagnosis-flow process bundles train-only flow candidates: carry-forward, support-partition flow, "
+            "monthly service/rebound flow, R19 support/reporting shape flow, and lagged observed flow."
+        ),
+    }
+
+
+def _r21_predict_diagnosis_flow_variant(
+    process: dict[str, Any],
+    *,
+    variant: str,
+    holdout_row: dict[str, Any],
+    current_flow: float,
+    carry_forward_flow: float | None,
+    flow_by_ordinal: dict[int, float],
+) -> tuple[float | None, dict[str, Any]]:
+    if str(process.get("status") or "") != "completed":
+        return None, {"status": "not_estimable"}
+    if variant == "carry_forward":
+        return carry_forward_flow, {"status": "completed", "variant": variant, "process_value": carry_forward_flow}
+    if variant == "support_partition_flow":
+        value = _predict_support_partition_calibration(
+            dict(process.get("support_flow_model") or {}),
+            holdout_row,
+            "new_diagnosed_cases_period",
+        )
+        return value, {"status": "completed" if value is not None else "not_estimable", "variant": variant, "process_value": value}
+    if variant == "monthly_service_flow":
+        availability_prediction = _predict_r12_latent_reporting_intensity(
+            dict(process.get("support_reporting_availability_process") or {}),
+            holdout_row,
+        )
+        shock_prediction = _predict_r14_program_volume_shock(
+            dict(process.get("program_volume_shock_process") or {}),
+            holdout_row,
+        )
+        value, detail = _predict_r20_diagnosis_flow(
+            dict(process.get("monthly_service_flow_process") or {}),
+            previous_flow=float(current_flow),
+            availability=float(availability_prediction.get("latent_reporting_intensity") or 0.0),
+            shock=float(shock_prediction.get("latent_program_volume_shock") or 0.0),
+        )
+        return value, {
+            "variant": variant,
+            "process_value": value,
+            "availability_prediction": availability_prediction,
+            "shock_prediction": shock_prediction,
+            "flow_detail": detail,
+        }
+    if variant == "r19_shape_flow":
+        value, detail = _r19_predict_diagnosis_flow(
+            dict(process.get("r19_shape_flow_process") or {}),
+            holdout_row,
+            _finite_float(process.get("median_monthly_reporting_intensity")),
+        )
+        return value, {"variant": variant, "process_value": value, "flow_detail": detail}
+    if variant == "lagged_flow":
+        lag_model = dict(process.get("lag_model") or {})
+        lag = int(lag_model.get("selected_lag_quarters") or 0) if str(lag_model.get("status") or "") == "completed" else 0
+        holdout_ord = quarter_ordinal(str(holdout_row.get("quarter") or ""))
+        value = flow_by_ordinal.get(holdout_ord - lag)
+        if value is None:
+            value = _finite_float(process.get("last_flow"))
+        return value, {
+            "status": "completed" if value is not None else "not_estimable",
+            "variant": variant,
+            "selected_lag_quarters": lag,
+            "process_value": value,
+        }
+    raise ValueError(f"Unknown R21 diagnosis-flow variant: {variant}")
+
+
+def _apply_r21_diagnosis_flow_policy(
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    process: dict[str, Any],
+    policy_by_lead: dict[str, dict[str, Any]],
+    train_end_year: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if str(process.get("status") or "") != "completed":
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+    flow_by_ordinal = {
+        int(key): float(value)
+        for key, value in dict(process.get("observed_diagnosis_flow_by_ordinal") or {}).items()
+        if _finite_float(value) is not None
+    }
+    current_flow = _finite_float(process.get("last_flow"))
+    if current_flow is None:
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    output: list[dict[str, Any]] = []
+    policy_rows: list[dict[str, Any]] = []
+    # Compute carry-forward from the same base state by using the last observed flow directly.
+    carry_forward_flow = float(current_flow)
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        row = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        lead_years = max(quarter_year(quarter) - int(train_end_year), 1)
+        origin_regime = str(process.get("origin_flow_regime") or "flow_unknown")
+        policy_key = f"{origin_regime}|lead{int(lead_years)}"
+        policy = dict(
+            policy_by_lead.get(policy_key)
+            or policy_by_lead.get(str(lead_years))
+            or policy_by_lead.get(f"{origin_regime}|global")
+            or policy_by_lead.get("global")
+            or {}
+        )
+        variant = str(policy.get("variant") or "base")
+        alpha = float(min(max(float(policy.get("blend_weight") or 0.0), 0.0), 1.0))
+        base_flow = _finite_float(row.get("new_diagnosed_cases_period"))
+        process_flow: float | None = None
+        detail: dict[str, Any] = {"variant": variant, "status": "not_applied"}
+        mutated = False
+        if (
+            variant != "base"
+            and alpha > 0.0
+            and base_flow is not None
+            and _r12_metric_matches_lineage_ids(holdout_row, "new_diagnosed_cases_period", R12_PROGRAM_LINEAGE_IDS)
+        ):
+            process_flow, detail = _r21_predict_diagnosis_flow_variant(
+                process,
+                variant=variant,
+                holdout_row=holdout_row,
+                current_flow=float(current_flow),
+                carry_forward_flow=carry_forward_flow,
+                flow_by_ordinal=flow_by_ordinal,
+            )
+            if process_flow is not None:
+                row["new_diagnosed_cases_period"] = float((1.0 - alpha) * float(base_flow) + alpha * max(float(process_flow), 0.0))
+                mutated = True
+        row = _project_prediction_row(row)
+        output.append(row)
+        current_flow = float(_finite_float(row.get("new_diagnosed_cases_period")) or current_flow)
+        flow_by_ordinal[quarter_ordinal(quarter)] = float(current_flow)
+        policy_rows.append(
+            {
+                "quarter": quarter,
+                "lead_years": int(lead_years),
+                "origin_flow_regime": origin_regime,
+                "policy_key": policy_key,
+                "variant": variant,
+                "blend_weight": alpha,
+                "base_new_diagnosed_cases_period": base_flow,
+                "process_new_diagnosed_cases_period": process_flow,
+                "blended_new_diagnosed_cases_period": row.get("new_diagnosed_cases_period"),
+                "mutated": mutated,
+                "detail": detail,
+            }
+        )
+    return output, policy_rows
+
+
+def _r21_select_flow_policy(records: list[dict[str, Any]], *, lead_key: str) -> dict[str, Any]:
+    lead_records = [
+        record
+        for record in records
+        if lead_key == "global"
+        or str(record.get("lead_years") or "") == str(lead_key)
+        or str(record.get("policy_key") or "") == str(lead_key)
+        or str(record.get("origin_flow_regime_global_key") or "") == str(lead_key)
+    ]
+    if not lead_records:
+        return {
+            "status": "not_estimable",
+            "variant": "base",
+            "blend_weight": 0.0,
+            "lead_key": str(lead_key),
+            "record_count": 0,
+        }
+    base_errors = [
+        abs(float(record["base_prediction"]) - float(record["target_value"]))
+        / max(float(record["scale"]), float(np.finfo(np.float32).eps))
+        for record in lead_records
+    ]
+    base_mean = float(np.mean(np.asarray(base_errors, dtype=np.float64)))
+    base_worst = float(np.max(np.asarray(base_errors, dtype=np.float64)))
+    candidate_rows: list[dict[str, Any]] = [
+        {
+            "variant": "base",
+            "blend_weight": 0.0,
+            "mean_mae": base_mean,
+            "worst_mae": base_worst,
+            "mean_minus_base": 0.0,
+            "worst_minus_base": 0.0,
+            "record_count": len(lead_records),
+            "eligible": True,
+        }
+    ]
+    best_row: dict[str, Any] | None = None
+    for variant in R21_DIAGNOSIS_FLOW_VARIANTS:
+        variant_records = [record for record in lead_records if str(record.get("variant") or "") == variant]
+        if not variant_records:
+            continue
+        variant_base_errors = [
+            abs(float(record["base_prediction"]) - float(record["target_value"]))
+            / max(float(record["scale"]), float(np.finfo(np.float32).eps))
+            for record in variant_records
+        ]
+        variant_base_mean = float(np.mean(np.asarray(variant_base_errors, dtype=np.float64)))
+        variant_base_worst = float(np.max(np.asarray(variant_base_errors, dtype=np.float64)))
+        for alpha in _r12_alpha_candidates(variant_records):
+            errors = [
+                _r12_convex_error(
+                    float(record["base_prediction"]),
+                    float(record["selected_prediction"]),
+                    float(alpha),
+                    float(record["target_value"]),
+                    float(record["scale"]),
+                )
+                for record in variant_records
+            ]
+            mean_error = float(np.mean(np.asarray(errors, dtype=np.float64)))
+            worst_error = float(np.max(np.asarray(errors, dtype=np.float64)))
+            eligible = (
+                float(alpha) > 0.0
+                and mean_error < variant_base_mean
+                and worst_error < variant_base_worst
+            )
+            row = {
+                "variant": variant,
+                "blend_weight": float(alpha),
+                "mean_mae": mean_error,
+                "worst_mae": worst_error,
+                "base_mean_mae": variant_base_mean,
+                "base_worst_mae": variant_base_worst,
+                "mean_minus_base": float(mean_error - variant_base_mean),
+                "worst_minus_base": float(worst_error - variant_base_worst),
+                "record_count": len(variant_records),
+                "eligible": bool(eligible),
+            }
+            candidate_rows.append(row)
+            if eligible and (best_row is None or mean_error < float(best_row["mean_mae"])):
+                best_row = row
+    selected = {"variant": "base", "blend_weight": 0.0, "mean_mae": base_mean, "worst_mae": base_worst}
+    status = "failed_closed"
+    if best_row is not None:
+        selected = best_row
+        status = "completed"
+    return {
+        "status": status,
+        "lead_key": str(lead_key),
+        "variant": str(selected.get("variant") or "base"),
+        "blend_weight": float(selected.get("blend_weight") or 0.0),
+        "mean_mae": selected.get("mean_mae"),
+        "worst_mae": selected.get("worst_mae"),
+        "base_mean_mae": base_mean,
+        "base_worst_mae": base_worst,
+        "record_count": len(lead_records),
+        "candidate_rows": candidate_rows,
+    }
+
+
+def _fit_r21_diagnosis_flow_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    process_manifests: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions, _base_summary = _r19_joint_service_predictions(internal_train, internal_holdout)
+        carry_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        process = _fit_r21_diagnosis_flow_process(internal_train)
+        origin_flow_regime = str(process.get("origin_flow_regime") or "flow_unknown")
+        base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        process_manifests.append(
+            {
+                "train_end_year": int(train_end_year),
+                "status": str(process.get("status") or ""),
+                "program_train_row_count": process.get("program_train_row_count"),
+                "fit_row_count": process.get("fit_row_count"),
+            }
+        )
+        for variant in R21_DIAGNOSIS_FLOW_VARIANTS:
+            variant_predictions, _policy_rows = _apply_r21_diagnosis_flow_policy(
+                internal_holdout,
+                base_predictions,
+                process=process,
+                policy_by_lead={"global": {"variant": variant, "blend_weight": 1.0}},
+                train_end_year=int(train_end_year),
+            )
+            variant_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in variant_predictions}
+            for holdout_row in internal_holdout:
+                if not _r12_metric_matches_lineage_ids(holdout_row, "new_diagnosed_cases_period", R12_PROGRAM_LINEAGE_IDS):
+                    continue
+                quarter = str(holdout_row.get("quarter") or "")
+                target_value = _finite_float(holdout_row.get("new_diagnosed_cases_period"))
+                base_value = _finite_float(base_by_quarter.get(quarter, {}).get("new_diagnosed_cases_period"))
+                variant_value = _finite_float(variant_by_quarter.get(quarter, {}).get("new_diagnosed_cases_period"))
+                carry_value = _finite_float(carry_by_quarter.get(quarter, {}).get("new_diagnosed_cases_period"))
+                if target_value is None or base_value is None or variant_value is None or carry_value is None:
+                    continue
+                records.append(
+                    {
+                        "origin_year": int(train_end_year),
+                        "lead_years": max(quarter_year(quarter) - int(train_end_year), 1),
+                        "origin_flow_regime": origin_flow_regime,
+                        "policy_key": f"{origin_flow_regime}|lead{max(quarter_year(quarter) - int(train_end_year), 1)}",
+                        "origin_flow_regime_global_key": f"{origin_flow_regime}|global",
+                        "quarter": quarter,
+                        "metric_name": "new_diagnosed_cases_period",
+                        "variant": variant,
+                        "base_prediction": float(base_value),
+                        "selected_prediction": float(variant_value),
+                        "carry_forward_prediction": float(carry_value),
+                        "target_value": float(target_value),
+                        "scale": float(_metric_scale(internal_train, "new_diagnosed_cases_period")),
+                    }
+                )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "record_count": 0,
+            "policy_by_lead": {},
+            "reason": "no_train_origin_program_diagnosis_flow_records",
+            "process_manifests": process_manifests,
+        }
+    lead_keys = sorted({str(record.get("lead_years") or "") for record in records})
+    regime_lead_keys = sorted({str(record.get("policy_key") or "") for record in records if record.get("policy_key")})
+    regime_global_keys = sorted(
+        {str(record.get("origin_flow_regime_global_key") or "") for record in records if record.get("origin_flow_regime_global_key")}
+    )
+    lead_policies = [_r21_select_flow_policy(records, lead_key=lead_key) for lead_key in lead_keys]
+    regime_lead_policies = [_r21_select_flow_policy(records, lead_key=lead_key) for lead_key in regime_lead_keys]
+    regime_global_policies = [_r21_select_flow_policy(records, lead_key=lead_key) for lead_key in regime_global_keys]
+    global_policy = _r21_select_flow_policy(records, lead_key="global")
+    policy_by_lead = {
+        str(policy.get("lead_key") or ""): {
+            "variant": str(policy.get("variant") or "base"),
+            "blend_weight": float(policy.get("blend_weight") or 0.0),
+        }
+        for policy in [*lead_policies, *regime_global_policies, *regime_lead_policies]
+    }
+    if global_policy:
+        policy_by_lead["global"] = {
+            "variant": str(global_policy.get("variant") or "base"),
+            "blend_weight": float(global_policy.get("blend_weight") or 0.0),
+        }
+    moved = any(float(policy.get("blend_weight") or 0.0) > 0.0 for policy in policy_by_lead.values())
+    return {
+        "status": "completed" if moved else "failed_closed",
+        "reference_family": "r19_joint_service_cascade_process",
+        "record_count": len(records),
+        "policy_by_lead": policy_by_lead,
+        "lead_policies": lead_policies,
+        "regime_global_policies": regime_global_policies,
+        "regime_lead_policies": regime_lead_policies,
+        "global_policy": global_policy,
+        "process_manifests": process_manifests,
+        "contract": (
+            "R21 selects diagnosis-flow-only variants by train-origin lead-year records. The selector can choose "
+            "R19/base, carry-forward, support-partition, monthly service/rebound, R19 shape, or lagged observed flow. "
+            "A non-base policy must improve both mean and worst-case diagnosis-flow error against the R19 base."
+        ),
+    }
+
+
+def _r21_diagnosis_flow_guarded_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r19_joint_service_predictions(train_rows, holdout_rows)
+    process = _fit_r21_diagnosis_flow_process(train_rows)
+    train_years = [quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")]
+    train_end_year = max(train_years) if train_years else 0
+    selector = _fit_r21_diagnosis_flow_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    predictions, policy_rows = _apply_r21_diagnosis_flow_policy(
+        holdout_rows,
+        base_predictions,
+        process=process,
+        policy_by_lead=dict(selector.get("policy_by_lead") or {}),
+        train_end_year=int(train_end_year),
+    )
+    return predictions, {
+        "base_family": "r19_joint_service_cascade_process",
+        "base_summary": base_summary,
+        "diagnosis_flow_process": process,
+        "diagnosis_flow_selector": selector,
+        "mutation_rows": policy_rows,
+        "contract": (
+            "R21 keeps R19 diagnosed/ART/VL/suppression states fixed and mutates only program-lineage diagnosis-flow "
+            "through a train-origin guarded selector. This targets matched-R10 flow shape without adding new stock freedom."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -10242,11 +10693,24 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r21_diagnosis_flow_guarded_process":
+        predictions, summary = _r21_diagnosis_flow_guarded_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R21 keeps the R19 state trajectory fixed and mutates only program-lineage diagnosis-flow through "
+                "a train-origin lead-aware selector. It can choose R19/base, carry-forward, support-partition, "
+                "monthly service/rebound, R19 shape, or lagged observed flow without directly changing D/A stocks."
+            ),
+        }
+
     if family == "r14_two_factor_horizon_selector_process":
         predictions, selector_summary = _family_selector_predictions(
             train_rows,
             holdout_rows,
             candidate_families=(
+                "r21_diagnosis_flow_guarded_process",
                 "r20_service_capacity_process",
                 "r19_joint_service_cascade_process",
                 "r18_evidence_backed_art_process",
