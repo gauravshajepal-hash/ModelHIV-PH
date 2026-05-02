@@ -121,6 +121,11 @@ R19_JOINT_SERVICE_METRICS: tuple[str, ...] = (
     "new_diagnosed_cases_period",
 )
 R19_BACK_HALF_METRICS: tuple[str, ...] = ("tested_for_viral_load", "virally_suppressed")
+R20_SERVICE_CAPACITY_METRICS: tuple[str, ...] = (
+    "tested_for_viral_load",
+    "virally_suppressed",
+    "new_diagnosed_cases_period",
+)
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -7788,6 +7793,558 @@ def _r19_lineage_state_space_back_half_predictions(
     }
 
 
+def _fit_r20_service_capacity_transition(
+    train_rows: list[dict[str, Any]],
+    *,
+    state_metric: str,
+    capacity_metric: str,
+    availability_process: dict[str, Any],
+    shock_process: dict[str, Any],
+) -> dict[str, Any]:
+    rows = [
+        dict(row)
+        for row in sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+        if _finite_float(row.get(state_metric)) is not None and _finite_float(row.get(capacity_metric)) is not None
+    ]
+    x_rows: list[list[float]] = []
+    y_values: list[float] = []
+    for previous, current in zip(rows[:-1], rows[1:]):
+        previous_state = _finite_float(previous.get(state_metric))
+        current_state = _finite_float(current.get(state_metric))
+        current_capacity = _finite_float(current.get(capacity_metric))
+        if previous_state is None or current_state is None or current_capacity is None:
+            continue
+        service_gap = max(float(current_capacity) - float(previous_state), 0.0)
+        availability = _r12_latent_reporting_intensity_for_train_row(availability_process, current)
+        shock = _r14_program_volume_shock_for_train_row(shock_process, current)
+        x_rows.append([service_gap, -max(float(previous_state), 0.0), availability, shock])
+        y_values.append(float(current_state) - float(previous_state))
+    factor_bound = _latent_reporting_bound(y_values)
+    fit = _fit_bounded_transition_with_latent_intensity(
+        x_rows=x_rows,
+        y_values=y_values,
+        feature_names=(
+            "service_gap_capacity",
+            "state_removal_stock",
+            "support_reporting_availability",
+            "program_volume_shock",
+        ),
+        lower=(0.0, 0.0, -factor_bound, -factor_bound),
+        upper=(1.0, 1.0, factor_bound, factor_bound),
+    )
+    if str(fit.get("status") or "") != "completed":
+        return {
+            **fit,
+            "state_metric": state_metric,
+            "capacity_metric": capacity_metric,
+            "train_row_count": len(rows),
+        }
+    coefficients = list(fit.get("coefficients") or [])
+    return {
+        **fit,
+        "state_metric": state_metric,
+        "capacity_metric": capacity_metric,
+        "train_row_count": len(rows),
+        "service_gap_uptake_fraction": None if len(coefficients) < 1 else float(coefficients[0]),
+        "state_removal_fraction": None if len(coefficients) < 2 else float(coefficients[1]),
+        "availability_coefficient": None if len(coefficients) < 3 else float(coefficients[2]),
+        "program_volume_shock_coefficient": None if len(coefficients) < 4 else float(coefficients[3]),
+        "equation": f"{state_metric}_t = {state_metric}_(t-1) + theta*max({capacity_metric}_t - {state_metric}_(t-1), 0) - mu*{state_metric}_(t-1) + k_avail*a_t + k_vol*v_t",
+        "contract": (
+            f"R20 service-capacity transition for {state_metric}: train-only bounded stock-flow process driven by "
+            "the unserved capacity gap, observed state removal, support/reporting availability, and program-volume shock."
+        ),
+    }
+
+
+def _predict_r20_service_capacity_transition(
+    model: dict[str, Any],
+    *,
+    previous_state: float,
+    capacity_value: float,
+    availability: float,
+    shock: float,
+) -> tuple[float | None, dict[str, Any]]:
+    if str(model.get("status") or "") != "completed":
+        return None, {"status": "not_estimable"}
+    uptake = _finite_float(model.get("service_gap_uptake_fraction"))
+    removal = _finite_float(model.get("state_removal_fraction"))
+    availability_coefficient = _finite_float(model.get("availability_coefficient"))
+    shock_coefficient = _finite_float(model.get("program_volume_shock_coefficient"))
+    if uptake is None or removal is None:
+        return None, {"status": "not_estimable", "reason": "missing_transition_coefficients"}
+    previous = max(float(previous_state), 0.0)
+    capacity = max(float(capacity_value), 0.0)
+    service_gap = max(capacity - previous, 0.0)
+    raw_value = (
+        previous
+        + float(uptake) * service_gap
+        - float(removal) * previous
+        + (0.0 if availability_coefficient is None else float(availability_coefficient) * float(availability))
+        + (0.0 if shock_coefficient is None else float(shock_coefficient) * float(shock))
+    )
+    value = float(min(max(raw_value, 0.0), capacity))
+    return value, {
+        "status": "completed",
+        "state_metric": str(model.get("state_metric") or ""),
+        "capacity_metric": str(model.get("capacity_metric") or ""),
+        "previous_state": previous,
+        "capacity_value": capacity,
+        "service_gap": service_gap,
+        "service_gap_uptake_fraction": uptake,
+        "state_removal_fraction": removal,
+        "availability": float(availability),
+        "shock": float(shock),
+        "availability_coefficient": availability_coefficient,
+        "program_volume_shock_coefficient": shock_coefficient,
+        "raw_process_value": float(raw_value),
+        "process_value": value,
+    }
+
+
+def _fit_r20_service_capacity_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    sorted_rows = sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+    program_rows = _r12_program_rows(sorted_rows)
+    fit_rows = program_rows or sorted_rows
+    availability_process = _fit_r12_latent_reporting_intensity_process(fit_rows)
+    shock_process = _fit_r14_program_volume_shock_process(fit_rows, availability_process)
+    flow_process = _fit_r14_monthly_program_flow_process(fit_rows, availability_process, shock_process)
+    vl_transition = _fit_r20_service_capacity_transition(
+        fit_rows,
+        state_metric="tested_for_viral_load",
+        capacity_metric="alive_on_art",
+        availability_process=availability_process,
+        shock_process=shock_process,
+    )
+    suppression_transition = _fit_r20_service_capacity_transition(
+        fit_rows,
+        state_metric="virally_suppressed",
+        capacity_metric="tested_for_viral_load",
+        availability_process=availability_process,
+        shock_process=shock_process,
+    )
+    status = (
+        "completed"
+        if str(vl_transition.get("status") or "") == "completed"
+        and str(suppression_transition.get("status") or "") == "completed"
+        else "not_estimable"
+    )
+    return {
+        "status": status,
+        "program_train_row_count": len(program_rows),
+        "fit_row_count": len(fit_rows),
+        "support_reporting_availability_process": availability_process,
+        "program_volume_shock_process": shock_process,
+        "diagnosis_flow_service_process": flow_process,
+        "vl_testing_service_capacity_transition": vl_transition,
+        "suppression_service_capacity_transition": suppression_transition,
+        "last_state": {
+            metric_name: _last_metric_value(sorted_rows, metric_name)
+            for metric_name in R11_EVALUATION_METRICS
+        },
+        "contract": (
+            "R20 service-capacity process keeps the R19/R18 state backbone but models diagnosis-flow volume, "
+            "VL testing, and viral suppression as train-only service-capacity transitions driven by support/"
+            "reporting availability and program-volume shock. It does not use holdout targets or handwritten coefficients."
+        ),
+    }
+
+
+def _predict_r20_diagnosis_flow(
+    flow_model: dict[str, Any],
+    *,
+    previous_flow: float,
+    availability: float,
+    shock: float,
+) -> tuple[float | None, dict[str, Any]]:
+    if str(flow_model.get("status") or "") != "completed":
+        return None, {"status": "not_estimable"}
+    rho = _finite_float(flow_model.get("flow_retention_coefficient"))
+    innovation = _finite_float(flow_model.get("flow_innovation"))
+    availability_coefficient = _finite_float(flow_model.get("availability_coefficient"))
+    shock_coefficient = _finite_float(flow_model.get("program_volume_shock_coefficient"))
+    if rho is None or innovation is None:
+        return None, {"status": "not_estimable", "reason": "missing_flow_coefficients"}
+    raw_value = (
+        float(rho) * max(float(previous_flow), 0.0)
+        + float(innovation)
+        + (0.0 if availability_coefficient is None else float(availability_coefficient) * float(availability))
+        + (0.0 if shock_coefficient is None else float(shock_coefficient) * float(shock))
+    )
+    return float(max(raw_value, 0.0)), {
+        "status": "completed",
+        "previous_flow": max(float(previous_flow), 0.0),
+        "flow_retention_coefficient": rho,
+        "flow_innovation": innovation,
+        "availability": float(availability),
+        "shock": float(shock),
+        "availability_coefficient": availability_coefficient,
+        "program_volume_shock_coefficient": shock_coefficient,
+        "raw_process_value": float(raw_value),
+        "process_value": float(max(raw_value, 0.0)),
+    }
+
+
+def _apply_r20_service_capacity_process(
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    process: dict[str, Any],
+    blend_weight: float,
+    diagnosis_flow_blend_weight: float | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    back_half_alpha = float(min(max(float(blend_weight), 0.0), 1.0))
+    flow_alpha = back_half_alpha if diagnosis_flow_blend_weight is None else float(
+        min(max(float(diagnosis_flow_blend_weight), 0.0), 1.0)
+    )
+    if str(process.get("status") or "") != "completed" or (back_half_alpha <= 0.0 and flow_alpha <= 0.0):
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    availability_process = dict(process.get("support_reporting_availability_process") or {})
+    shock_process = dict(process.get("program_volume_shock_process") or {})
+    flow_model = dict(process.get("diagnosis_flow_service_process") or {})
+    vl_model = dict(process.get("vl_testing_service_capacity_transition") or {})
+    suppression_model = dict(process.get("suppression_service_capacity_transition") or {})
+    last_state = dict(process.get("last_state") or {})
+    current_flow = _finite_float(last_state.get("new_diagnosed_cases_period"))
+    current_vl = _finite_float(last_state.get("tested_for_viral_load"))
+    current_suppressed = _finite_float(last_state.get("virally_suppressed"))
+    if current_flow is None or current_vl is None or current_suppressed is None:
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+    output: list[dict[str, Any]] = []
+    process_rows: list[dict[str, Any]] = []
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        base_prediction = dict(base_by_quarter.get(quarter, {"quarter": quarter}))
+        row = dict(base_prediction)
+        availability_prediction = _predict_r12_latent_reporting_intensity(availability_process, holdout_row)
+        shock_prediction = _predict_r14_program_volume_shock(shock_process, holdout_row)
+        availability = float(availability_prediction.get("latent_reporting_intensity") or 0.0)
+        shock = float(shock_prediction.get("latent_program_volume_shock") or 0.0)
+        process_flow, flow_detail = _predict_r20_diagnosis_flow(
+            flow_model,
+            previous_flow=float(current_flow),
+            availability=availability,
+            shock=shock,
+        )
+        mutated_metrics: list[str] = []
+        base_flow = _finite_float(row.get("new_diagnosed_cases_period"))
+        if (
+            process_flow is not None
+            and base_flow is not None
+            and flow_alpha > 0.0
+            and _r12_metric_matches_lineage_ids(holdout_row, "new_diagnosed_cases_period", R12_PROGRAM_LINEAGE_IDS)
+        ):
+            row["new_diagnosed_cases_period"] = float((1.0 - flow_alpha) * float(base_flow) + flow_alpha * float(process_flow))
+            mutated_metrics.append("new_diagnosed_cases_period")
+        art_value = _finite_float(row.get("alive_on_art"))
+        vl_detail: dict[str, Any] = {}
+        if art_value is not None:
+            process_vl, vl_detail = _predict_r20_service_capacity_transition(
+                vl_model,
+                previous_state=float(current_vl),
+                capacity_value=float(art_value),
+                availability=availability,
+                shock=shock,
+            )
+            base_vl = _finite_float(row.get("tested_for_viral_load"))
+            if (
+                process_vl is not None
+                and base_vl is not None
+                and back_half_alpha > 0.0
+                and _r12_metric_matches_lineage_ids(holdout_row, "tested_for_viral_load", R12_PROGRAM_LINEAGE_IDS)
+            ):
+                row["tested_for_viral_load"] = float((1.0 - back_half_alpha) * float(base_vl) + back_half_alpha * float(process_vl))
+                mutated_metrics.append("tested_for_viral_load")
+        vl_value = _finite_float(row.get("tested_for_viral_load"))
+        suppression_detail: dict[str, Any] = {}
+        if vl_value is not None:
+            process_suppressed, suppression_detail = _predict_r20_service_capacity_transition(
+                suppression_model,
+                previous_state=float(current_suppressed),
+                capacity_value=float(vl_value),
+                availability=availability,
+                shock=shock,
+            )
+            base_suppressed = _finite_float(row.get("virally_suppressed"))
+            if (
+                process_suppressed is not None
+                and base_suppressed is not None
+                and back_half_alpha > 0.0
+                and _r12_metric_matches_lineage_ids(holdout_row, "virally_suppressed", R12_PROGRAM_LINEAGE_IDS)
+            ):
+                row["virally_suppressed"] = float((1.0 - back_half_alpha) * float(base_suppressed) + back_half_alpha * float(process_suppressed))
+                mutated_metrics.append("virally_suppressed")
+        row = _project_prediction_row(row)
+        output.append(row)
+        current_flow = float(process_flow if process_flow is not None else (_finite_float(row.get("new_diagnosed_cases_period")) or current_flow))
+        current_vl = float(_finite_float(row.get("tested_for_viral_load")) or current_vl)
+        current_suppressed = float(_finite_float(row.get("virally_suppressed")) or current_suppressed)
+        process_rows.append(
+            {
+                "quarter": quarter,
+                "back_half_blend_weight": back_half_alpha,
+                "diagnosis_flow_blend_weight": flow_alpha,
+                "program_row": _r12_is_program_row(holdout_row),
+                "latent_support_reporting_availability": availability,
+                "latent_program_volume_shock": shock,
+                "base_new_diagnosed_cases_period": base_flow,
+                "process_new_diagnosed_cases_period": process_flow,
+                "blended_new_diagnosed_cases_period": row.get("new_diagnosed_cases_period"),
+                "base_tested_for_viral_load": base_prediction.get("tested_for_viral_load"),
+                "process_tested_for_viral_load": vl_detail.get("process_value"),
+                "blended_tested_for_viral_load": row.get("tested_for_viral_load"),
+                "base_virally_suppressed": base_prediction.get("virally_suppressed"),
+                "process_virally_suppressed": suppression_detail.get("process_value"),
+                "blended_virally_suppressed": row.get("virally_suppressed"),
+                "flow_detail": flow_detail,
+                "vl_testing_detail": vl_detail,
+                "suppression_detail": suppression_detail,
+                "mutated_metrics": mutated_metrics,
+            }
+        )
+    return output, process_rows
+
+
+def _r20_select_group_blend(records: list[dict[str, Any]], metrics: tuple[str, ...]) -> dict[str, Any]:
+    metric_set = set(metrics)
+    group_records = [record for record in records if str(record.get("metric_name") or "") in metric_set]
+    if not group_records:
+        return {
+            "status": "not_estimable",
+            "selected_blend_weight": 0.0,
+            "record_count": 0,
+            "metrics": list(metrics),
+        }
+    identity_errors = [
+        _r12_convex_error(
+            float(record["base_prediction"]),
+            float(record["selected_prediction"]),
+            0.0,
+            float(record["target_value"]),
+            float(record["scale"]),
+        )
+        for record in group_records
+    ]
+    identity_mean = float(np.mean(np.asarray(identity_errors, dtype=np.float64)))
+    identity_worst = float(np.max(np.asarray(identity_errors, dtype=np.float64)))
+    rows: list[dict[str, Any]] = []
+    best_row: dict[str, Any] | None = None
+    for alpha in _r12_alpha_candidates(group_records):
+        errors = [
+            _r12_convex_error(
+                float(record["base_prediction"]),
+                float(record["selected_prediction"]),
+                float(alpha),
+                float(record["target_value"]),
+                float(record["scale"]),
+            )
+            for record in group_records
+        ]
+        mean_error = float(np.mean(np.asarray(errors, dtype=np.float64)))
+        worst_error = float(np.max(np.asarray(errors, dtype=np.float64)))
+        eligible = (
+            float(alpha) > 0.0
+            and mean_error < identity_mean
+            and worst_error <= identity_worst + FLOAT_NONREGRESSION_TOLERANCE
+        )
+        row = {
+            "blend_weight": float(alpha),
+            "mean_mae": mean_error,
+            "worst_mae": worst_error,
+            "identity_mean_mae": identity_mean,
+            "identity_worst_mae": identity_worst,
+            "mean_minus_identity": float(mean_error - identity_mean),
+            "worst_minus_identity": float(worst_error - identity_worst),
+            "eligible": bool(eligible),
+        }
+        rows.append(row)
+        if eligible and (best_row is None or mean_error < float(best_row["mean_mae"])):
+            best_row = row
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "selected_blend_weight": 0.0 if best_row is None else float(best_row["blend_weight"]),
+        "record_count": len(group_records),
+        "metrics": list(metrics),
+        "identity_mean_mae": identity_mean,
+        "identity_worst_mae": identity_worst,
+        "selected_mean_mae": None if best_row is None else best_row.get("mean_mae"),
+        "selected_worst_mae": None if best_row is None else best_row.get("worst_mae"),
+        "candidate_blend_rows": rows,
+    }
+
+
+def _fit_r20_service_capacity_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    process_manifests: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        process = _fit_r20_service_capacity_process(internal_train)
+        base_predictions, _base_summary = _r19_joint_service_predictions(internal_train, internal_holdout)
+        process_predictions, _process_rows = _apply_r20_service_capacity_process(
+            internal_holdout,
+            base_predictions,
+            process=process,
+            blend_weight=1.0,
+        )
+        carry_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+        process_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in process_predictions}
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        process_manifests.append(
+            {
+                "train_end_year": int(train_end_year),
+                "status": str(process.get("status") or ""),
+                "program_train_row_count": process.get("program_train_row_count"),
+                "vl_transition_status": str(dict(process.get("vl_testing_service_capacity_transition") or {}).get("status") or ""),
+                "suppression_transition_status": str(dict(process.get("suppression_service_capacity_transition") or {}).get("status") or ""),
+                "flow_process_status": str(dict(process.get("diagnosis_flow_service_process") or {}).get("status") or ""),
+            }
+        )
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            for metric_name in R20_SERVICE_CAPACITY_METRICS:
+                if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                    continue
+                target_value = _finite_float(holdout_row.get(metric_name))
+                base_value = _finite_float(base_by_quarter.get(quarter, {}).get(metric_name))
+                process_value = _finite_float(process_by_quarter.get(quarter, {}).get(metric_name))
+                carry_value = _finite_float(carry_by_quarter.get(quarter, {}).get(metric_name))
+                if target_value is None or base_value is None or process_value is None or carry_value is None:
+                    continue
+                records.append(
+                    {
+                        "origin_year": int(train_end_year),
+                        "quarter": quarter,
+                        "metric_name": metric_name,
+                        "base_prediction": float(base_value),
+                        "selected_prediction": float(process_value),
+                        "carry_forward_prediction": float(carry_value),
+                        "target_value": float(target_value),
+                        "scale": float(_metric_scale(internal_train, metric_name)),
+                    }
+                )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "selected_blend_weight": 0.0,
+            "record_count": 0,
+            "reason": "no_train_origin_service_capacity_records",
+            "process_manifests": process_manifests,
+        }
+    identity_full = _r19_record_mean(records, alpha=0.0, metrics=R20_SERVICE_CAPACITY_METRICS)
+    identity_flow = _r19_record_mean(records, alpha=0.0, metrics=("new_diagnosed_cases_period",))
+    identity_back_half = _r19_record_mean(records, alpha=0.0, metrics=R19_BACK_HALF_METRICS)
+    alpha_rows: list[dict[str, Any]] = []
+    best_row: dict[str, Any] | None = None
+    for alpha in _r12_alpha_candidates(records):
+        full_mean = _r19_record_mean(records, alpha=float(alpha), metrics=R20_SERVICE_CAPACITY_METRICS)
+        flow_mean = _r19_record_mean(records, alpha=float(alpha), metrics=("new_diagnosed_cases_period",))
+        back_half_mean = _r19_record_mean(records, alpha=float(alpha), metrics=R19_BACK_HALF_METRICS)
+        eligible = (
+            float(alpha) > 0.0
+            and full_mean is not None
+            and identity_full is not None
+            and full_mean < identity_full
+            and (identity_flow is None or flow_mean is None or flow_mean <= identity_flow + FLOAT_NONREGRESSION_TOLERANCE)
+            and (
+                identity_back_half is None
+                or back_half_mean is None
+                or back_half_mean <= identity_back_half + FLOAT_NONREGRESSION_TOLERANCE
+            )
+        )
+        row = {
+            "blend_weight": float(alpha),
+            "record_count": len(records),
+            "service_capacity_mean_mae": full_mean,
+            "diagnosis_flow_mean_mae": flow_mean,
+            "back_half_mean_mae": back_half_mean,
+            "identity_service_capacity_mean_mae": identity_full,
+            "identity_diagnosis_flow_mean_mae": identity_flow,
+            "identity_back_half_mean_mae": identity_back_half,
+            "service_capacity_minus_identity": None
+            if full_mean is None or identity_full is None
+            else float(full_mean - identity_full),
+            "eligible": bool(eligible),
+        }
+        alpha_rows.append(row)
+        if eligible and (best_row is None or float(full_mean) < float(best_row["service_capacity_mean_mae"])):
+            best_row = row
+    flow_selector = _r20_select_group_blend(records, ("new_diagnosed_cases_period",))
+    back_half_selector = _r20_select_group_blend(records, R19_BACK_HALF_METRICS)
+    selected_back_half_weight = _finite_float(back_half_selector.get("selected_blend_weight")) or 0.0
+    selected_flow_weight = _finite_float(flow_selector.get("selected_blend_weight")) or 0.0
+    return {
+        "status": "completed" if selected_back_half_weight > 0.0 or selected_flow_weight > 0.0 else "failed_closed",
+        "reference_family": "r19_joint_service_cascade_process",
+        "selected_blend_weight": selected_back_half_weight,
+        "selected_diagnosis_flow_blend_weight": selected_flow_weight,
+        "identity_service_capacity_mean_mae": identity_full,
+        "selected_service_capacity_mean_mae": None if best_row is None else best_row.get("service_capacity_mean_mae"),
+        "record_count": len(records),
+        "candidate_blend_rows": alpha_rows,
+        "diagnosis_flow_selector": flow_selector,
+        "back_half_selector": back_half_selector,
+        "process_manifests": process_manifests,
+        "contract": (
+            "R20 selector uses train-origin program service-capacity records only. It selects an exact convex blend "
+            "from the R19 base to the service process. Diagnosis-flow and back-half groups are selected separately; "
+            "a group can only move if train-origin mean improves and worst-case error does not regress."
+        ),
+    }
+
+
+def _r20_service_capacity_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r19_joint_service_predictions(train_rows, holdout_rows)
+    process = _fit_r20_service_capacity_process(train_rows)
+    selector = _fit_r20_service_capacity_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    selected_alpha = _finite_float(selector.get("selected_blend_weight"))
+    if selected_alpha is None:
+        selected_alpha = 0.0
+    selected_flow_alpha = _finite_float(selector.get("selected_diagnosis_flow_blend_weight"))
+    if selected_flow_alpha is None:
+        selected_flow_alpha = 0.0
+    predictions, process_rows = _apply_r20_service_capacity_process(
+        holdout_rows,
+        base_predictions,
+        process=process,
+        blend_weight=float(selected_alpha),
+        diagnosis_flow_blend_weight=float(selected_flow_alpha),
+    )
+    return predictions, {
+        "base_family": "r19_joint_service_cascade_process",
+        "base_summary": base_summary,
+        "service_capacity_process": process,
+        "service_capacity_selector": selector,
+        "selected_blend_weight": float(selected_alpha),
+        "selected_diagnosis_flow_blend_weight": float(selected_flow_alpha),
+        "mutation_rows": process_rows,
+        "contract": (
+            "R20 starts from R19 and adds a train-selected service-capacity process for program diagnosis flow, "
+            "VL testing, and viral suppression. It can mutate only DOH program-lineage rows and cannot directly "
+            "change diagnosed stock or ART stock."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -9673,11 +10230,24 @@ def _candidate_predictions(
             ),
         }
 
+    if family == "r20_service_capacity_process":
+        predictions, summary = _r20_service_capacity_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R20 keeps R19 as the base and adds a program-lineage service-capacity process for diagnosis-flow "
+                "volume, VL testing, and viral suppression. It is data-selected by train-origin service records and "
+                "does not directly move diagnosed stock or ART stock."
+            ),
+        }
+
     if family == "r14_two_factor_horizon_selector_process":
         predictions, selector_summary = _family_selector_predictions(
             train_rows,
             holdout_rows,
             candidate_families=(
+                "r20_service_capacity_process",
                 "r19_joint_service_cascade_process",
                 "r18_evidence_backed_art_process",
                 "r17_art_flow_teacher_process",

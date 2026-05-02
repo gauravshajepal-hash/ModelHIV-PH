@@ -12,6 +12,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _fit_horizon_adaptive_shape_selector,
     _fit_linkage_lag_kernel,
     _fit_r19_lineage_rate_state_model,
+    _fit_r20_service_capacity_transition,
     _fit_trajectory_shape_head,
     _build_r12_04_source_lineage_ablation_report,
     _build_r12_05_lineage_stratified_contract_report,
@@ -22,6 +23,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _fit_r12_annual_anchor_head_selector,
     _predict_back_half_rate,
     _predict_r19_lineage_rate_state,
+    _predict_r20_service_capacity_transition,
     _r11_multi_horizon_report,
     _r10_lifted_gate,
     _select_horizon_matched_r10_reference,
@@ -45,7 +47,7 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
     assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
     assert any(spec["family"] == "r19_joint_service_cascade_process" for spec in specs)
-    assert any(spec["family"] == "r19_lineage_state_space_back_half_process" for spec in specs)
+    assert any(spec["family"] == "r20_service_capacity_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
@@ -351,6 +353,43 @@ def test_r19_lineage_rate_state_model_predicts_bounded_lineage_rate() -> None:
     assert prediction is not None
     assert 0.0 <= prediction <= 1.0
     assert detail["lineage_logit_bias"] != 0.0 or model["median_quarterly_logit_slope"] != 0.0
+
+
+def test_r20_service_capacity_transition_predicts_bounded_stock() -> None:
+    rows = [
+        {"quarter": "2020-Q1", "alive_on_art": 100.0, "tested_for_viral_load": 40.0},
+        {"quarter": "2020-Q2", "alive_on_art": 110.0, "tested_for_viral_load": 55.0},
+        {"quarter": "2020-Q3", "alive_on_art": 120.0, "tested_for_viral_load": 70.0},
+    ]
+    latent_process = {
+        "status": "completed",
+        "latent_intensity_by_ordinal": {},
+    }
+    shock_process = {
+        "status": "completed",
+        "latent_shock_by_ordinal": {},
+        "median_program_volume_shock": 0.0,
+    }
+
+    model = _fit_r20_service_capacity_transition(
+        rows,
+        state_metric="tested_for_viral_load",
+        capacity_metric="alive_on_art",
+        availability_process=latent_process,
+        shock_process=shock_process,
+    )
+    prediction, detail = _predict_r20_service_capacity_transition(
+        model,
+        previous_state=70.0,
+        capacity_value=130.0,
+        availability=0.0,
+        shock=0.0,
+    )
+
+    assert model["status"] == "completed"
+    assert prediction is not None
+    assert 0.0 <= prediction <= 130.0
+    assert detail["service_gap"] == pytest.approx(60.0)
 
 
 def test_back_half_conditional_rates_preserve_front_half_and_cascade() -> None:
