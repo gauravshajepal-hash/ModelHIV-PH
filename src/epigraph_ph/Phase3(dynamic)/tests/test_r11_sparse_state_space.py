@@ -41,6 +41,10 @@ from phase3_dynamic.r27_r19_r10_complementarity import (
     _fit_metric_policy as _fit_r27_metric_policy,
     _summary_row as _r27_summary_row,
 )
+from phase3_dynamic.r28_r10_contract_lineage_audit import (
+    _lineage_id as _r28_lineage_id,
+    _provenance_coverage_rows as _r28_provenance_coverage_rows,
+)
 
 
 def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
@@ -123,6 +127,33 @@ def test_r27_summary_row_rejects_oracle_tie_with_r10() -> None:
     assert row["fusion_mean_mae"] == 0.13
     assert row["status"] == "fail"
     assert "oracle_not_strictly_better_than_matched_r10" in row["blockers"]
+
+
+def test_r28_lineage_id_preserves_source_measurement_and_cadence() -> None:
+    lineage = _r28_lineage_id(
+        {
+            "source_quality_tier": "official_doh_archive",
+            "measurement_class": "program_observed_harp",
+            "series_kind": "quarterly_snapshot",
+        }
+    )
+
+    assert lineage == "official_doh_archive|program_observed_harp|quarterly_snapshot"
+
+
+def test_r28_provenance_coverage_flags_unmapped_entries() -> None:
+    rows = _r28_provenance_coverage_rows(
+        [
+            {"horizon_years": 5, "unknown_provenance": False},
+            {"horizon_years": 5, "unknown_provenance": True},
+            {"horizon_years": 3, "unknown_provenance": True},
+        ]
+    )
+
+    by_horizon = {row["horizon_years"]: row for row in rows}
+    assert by_horizon[5]["unknown_provenance_count"] == 1
+    assert by_horizon[5]["unknown_provenance_share"] == 0.5
+    assert by_horizon[3]["unknown_provenance_share"] == 1.0
 
 
 def test_project_cascade_stock_row_enforces_nonnegative_cascade_cone() -> None:
