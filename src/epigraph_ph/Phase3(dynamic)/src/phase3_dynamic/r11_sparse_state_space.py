@@ -7389,6 +7389,405 @@ def _r19_joint_service_predictions(
     }
 
 
+def _r19_rate_logit(rate: float) -> float:
+    eps = float(np.finfo(np.float32).eps)
+    bounded = min(max(float(rate), eps), 1.0 - eps)
+    return float(np.log(bounded / (1.0 - bounded)))
+
+
+def _r19_inverse_rate_logit(logit_value: float) -> float:
+    value = float(logit_value)
+    if value >= 0.0:
+        exp_neg = float(np.exp(-value))
+        return float(1.0 / (1.0 + exp_neg))
+    exp_pos = float(np.exp(value))
+    return float(exp_pos / (1.0 + exp_pos))
+
+
+def _r19_rate_lineage_signature(row: dict[str, Any], numerator_metric: str, denominator_metric: str) -> str:
+    numerator_provenance = _metric_provenance(row, numerator_metric)
+    denominator_provenance = _metric_provenance(row, denominator_metric)
+    aggregation = str(
+        numerator_provenance.get("aggregation_mode")
+        or denominator_provenance.get("aggregation_mode")
+        or "unknown_aggregation"
+    )
+    return "|".join(
+        [
+            _source_family_signature(row, numerator_metric),
+            _source_family_signature(row, denominator_metric),
+            _rate_support_partition(row, numerator_metric, denominator_metric),
+            aggregation,
+        ]
+    )
+
+
+def _fit_r19_lineage_rate_state_model(
+    train_rows: list[dict[str, Any]],
+    *,
+    rate_id: str,
+    numerator_metric: str,
+    denominator_metric: str,
+) -> dict[str, Any]:
+    rate_rows: list[dict[str, Any]] = []
+    for row in sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        rate = _conditional_rate(row, numerator_metric, denominator_metric)
+        if rate is None:
+            continue
+        ordinal = quarter_ordinal(str(row.get("quarter") or ""))
+        lineage_signature = _r19_rate_lineage_signature(row, numerator_metric, denominator_metric)
+        rate_rows.append(
+            {
+                "row": dict(row),
+                "quarter": str(row.get("quarter") or ""),
+                "ordinal": int(ordinal),
+                "rate": float(rate),
+                "logit_rate": _r19_rate_logit(float(rate)),
+                "lineage_signature": lineage_signature,
+            }
+        )
+    if not rate_rows:
+        return {
+            "status": "not_estimable",
+            "rate_id": rate_id,
+            "numerator_metric": numerator_metric,
+            "denominator_metric": denominator_metric,
+            "reason": "no_train_conditional_rates",
+        }
+    slopes: list[float] = []
+    for previous, current in zip(rate_rows[:-1], rate_rows[1:]):
+        step = max(int(current["ordinal"]) - int(previous["ordinal"]), 1)
+        slopes.append(float((float(current["logit_rate"]) - float(previous["logit_rate"])) / float(step)))
+    median_slope = 0.0 if not slopes else float(np.median(np.asarray(slopes, dtype=np.float64)))
+    origin = int(rate_rows[0]["ordinal"])
+    detrended = [
+        float(row["logit_rate"]) - median_slope * float(int(row["ordinal"]) - origin)
+        for row in rate_rows
+    ]
+    global_center = float(np.median(np.asarray(detrended, dtype=np.float64)))
+    residual_by_lineage: dict[str, list[float]] = defaultdict(list)
+    for row, value in zip(rate_rows, detrended):
+        residual_by_lineage[str(row["lineage_signature"])].append(float(value - global_center))
+    lineage_bias = {
+        lineage: float(np.median(np.asarray(values, dtype=np.float64)))
+        for lineage, values in sorted(residual_by_lineage.items())
+        if values
+    }
+    one_step_errors: list[float] = []
+    for previous, current in zip(rate_rows[:-1], rate_rows[1:]):
+        step = max(int(current["ordinal"]) - int(previous["ordinal"]), 1)
+        previous_bias = float(lineage_bias.get(str(previous["lineage_signature"]), 0.0))
+        current_bias = float(lineage_bias.get(str(current["lineage_signature"]), 0.0))
+        previous_canonical = float(previous["logit_rate"]) - previous_bias
+        predicted_rate = _r19_inverse_rate_logit(previous_canonical + median_slope * float(step) + current_bias)
+        one_step_errors.append(abs(float(predicted_rate) - float(current["rate"])))
+    last = rate_rows[-1]
+    last_bias = float(lineage_bias.get(str(last["lineage_signature"]), 0.0))
+    return {
+        "status": "completed",
+        "rate_id": rate_id,
+        "numerator_metric": numerator_metric,
+        "denominator_metric": denominator_metric,
+        "first_quarter": str(rate_rows[0]["quarter"]),
+        "last_quarter": str(last["quarter"]),
+        "last_ordinal": int(last["ordinal"]),
+        "last_rate": float(last["rate"]),
+        "last_canonical_logit_rate": float(last["logit_rate"] - last_bias),
+        "median_quarterly_logit_slope": median_slope,
+        "lineage_logit_bias": lineage_bias,
+        "lineage_count": len(lineage_bias),
+        "rate_count": len(rate_rows),
+        "slope_count": len(slopes),
+        "one_step_mean_rate_error": None
+        if not one_step_errors
+        else float(np.mean(np.asarray(one_step_errors, dtype=np.float64))),
+        "one_step_worst_rate_error": None
+        if not one_step_errors
+        else float(np.max(np.asarray(one_step_errors, dtype=np.float64))),
+        "contract": (
+            f"R19 lineage state model for {rate_id}: logit({numerator_metric}/{denominator_metric}) is "
+            "a local-level rate state with a train-median logit slope and train-median source-family/"
+            "support-partition lineage biases. Holdout rows can only use previously estimated lineage states; "
+            "unseen lineages receive zero bias."
+        ),
+    }
+
+
+def _predict_r19_lineage_rate_state(
+    model: dict[str, Any],
+    holdout_row: dict[str, Any],
+) -> tuple[float | None, dict[str, Any]]:
+    if str(model.get("status") or "") != "completed":
+        return None, {"status": "not_estimable"}
+    numerator_metric = str(model.get("numerator_metric") or "")
+    denominator_metric = str(model.get("denominator_metric") or "")
+    ordinal = quarter_ordinal(str(holdout_row.get("quarter") or ""))
+    last_ordinal = int(model.get("last_ordinal") or ordinal)
+    step = max(int(ordinal - last_ordinal), 0)
+    lineage_signature = _r19_rate_lineage_signature(holdout_row, numerator_metric, denominator_metric)
+    lineage_bias = float(dict(model.get("lineage_logit_bias") or {}).get(lineage_signature, 0.0))
+    logit_rate = (
+        float(model.get("last_canonical_logit_rate") or 0.0)
+        + float(model.get("median_quarterly_logit_slope") or 0.0) * float(step)
+        + lineage_bias
+    )
+    rate = _bounded_rate(_r19_inverse_rate_logit(logit_rate))
+    return rate, {
+        "status": "completed",
+        "rate_id": str(model.get("rate_id") or ""),
+        "lead_quarters": int(step),
+        "lineage_signature": lineage_signature,
+        "lineage_logit_bias": lineage_bias,
+        "process_rate": rate,
+    }
+
+
+def _fit_r19_lineage_back_half_process(train_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    rate_models: dict[str, dict[str, Any]] = {}
+    for spec in BACK_HALF_RATE_SPECS:
+        rate_models[str(spec["rate_id"])] = _fit_r19_lineage_rate_state_model(
+            train_rows,
+            rate_id=str(spec["rate_id"]),
+            numerator_metric=str(spec["numerator_metric"]),
+            denominator_metric=str(spec["denominator_metric"]),
+        )
+    return {
+        "status": "completed"
+        if any(str(model.get("status") or "") == "completed" for model in rate_models.values())
+        else "not_estimable",
+        "rate_models": rate_models,
+        "contract": (
+            "R19 lineage back-half process models the two third-95 conditional rates as train-only lineage-aware "
+            "state variables: VL-tested among ART and suppressed among VL-tested. It never changes diagnosed stock, "
+            "ART stock, or diagnosis flow directly."
+        ),
+    }
+
+
+def _apply_r19_lineage_back_half_process(
+    holdout_rows: list[dict[str, Any]],
+    base_predictions: list[dict[str, Any]],
+    *,
+    process: dict[str, Any],
+    blend_weight: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    alpha = float(min(max(float(blend_weight), 0.0), 1.0))
+    if str(process.get("status") or "") != "completed" or alpha <= 0.0:
+        return [_project_prediction_row(dict(row)) for row in base_predictions], []
+    models = dict(process.get("rate_models") or {})
+    output: list[dict[str, Any]] = []
+    process_rows: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(base_prediction)
+        vl_model = dict(models.get("vl_tested_among_art") or {})
+        process_vl_rate, vl_detail = _predict_r19_lineage_rate_state(vl_model, holdout_row)
+        base_vl_rate = _conditional_rate(row, "tested_for_viral_load", "alive_on_art")
+        art_value = _finite_float(row.get("alive_on_art"))
+        if art_value is not None and process_vl_rate is not None:
+            selected_vl_rate = process_vl_rate if base_vl_rate is None else (1.0 - alpha) * float(base_vl_rate) + alpha * float(process_vl_rate)
+            row["tested_for_viral_load"] = float(max(float(art_value), 0.0) * float(_bounded_rate(selected_vl_rate) or 0.0))
+        suppression_model = dict(models.get("suppressed_among_vl_tested") or {})
+        process_suppression_rate, suppression_detail = _predict_r19_lineage_rate_state(suppression_model, holdout_row)
+        base_suppression_rate = _conditional_rate(row, "virally_suppressed", "tested_for_viral_load")
+        vl_value = _finite_float(row.get("tested_for_viral_load"))
+        if vl_value is not None and process_suppression_rate is not None:
+            selected_suppression_rate = (
+                process_suppression_rate
+                if base_suppression_rate is None
+                else (1.0 - alpha) * float(base_suppression_rate) + alpha * float(process_suppression_rate)
+            )
+            row["virally_suppressed"] = float(max(float(vl_value), 0.0) * float(_bounded_rate(selected_suppression_rate) or 0.0))
+        row = _project_prediction_row(row)
+        output.append(row)
+        process_rows.append(
+            {
+                "quarter": str(holdout_row.get("quarter") or row.get("quarter") or ""),
+                "blend_weight": alpha,
+                "base_vl_tested_among_art": base_vl_rate,
+                "process_vl_tested_among_art": process_vl_rate,
+                "blended_tested_for_viral_load": row.get("tested_for_viral_load"),
+                "base_suppressed_among_vl_tested": base_suppression_rate,
+                "process_suppressed_among_vl_tested": process_suppression_rate,
+                "blended_virally_suppressed": row.get("virally_suppressed"),
+                "vl_testing_detail": vl_detail,
+                "suppression_detail": suppression_detail,
+            }
+        )
+    return output, process_rows
+
+
+def _fit_r19_lineage_back_half_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    process_manifests: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        lineage_process = _fit_r19_lineage_back_half_process(internal_train)
+        carry_process = _fit_back_half_rate_process(internal_train)
+        process_manifests.append(
+            {
+                "train_end_year": int(train_end_year),
+                "status": str(lineage_process.get("status") or ""),
+                "rate_model_status": {
+                    rate_id: str(dict(model).get("status") or "")
+                    for rate_id, model in dict(lineage_process.get("rate_models") or {}).items()
+                },
+                "carry_rate_process_status": str(carry_process.get("status") or ""),
+            }
+        )
+        lineage_models = dict(lineage_process.get("rate_models") or {})
+        carry_models = dict(carry_process.get("rate_models") or {})
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            for spec in BACK_HALF_RATE_SPECS:
+                rate_id = str(spec["rate_id"])
+                numerator_metric = str(spec["numerator_metric"])
+                denominator_metric = str(spec["denominator_metric"])
+                target_rate = _conditional_rate(holdout_row, numerator_metric, denominator_metric)
+                lineage_rate, _detail = _predict_r19_lineage_rate_state(
+                    dict(lineage_models.get(rate_id) or {}),
+                    holdout_row,
+                )
+                carry_model = dict(carry_models.get(rate_id) or {})
+                carry_variant = str(carry_model.get("selected_variant") or "carry_rate")
+                carry_rate = _predict_back_half_rate(carry_model, holdout_row, variant=carry_variant)
+                base_rate = _predict_back_half_rate(carry_model, holdout_row, variant="carry_rate")
+                if target_rate is None or lineage_rate is None or carry_rate is None or base_rate is None:
+                    continue
+                records.append(
+                    {
+                        "origin_year": int(train_end_year),
+                        "quarter": quarter,
+                        "metric_name": numerator_metric,
+                        "rate_id": rate_id,
+                        "base_prediction": float(base_rate),
+                        "selected_prediction": float(lineage_rate),
+                        "carry_forward_prediction": float(carry_rate),
+                        "target_value": float(target_rate),
+                        "scale": 1.0,
+                    }
+                )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "selected_blend_weight": 0.0,
+            "record_count": 0,
+            "reason": "no_train_origin_lineage_back_half_rate_records",
+            "process_manifests": process_manifests,
+        }
+    identity_back_half = _r19_record_mean(records, alpha=0.0, metrics=R19_BACK_HALF_METRICS)
+    identity_vl = _r19_record_mean(records, alpha=0.0, metrics=("tested_for_viral_load",))
+    identity_suppression = _r19_record_mean(records, alpha=0.0, metrics=("virally_suppressed",))
+    carry_back_half_errors = [
+        abs(float(record["carry_forward_prediction"]) - float(record["target_value"]))
+        for record in records
+    ]
+    carry_back_half = float(np.mean(np.asarray(carry_back_half_errors, dtype=np.float64))) if carry_back_half_errors else None
+    alpha_rows: list[dict[str, Any]] = []
+    best_row: dict[str, Any] | None = None
+    for alpha in _r12_alpha_candidates(records):
+        back_half_mean = _r19_record_mean(records, alpha=float(alpha), metrics=R19_BACK_HALF_METRICS)
+        vl_mean = _r19_record_mean(records, alpha=float(alpha), metrics=("tested_for_viral_load",))
+        suppression_mean = _r19_record_mean(records, alpha=float(alpha), metrics=("virally_suppressed",))
+        eligible = (
+            float(alpha) > 0.0
+            and back_half_mean is not None
+            and identity_back_half is not None
+            and back_half_mean < identity_back_half
+            and (carry_back_half is None or back_half_mean <= carry_back_half + FLOAT_NONREGRESSION_TOLERANCE)
+            and (identity_vl is None or vl_mean is None or vl_mean <= identity_vl + FLOAT_NONREGRESSION_TOLERANCE)
+            and (
+                identity_suppression is None
+                or suppression_mean is None
+                or suppression_mean <= identity_suppression + FLOAT_NONREGRESSION_TOLERANCE
+            )
+        )
+        row = {
+            "blend_weight": float(alpha),
+            "record_count": len(records),
+            "back_half_mean_rate_error": back_half_mean,
+            "vl_testing_mean_rate_error": vl_mean,
+            "suppression_mean_rate_error": suppression_mean,
+            "identity_back_half_mean_rate_error": identity_back_half,
+            "carry_forward_back_half_mean_rate_error": carry_back_half,
+            "back_half_rate_minus_identity": None
+            if back_half_mean is None or identity_back_half is None
+            else float(back_half_mean - identity_back_half),
+            "back_half_rate_minus_carry_forward": None
+            if back_half_mean is None or carry_back_half is None
+            else float(back_half_mean - carry_back_half),
+            "eligible": bool(eligible),
+        }
+        alpha_rows.append(row)
+        if eligible and (best_row is None or float(back_half_mean) < float(best_row["back_half_mean_rate_error"])):
+            best_row = row
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "reference_family": "r19_joint_service_cascade_process",
+        "selected_blend_weight": 0.0 if best_row is None else float(best_row["blend_weight"]),
+        "identity_back_half_mean_rate_error": identity_back_half,
+        "carry_forward_back_half_mean_rate_error": carry_back_half,
+        "selected_back_half_mean_rate_error": None if best_row is None else best_row.get("back_half_mean_rate_error"),
+        "record_count": len(records),
+        "candidate_blend_rows": alpha_rows,
+        "process_manifests": process_manifests,
+        "contract": (
+            "R19 lineage selector chooses one exact convex blend from last-observed conditional-rate carry-forward "
+            "to the lineage-aware back-half rate state model using train-origin rate records only. It can only move "
+            "VL testing and suppression, and it must improve train-origin back-half rate error without worsening "
+            "either rate stream or conditional-rate carry-forward."
+        ),
+    }
+
+
+def _r19_lineage_state_space_back_half_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r19_joint_service_predictions(train_rows, holdout_rows)
+    process = _fit_r19_lineage_back_half_process(train_rows)
+    selector = _fit_r19_lineage_back_half_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    selected_alpha = _finite_float(selector.get("selected_blend_weight"))
+    if selected_alpha is None:
+        selected_alpha = 0.0
+    predictions, process_rows = _apply_r19_lineage_back_half_process(
+        holdout_rows,
+        base_predictions,
+        process=process,
+        blend_weight=float(selected_alpha),
+    )
+    return predictions, {
+        "base_family": "r19_joint_service_cascade_process",
+        "base_summary": base_summary,
+        "lineage_back_half_process": process,
+        "lineage_back_half_selector": selector,
+        "selected_blend_weight": float(selected_alpha),
+        "mutation_rows": process_rows,
+        "contract": (
+            "R19-lineage starts from the R19 joint service branch and adds only a source-lineage-aware "
+            "local-level state-space observation model for third-95 conditional rates. It is blocked-time selected "
+            "and cannot directly change diagnosed stock, ART stock, or diagnosis flow."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -9259,6 +9658,18 @@ def _candidate_predictions(
                 "R19 keeps the R18 evidence-backed ART branch as the base and adds a jointly selected "
                 "long-horizon VL testing, suppression, and diagnosis-flow service process. It is promoted only "
                 "when train-origin selector gates preserve R10-scope and stock consistency."
+            ),
+        }
+
+    if family == "r19_lineage_state_space_back_half_process":
+        predictions, summary = _r19_lineage_state_space_back_half_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R19-lineage keeps the R19 ART/service branch fixed and adds a source-lineage-aware "
+                "local-level state-space observation process for VL testing and suppression conditional rates. "
+                "The process cannot directly mutate diagnosed stock, ART stock, or diagnosis flow."
             ),
         }
 

@@ -11,6 +11,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _fit_back_half_rate_model,
     _fit_horizon_adaptive_shape_selector,
     _fit_linkage_lag_kernel,
+    _fit_r19_lineage_rate_state_model,
     _fit_trajectory_shape_head,
     _build_r12_04_source_lineage_ablation_report,
     _build_r12_05_lineage_stratified_contract_report,
@@ -20,6 +21,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _build_r12_official_annual_challenge_gate_report,
     _fit_r12_annual_anchor_head_selector,
     _predict_back_half_rate,
+    _predict_r19_lineage_rate_state,
     _r11_multi_horizon_report,
     _r10_lifted_gate,
     _select_horizon_matched_r10_reference,
@@ -43,6 +45,7 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
     assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
     assert any(spec["family"] == "r19_joint_service_cascade_process" for spec in specs)
+    assert any(spec["family"] == "r19_lineage_state_space_back_half_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
@@ -292,6 +295,62 @@ def test_back_half_rate_model_predicts_bounded_conditional_rate() -> None:
     assert prediction is not None
     assert 0.0 <= prediction <= 1.0
     assert prediction > model["last_rate"]
+
+
+def test_r19_lineage_rate_state_model_predicts_bounded_lineage_rate() -> None:
+    provenance = {
+        "alive_on_art": {
+            "source_tier": "official_doh_archive",
+            "measurement_class": "program_observed_harp",
+            "series_kind": "quarterly_snapshot",
+            "support_partition": "common_support",
+            "aggregation_mode": "quarterly",
+        },
+        "tested_for_viral_load": {
+            "source_tier": "official_doh_archive",
+            "measurement_class": "program_observed_harp",
+            "series_kind": "quarterly_snapshot",
+            "support_partition": "common_support",
+            "aggregation_mode": "quarterly",
+        },
+    }
+    rows = [
+        {
+            "quarter": "2020-Q1",
+            "alive_on_art": 100.0,
+            "tested_for_viral_load": 40.0,
+            "metric_provenance": provenance,
+        },
+        {
+            "quarter": "2020-Q2",
+            "alive_on_art": 100.0,
+            "tested_for_viral_load": 50.0,
+            "metric_provenance": provenance,
+        },
+        {
+            "quarter": "2020-Q3",
+            "alive_on_art": 100.0,
+            "tested_for_viral_load": 60.0,
+            "metric_provenance": provenance,
+        },
+    ]
+
+    model = _fit_r19_lineage_rate_state_model(
+        rows,
+        rate_id="vl_tested_among_art",
+        numerator_metric="tested_for_viral_load",
+        denominator_metric="alive_on_art",
+    )
+    prediction, detail = _predict_r19_lineage_rate_state(
+        model,
+        {"quarter": "2020-Q4", "metric_provenance": provenance},
+    )
+
+    assert model["status"] == "completed"
+    assert model["lineage_count"] == 1
+    assert prediction is not None
+    assert 0.0 <= prediction <= 1.0
+    assert detail["lineage_logit_bias"] != 0.0 or model["median_quarterly_logit_slope"] != 0.0
 
 
 def test_back_half_conditional_rates_preserve_front_half_and_cascade() -> None:
