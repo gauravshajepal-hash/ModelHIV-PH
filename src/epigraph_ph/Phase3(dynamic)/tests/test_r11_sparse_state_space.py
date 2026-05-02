@@ -42,7 +42,7 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert all(spec.get("metrics") for spec in specs)
     assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
     assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
-    assert any(spec["family"] == "r18_evidence_backed_art_process" for spec in specs)
+    assert any(spec["family"] == "r19_joint_service_cascade_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
 
 
@@ -1621,3 +1621,16 @@ def test_r12_10_program_nowcast_branch_is_doh_program_scoped() -> None:
     assert r18_summary["art_process_selector"]["reference_family"] == "r16_support_cadence_stock_process"
     assert r18_summary["evidence_backed_art_process"]["art_stock_transition"]["status"] == "completed"
     assert r18_summary["evidence_backed_art_process"]["art_retention_fraction"] is not None
+
+    r19_predictions, r19_summary = _candidate_predictions(
+        train_rows,
+        holdout_rows,
+        family="r19_joint_service_cascade_process",
+    )
+
+    assert r19_predictions
+    assert r19_summary["family"] == "r19_joint_service_cascade_process"
+    assert r19_summary["joint_service_selector"]["reference_family"] == "r18_evidence_backed_art_process"
+    assert r19_summary["joint_service_process"]["vl_testing_channel"]["status"] == "completed"
+    assert r19_summary["joint_service_process"]["suppression_channel"]["status"] == "completed"
+    assert r19_summary["joint_service_process"]["diagnosis_flow_shape_process"]["status"] == "completed"
