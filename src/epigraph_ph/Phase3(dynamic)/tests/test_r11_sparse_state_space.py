@@ -36,6 +36,11 @@ from phase3_dynamic.r11_sparse_state_space import (
     stock_consistency_gate,
 )
 from phase3_dynamic.r13_priority_experiments import _r13_priority_experiment_specs
+from phase3_dynamic.r26_r10_teacher_fusion import _fit_metric_policy as _fit_r26_metric_policy
+from phase3_dynamic.r27_r19_r10_complementarity import (
+    _fit_metric_policy as _fit_r27_metric_policy,
+    _summary_row as _r27_summary_row,
+)
 
 
 def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
@@ -54,6 +59,70 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert any(spec["family"] == "r20_service_capacity_process" for spec in specs)
     assert any(spec["family"] == "r21_diagnosis_flow_guarded_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
+
+
+def test_r26_metric_policy_requires_worst_case_nonregression() -> None:
+    records = [
+        {
+            "metric_name": "alive_on_art",
+            "target_value": 10.0,
+            "r10_value": 9.0,
+            "carry_forward_value": 10.0,
+            "scale": 1.0,
+        },
+        {
+            "metric_name": "alive_on_art",
+            "target_value": 10.0,
+            "r10_value": 10.0,
+            "carry_forward_value": 12.0,
+            "scale": 1.0,
+        },
+    ]
+
+    policy = _fit_r26_metric_policy(records, "alive_on_art")
+
+    assert policy["kind"] == "identity"
+
+
+def test_r27_metric_policy_can_select_r19_when_train_safe() -> None:
+    records = [
+        {
+            "metric_name": "alive_on_art",
+            "target_value": 20.0,
+            "r10_value": 10.0,
+            "r19_value": 20.0,
+            "carry_forward_value": 12.0,
+            "scale": 1.0,
+        },
+        {
+            "metric_name": "alive_on_art",
+            "target_value": 30.0,
+            "r10_value": 15.0,
+            "r19_value": 30.0,
+            "carry_forward_value": 18.0,
+            "scale": 1.0,
+        },
+    ]
+
+    policy = _fit_r27_metric_policy(records, "alive_on_art")
+
+    assert policy["kind"] in {"r19", "r10_r19_blend"}
+
+
+def test_r27_summary_row_rejects_oracle_tie_with_r10() -> None:
+    row = _r27_summary_row(
+        row_scope="program_best_phase3",
+        source_row={
+            "horizon_years": 5,
+            "family": "r22_program_metric_coupled_process",
+            "r10_comparable_candidate_mean_mae": 0.18,
+            "r10_horizon_reference_mae": 0.13,
+        },
+    )
+
+    assert row["fusion_mean_mae"] == 0.13
+    assert row["status"] == "fail"
+    assert "oracle_not_strictly_better_than_matched_r10" in row["blockers"]
 
 
 def test_project_cascade_stock_row_enforces_nonnegative_cascade_cone() -> None:
