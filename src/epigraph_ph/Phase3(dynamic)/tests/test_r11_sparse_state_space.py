@@ -49,6 +49,10 @@ from phase3_dynamic.r29_strict_ledger_matched_r10_gate import (
     _is_program_lineage as _r29_is_program_lineage,
     _score_records as _r29_score_records,
 )
+from phase3_dynamic.r30_strict_r13_family_scan import (
+    _reference_scope_for_row_scope as _r30_reference_scope_for_row_scope,
+    _scan_r13_results as _r30_scan_r13_results,
+)
 
 
 def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
@@ -181,6 +185,33 @@ def test_r29_score_records_computes_strict_mapped_r10_reference() -> None:
     assert score["matched_r10_mean_mae"] == pytest.approx(0.15)
     assert score["carry_forward_mean_mae"] == pytest.approx(0.2)
     assert score["matched_r10_better_share"] == pytest.approx(0.5)
+
+
+def test_r30_reference_scope_maps_program_to_program_reference() -> None:
+    assert _r30_reference_scope_for_row_scope("program") == "program_mapped"
+    assert _r30_reference_scope_for_row_scope("all") == "all_mapped"
+
+
+def test_r30_scan_requires_all_required_horizons() -> None:
+    rows = _r30_scan_r13_results(
+        r13_report={
+            "results": [
+                {
+                    "experiment_id": "R13-X",
+                    "family": "candidate",
+                    "row_scope": "all",
+                    "decision": "diagnostic",
+                    "horizon_rows": [
+                        {"horizon_years": 1, "r10_comparable_candidate_mean_mae": 0.05},
+                    ],
+                }
+            ]
+        },
+        strict_reference={("all_mapped", 1): 0.1},
+    )
+
+    assert rows[0]["status"] == "fail"
+    assert "missing_required_horizons_h3_h5" in rows[0]["blockers"]
 
 
 def test_project_cascade_stock_row_enforces_nonnegative_cascade_cone() -> None:
