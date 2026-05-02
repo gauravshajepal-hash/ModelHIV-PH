@@ -135,6 +135,12 @@ R21_DIAGNOSIS_FLOW_VARIANTS: tuple[str, ...] = (
 )
 R22_PROGRAM_COUPLED_METRICS: tuple[str, ...] = R19_JOINT_SERVICE_METRICS
 R23_RECENT_ORIGIN_PROGRAM_METRICS: tuple[str, ...] = R22_PROGRAM_COUPLED_METRICS
+R25_PREDICTIVE_ENDPOINT_METRICS: tuple[str, ...] = R10_COMPARABLE_METRICS
+_R25_R19_REPLAY_CACHE: dict[
+    tuple[tuple[tuple[Any, ...], ...], tuple[tuple[Any, ...], ...]],
+    tuple[list[dict[str, Any]], dict[str, Any]],
+] = {}
+_R25_HEAD_CACHE: dict[tuple[tuple[tuple[Any, ...], ...], int], dict[str, Any]] = {}
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -9243,6 +9249,624 @@ def _r23_recent_origin_program_coupled_predictions(
     }
 
 
+def _r25_endpoint_record_key(metric_name: str, lead_years: int) -> str:
+    return _shape_record_key(metric_name, int(lead_years))
+
+
+def _r25_rows_cache_key(rows: list[dict[str, Any]]) -> tuple[tuple[Any, ...], ...]:
+    output: list[tuple[Any, ...]] = []
+    for row in sorted(rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        metric_values = tuple(
+            None if _finite_float(row.get(metric_name)) is None else round(float(row.get(metric_name)), 8)
+            for metric_name in R11_EVALUATION_METRICS
+        )
+        provenance_values = tuple(
+            str(_metric_provenance(row, metric_name).get("support_partition") or "")
+            for metric_name in R11_EVALUATION_METRICS
+        )
+        output.append((str(row.get("quarter") or ""), metric_values, provenance_values))
+    return tuple(output)
+
+
+def _r25_cached_r19_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    key = (_r25_rows_cache_key(train_rows), _r25_rows_cache_key(holdout_rows))
+    cached = _R25_R19_REPLAY_CACHE.get(key)
+    if cached is not None:
+        predictions, summary = cached
+        return [dict(row) for row in predictions], dict(summary)
+    predictions, summary = _r19_joint_service_predictions(train_rows, holdout_rows)
+    _R25_R19_REPLAY_CACHE[key] = ([dict(row) for row in predictions], dict(summary))
+    return [dict(row) for row in predictions], dict(summary)
+
+
+def _r25_endpoint_records(
+    train_rows: list[dict[str, Any]],
+    *,
+    max_horizon_years: int,
+) -> list[dict[str, Any]]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    if len(years) < 3:
+        return []
+    records: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions, _summary = _r25_cached_r19_predictions(internal_train, internal_holdout)
+        carry_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            lead_years = max(quarter_year(quarter) - int(train_end_year), 1)
+            base_row = base_by_quarter.get(quarter, {})
+            carry_row = carry_by_quarter.get(quarter, {})
+            for metric_name in R25_PREDICTIVE_ENDPOINT_METRICS:
+                target_value = _finite_float(holdout_row.get(metric_name))
+                base_value = _finite_float(base_row.get(metric_name))
+                carry_value = _finite_float(carry_row.get(metric_name))
+                if target_value is None or base_value is None or carry_value is None:
+                    continue
+                scale = _metric_scale(internal_train, metric_name)
+                records.append(
+                    {
+                        "train_end_year": int(train_end_year),
+                        "quarter": quarter,
+                        "metric_name": metric_name,
+                        "lead_years": int(lead_years),
+                        "target_value": float(max(target_value, 0.0)),
+                        "base_prediction": float(max(base_value, 0.0)),
+                        "carry_forward_prediction": float(max(carry_value, 0.0)),
+                        "scale": float(scale),
+                        "base_norm_error": abs(float(base_value) - float(target_value))
+                        / max(float(scale), float(np.finfo(np.float32).eps)),
+                        "log_residual": float(
+                            np.log1p(max(float(target_value), 0.0))
+                            - np.log1p(max(float(base_value), 0.0))
+                        ),
+                    }
+                )
+    return sorted(records, key=lambda row: (int(row["train_end_year"]), str(row["quarter"]), str(row["metric_name"])))
+
+
+def _r25_blend_alpha(records: list[dict[str, Any]]) -> float:
+    if not records:
+        return 0.0
+    alpha_records = [
+        {
+            "base_prediction": float(row["base_prediction"]),
+            "selected_prediction": float(row["carry_forward_prediction"]),
+            "carry_forward_prediction": float(row["carry_forward_prediction"]),
+            "target_value": float(row["target_value"]),
+        }
+        for row in records
+    ]
+    candidates = _r12_alpha_candidates(alpha_records)
+    if not candidates:
+        return 0.0
+    best_alpha = 0.0
+    best_error: float | None = None
+    for alpha in candidates:
+        errors = [
+            abs(
+                ((1.0 - float(alpha)) * float(row["base_prediction"]) + float(alpha) * float(row["carry_forward_prediction"]))
+                - float(row["target_value"])
+            )
+            / max(float(row["scale"]), float(np.finfo(np.float32).eps))
+            for row in records
+        ]
+        mean_error = float(np.mean(np.asarray(errors, dtype=np.float64)))
+        if best_error is None or mean_error < best_error - FLOAT_NONREGRESSION_TOLERANCE:
+            best_error = mean_error
+            best_alpha = float(alpha)
+        elif best_error is not None and abs(mean_error - best_error) <= FLOAT_NONREGRESSION_TOLERANCE:
+            if abs(float(alpha)) < abs(best_alpha):
+                best_alpha = float(alpha)
+    return float(min(max(best_alpha, 0.0), 1.0))
+
+
+def _r25_policy_error(record: dict[str, Any], *, policy: str, residual: float = 0.0, alpha: float = 0.0) -> float:
+    base_value = float(record.get("base_prediction") or 0.0)
+    carry_value = float(record.get("carry_forward_prediction") or 0.0)
+    target_value = float(record.get("target_value") or 0.0)
+    if policy == "log_residual":
+        predicted = float(max(np.expm1(np.log1p(max(base_value, 0.0)) + float(residual)), 0.0))
+    elif policy == "carry_blend":
+        predicted = float((1.0 - float(alpha)) * base_value + float(alpha) * carry_value)
+    elif policy == "identity":
+        predicted = base_value
+    else:
+        raise ValueError(f"Unknown R25 endpoint policy: {policy}")
+    return abs(predicted - target_value) / max(float(record.get("scale") or 0.0), float(np.finfo(np.float32).eps))
+
+
+def _fit_r25_predictive_endpoint_head_from_records(
+    records: list[dict[str, Any]],
+    *,
+    max_horizon_years: int,
+) -> dict[str, Any]:
+    if not records:
+        return {
+            "status": "not_estimable",
+            "reason": "no_train_origin_endpoint_records",
+            "max_horizon_years": int(max_horizon_years),
+        }
+    records_by_key: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        key = _r25_endpoint_record_key(str(record.get("metric_name") or ""), int(record.get("lead_years") or 0))
+        records_by_key[key].append(dict(record))
+
+    policy_by_key: dict[str, dict[str, Any]] = {}
+    policy_rows: list[dict[str, Any]] = []
+    walk_forward_rows: list[dict[str, Any]] = []
+    for key, key_records in sorted(records_by_key.items()):
+        sorted_key_records = sorted(key_records, key=lambda row: (int(row.get("train_end_year") or 0), str(row.get("quarter") or "")))
+        eval_by_policy: dict[str, list[float]] = {"identity": [], "log_residual": [], "carry_blend": []}
+        for record in sorted_key_records:
+            pool = [
+                dict(row)
+                for row in sorted_key_records
+                if int(row.get("train_end_year") or 0) < int(record.get("train_end_year") or 0)
+            ]
+            if not pool:
+                continue
+            residual = float(np.median(np.asarray([float(row.get("log_residual") or 0.0) for row in pool], dtype=np.float64)))
+            alpha = _r25_blend_alpha(pool)
+            row_errors = {
+                "identity": _r25_policy_error(record, policy="identity"),
+                "log_residual": _r25_policy_error(record, policy="log_residual", residual=residual),
+                "carry_blend": _r25_policy_error(record, policy="carry_blend", alpha=alpha),
+            }
+            for policy, error in row_errors.items():
+                eval_by_policy[policy].append(float(error))
+            walk_forward_rows.append(
+                {
+                    "key": key,
+                    "metric_name": str(record.get("metric_name") or ""),
+                    "lead_years": int(record.get("lead_years") or 0),
+                    "train_end_year": int(record.get("train_end_year") or 0),
+                    "quarter": str(record.get("quarter") or ""),
+                    "identity_norm_error": row_errors["identity"],
+                    "log_residual_norm_error": row_errors["log_residual"],
+                    "carry_blend_norm_error": row_errors["carry_blend"],
+                    "walk_forward_residual": residual,
+                    "walk_forward_alpha": alpha,
+                }
+            )
+        identity_values = eval_by_policy["identity"]
+        identity_mean = None if not identity_values else float(np.mean(np.asarray(identity_values, dtype=np.float64)))
+        identity_worst = None if not identity_values else float(np.max(np.asarray(identity_values, dtype=np.float64)))
+        selected_policy = "identity"
+        selected_mean = identity_mean
+        selected_worst = identity_worst
+        candidate_policy_rows: list[dict[str, Any]] = []
+        for policy in ("log_residual", "carry_blend"):
+            values = eval_by_policy[policy]
+            mean_error = None if not values else float(np.mean(np.asarray(values, dtype=np.float64)))
+            worst_error = None if not values else float(np.max(np.asarray(values, dtype=np.float64)))
+            eligible = (
+                mean_error is not None
+                and worst_error is not None
+                and identity_mean is not None
+                and identity_worst is not None
+                and mean_error < identity_mean
+                and worst_error <= identity_worst + FLOAT_NONREGRESSION_TOLERANCE
+            )
+            candidate_policy_rows.append(
+                {
+                    "policy": policy,
+                    "walk_forward_count": len(values),
+                    "mean_norm_error": mean_error,
+                    "worst_norm_error": worst_error,
+                    "mean_minus_identity": None if mean_error is None or identity_mean is None else float(mean_error - identity_mean),
+                    "worst_minus_identity": None if worst_error is None or identity_worst is None else float(worst_error - identity_worst),
+                    "eligible": eligible,
+                }
+            )
+            if eligible and (selected_mean is None or float(mean_error) < float(selected_mean)):
+                selected_policy = policy
+                selected_mean = mean_error
+                selected_worst = worst_error
+        residual_all = float(np.median(np.asarray([float(row.get("log_residual") or 0.0) for row in sorted_key_records], dtype=np.float64)))
+        alpha_all = _r25_blend_alpha(sorted_key_records)
+        if selected_policy != "identity":
+            policy_by_key[key] = {
+                "policy": selected_policy,
+                "log_residual": residual_all,
+                "alpha": alpha_all,
+            }
+        policy_rows.append(
+            {
+                "key": key,
+                "metric_name": _shape_record_metric(key),
+                "lead_years": _shape_record_lead(key),
+                "record_count": len(sorted_key_records),
+                "selected_policy": selected_policy,
+                "selected": selected_policy != "identity",
+                "identity_mean_norm_error": identity_mean,
+                "identity_worst_norm_error": identity_worst,
+                "selected_mean_norm_error": selected_mean,
+                "selected_worst_norm_error": selected_worst,
+                "final_log_residual": residual_all,
+                "final_alpha": alpha_all,
+                "candidate_policy_rows": candidate_policy_rows,
+            }
+        )
+    return {
+        "status": "completed",
+        "max_horizon_years": int(max_horizon_years),
+        "endpoint_record_count": len(records),
+        "walk_forward_record_count": len(walk_forward_rows),
+        "selected_policy_count": len(policy_by_key),
+        "policy_by_metric_lead": policy_by_key,
+        "policy_rows": policy_rows,
+        "walk_forward_rows": walk_forward_rows,
+        "contract": (
+            "R25 predictive endpoint head over the R10-comparable metric scope. Each metric/lead may use either "
+            "a train-origin log-residual correction or a data-derived convex blend back toward carry-forward. "
+            "A policy is selected only when previous-origin walk-forward evidence improves mean error without "
+            "worsening worst-case error versus the unmodified R19 endpoint."
+        ),
+    }
+
+
+def _fit_r25_predictive_endpoint_head(
+    train_rows: list[dict[str, Any]],
+    *,
+    max_horizon_years: int,
+) -> dict[str, Any]:
+    key = (_r25_rows_cache_key(train_rows), int(max_horizon_years))
+    cached = _R25_HEAD_CACHE.get(key)
+    if cached is not None:
+        return dict(cached)
+    head = _fit_r25_direct_endpoint_readout_head(train_rows, max_horizon_years=int(max_horizon_years))
+    _R25_HEAD_CACHE[key] = dict(head)
+    return dict(head)
+
+
+def _r25_direct_endpoint_metric_rows(train_rows: list[dict[str, Any]], metric_name: str) -> list[dict[str, Any]]:
+    return [
+        dict(row)
+        for row in sorted(train_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or "")))
+        if _finite_float(row.get(metric_name)) is not None and row.get("quarter")
+    ]
+
+
+def _fit_r25_direct_endpoint_metric_model(train_rows: list[dict[str, Any]], metric_name: str) -> dict[str, Any]:
+    metric_rows = _r25_direct_endpoint_metric_rows(train_rows, metric_name)
+    if not metric_rows:
+        return {
+            "status": "not_estimable",
+            "metric_name": metric_name,
+            "reason": "no_train_values",
+        }
+    ordinals = np.asarray([quarter_ordinal(str(row.get("quarter") or "")) for row in metric_rows], dtype=np.float64)
+    values = np.asarray([max(float(row.get(metric_name) or 0.0), 0.0) for row in metric_rows], dtype=np.float64)
+    deltas: list[float] = []
+    log_deltas: list[float] = []
+    for previous_row, current_row in zip(metric_rows[:-1], metric_rows[1:]):
+        step = quarter_ordinal(str(current_row.get("quarter") or "")) - quarter_ordinal(str(previous_row.get("quarter") or ""))
+        if step <= 0:
+            continue
+        previous_value = max(float(previous_row.get(metric_name) or 0.0), 0.0)
+        current_value = max(float(current_row.get(metric_name) or 0.0), 0.0)
+        deltas.append(float((current_value - previous_value) / float(step)))
+        log_deltas.append(float((np.log1p(current_value) - np.log1p(previous_value)) / float(step)))
+    median_delta = float(np.median(np.asarray(deltas, dtype=np.float64))) if deltas else 0.0
+    median_log_delta = float(np.median(np.asarray(log_deltas, dtype=np.float64))) if log_deltas else 0.0
+    if values.size >= 2 and float(np.var(ordinals)) > 0.0:
+        slope, intercept = np.polyfit(ordinals, values, deg=1)
+        log_slope, log_intercept = np.polyfit(ordinals, np.log1p(values), deg=1)
+    else:
+        slope = 0.0
+        intercept = float(values[-1])
+        log_slope = 0.0
+        log_intercept = float(np.log1p(values[-1]))
+    return {
+        "status": "completed",
+        "metric_name": metric_name,
+        "last_quarter": str(metric_rows[-1].get("quarter") or ""),
+        "last_value": float(values[-1]),
+        "median_quarterly_delta": median_delta,
+        "median_quarterly_log_delta": median_log_delta,
+        "ols_level_slope": float(slope),
+        "ols_level_intercept": float(intercept),
+        "ols_log_slope": float(log_slope),
+        "ols_log_intercept": float(log_intercept),
+        "train_value_count": int(values.size),
+        "delta_count": len(deltas),
+        "contract": "direct endpoint time-series head fitted only from train-window observed endpoint values",
+    }
+
+
+def _predict_r25_direct_endpoint(model: dict[str, Any], holdout_row: dict[str, Any], *, policy: str) -> float | None:
+    if str(model.get("status") or "") != "completed":
+        return None
+    last_quarter = str(model.get("last_quarter") or "")
+    if not last_quarter:
+        return None
+    holdout_ordinal = quarter_ordinal(str(holdout_row.get("quarter") or ""))
+    last_ordinal = quarter_ordinal(last_quarter)
+    step = max(holdout_ordinal - last_ordinal, 0)
+    last_value = max(float(model.get("last_value") or 0.0), 0.0)
+    if policy == "median_delta":
+        value = last_value + float(model.get("median_quarterly_delta") or 0.0) * float(step)
+    elif policy == "median_log_growth":
+        value = np.expm1(np.log1p(last_value) + float(model.get("median_quarterly_log_delta") or 0.0) * float(step))
+    elif policy == "ols_level":
+        value = float(model.get("ols_level_intercept") or 0.0) + float(model.get("ols_level_slope") or 0.0) * float(holdout_ordinal)
+    elif policy == "ols_log":
+        value = np.expm1(float(model.get("ols_log_intercept") or 0.0) + float(model.get("ols_log_slope") or 0.0) * float(holdout_ordinal))
+    else:
+        raise ValueError(f"Unknown R25 direct endpoint policy: {policy}")
+    return float(max(value, 0.0))
+
+
+def _fit_r25_direct_endpoint_readout_head(
+    train_rows: list[dict[str, Any]],
+    *,
+    max_horizon_years: int,
+) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    policies = ("median_delta", "median_log_growth", "ols_level", "ols_log")
+    if len(years) < 3:
+        return {
+            "status": "not_estimable",
+            "reason": "insufficient_train_years",
+            "max_horizon_years": int(max_horizon_years),
+            "selected_policy_by_metric_lead": {},
+        }
+    scores: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    carry_scores: dict[str, list[float]] = defaultdict(list)
+    policy_rows_raw: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        carry_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        models = {
+            metric_name: _fit_r25_direct_endpoint_metric_model(internal_train, metric_name)
+            for metric_name in R25_PREDICTIVE_ENDPOINT_METRICS
+        }
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            lead_years = max(quarter_year(quarter) - int(train_end_year), 1)
+            for metric_name in R25_PREDICTIVE_ENDPOINT_METRICS:
+                target_value = _finite_float(holdout_row.get(metric_name))
+                carry_value = _finite_float(carry_by_quarter.get(quarter, {}).get(metric_name))
+                if target_value is None or carry_value is None:
+                    continue
+                scale = max(_metric_scale(internal_train, metric_name), float(np.finfo(np.float32).eps))
+                key = _r25_endpoint_record_key(metric_name, int(lead_years))
+                carry_error = abs(float(carry_value) - float(target_value)) / scale
+                carry_scores[key].append(float(carry_error))
+                for policy in policies:
+                    predicted = _predict_r25_direct_endpoint(models[metric_name], holdout_row, policy=policy)
+                    if predicted is None:
+                        continue
+                    error = abs(float(predicted) - float(target_value)) / scale
+                    scores[key][policy].append(float(error))
+                    policy_rows_raw.append(
+                        {
+                            "key": key,
+                            "metric_name": metric_name,
+                            "lead_years": int(lead_years),
+                            "train_end_year": int(train_end_year),
+                            "quarter": quarter,
+                            "policy": policy,
+                            "norm_error": float(error),
+                            "carry_forward_norm_error": float(carry_error),
+                        }
+                    )
+    selected_policy_by_key: dict[str, str] = {}
+    policy_rows: list[dict[str, Any]] = []
+    for key in sorted(carry_scores):
+        carry_values = carry_scores[key]
+        if not carry_values:
+            continue
+        carry_mean = float(np.mean(np.asarray(carry_values, dtype=np.float64)))
+        carry_worst = float(np.max(np.asarray(carry_values, dtype=np.float64)))
+        selected_policy = "identity_r19"
+        selected_mean: float | None = None
+        selected_worst: float | None = None
+        candidate_rows: list[dict[str, Any]] = []
+        for policy in policies:
+            values = scores[key].get(policy, [])
+            mean_error = None if not values else float(np.mean(np.asarray(values, dtype=np.float64)))
+            worst_error = None if not values else float(np.max(np.asarray(values, dtype=np.float64)))
+            eligible = (
+                mean_error is not None
+                and worst_error is not None
+                and mean_error < carry_mean
+                and worst_error <= carry_worst + FLOAT_NONREGRESSION_TOLERANCE
+            )
+            candidate_rows.append(
+                {
+                    "policy": policy,
+                    "record_count": len(values),
+                    "mean_norm_error": mean_error,
+                    "worst_norm_error": worst_error,
+                    "mean_minus_carry": None if mean_error is None else float(mean_error - carry_mean),
+                    "worst_minus_carry": None if worst_error is None else float(worst_error - carry_worst),
+                    "eligible": eligible,
+                }
+            )
+            if eligible and (selected_mean is None or float(mean_error) < float(selected_mean)):
+                selected_policy = policy
+                selected_mean = mean_error
+                selected_worst = worst_error
+        if selected_policy != "identity_r19":
+            selected_policy_by_key[key] = selected_policy
+        policy_rows.append(
+            {
+                "key": key,
+                "metric_name": _shape_record_metric(key),
+                "lead_years": _shape_record_lead(key),
+                "selected_policy": selected_policy,
+                "selected": selected_policy != "identity_r19",
+                "carry_forward_mean_norm_error": carry_mean,
+                "carry_forward_worst_norm_error": carry_worst,
+                "selected_mean_norm_error": selected_mean,
+                "selected_worst_norm_error": selected_worst,
+                "candidate_policy_rows": candidate_rows,
+            }
+        )
+    final_models = {
+        metric_name: _fit_r25_direct_endpoint_metric_model(train_rows, metric_name)
+        for metric_name in R25_PREDICTIVE_ENDPOINT_METRICS
+    }
+    return {
+        "status": "completed" if policy_rows else "not_estimable",
+        "max_horizon_years": int(max_horizon_years),
+        "policy_family": "direct_endpoint_time_series",
+        "candidate_policies": list(policies),
+        "selected_policy_by_metric_lead": selected_policy_by_key,
+        "selected_policy_count": len(selected_policy_by_key),
+        "metric_models": final_models,
+        "policy_rows": policy_rows,
+        "walk_forward_rows": policy_rows_raw,
+        "contract": (
+            "R25 direct endpoint head selects metric/lead time-series policies from train-origin history only. "
+            "A policy can replace the R19 endpoint only if it beats last-observed carry-forward on internal mean "
+            "error without worsening internal worst-case error. Matched R10 is never used for selection."
+        ),
+    }
+
+
+def _apply_r25_predictive_endpoint_head(
+    base_prediction: dict[str, Any],
+    carry_prediction: dict[str, Any],
+    holdout_row: dict[str, Any],
+    head: dict[str, Any],
+    *,
+    train_end_year: int,
+) -> dict[str, Any]:
+    prediction = dict(base_prediction)
+    lead_years = max(quarter_year(str(holdout_row.get("quarter") or "")) - int(train_end_year), 1)
+    policies = dict(head.get("policy_by_metric_lead") or {})
+    direct_policies = dict(head.get("selected_policy_by_metric_lead") or {})
+    direct_models = dict(head.get("metric_models") or {})
+    for metric_name in R25_PREDICTIVE_ENDPOINT_METRICS:
+        policy = dict(policies.get(_r25_endpoint_record_key(metric_name, int(lead_years))) or {})
+        policy_name = str(policy.get("policy") or "identity")
+        base_value = _finite_float(prediction.get(metric_name))
+        direct_policy = str(direct_policies.get(_r25_endpoint_record_key(metric_name, int(lead_years))) or "")
+        if direct_policy:
+            direct_value = _predict_r25_direct_endpoint(
+                dict(direct_models.get(metric_name) or {}),
+                holdout_row,
+                policy=direct_policy,
+            )
+            if direct_value is not None:
+                prediction[metric_name] = float(direct_value)
+            continue
+        if base_value is None or policy_name == "identity":
+            continue
+        if policy_name == "log_residual":
+            residual = _finite_float(policy.get("log_residual"))
+            if residual is not None:
+                prediction[metric_name] = float(max(np.expm1(np.log1p(max(float(base_value), 0.0)) + float(residual)), 0.0))
+        elif policy_name == "carry_blend":
+            alpha = _finite_float(policy.get("alpha"))
+            carry_value = _finite_float(carry_prediction.get(metric_name))
+            if alpha is not None and carry_value is not None:
+                prediction[metric_name] = float((1.0 - float(alpha)) * float(base_value) + float(alpha) * float(carry_value))
+        else:
+            raise ValueError(f"Unknown R25 endpoint policy: {policy_name}")
+
+    prediction = _project_prediction_row(prediction)
+    vl_rate = _conditional_rate(base_prediction, "tested_for_viral_load", "alive_on_art")
+    suppression_rate = _conditional_rate(base_prediction, "virally_suppressed", "tested_for_viral_load")
+    art_value = _finite_float(prediction.get("alive_on_art"))
+    if art_value is not None and vl_rate is not None:
+        prediction["tested_for_viral_load"] = float(max(float(art_value), 0.0) * float(vl_rate))
+    vl_value = _finite_float(prediction.get("tested_for_viral_load"))
+    if vl_value is not None and suppression_rate is not None:
+        prediction["virally_suppressed"] = float(max(float(vl_value), 0.0) * float(suppression_rate))
+    return _project_prediction_row(prediction)
+
+
+def _r25_r19_predictive_endpoint_readout_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions = _carry_forward_prediction(train_rows, holdout_rows)
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    base_predictions = [
+        _apply_back_half_rate_process(base_prediction, holdout_row, back_half_process)
+        for base_prediction, holdout_row in zip(
+            base_predictions,
+            sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+        )
+    ]
+    base_summary = {
+        "family": "direct_endpoint_carry_rate_base",
+        "back_half_rate_process": back_half_process,
+        "reference_family": "r19_joint_service_cascade_process",
+        "contract": (
+            "R25 fast predictive track does not recursively refit R19. R19 remains the mechanistic reference; "
+            "the scored readout starts from carry-forward endpoints and train-selected direct endpoint policies, "
+            "then applies the same cascade/rate projection used by the Phase 3 gates."
+        ),
+    }
+    carry_predictions = _carry_forward_prediction(train_rows, holdout_rows)
+    head = _fit_r25_predictive_endpoint_head(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    train_years = [quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")]
+    train_end_year = max(train_years) if train_years else 0
+    predictions = [
+        _apply_r25_predictive_endpoint_head(
+            base_prediction,
+            carry_prediction,
+            holdout_row,
+            head,
+            train_end_year=int(train_end_year),
+        )
+        for base_prediction, carry_prediction, holdout_row in zip(
+            base_predictions,
+            carry_predictions,
+            sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+        )
+    ]
+    return predictions, {
+        "base_family": "direct_endpoint_carry_rate_base",
+        "mechanistic_reference_family": "r19_joint_service_cascade_process",
+        "base_summary": base_summary,
+        "predictive_endpoint_head": head,
+        "mutated_metrics": list(R25_PREDICTIVE_ENDPOINT_METRICS),
+        "contract": (
+            "R25 is a two-track diagnostic: the mechanistic reference is R19, while a predictive endpoint readout head "
+            "can adjust only diagnosed_plhiv, alive_on_art, and new_diagnosed_cases_period using train-origin "
+            "walk-forward evidence. VL and suppression are regenerated from train-derived conditional rates after the stock "
+            "cone projection. This is not a mechanistic transition-process claim."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -11175,6 +11799,18 @@ def _candidate_predictions(
                 "metrics can re-enter only where the latest train-contained validation window improves both mean "
                 "and worst-case error for the same metric/lead. It targets R22's h3 ART regression without using "
                 "holdout outcomes or R10 targets."
+            ),
+        }
+
+    if family == "r25_r19_predictive_endpoint_readout":
+        predictions, summary = _r25_r19_predictive_endpoint_readout_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R25 keeps R19 as the mechanistic reference but evaluates a separate train-origin predictive "
+                "endpoint readout over the R10-comparable metrics. It is a predictive track, not evidence that "
+                "the readout correction is a biological transition."
             ),
         }
 

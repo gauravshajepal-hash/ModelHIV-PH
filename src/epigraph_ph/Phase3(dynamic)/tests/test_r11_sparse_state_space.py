@@ -14,6 +14,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _fit_r19_lineage_rate_state_model,
     _fit_r20_service_capacity_transition,
     _fit_r21_diagnosis_flow_selector,
+    _fit_r25_predictive_endpoint_head_from_records,
     _r22_select_program_metric_policy,
     _fit_trajectory_shape_head,
     _build_r12_04_source_lineage_ablation_report,
@@ -487,6 +488,56 @@ def test_r22_program_metric_policy_requires_mean_and_worst_improvement() -> None
 
     assert failed["status"] == "failed_closed"
     assert failed["blend_weight"] == 0.0
+
+
+def test_r25_endpoint_head_selects_only_walk_forward_supported_policy() -> None:
+    records = [
+        {
+            "train_end_year": 2018,
+            "quarter": "2019-Q4",
+            "metric_name": "alive_on_art",
+            "lead_years": 1,
+            "target_value": 121.0,
+            "base_prediction": 100.0,
+            "carry_forward_prediction": 121.0,
+            "scale": 100.0,
+            "base_norm_error": 0.21,
+            "log_residual": 0.19062035960864987,
+        },
+        {
+            "train_end_year": 2019,
+            "quarter": "2020-Q4",
+            "metric_name": "alive_on_art",
+            "lead_years": 1,
+            "target_value": 121.0,
+            "base_prediction": 100.0,
+            "carry_forward_prediction": 121.0,
+            "scale": 100.0,
+            "base_norm_error": 0.21,
+            "log_residual": 0.19062035960864987,
+        },
+        {
+            "train_end_year": 2020,
+            "quarter": "2021-Q4",
+            "metric_name": "alive_on_art",
+            "lead_years": 1,
+            "target_value": 121.0,
+            "base_prediction": 100.0,
+            "carry_forward_prediction": 121.0,
+            "scale": 100.0,
+            "base_norm_error": 0.21,
+            "log_residual": 0.19062035960864987,
+        },
+    ]
+
+    head = _fit_r25_predictive_endpoint_head_from_records(records, max_horizon_years=1)
+
+    assert head["status"] == "completed"
+    assert head["selected_policy_count"] == 1
+    policy = head["policy_by_metric_lead"]["alive_on_art|lead1"]
+    assert policy["policy"] in {"log_residual", "carry_blend"}
+    row = next(item for item in head["policy_rows"] if item["key"] == "alive_on_art|lead1")
+    assert row["selected"] is True
 
 
 def test_back_half_conditional_rates_preserve_front_half_and_cascade() -> None:
