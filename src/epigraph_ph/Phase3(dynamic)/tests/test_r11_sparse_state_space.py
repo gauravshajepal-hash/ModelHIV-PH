@@ -53,6 +53,10 @@ from phase3_dynamic.r30_strict_r13_family_scan import (
     _reference_scope_for_row_scope as _r30_reference_scope_for_row_scope,
     _scan_r13_results as _r30_scan_r13_results,
 )
+from phase3_dynamic.r31_strict_policy_probe import (
+    _median_velocity as _r31_median_velocity,
+    _positive_velocity as _r31_positive_velocity,
+)
 
 
 def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
@@ -212,6 +216,18 @@ def test_r30_scan_requires_all_required_horizons() -> None:
 
     assert rows[0]["status"] == "fail"
     assert "missing_required_horizons_h3_h5" in rows[0]["blockers"]
+
+
+def test_r31_velocity_helpers_are_train_derived() -> None:
+    history = [
+        (1, 2020, 10.0),
+        (2, 2020, 12.0),
+        (3, 2020, 11.0),
+        (4, 2020, 15.0),
+    ]
+
+    assert _r31_positive_velocity(history) == pytest.approx(3.0)
+    assert _r31_median_velocity(history) == pytest.approx(2.0)
 
 
 def test_project_cascade_stock_row_enforces_nonnegative_cascade_cone() -> None:
