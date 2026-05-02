@@ -1,0 +1,193 @@
+{
+  "active_reference_after_audit": "r19_joint_service_cascade_process",
+  "all_support_r19_rows": [
+    {
+      "candidate_mean_mae": 0.20988971808626875,
+      "candidate_minus_r10_reference_mae": -0.020574512909021972,
+      "carry_forward_mean_mae": 0.28697436438140306,
+      "family": "r19_joint_service_cascade_process",
+      "horizon_years": 1,
+      "r10_comparable_candidate_mean_mae": 0.07472894582132304,
+      "r10_horizon_reference_mae": 0.09530345873034501,
+      "split_count": 7
+    },
+    {
+      "candidate_mean_mae": 0.31307311828503964,
+      "candidate_minus_r10_reference_mae": -0.0036820254426155885,
+      "carry_forward_mean_mae": 0.5278718299428302,
+      "family": "r19_joint_service_cascade_process",
+      "horizon_years": 3,
+      "r10_comparable_candidate_mean_mae": 0.11196855677854647,
+      "r10_horizon_reference_mae": 0.11565058222116206,
+      "split_count": 7
+    },
+    {
+      "candidate_mean_mae": 0.48087914274828675,
+      "candidate_minus_r10_reference_mae": 0.00763302663651344,
+      "carry_forward_mean_mae": 0.8387643744603296,
+      "family": "r19_joint_service_cascade_process",
+      "horizon_years": 5,
+      "r10_comparable_candidate_mean_mae": 0.13705411438672369,
+      "r10_horizon_reference_mae": 0.12942108775021025,
+      "split_count": 7
+    }
+  ],
+  "artifact_paths": {
+    "dashboard_png": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r24_matched_r10_fairness_audit_dashboard_20260502.png",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r24_matched_r10_fairness_audit_20260502.md",
+    "results_json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r24_matched_r10_fairness_audit_results_20260502.json"
+  },
+  "audit_decision": "do_not_promote_r24_as_model",
+  "blockers": [
+    "matched_r10_endpoint_readout_advantage",
+    "program_route_h3_h5_still_fail_r10",
+    "full_sentinel_h5_still_fails_r10"
+  ],
+  "full_sentinel_h5_candidate_minus_r10": 0.00763302663651344,
+  "generated_at": "2026-05-02",
+  "matched_r10_reference_by_horizon": {
+    "1": {
+      "horizon_years": 1,
+      "quarterly_window": {
+        "end_year": 2025,
+        "horizon_years": 1,
+        "min_train_years": 5,
+        "start_year": 2010
+      },
+      "reference_carry_forward_mean_mae": 0.14136962808267026,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "reference_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "reference_quarterly_mean_mae": 0.09530345873034501,
+      "reference_quarterly_worst_mae": 0.18680338262390253,
+      "reference_selection_policy": "best_executed_EXP_R10_family_candidate_within_same_horizon_dense_contract"
+    },
+    "3": {
+      "horizon_years": 3,
+      "quarterly_window": {
+        "end_year": 2025,
+        "horizon_years": 3,
+        "min_train_years": 5,
+        "start_year": 2010
+      },
+      "reference_carry_forward_mean_mae": 0.18967697114890783,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "reference_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "reference_quarterly_mean_mae": 0.11565058222116206,
+      "reference_quarterly_worst_mae": 0.24985317795262668,
+      "reference_selection_policy": "best_executed_EXP_R10_family_candidate_within_same_horizon_dense_contract"
+    },
+    "5": {
+      "horizon_years": 5,
+      "quarterly_window": {
+        "end_year": 2025,
+        "horizon_years": 5,
+        "min_train_years": 5,
+        "start_year": 2010
+      },
+      "reference_carry_forward_mean_mae": 0.2295200445523079,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "reference_metric_scope": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "new_diagnosed_cases_period"
+      ],
+      "reference_quarterly_mean_mae": 0.12942108775021025,
+      "reference_quarterly_worst_mae": 0.2895577296124719,
+      "reference_selection_policy": "best_executed_EXP_R10_family_candidate_within_same_horizon_dense_contract"
+    }
+  },
+  "next_branch_contract": "If matched-R10 superiority remains required, build a transparently predictive endpoint readout head on top of the conserved R19 state model; keep the mechanistic and predictive claims separate.",
+  "official_annual_gate": {
+    "annual_max_conservation_residual": 2.7853275241795927e-11,
+    "annual_status": "pass",
+    "candidate_family": "r19_joint_service_cascade_process",
+    "candidate_mean_mae": 0.3966555315147762,
+    "carry_forward_mean_mae": 0.5924720011390459,
+    "decision": "promote_for_next_wave",
+    "experiment_id": "R13-001",
+    "stock_cone_violation_count": 0
+  },
+  "program_route_rows": [
+    {
+      "candidate_mean_mae": 0.37406991906028547,
+      "candidate_minus_r10_reference_mae": 0.027346536164196134,
+      "carry_forward_mean_mae": 0.5365953883119511,
+      "family": "r19_joint_service_cascade_process",
+      "horizon_years": 3,
+      "r10_comparable_candidate_mean_mae": 0.1429971183853582,
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "candidate_mean_mae": 0.3597548704105189,
+      "candidate_minus_r10_reference_mae": 0.032484161322215155,
+      "carry_forward_mean_mae": 0.5365953883119511,
+      "family": "r22_program_metric_coupled_process",
+      "horizon_years": 3,
+      "r10_comparable_candidate_mean_mae": 0.14813474354337722,
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "candidate_mean_mae": 0.3742078591384579,
+      "candidate_minus_r10_reference_mae": 0.0269537976517924,
+      "carry_forward_mean_mae": 0.5365953883119511,
+      "family": "r23_recent_origin_program_coupled_process",
+      "horizon_years": 3,
+      "r10_comparable_candidate_mean_mae": 0.14260437987295446,
+      "r10_horizon_reference_mae": 0.11565058222116206
+    },
+    {
+      "candidate_mean_mae": 0.6409292968558129,
+      "candidate_minus_r10_reference_mae": 0.05559054802003127,
+      "carry_forward_mean_mae": 0.9671842817967539,
+      "family": "r19_joint_service_cascade_process",
+      "horizon_years": 5,
+      "r10_comparable_candidate_mean_mae": 0.18501163577024152,
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "candidate_mean_mae": 0.6135970695404589,
+      "candidate_minus_r10_reference_mae": 0.050278975561881184,
+      "carry_forward_mean_mae": 0.9671842817967539,
+      "family": "r22_program_metric_coupled_process",
+      "horizon_years": 5,
+      "r10_comparable_candidate_mean_mae": 0.17970006331209143,
+      "r10_horizon_reference_mae": 0.12942108775021025
+    },
+    {
+      "candidate_mean_mae": 0.6410672369339853,
+      "candidate_minus_r10_reference_mae": 0.05519780950762754,
+      "carry_forward_mean_mae": 0.9671842817967539,
+      "family": "r23_recent_origin_program_coupled_process",
+      "horizon_years": 5,
+      "r10_comparable_candidate_mean_mae": 0.18461889725783778,
+      "r10_horizon_reference_mae": 0.12942108775021025
+    }
+  ],
+  "r22_blockers": [
+    "matched_r10_gate_failed",
+    "h3_r10_scope_regressed_vs_r19"
+  ],
+  "r22_decision": "keep_as_diagnostic",
+  "r23_blockers": [
+    "matched_r10_gate_failed",
+    "full_program_route_not_improved_vs_r19"
+  ],
+  "r23_decision": "keep_as_diagnostic",
+  "schema_version": "phase3_dynamic.r24_matched_r10_fairness_audit.v1",
+  "source_artifacts": {
+    "matched_r10_horizon_replay": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis/r10_horizon_matched_replay_report.json",
+    "r10_winner_documentation": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/R10_WINNER_DOCUMENTATION.md",
+    "r13_final_results": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r19-joint-service-r13-queue-20260502-final-v3/analysis/r13_priority_experiment_results.json",
+    "r22_program_diagnostic": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r22_program_metric_coupled_diagnostic_results_20260502.json",
+    "r23_program_diagnostic": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r23_recent_origin_program_coupling_diagnostic_results_20260502.json"
+  },
+  "worst_program_candidate_minus_r10": 0.05559054802003127
+}
