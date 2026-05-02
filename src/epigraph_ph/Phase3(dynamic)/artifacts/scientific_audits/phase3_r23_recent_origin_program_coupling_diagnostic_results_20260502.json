@@ -1,0 +1,108 @@
+{
+  "schema_version": "phase3_dynamic.r23_recent_origin_program_coupling_diagnostic.v1",
+  "run_context": "direct exact R13-006 program-route replay using official rolling_origin_splits, start_year=2010, end_year=2025, min_train_years=5",
+  "families": {
+    "r19_joint_service_cascade_process": {
+      "horizon_rows": [
+        {
+          "horizon_years": 3,
+          "candidate_mean_mae": 0.37406991906028547,
+          "carry_forward_mean_mae": 0.5365953883119511,
+          "r10_comparable_candidate_mean_mae": 0.1429971183853582,
+          "r10_horizon_reference_mae": 0.11565058222116206
+        },
+        {
+          "horizon_years": 5,
+          "candidate_mean_mae": 0.6409292968558129,
+          "carry_forward_mean_mae": 0.9671842817967539,
+          "r10_comparable_candidate_mean_mae": 0.18501163577024152,
+          "r10_horizon_reference_mae": 0.12942108775021025
+        }
+      ]
+    },
+    "r22_program_metric_coupled_process": {
+      "horizon_rows": [
+        {
+          "horizon_years": 3,
+          "candidate_mean_mae": 0.3597548704105189,
+          "carry_forward_mean_mae": 0.5365953883119511,
+          "r10_comparable_candidate_mean_mae": 0.14813474354337722,
+          "r10_horizon_reference_mae": 0.11565058222116206
+        },
+        {
+          "horizon_years": 5,
+          "candidate_mean_mae": 0.6135970695404589,
+          "carry_forward_mean_mae": 0.9671842817967539,
+          "r10_comparable_candidate_mean_mae": 0.17970006331209143,
+          "r10_horizon_reference_mae": 0.12942108775021025
+        }
+      ]
+    },
+    "r23_recent_origin_program_coupled_process": {
+      "horizon_rows": [
+        {
+          "horizon_years": 3,
+          "candidate_mean_mae": 0.3742078591384579,
+          "carry_forward_mean_mae": 0.5365953883119511,
+          "r10_comparable_candidate_mean_mae": 0.14260437987295446,
+          "r10_horizon_reference_mae": 0.11565058222116206
+        },
+        {
+          "horizon_years": 5,
+          "candidate_mean_mae": 0.6410672369339853,
+          "carry_forward_mean_mae": 0.9671842817967539,
+          "r10_comparable_candidate_mean_mae": 0.18461889725783778,
+          "r10_horizon_reference_mae": 0.12942108775021025
+        }
+      ],
+      "metric_rows": [
+        {
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "candidate_mean_norm_error": 0.13188016821588214
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "candidate_mean_norm_error": 0.6161094590849227
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "candidate_mean_norm_error": 0.677438099899199
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "candidate_mean_norm_error": 0.15332859153002668
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "candidate_mean_norm_error": 0.15684964860761283
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "candidate_mean_norm_error": 1.0907612044863932
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "candidate_mean_norm_error": 1.2124741749583994
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "candidate_mean_norm_error": 0.21238814590806268
+        }
+      ]
+    }
+  },
+  "decision": "keep_as_diagnostic",
+  "blockers": [
+    "matched_r10_gate_failed",
+    "full_program_route_not_improved_vs_r19"
+  ],
+  "interpretation": "Lead-aware recent-origin gating prevents R22 h3 ART regression and slightly improves R10-scope versus R19, but it loses the full-service gain and remains far from matched R10."
+}

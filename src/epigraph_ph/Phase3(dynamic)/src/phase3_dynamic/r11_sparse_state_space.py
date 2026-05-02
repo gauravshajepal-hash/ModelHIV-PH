@@ -134,6 +134,7 @@ R21_DIAGNOSIS_FLOW_VARIANTS: tuple[str, ...] = (
     "lagged_flow",
 )
 R22_PROGRAM_COUPLED_METRICS: tuple[str, ...] = R19_JOINT_SERVICE_METRICS
+R23_RECENT_ORIGIN_PROGRAM_METRICS: tuple[str, ...] = R22_PROGRAM_COUPLED_METRICS
 R12_HORIZON_EVIDENCE_ROUTES: tuple[dict[str, Any], ...] = (
     {
         "route_id": "program_nowcast",
@@ -9091,6 +9092,157 @@ def _r22_program_metric_coupled_predictions(
     }
 
 
+def _fit_r23_recent_origin_program_policy(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    if len(years) < 2:
+        return {
+            "status": "not_estimable",
+            "reason": "insufficient_train_years",
+            "policy_by_key": {},
+            "record_count": 0,
+        }
+    last_train_year = int(max(years))
+    first_train_year = int(min(years))
+    records: list[dict[str, Any]] = []
+    origin_rows: list[dict[str, Any]] = []
+    for lead_years in range(1, int(max_horizon_years) + 1):
+        internal_train_end = int(last_train_year - int(lead_years))
+        if internal_train_end < first_train_year:
+            continue
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= internal_train_end
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if internal_train_end < quarter_year(str(row.get("quarter") or "")) <= last_train_year
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        base_predictions, _base_summary = _r19_joint_service_predictions(internal_train, internal_holdout)
+        coupled_predictions, _coupled_summary = _r16_support_cadence_stock_predictions(internal_train, internal_holdout)
+        carry_predictions = _carry_forward_prediction(internal_train, internal_holdout)
+        base_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in base_predictions}
+        coupled_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in coupled_predictions}
+        carry_by_quarter = {str(row.get("quarter") or ""): dict(row) for row in carry_predictions}
+        origin_record_count = 0
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            actual_lead = max(quarter_year(quarter) - int(internal_train_end), 1)
+            for metric_name in R23_RECENT_ORIGIN_PROGRAM_METRICS:
+                if not _r12_metric_matches_lineage_ids(holdout_row, metric_name, R12_PROGRAM_LINEAGE_IDS):
+                    continue
+                target_value = _finite_float(holdout_row.get(metric_name))
+                base_value = _finite_float(base_by_quarter.get(quarter, {}).get(metric_name))
+                coupled_value = _finite_float(coupled_by_quarter.get(quarter, {}).get(metric_name))
+                carry_value = _finite_float(carry_by_quarter.get(quarter, {}).get(metric_name))
+                if target_value is None or base_value is None or coupled_value is None or carry_value is None:
+                    continue
+                records.append(
+                    {
+                        "origin_year": int(internal_train_end),
+                        "quarter": quarter,
+                        "lead_years": int(actual_lead),
+                        "metric_name": metric_name,
+                        "policy_key": f"{metric_name}|lead{int(actual_lead)}",
+                        "metric_global_key": f"{metric_name}|global",
+                        "base_prediction": float(base_value),
+                        "selected_prediction": float(coupled_value),
+                        "carry_forward_prediction": float(carry_value),
+                        "target_value": float(target_value),
+                        "scale": float(_metric_scale(internal_train, metric_name)),
+                    }
+                )
+                origin_record_count += 1
+        origin_rows.append(
+            {
+                "requested_lead_years": int(lead_years),
+                "internal_train_end_year": int(internal_train_end),
+                "internal_holdout_years": sorted(
+                    {
+                        quarter_year(str(row.get("quarter") or ""))
+                        for row in internal_holdout
+                        if row.get("quarter")
+                    }
+                ),
+                "record_count": int(origin_record_count),
+            }
+        )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "reason": "no_recent_origin_program_records",
+            "policy_by_key": {},
+            "record_count": 0,
+            "origin_rows": origin_rows,
+        }
+    policy_keys = sorted({str(record.get("policy_key") or "") for record in records if record.get("policy_key")})
+    metric_global_keys = sorted({str(record.get("metric_global_key") or "") for record in records if record.get("metric_global_key")})
+    policies = [
+        _r22_select_program_metric_policy(records, policy_key=policy_key)
+        for policy_key in [*metric_global_keys, *policy_keys]
+    ]
+    policy_by_key = {
+        str(policy.get("policy_key") or ""): {
+            "blend_weight": float(policy.get("blend_weight") or 0.0),
+            "status": str(policy.get("status") or ""),
+        }
+        for policy in policies
+    }
+    moved = any(float(policy.get("blend_weight") or 0.0) > 0.0 for policy in policy_by_key.values())
+    return {
+        "status": "completed" if moved else "failed_closed",
+        "reference_family": "r19_joint_service_cascade_process",
+        "coupled_family": "r16_support_cadence_stock_process",
+        "record_count": len(records),
+        "policy_by_key": policy_by_key,
+        "metric_global_policies": [policy for policy in policies if str(policy.get("policy_key") or "").endswith("|global")],
+        "metric_lead_policies": [policy for policy in policies if "|lead" in str(policy.get("policy_key") or "")],
+        "origin_rows": origin_rows,
+        "contract": (
+            "R23 uses only the most recent train-contained internal origin for each lead. R16 program metrics can "
+            "replace R19 only when that recent internal validation improves both mean and worst-case error for the "
+            "same metric/lead."
+        ),
+    }
+
+
+def _r23_recent_origin_program_coupled_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r19_joint_service_predictions(train_rows, holdout_rows)
+    coupled_predictions, coupled_summary = _r16_support_cadence_stock_predictions(train_rows, holdout_rows)
+    policy = _fit_r23_recent_origin_program_policy(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    train_years = [quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")]
+    train_end_year = max(train_years) if train_years else 0
+    predictions, mutation_rows = _apply_r22_program_metric_coupled_selector(
+        holdout_rows,
+        base_predictions,
+        coupled_predictions,
+        selector=policy,
+        train_end_year=int(train_end_year),
+    )
+    return predictions, {
+        "base_family": "r19_joint_service_cascade_process",
+        "coupled_family": "r16_support_cadence_stock_process",
+        "base_summary": base_summary,
+        "coupled_summary": coupled_summary,
+        "recent_origin_program_policy": policy,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R23 starts from R19 and uses a recent-origin train-only policy to restore R16 program metrics only "
+            "where the latest internal validation window improves both mean and worst-case error for the same "
+            "metric/lead. It is designed to prevent R22's h3 ART regression while preserving service gains."
+        ),
+    }
+
+
 def _fit_r12_program_nowcast_selector(train_rows: list[dict[str, Any]], holdout_rows: list[dict[str, Any]]) -> dict[str, Any]:
     program_train_rows = _r12_program_rows(train_rows)
     if not program_train_rows:
@@ -11010,6 +11162,19 @@ def _candidate_predictions(
                 "program rows, while the earlier R16 program-state backbone supplies DOH program-lineage ART, "
                 "VL, suppression, and diagnosis-flow metrics. This is a fast process-level diagnostic, not a "
                 "holdout-tuned readout correction."
+            ),
+        }
+
+    if family == "r23_recent_origin_program_coupled_process":
+        predictions, summary = _r23_recent_origin_program_coupled_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R23 is a recent-origin process-family coupling branch: R19 remains the base, and R16 program "
+                "metrics can re-enter only where the latest train-contained validation window improves both mean "
+                "and worst-case error for the same metric/lead. It targets R22's h3 ART regression without using "
+                "holdout outcomes or R10 targets."
             ),
         }
 
