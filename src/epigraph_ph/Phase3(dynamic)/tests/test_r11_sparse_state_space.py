@@ -14,6 +14,7 @@ from phase3_dynamic.r11_sparse_state_space import (
     _fit_r19_lineage_rate_state_model,
     _fit_r20_service_capacity_transition,
     _fit_r21_diagnosis_flow_selector,
+    _r22_select_program_metric_policy,
     _fit_trajectory_shape_head,
     _build_r12_04_source_lineage_ablation_report,
     _build_r12_05_lineage_stratified_contract_report,
@@ -48,6 +49,7 @@ def test_r13_priority_experiment_specs_are_ordered_and_claim_scoped() -> None:
     assert any(spec["family"] == "official_annual_challenge_gate" for spec in specs)
     assert any(spec["family"] == "r14_two_factor_program_process" for spec in specs)
     assert any(spec["family"] == "r19_joint_service_cascade_process" for spec in specs)
+    assert any(spec["family"] == "r22_program_metric_coupled_process" for spec in specs)
     assert any(spec["family"] == "r20_service_capacity_process" for spec in specs)
     assert any(spec["family"] == "r21_diagnosis_flow_guarded_process" for spec in specs)
     assert any(spec.get("phase2_status") == "locked_until_source_stable" for spec in specs)
@@ -433,6 +435,58 @@ def test_r21_diagnosis_flow_selector_is_lead_aware_and_guarded() -> None:
     assert selector["reference_family"] == "r19_joint_service_cascade_process"
     assert selector["record_count"] > 0
     assert "global" in selector["policy_by_lead"]
+
+
+def test_r22_program_metric_policy_requires_mean_and_worst_improvement() -> None:
+    improving_records = [
+        {
+            "policy_key": "alive_on_art|lead3",
+            "metric_global_key": "alive_on_art|global",
+            "base_prediction": 10.0,
+            "selected_prediction": 12.0,
+            "carry_forward_prediction": 10.0,
+            "target_value": 12.0,
+            "scale": 1.0,
+        },
+        {
+            "policy_key": "alive_on_art|lead3",
+            "metric_global_key": "alive_on_art|global",
+            "base_prediction": 14.0,
+            "selected_prediction": 13.0,
+            "carry_forward_prediction": 14.0,
+            "target_value": 13.0,
+            "scale": 1.0,
+        },
+    ]
+    selected = _r22_select_program_metric_policy(improving_records, policy_key="alive_on_art|lead3")
+
+    assert selected["status"] == "completed"
+    assert selected["blend_weight"] > 0.0
+
+    mixed_records = [
+        {
+            "policy_key": "alive_on_art|lead5",
+            "metric_global_key": "alive_on_art|global",
+            "base_prediction": 10.0,
+            "selected_prediction": 12.0,
+            "carry_forward_prediction": 10.0,
+            "target_value": 12.0,
+            "scale": 1.0,
+        },
+        {
+            "policy_key": "alive_on_art|lead5",
+            "metric_global_key": "alive_on_art|global",
+            "base_prediction": 10.0,
+            "selected_prediction": 20.0,
+            "carry_forward_prediction": 10.0,
+            "target_value": 10.0,
+            "scale": 1.0,
+        },
+    ]
+    failed = _r22_select_program_metric_policy(mixed_records, policy_key="alive_on_art|lead5")
+
+    assert failed["status"] == "failed_closed"
+    assert failed["blend_weight"] == 0.0
 
 
 def test_back_half_conditional_rates_preserve_front_half_and_cascade() -> None:
