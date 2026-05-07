@@ -300,6 +300,10 @@ from phase3_dynamic.r85_annual_ledger_forecast_grid import (
     _gate as _r85_gate,
     _quarter_grid as _r85_quarter_grid,
 )
+from phase3_dynamic.r86_annual_calibrated_forecast_grid_ledger import (
+    _distribute_annual_total_by_quarter_shape as _r86_distribute_annual_total_by_quarter_shape,
+    _gate as _r86_gate,
+)
 from phase3_dynamic.model import _apply_observation_model as _phase3_apply_observation_model
 from phase3_dynamic.model import _simulate_sequence as _phase3_simulate_sequence
 
@@ -5729,4 +5733,71 @@ def test_r85_gate_promotes_complete_better_forecast_grid() -> None:
     gate = _r85_gate(score_rows=score_rows, family_rows=family_rows, target_rows=[{"year": 2024}])
 
     assert gate["status"] == "annual_ledger_forecast_grid_pass"
+    assert gate["blockers"] == []
+
+
+def test_r86_distributes_annual_total_by_dynamic_quarter_shape() -> None:
+    rows = [
+        {"quarter": "2024-Q1", "incident_infections_period": 1.0},
+        {"quarter": "2024-Q2", "incident_infections_period": 1.0},
+        {"quarter": "2024-Q3", "incident_infections_period": 2.0},
+        {"quarter": "2024-Q4", "incident_infections_period": 6.0},
+    ]
+
+    distribution = _r86_distribute_annual_total_by_quarter_shape(
+        rows,
+        annual_total=100.0,
+        quarterly_metric="incident_infections_period",
+    )
+
+    assert distribution["2024-Q1"] == 10.0
+    assert distribution["2024-Q2"] == 10.0
+    assert distribution["2024-Q3"] == 20.0
+    assert distribution["2024-Q4"] == 60.0
+    assert sum(value for key, value in distribution.items() if key.startswith("2024-")) == 100.0
+    assert distribution["_shape_status"] == "base_dynamic_quarter_shape"
+
+
+def test_r86_distributes_annual_total_uniformly_when_shape_is_zero() -> None:
+    rows = [
+        {"quarter": "2024-Q1", "aids_deaths_period": 0.0},
+        {"quarter": "2024-Q2", "aids_deaths_period": 0.0},
+        {"quarter": "2024-Q3", "aids_deaths_period": 0.0},
+        {"quarter": "2024-Q4", "aids_deaths_period": 0.0},
+    ]
+
+    distribution = _r86_distribute_annual_total_by_quarter_shape(
+        rows,
+        annual_total=8.0,
+        quarterly_metric="aids_deaths_period",
+    )
+
+    assert [distribution[f"2024-Q{quarter}"] for quarter in range(1, 5)] == [2.0, 2.0, 2.0, 2.0]
+    assert distribution["_shape_status"] == "uniform_no_positive_quarter_shape"
+
+
+def test_r86_gate_promotes_complete_better_annual_calibrated_ledger() -> None:
+    score_rows = []
+    for metric_name in ("annual_new_infections", "annual_aids_deaths", "estimated_plhiv"):
+        score_rows.append(
+            {
+                "metric_name": metric_name,
+                "candidate_norm_error": 0.1,
+                "carry_forward_norm_error": 0.2,
+                "observation_role": "validation_only",
+                "allowed_use": "validation_only",
+            }
+        )
+    family_rows = [
+        {
+            "candidate_mean_norm_error": 0.1,
+            "carry_forward_mean_norm_error": 0.2,
+            "candidate_interval_coverage": 1.0,
+            "carry_forward_interval_coverage": 1.0,
+        }
+    ]
+
+    gate = _r86_gate(score_rows=score_rows, family_rows=family_rows, target_rows=[{"year": 2024}])
+
+    assert gate["status"] == "annual_calibrated_forecast_grid_ledger_pass"
     assert gate["blockers"] == []

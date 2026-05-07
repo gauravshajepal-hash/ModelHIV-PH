@@ -292,6 +292,14 @@ R85_DEFAULT_REPORT = (
     / "analysis"
     / "r85_annual_ledger_forecast_grid_report.json"
 )
+R86_DEFAULT_REPORT = (
+    sandbox_repo_root()
+    / "artifacts"
+    / "runs"
+    / "p3d-r86-annual-calibrated-forecast-grid-ledger-20260507-s00"
+    / "analysis"
+    / "r86_annual_calibrated_forecast_grid_ledger_report.json"
+)
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1285,6 +1293,39 @@ def _annual_ledger_forecast_grid_claim(r85: dict[str, Any], path: Path) -> dict[
     }
 
 
+def _annual_calibrated_forecast_grid_ledger_claim(r86: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(r86.get("annual_calibrated_forecast_grid_ledger_gate") or {})
+    status = str(r86.get("status") or gate.get("status") or "")
+    if status == "annual_calibrated_forecast_grid_ledger_pass":
+        claim_status = "scoped_annual_model_win"
+        allowed = (
+            "The complete quarterly ledger with train-origin annual weak-measurement calibration beats carry-forward "
+            "on held-out annual incidence, AIDS deaths, and PLHIV targets without using holdout annual targets as training truth."
+        )
+    elif status:
+        claim_status = "diagnostic_only"
+        allowed = "The annual-calibrated forecast-grid ledger is evaluable, but it is not promotion-grade against carry-forward and interval gates."
+    else:
+        claim_status = "blocked"
+        allowed = "Annual-calibrated forecast-grid ledger artifact is missing or not evaluable."
+    return {
+        "claim_id": "phase3_r86_annual_calibrated_forecast_grid_ledger",
+        "claim_scope": "train_origin_annual_calibration_on_complete_quarterly_ledger",
+        "claim_status": claim_status,
+        "model_family": "annual_calibrated_conserved_forecast_grid_ledger",
+        "primary_gate": status,
+        "blockers": list(gate.get("blockers") or ([] if claim_status == "scoped_annual_model_win" else ["annual_calibrated_forecast_grid_ledger_not_promoted"])),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": allowed,
+        "claim_limit": (
+            "This is a scoped annual-ledger win, not a proof that raw quarterly mechanistic incidence/death emissions "
+            "or broad official-model replacement claims are solved."
+        ),
+        "key_metrics": gate,
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -1325,6 +1366,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     r83_quarterly_emission_bridge_status = str((by_id.get("phase3_r83_quarterly_emission_bridge_audit") or {}).get("claim_status"))
     r84_conserved_ledger_status = str((by_id.get("phase3_r84_conserved_quarterly_annual_ledger") or {}).get("claim_status"))
     r85_forecast_grid_status = str((by_id.get("phase3_r85_annual_ledger_forecast_grid") or {}).get("claim_status"))
+    r86_annual_calibrated_ledger_status = str((by_id.get("phase3_r86_annual_calibrated_forecast_grid_ledger") or {}).get("claim_status"))
     subnational_ok = regional_r63_ok or regional_r62_ok or regional_r61_ok or regional_r60_ok or regional_anchor_ensemble_ok or regional_pareto_ensemble_ok or regional_split_guarded_ok or regional_adapter_ok or regional_readout_ok
     adapter_stability_status = str((by_id.get("regional_adapter_split_stability_claim") or {}).get("claim_status"))
     split_guarded_selector_status = str((by_id.get("regional_split_guarded_selector_claim") or {}).get("claim_status"))
@@ -1384,6 +1426,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "phase3_r83_quarterly_emission_bridge_status": r83_quarterly_emission_bridge_status,
         "phase3_r84_conserved_ledger_status": r84_conserved_ledger_status,
         "phase3_r85_forecast_grid_status": r85_forecast_grid_status,
+        "phase3_r86_annual_calibrated_ledger_status": r86_annual_calibrated_ledger_status,
         "regional_adapter_stability_status": adapter_stability_status,
         "regional_split_guarded_selector_status": split_guarded_selector_status,
         "regional_candidate_ceiling_status": candidate_ceiling_status,
@@ -1466,6 +1509,7 @@ def _write_markdown(path: Path, report: dict[str, Any]) -> None:
         f"- Phase 3 R83 quarterly emission bridge status: `{gate.get('phase3_r83_quarterly_emission_bridge_status')}`",
         f"- Phase 3 R84 conserved ledger status: `{gate.get('phase3_r84_conserved_ledger_status')}`",
         f"- Phase 3 R85 forecast-grid status: `{gate.get('phase3_r85_forecast_grid_status')}`",
+        f"- Phase 3 R86 annual-calibrated ledger status: `{gate.get('phase3_r86_annual_calibrated_ledger_status')}`",
         f"- Regional adapter stability status: `{gate.get('regional_adapter_stability_status')}`",
         f"- Regional split-guarded selector status: `{gate.get('regional_split_guarded_selector_status')}`",
         f"- Regional candidate ceiling status: `{gate.get('regional_candidate_ceiling_status')}`",
@@ -1524,6 +1568,7 @@ def run_r53_publication_claim_registry(
     r83_report_path: Path | None = None,
     r84_report_path: Path | None = None,
     r85_report_path: Path | None = None,
+    r86_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -1560,6 +1605,7 @@ def run_r53_publication_claim_registry(
     r83_path = Path(r83_report_path) if r83_report_path is not None else R83_DEFAULT_REPORT
     r84_path = Path(r84_report_path) if r84_report_path is not None else R84_DEFAULT_REPORT
     r85_path = Path(r85_report_path) if r85_report_path is not None else R85_DEFAULT_REPORT
+    r86_path = Path(r86_report_path) if r86_report_path is not None else R86_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -1595,6 +1641,7 @@ def run_r53_publication_claim_registry(
     r83 = _load_report(r83_path)
     r84 = _load_report(r84_path)
     r85 = _load_report(r85_path)
+    r86 = _load_report(r86_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -1658,6 +1705,7 @@ def run_r53_publication_claim_registry(
         _quarterly_emission_bridge_claim(r83, r83_path),
         _conserved_quarterly_annual_ledger_claim(r84, r84_path),
         _annual_ledger_forecast_grid_claim(r85, r85_path),
+        _annual_calibrated_forecast_grid_ledger_claim(r86, r86_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -1724,6 +1772,7 @@ def _main() -> None:
     parser.add_argument("--r83-report-path", default=None)
     parser.add_argument("--r84-report-path", default=None)
     parser.add_argument("--r85-report-path", default=None)
+    parser.add_argument("--r86-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -1762,6 +1811,7 @@ def _main() -> None:
         r83_report_path=None if args.r83_report_path is None else Path(args.r83_report_path),
         r84_report_path=None if args.r84_report_path is None else Path(args.r84_report_path),
         r85_report_path=None if args.r85_report_path is None else Path(args.r85_report_path),
+        r86_report_path=None if args.r86_report_path is None else Path(args.r86_report_path),
     )
 
 

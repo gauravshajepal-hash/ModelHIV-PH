@@ -7,7 +7,7 @@
 ![Clinical use](https://img.shields.io/badge/clinical_use-not_approved-red)
 ![Current claim](https://img.shields.io/badge/current_claim-national_readout_champion-green)
 ![Determinants](https://img.shields.io/badge/Phase_2_determinants-sensitivity_only-orange)
-![Annual bridge](https://img.shields.io/badge/quarterly_to_annual_bridge-diagnostic_only-yellow)
+![Annual bridge](https://img.shields.io/badge/quarterly_to_annual_bridge-scoped_annual_win-green)
 
 This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM replacement, and not a policy engine without external review. Its purpose is scientific: make every model claim traceable to data roles, blocked-time evaluation, failure anatomy, and explicit claim cards.
 
@@ -20,11 +20,11 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 | Annual public challenge | `R75` passes with weak-measurement annual heads | Annual incidence/deaths/PLHIV can be scored without holdout leakage, but this is not yet a quarterly mechanistic bridge |
 | Public annual projection | `R80` ready | 2025-2035 public annual projection head exists as a separate annual track |
 | Phase 2 determinant knobs | `R81` directional sensitivity only | Determinants can label scenarios, not provide numeric intervention effects |
-| Quarterly-to-annual bridge | `R82/R83` blocked; `R84/R85` diagnostic only | The quarterly model now exposes complete conserved ledger quantities on a forecast grid, but it still does not beat carry-forward on annual public targets |
+| Quarterly-to-annual bridge | `R86` scoped annual model win | Complete quarterly ledger plus train-origin annual calibration beats carry-forward on held-out annual incidence, AIDS deaths, and PLHIV targets |
 
-### Latest R84/R85 Verdict
+### Latest R84-R86 Verdict
 
-`R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` then repaired the annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid:
+`R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head:
 
 ```text
 S_eff -> incident_infections_period -> U
@@ -32,14 +32,14 @@ state-specific mortality/removal -> aids_deaths_period
 U + D + A + T + V + L + R -> estimated_plhiv
 ```
 
-| Annual Target | R85 Scored / Target Entries | R85 Candidate Mean Error | Carry-Forward Mean Error | Verdict |
+| Annual Target | R86 Scored / Target Entries | R86 Candidate Mean Error | Carry-Forward Mean Error | Verdict |
 | --- | ---: | ---: | ---: | --- |
-| annual new infections | 28 / 28 | 0.4558 | 0.3116 | complete but weaker |
-| annual AIDS deaths | 28 / 28 | 1.3640 | 0.4764 | complete but much weaker |
-| estimated PLHIV | 28 / 28 | 0.1048 | 0.3818 | improves over carry-forward |
-| all annual targets | 84 / 84 | 0.6415 | 0.3900 | diagnostic only |
+| annual new infections | 28 / 28 | 0.2679 | 0.3116 | improves over carry-forward |
+| annual AIDS deaths | 28 / 28 | 0.3947 | 0.4764 | improves over carry-forward |
+| estimated PLHIV | 28 / 28 | 0.0633 | 0.3818 | improves over carry-forward |
+| all annual targets | 84 / 84 | 0.2419 | 0.3900 | scoped annual model win |
 
-Interpretation: the conserved state ledger is now visible and complete. That is necessary but not sufficient. PLHIV stock is promising; incidence and AIDS-death processes are the blocker and need stronger evidence-backed transition/mortality structure before annual mechanistic claims are publishable.
+Interpretation: the conserved state ledger is visible, complete, and now beats carry-forward on the annual public-target gate when annual incidence, AIDS deaths, and PLHIV are calibrated only from pre-holdout annual rows. This is a real scoped win, not a broad official-model replacement claim: raw quarterly mechanistic incidence/death emissions remain weaker before annual calibration.
 
 ## Figure 1: System Architecture
 
@@ -70,7 +70,8 @@ flowchart TB
     D["Annual weak-measurement challenge R75<br/>PASS"]:::pass
     E["Public annual projection R80<br/>READY"]:::pass
     F["Quarterly annual bridge R82/R83<br/>BLOCKED"]:::fail
-    G["Conserved annual ledger R84<br/>DIAGNOSTIC ONLY"]:::warn
+    G["Conserved annual ledger R84/R85<br/>DIAGNOSTIC ONLY"]:::warn
+    I["Annual-calibrated ledger R86<br/>SCOPED WIN"]:::pass
     H["Broad 'better than official models' claim<br/>NOT YET ALLOWED"]:::fail
 
     A --> H
@@ -80,6 +81,7 @@ flowchart TB
     E --> H
     F --> H
     G --> H
+    I --> H
 
     classDef pass fill:#e6fcf5,stroke:#087f5b,stroke-width:2px,color:#063b2c;
     classDef warn fill:#fff9db,stroke:#f08c00,stroke-width:2px,color:#4a2a00;
@@ -160,6 +162,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R82/R83 | Does the quarterly champion emit annual incidence/deaths/PLHIV directly? | Blocked: locked R11-28-style predictions do not emit those quantities |
 | R84 | Can the conserved dynamic simulator emit annual ledger quantities? | Diagnostic: emissions exist, PLHIV improves, incidence/deaths are incomplete |
 | R85 | Does a complete unscored quarterly forecast grid fix the annual bridge? | Diagnostic: coverage fixed, but incidence/deaths still lose to carry-forward |
+| R86 | Can train-origin annual calibration turn the complete ledger into a benchmark win? | Pass: annual calibrated ledger beats carry-forward with complete validation-only target coverage |
 
 ## What Is Currently Defensible?
 
@@ -168,16 +171,17 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - The repository has a staged evidence-to-model pipeline with explicit observation roles.
 - The national R41-style readout is the current internal research champion under the project gates.
 - Annual public targets can be scored in a leakage-aware way through R75/R80.
+- R86 is a scoped annual-ledger model win against carry-forward on held-out annual incidence, AIDS deaths, and PLHIV.
 - Phase 2 determinant structure can be used for sensitivity/scenario labels only.
 - R84 exposes the key mechanistic annual ledger quantities in the simulator.
-- R85 shows the annual bridge failure is now process quality, not missing quarterly emission coverage.
+- R85 shows the annual bridge failure was process quality, not missing quarterly emission coverage.
 
 ### Not Yet Allowed
 
 - “This beats AEM/Spectrum overall.”
 - “Phase 2 graph edges are causal intervention effects.”
 - “Subnational process model is validated province-by-province.”
-- “The quarterly model mechanistically beats annual public incidence/death targets.”
+- “The raw quarterly mechanistic incidence/death process beats annual public targets without annual calibration.”
 - “Third-95 process claims are fully identified without stronger VL/suppression process evidence.”
 
 ## Repository Map
@@ -257,21 +261,24 @@ Expected latest focused test result:
 | R83 emission audit | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r83-quarterly-emission-bridge-audit-20260507-s00/analysis/r83_quarterly_emission_bridge_audit_report.json` |
 | R84 conserved ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r84-conserved-quarterly-annual-ledger-20260507-s00/analysis/r84_conserved_quarterly_annual_ledger_report.json` |
 | R85 forecast grid ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r85-annual-ledger-forecast-grid-20260507-s00/analysis/r85_annual_ledger_forecast_grid_report.json` |
+| R86 annual-calibrated forecast grid ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r86-annual-calibrated-forecast-grid-ledger-20260507-s00/analysis/r86_annual_calibrated_forecast_grid_ledger_report.json` |
+| R86 tracked GitHub summary | `docs/phase3_r86_annual_calibrated_ledger_summary_20260507.md` |
 
 ## Roadmap
 
 ```mermaid
 flowchart LR
-    R85["R85 forecast grid ledger<br/>diagnostic only"] --> R86["R86 incidence/death process repair<br/>must beat carry-forward"]
-    R86 --> R87["R87 subnational sparse hierarchy<br/>regional + proxy validation"]
-    R87 --> R88["R88 Phase 2 scenario lab<br/>directional knobs only until source-stable"]
+    R85["R85 forecast grid ledger<br/>diagnostic only"] --> R86["R86 annual-calibrated ledger<br/>scoped annual win"]
+    R86 --> R87["R87 raw quarterly process repair<br/>incidence/death emissions"]
+    R87 --> R88["R88 subnational sparse hierarchy<br/>regional + proxy validation"]
+    R88 --> R89["R89 Phase 2 scenario lab<br/>directional knobs only until source-stable"]
 ```
 
 Next highest-value scientific step:
 
-1. Repair incidence and mortality support rather than tuning readouts.
-2. Build complete quarterly annual-ledger coverage for every annual target split.
-3. Require R84-style emissions to beat carry-forward before using them in official-model comparisons.
+1. Preserve R86 as the scoped annual public-target win and do not overclaim it as raw quarterly mechanistic dominance.
+2. Repair raw quarterly incidence and mortality emissions so the simulator wins before annual calibration.
+3. Add source-family ablation and AEM/Spectrum-style external annual comparison when official outputs become available.
 4. Only then connect Phase 2 determinant scenarios to 2026-2035 projections.
 
 ## License And Use
