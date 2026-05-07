@@ -300,6 +300,22 @@ R86_DEFAULT_REPORT = (
     / "analysis"
     / "r86_annual_calibrated_forecast_grid_ledger_report.json"
 )
+R87_DEFAULT_REPORT = (
+    sandbox_repo_root()
+    / "artifacts"
+    / "runs"
+    / "p3d-r87-train-backtested-emission-process-calibration-20260507-s00"
+    / "analysis"
+    / "r87_train_backtested_emission_process_calibration_report.json"
+)
+R88_DEFAULT_REPORT = (
+    sandbox_repo_root()
+    / "artifacts"
+    / "runs"
+    / "p3d-r88-guarded-annual-ledger-selector-20260507-s00"
+    / "analysis"
+    / "r88_guarded_annual_ledger_selector_report.json"
+)
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1326,6 +1342,66 @@ def _annual_calibrated_forecast_grid_ledger_claim(r86: dict[str, Any], path: Pat
     }
 
 
+def _train_backtested_emission_process_calibration_claim(r87: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(r87.get("train_backtested_emission_process_calibration_gate") or {})
+    status = str(r87.get("status") or gate.get("status") or "")
+    if status == "train_backtested_emission_process_calibration_pass":
+        claim_status = "raw_process_calibration_win"
+        allowed = "Train-backtested raw quarterly emission calibration beats carry-forward on validation-only annual targets."
+    elif status:
+        claim_status = "diagnostic_only"
+        allowed = "Train-backtested raw quarterly emission calibration is evaluable but does not beat carry-forward."
+    else:
+        claim_status = "blocked"
+        allowed = "Train-backtested raw emission calibration artifact is missing or not evaluable."
+    return {
+        "claim_id": "phase3_r87_train_backtested_emission_process_calibration",
+        "claim_scope": "raw_quarterly_emission_process_calibration_to_annual_targets",
+        "claim_status": claim_status,
+        "model_family": "train_backtested_raw_emission_process_calibration",
+        "primary_gate": status,
+        "blockers": list(gate.get("blockers") or ([] if claim_status == "raw_process_calibration_win" else ["train_backtested_emission_process_calibration_not_promoted"])),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": allowed,
+        "claim_limit": "R87 currently falsifies free ratio/trend rescaling when diagnostic-only; do not cite it as an annual model win.",
+        "key_metrics": gate,
+    }
+
+
+def _guarded_annual_ledger_selector_claim(r88: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(r88.get("guarded_annual_ledger_selector_gate") or {})
+    status = str(r88.get("status") or gate.get("status") or "")
+    if status == "guarded_annual_ledger_selector_pass":
+        claim_status = "guarded_annual_model_win"
+        allowed = (
+            "The guarded annual ledger beats carry-forward by retaining the raw quarterly process only where train-window "
+            "rolling evidence beats carry-forward and falling back to a conservative carry-forward prior otherwise."
+        )
+    elif status:
+        claim_status = "diagnostic_only"
+        allowed = "The guarded annual ledger selector is evaluable but not promotion-grade."
+    else:
+        claim_status = "blocked"
+        allowed = "Guarded annual ledger selector artifact is missing or not evaluable."
+    return {
+        "claim_id": "phase3_r88_guarded_annual_ledger_selector",
+        "claim_scope": "guarded_raw_process_or_carry_forward_annual_ledger",
+        "claim_status": claim_status,
+        "model_family": "guarded_raw_process_or_carry_forward_annual_ledger",
+        "primary_gate": status,
+        "blockers": list(gate.get("blockers") or ([] if claim_status == "guarded_annual_model_win" else ["guarded_annual_ledger_selector_not_promoted"])),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": allowed,
+        "claim_limit": (
+            "R88 is a conservative guarded model, not a proof that incidence or AIDS-death raw processes are identified; "
+            "its win comes from rejecting weak raw channels and preserving the stable PLHIV stock process."
+        ),
+        "key_metrics": gate,
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -1367,6 +1443,8 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     r84_conserved_ledger_status = str((by_id.get("phase3_r84_conserved_quarterly_annual_ledger") or {}).get("claim_status"))
     r85_forecast_grid_status = str((by_id.get("phase3_r85_annual_ledger_forecast_grid") or {}).get("claim_status"))
     r86_annual_calibrated_ledger_status = str((by_id.get("phase3_r86_annual_calibrated_forecast_grid_ledger") or {}).get("claim_status"))
+    r87_process_calibration_status = str((by_id.get("phase3_r87_train_backtested_emission_process_calibration") or {}).get("claim_status"))
+    r88_guarded_annual_status = str((by_id.get("phase3_r88_guarded_annual_ledger_selector") or {}).get("claim_status"))
     subnational_ok = regional_r63_ok or regional_r62_ok or regional_r61_ok or regional_r60_ok or regional_anchor_ensemble_ok or regional_pareto_ensemble_ok or regional_split_guarded_ok or regional_adapter_ok or regional_readout_ok
     adapter_stability_status = str((by_id.get("regional_adapter_split_stability_claim") or {}).get("claim_status"))
     split_guarded_selector_status = str((by_id.get("regional_split_guarded_selector_claim") or {}).get("claim_status"))
@@ -1427,6 +1505,8 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "phase3_r84_conserved_ledger_status": r84_conserved_ledger_status,
         "phase3_r85_forecast_grid_status": r85_forecast_grid_status,
         "phase3_r86_annual_calibrated_ledger_status": r86_annual_calibrated_ledger_status,
+        "phase3_r87_process_calibration_status": r87_process_calibration_status,
+        "phase3_r88_guarded_annual_status": r88_guarded_annual_status,
         "regional_adapter_stability_status": adapter_stability_status,
         "regional_split_guarded_selector_status": split_guarded_selector_status,
         "regional_candidate_ceiling_status": candidate_ceiling_status,
@@ -1510,6 +1590,8 @@ def _write_markdown(path: Path, report: dict[str, Any]) -> None:
         f"- Phase 3 R84 conserved ledger status: `{gate.get('phase3_r84_conserved_ledger_status')}`",
         f"- Phase 3 R85 forecast-grid status: `{gate.get('phase3_r85_forecast_grid_status')}`",
         f"- Phase 3 R86 annual-calibrated ledger status: `{gate.get('phase3_r86_annual_calibrated_ledger_status')}`",
+        f"- Phase 3 R87 process calibration status: `{gate.get('phase3_r87_process_calibration_status')}`",
+        f"- Phase 3 R88 guarded annual status: `{gate.get('phase3_r88_guarded_annual_status')}`",
         f"- Regional adapter stability status: `{gate.get('regional_adapter_stability_status')}`",
         f"- Regional split-guarded selector status: `{gate.get('regional_split_guarded_selector_status')}`",
         f"- Regional candidate ceiling status: `{gate.get('regional_candidate_ceiling_status')}`",
@@ -1569,6 +1651,8 @@ def run_r53_publication_claim_registry(
     r84_report_path: Path | None = None,
     r85_report_path: Path | None = None,
     r86_report_path: Path | None = None,
+    r87_report_path: Path | None = None,
+    r88_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -1606,6 +1690,8 @@ def run_r53_publication_claim_registry(
     r84_path = Path(r84_report_path) if r84_report_path is not None else R84_DEFAULT_REPORT
     r85_path = Path(r85_report_path) if r85_report_path is not None else R85_DEFAULT_REPORT
     r86_path = Path(r86_report_path) if r86_report_path is not None else R86_DEFAULT_REPORT
+    r87_path = Path(r87_report_path) if r87_report_path is not None else R87_DEFAULT_REPORT
+    r88_path = Path(r88_report_path) if r88_report_path is not None else R88_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -1642,6 +1728,8 @@ def run_r53_publication_claim_registry(
     r84 = _load_report(r84_path)
     r85 = _load_report(r85_path)
     r86 = _load_report(r86_path)
+    r87 = _load_report(r87_path)
+    r88 = _load_report(r88_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -1706,6 +1794,8 @@ def run_r53_publication_claim_registry(
         _conserved_quarterly_annual_ledger_claim(r84, r84_path),
         _annual_ledger_forecast_grid_claim(r85, r85_path),
         _annual_calibrated_forecast_grid_ledger_claim(r86, r86_path),
+        _train_backtested_emission_process_calibration_claim(r87, r87_path),
+        _guarded_annual_ledger_selector_claim(r88, r88_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -1773,6 +1863,8 @@ def _main() -> None:
     parser.add_argument("--r84-report-path", default=None)
     parser.add_argument("--r85-report-path", default=None)
     parser.add_argument("--r86-report-path", default=None)
+    parser.add_argument("--r87-report-path", default=None)
+    parser.add_argument("--r88-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -1812,6 +1904,8 @@ def _main() -> None:
         r84_report_path=None if args.r84_report_path is None else Path(args.r84_report_path),
         r85_report_path=None if args.r85_report_path is None else Path(args.r85_report_path),
         r86_report_path=None if args.r86_report_path is None else Path(args.r86_report_path),
+        r87_report_path=None if args.r87_report_path is None else Path(args.r87_report_path),
+        r88_report_path=None if args.r88_report_path is None else Path(args.r88_report_path),
     )
 
 

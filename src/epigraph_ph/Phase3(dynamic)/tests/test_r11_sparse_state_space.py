@@ -304,6 +304,16 @@ from phase3_dynamic.r86_annual_calibrated_forecast_grid_ledger import (
     _distribute_annual_total_by_quarter_shape as _r86_distribute_annual_total_by_quarter_shape,
     _gate as _r86_gate,
 )
+from phase3_dynamic.r87_train_backtested_emission_process_calibration import (
+    _fit_emission_ratio_family as _r87_fit_emission_ratio_family,
+    _gate as _r87_gate,
+    _predict_emission_ratio as _r87_predict_emission_ratio,
+    _select_metric_process_family as _r87_select_metric_process_family,
+)
+from phase3_dynamic.r88_guarded_annual_ledger_selector import (
+    _gate as _r88_gate,
+    _internal_guarded_metric_selector as _r88_internal_guarded_metric_selector,
+)
 from phase3_dynamic.model import _apply_observation_model as _phase3_apply_observation_model
 from phase3_dynamic.model import _simulate_sequence as _phase3_simulate_sequence
 
@@ -5800,4 +5810,106 @@ def test_r86_gate_promotes_complete_better_annual_calibrated_ledger() -> None:
     gate = _r86_gate(score_rows=score_rows, family_rows=family_rows, target_rows=[{"year": 2024}])
 
     assert gate["status"] == "annual_calibrated_forecast_grid_ledger_pass"
+    assert gate["blockers"] == []
+
+
+def test_r87_median_ratio_family_corrects_raw_emission_scale() -> None:
+    pairs = [
+        {"year": 2020, "raw_value": 10.0, "target_value": 100.0},
+        {"year": 2021, "raw_value": 20.0, "target_value": 200.0},
+    ]
+
+    model = _r87_fit_emission_ratio_family(pairs, family="median_ratio_process")
+    predicted = _r87_predict_emission_ratio(30.0, year=2022, model=model)
+
+    assert model["status"] == "completed"
+    assert model["ratio"] == 10.0
+    assert predicted == 300.0
+
+
+def test_r87_selector_uses_internal_backtest_not_holdout_rows() -> None:
+    pairs = [
+        {"year": 2020, "metric_name": "annual_aids_deaths", "raw_value": 10.0, "target_value": 100.0, "scale": 100.0},
+        {"year": 2021, "metric_name": "annual_aids_deaths", "raw_value": 20.0, "target_value": 200.0, "scale": 200.0},
+        {"year": 2022, "metric_name": "annual_aids_deaths", "raw_value": 30.0, "target_value": 300.0, "scale": 300.0},
+    ]
+
+    selected = _r87_select_metric_process_family(pairs, metric_name="annual_aids_deaths")
+
+    assert selected["metric_name"] == "annual_aids_deaths"
+    assert selected["selected_family"] in {
+        "median_ratio_process",
+        "recent_median_ratio_process",
+        "log_ratio_trend_process",
+    }
+    assert selected["pair_count"] == 3
+
+
+def test_r87_gate_promotes_complete_better_process_calibration() -> None:
+    score_rows = []
+    for metric_name in ("annual_new_infections", "annual_aids_deaths", "estimated_plhiv"):
+        score_rows.append(
+            {
+                "metric_name": metric_name,
+                "candidate_norm_error": 0.1,
+                "carry_forward_norm_error": 0.2,
+                "observation_role": "validation_only",
+                "allowed_use": "validation_only",
+            }
+        )
+    family_rows = [
+        {
+            "candidate_mean_norm_error": 0.1,
+            "carry_forward_mean_norm_error": 0.2,
+            "candidate_interval_coverage": 1.0,
+            "carry_forward_interval_coverage": 1.0,
+        }
+    ]
+
+    gate = _r87_gate(score_rows=score_rows, family_rows=family_rows, target_rows=[{"year": 2024}])
+
+    assert gate["status"] == "train_backtested_emission_process_calibration_pass"
+    assert gate["blockers"] == []
+
+
+def test_r88_guarded_selector_keeps_raw_only_when_internal_error_wins() -> None:
+    good_raw_pairs = [
+        {"year": 2020, "metric_name": "estimated_plhiv", "raw_value": 100.0, "target_value": 100.0, "scale": 100.0},
+        {"year": 2021, "metric_name": "estimated_plhiv", "raw_value": 120.0, "target_value": 120.0, "scale": 120.0},
+        {"year": 2022, "metric_name": "estimated_plhiv", "raw_value": 140.0, "target_value": 140.0, "scale": 140.0},
+    ]
+    bad_raw_pairs = [
+        {"year": 2020, "metric_name": "annual_aids_deaths", "raw_value": 10.0, "target_value": 100.0, "scale": 100.0},
+        {"year": 2021, "metric_name": "annual_aids_deaths", "raw_value": 20.0, "target_value": 105.0, "scale": 105.0},
+        {"year": 2022, "metric_name": "annual_aids_deaths", "raw_value": 30.0, "target_value": 110.0, "scale": 110.0},
+    ]
+
+    assert _r88_internal_guarded_metric_selector(good_raw_pairs, metric_name="estimated_plhiv")["selected_policy"] == "raw_quarterly_process"
+    assert _r88_internal_guarded_metric_selector(bad_raw_pairs, metric_name="annual_aids_deaths")["selected_policy"] == "carry_forward_prior"
+
+
+def test_r88_gate_promotes_complete_better_guarded_selector() -> None:
+    score_rows = []
+    for metric_name in ("annual_new_infections", "annual_aids_deaths", "estimated_plhiv"):
+        score_rows.append(
+            {
+                "metric_name": metric_name,
+                "candidate_norm_error": 0.1,
+                "carry_forward_norm_error": 0.2,
+                "observation_role": "validation_only",
+                "allowed_use": "validation_only",
+            }
+        )
+    family_rows = [
+        {
+            "candidate_mean_norm_error": 0.1,
+            "carry_forward_mean_norm_error": 0.2,
+            "candidate_interval_coverage": 1.0,
+            "carry_forward_interval_coverage": 1.0,
+        }
+    ]
+
+    gate = _r88_gate(score_rows=score_rows, family_rows=family_rows, target_rows=[{"year": 2024}])
+
+    assert gate["status"] == "guarded_annual_ledger_selector_pass"
     assert gate["blockers"] == []

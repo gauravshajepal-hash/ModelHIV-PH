@@ -20,11 +20,11 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 | Annual public challenge | `R75` passes with weak-measurement annual heads | Annual incidence/deaths/PLHIV can be scored without holdout leakage, but this is not yet a quarterly mechanistic bridge |
 | Public annual projection | `R80` ready | 2025-2035 public annual projection head exists as a separate annual track |
 | Phase 2 determinant knobs | `R81` directional sensitivity only | Determinants can label scenarios, not provide numeric intervention effects |
-| Quarterly-to-annual bridge | `R86` scoped annual model win | Complete quarterly ledger plus train-origin annual calibration beats carry-forward on held-out annual incidence, AIDS deaths, and PLHIV targets |
+| Quarterly-to-annual bridge | `R86` and `R88` scoped annual model wins | Complete quarterly ledger plus train-origin calibration/guarding beats carry-forward on held-out annual incidence, AIDS deaths, and PLHIV targets |
 
-### Latest R84-R86 Verdict
+### Latest R84-R88 Verdict
 
-`R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head:
+`R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head. `R87` tested free raw-emission process rescaling and failed. `R88` kept the raw quarterly process only where train-window evidence beat carry-forward and guarded weak incidence/death channels with a carry-forward prior:
 
 ```text
 S_eff -> incident_infections_period -> U
@@ -40,6 +40,8 @@ U + D + A + T + V + L + R -> estimated_plhiv
 | all annual targets | 84 / 84 | 0.2419 | 0.3900 | scoped annual model win |
 
 Interpretation: the conserved state ledger is visible, complete, and now beats carry-forward on the annual public-target gate when annual incidence, AIDS deaths, and PLHIV are calibrated only from pre-holdout annual rows. This is a real scoped win, not a broad official-model replacement claim: raw quarterly mechanistic incidence/death emissions remain weaker before annual calibration.
+
+R88 adds a second conservative win: all annual targets score `0.2976` versus carry-forward `0.3900`, with interval coverage `0.6429` versus `0.4881`. Its scientific meaning is different from R86: it proves the stable PLHIV stock process can improve an annual ledger when weak incidence/death raw emissions are explicitly rejected rather than overfit.
 
 ## Figure 1: System Architecture
 
@@ -163,6 +165,8 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R84 | Can the conserved dynamic simulator emit annual ledger quantities? | Diagnostic: emissions exist, PLHIV improves, incidence/deaths are incomplete |
 | R85 | Does a complete unscored quarterly forecast grid fix the annual bridge? | Diagnostic: coverage fixed, but incidence/deaths still lose to carry-forward |
 | R86 | Can train-origin annual calibration turn the complete ledger into a benchmark win? | Pass: annual calibrated ledger beats carry-forward with complete validation-only target coverage |
+| R87 | Can train-backtested raw emission ratio/trend calibration fix incidence/deaths? | Diagnostic: free process rescaling is unstable and loses to carry-forward |
+| R88 | Can a guarded process-or-carry selector improve the annual ledger without overfitting weak channels? | Pass: guarded annual ledger beats carry-forward by retaining raw PLHIV and rejecting weak raw incidence/death |
 
 ## What Is Currently Defensible?
 
@@ -172,6 +176,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - The national R41-style readout is the current internal research champion under the project gates.
 - Annual public targets can be scored in a leakage-aware way through R75/R80.
 - R86 is a scoped annual-ledger model win against carry-forward on held-out annual incidence, AIDS deaths, and PLHIV.
+- R88 is a conservative guarded annual-ledger win: it improves the annual ledger by keeping raw PLHIV and using carry-forward priors for weak incidence/death channels.
 - Phase 2 determinant structure can be used for sensitivity/scenario labels only.
 - R84 exposes the key mechanistic annual ledger quantities in the simulator.
 - R85 shows the annual bridge failure was process quality, not missing quarterly emission coverage.
@@ -263,15 +268,19 @@ Expected latest focused test result:
 | R85 forecast grid ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r85-annual-ledger-forecast-grid-20260507-s00/analysis/r85_annual_ledger_forecast_grid_report.json` |
 | R86 annual-calibrated forecast grid ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r86-annual-calibrated-forecast-grid-ledger-20260507-s00/analysis/r86_annual_calibrated_forecast_grid_ledger_report.json` |
 | R86 tracked GitHub summary | `docs/phase3_r86_annual_calibrated_ledger_summary_20260507.md` |
+| R87 process calibration diagnostic | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r87-train-backtested-emission-process-calibration-20260507-s00/analysis/r87_train_backtested_emission_process_calibration_report.json` |
+| R88 guarded annual ledger selector | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r88-guarded-annual-ledger-selector-20260507-s00/analysis/r88_guarded_annual_ledger_selector_report.json` |
+| R88 tracked GitHub summary | `docs/phase3_r88_guarded_annual_ledger_summary_20260507.md` |
 
 ## Roadmap
 
 ```mermaid
 flowchart LR
     R85["R85 forecast grid ledger<br/>diagnostic only"] --> R86["R86 annual-calibrated ledger<br/>scoped annual win"]
-    R86 --> R87["R87 raw quarterly process repair<br/>incidence/death emissions"]
-    R87 --> R88["R88 subnational sparse hierarchy<br/>regional + proxy validation"]
-    R88 --> R89["R89 Phase 2 scenario lab<br/>directional knobs only until source-stable"]
+    R86 --> R87["R87 raw emission ratio calibration<br/>diagnostic only"]
+    R87 --> R88["R88 guarded annual ledger<br/>scoped conservative win"]
+    R88 --> R89["R89 raw incidence/death mechanism<br/>mortality + incidence evidence"]
+    R89 --> R90["R90 subnational sparse hierarchy<br/>regional + proxy validation"]
 ```
 
 Next highest-value scientific step:
