@@ -1,0 +1,53 @@
+{
+  "rows": [
+    {
+      "filename": "2024_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_page": "https://www.ship.ph/january-march-2024/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2024-Q1",
+      "url": "https://www.ship.ph/wp-content/uploads/2025/11/2024_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf"
+    },
+    {
+      "filename": "2024_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_page": "https://www.ship.ph/april-june-2024/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2024-Q2",
+      "url": "https://www.ship.ph/wp-content/uploads/2025/11/2024_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf"
+    },
+    {
+      "filename": "HASP-Q3-2024-1.pdf",
+      "source_page": "https://www.ship.ph/may-july-2024/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2024-Q3",
+      "url": "https://www.ship.ph/wp-content/uploads/2025/11/HASP-Q3-2024-1.pdf"
+    },
+    {
+      "filename": "2024_Q4-HIV-AIDS-Surveillance-of-the-Philippines-2.pdf",
+      "source_page": "https://www.ship.ph/october-december-2024/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2024-Q4",
+      "url": "https://www.ship.ph/wp-content/uploads/2025/11/2024_Q4-HIV-AIDS-Surveillance-of-the-Philippines-2.pdf"
+    },
+    {
+      "filename": "HASP-Q1-2025.pdf",
+      "source_page": "https://www.ship.ph/category/hiv-aids-art-registry/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2025-Q1",
+      "url": "https://www.ship.ph/wp-content/uploads/2025/11/HASP-Q1-2025.pdf"
+    },
+    {
+      "filename": "HASP-REPORT-2025_-Q3_signed-1.pdf",
+      "source_page": "https://www.ship.ph/category/hiv-aids-art-registry/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2025-Q3",
+      "url": "https://www.ship.ph/wp-content/uploads/2025/12/HASP-REPORT-2025_-Q3_signed-1.pdf"
+    },
+    {
+      "filename": "2025_Q4-HIV-AIDS-Surveillance-Report-of-the-Philippines-2.pdf",
+      "source_page": "https://www.ship.ph/q4-2025/",
+      "source_tier": "doh_hasp_report_mirrored_by_ship",
+      "time_period_hint": "2025-Q4",
+      "url": "https://www.ship.ph/wp-content/uploads/2026/02/2025_Q4-HIV-AIDS-Surveillance-Report-of-the-Philippines-2.pdf"
+    }
+  ]
+}

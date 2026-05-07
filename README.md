@@ -1,489 +1,277 @@
 # ModelHIV-PH
 
-ModelHIV-PH is a staged scientific system for building, falsifying, and improving HIV epidemic models for the Philippines. The project combines evidence extraction, mixed-frequency observation contracts, latent determinant structure, and blocked-time cascade forecasting.
+> Evidence-ledger driven HIV epidemic modelling for the Philippines.
+> The repository builds, falsifies, and tracks national/subnational HIV model families across evidence extraction, latent determinant graphs, and Phase 3 dynamic cascade forecasting.
 
-The current scientific goal is not to claim that one model already beats all official systems. The current goal is narrower and more defensible:
+![Research software](https://img.shields.io/badge/status-research_software-blue)
+![Clinical use](https://img.shields.io/badge/clinical_use-not_approved-red)
+![Current claim](https://img.shields.io/badge/current_claim-national_readout_champion-green)
+![Determinants](https://img.shields.io/badge/Phase_2_determinants-sensitivity_only-orange)
+![Annual bridge](https://img.shields.io/badge/quarterly_to_annual_bridge-diagnostic_only-yellow)
 
-- build a citation-grade evidence and observation ledger from HARP, HASP, HIV_Data, official data, and literature-derived determinants
-- learn determinant structure in Phase 2 only after source-family robustness checks
-- build a Phase 3 model that is conserved, support-aware, and evaluated against carry-forward, frozen R10 readouts, and official-style annual references
-- report "not identifiable" or "claim blocked" when sparse evidence cannot support a stronger process claim
+This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM replacement, and not a policy engine without external review. Its purpose is scientific: make every model claim traceable to data roles, blocked-time evaluation, failure anatomy, and explicit claim cards.
 
-This repository is research software. It is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM replacement, and not a decision system without external review.
+## Scientific Snapshot
 
-## Current Status
+| Layer | Current Status | What It Means |
+| --- | --- | --- |
+| National quarterly cascade | `R41` promoted as current national research champion | Useful readout/forecast champion under locked gates, not a final official-model replacement |
+| Subnational modelling | readout/proxy champions exist, process claims limited | Regional claims remain constrained by sparse validation evidence |
+| Annual public challenge | `R75` passes with weak-measurement annual heads | Annual incidence/deaths/PLHIV can be scored without holdout leakage, but this is not yet a quarterly mechanistic bridge |
+| Public annual projection | `R80` ready | 2025-2035 public annual projection head exists as a separate annual track |
+| Phase 2 determinant knobs | `R81` directional sensitivity only | Determinants can label scenarios, not provide numeric intervention effects |
+| Quarterly-to-annual bridge | `R82/R83` blocked; `R84` diagnostic only | The quarterly model now exposes conserved ledger quantities, but it still does not beat carry-forward on annual public targets |
 
-The canonical current modelling branch is:
+### Latest R84 Verdict
+
+`R84` added a conserved quarterly annual ledger to the dynamic simulator:
 
 ```text
-Phase15 v2 -> Phase2 structural payload -> Phase3(dynamic)
+S_eff -> incident_infections_period -> U
+state-specific mortality/removal -> aids_deaths_period
+U + D + A + T + V + L + R -> estimated_plhiv
 ```
 
-The historical root `src/epigraph_ph/phase3` tree is still useful for older TR-V3/R10 experiments and paper lineage, but new scientific claims should be made from:
+| Annual Target | Scored / Target Entries | Candidate Mean Error | Carry-Forward Mean Error | Verdict |
+| --- | ---: | ---: | ---: | --- |
+| annual new infections | 3 / 28 | 0.6722 | 0.3116 | weak and incomplete |
+| annual AIDS deaths | 3 / 28 | 1.7468 | 0.4764 | weak and incomplete |
+| estimated PLHIV | 28 / 28 | 0.2396 | 0.3818 | improves over carry-forward |
+| all annual targets | mixed | 0.4107 | 0.3900 | diagnostic only |
 
-```text
-src/epigraph_ph/Phase3(dynamic)
+Interpretation: the conserved state ledger is now visible, which is necessary. It is not sufficient. PLHIV stock is promising; incidence and AIDS-death emissions need stronger evidence-backed quarterly support before annual mechanistic claims are publishable.
+
+## Figure 1: System Architecture
+
+```mermaid
+flowchart LR
+    P0["Phase 0<br/>evidence extraction<br/>papers, PDFs, HARP/HASP, WDI, WHO, PSA"] --> P1["Phase 1<br/>normalization<br/>roles, units, tensors"]
+    P1 --> P15["Phase 15 v2<br/>mixed-frequency latent states<br/>national/region/province"]
+    P15 --> P2["Phase 2<br/>lagged determinant graph<br/>direct surfaces + hidden modes"]
+    P2 --> P3["Phase3(dynamic)<br/>observation ledger + cascade dynamics"]
+    P3 --> G["Blocked-time gates<br/>carry-forward, R10, annual public targets"]
+    G --> C["Claim registry<br/>promote / diagnostic / blocked"]
+
+    classDef phase fill:#eaf4ff,stroke:#1864ab,stroke-width:1px,color:#0b2545;
+    classDef gate fill:#fff4db,stroke:#b26b00,stroke-width:1px,color:#3b2500;
+    classDef claim fill:#eafaf1,stroke:#1b7f45,stroke-width:1px,color:#083b1f;
+    class P0,P1,P15,P2,P3 phase;
+    class G gate;
+    class C claim;
 ```
 
-The latest checked-in Phase3(dynamic) replay is `R12-10`, run `p3d-r12-joint-annual-latent-monthly-20260501-s00`. It adds two gates on top of the R12-09 annual-anchor result:
+## Figure 2: Current Claim Board
 
-- `R12-10A`: an official annual AEM/Spectrum-style challenge gate for annual incidence, AIDS deaths, estimated PLHIV, and cascade anchors.
-- `R12-10B`: a DOH quarterly/monthly program-nowcast and mixed quarterly diagnosis/ART trajectory branch.
+```mermaid
+flowchart TB
+    A["National R41 research champion<br/>PROMOTED"]:::pass
+    B["Subnational readout/proxy layer<br/>LIMITED"]:::warn
+    C["Phase 2 determinant priors<br/>SENSITIVITY ONLY"]:::warn
+    D["Annual weak-measurement challenge R75<br/>PASS"]:::pass
+    E["Public annual projection R80<br/>READY"]:::pass
+    F["Quarterly annual bridge R82/R83<br/>BLOCKED"]:::fail
+    G["Conserved annual ledger R84<br/>DIAGNOSTIC ONLY"]:::warn
+    H["Broad 'better than official models' claim<br/>NOT YET ALLOWED"]:::fail
 
-Current result: `R12-10A` now passes with a joint conserved annual head: annual incidence and AIDS deaths are weak-measurement heads, while estimated PLHIV is propagated by train-estimated mass balance. `R12-10B` now uses a latent monthly reporting-intensity state for diagnosis flow, diagnosed stock, and ART stock; it improves over carry-forward on DOH program routes, but still fails matched R10 and is rejected for promotion. `R11-28` remains the locked research reference, while `R12-09` remains a route-specific annual-anchor candidate rather than a full-cascade champion.
+    A --> H
+    B --> H
+    C --> H
+    D --> H
+    E --> H
+    F --> H
+    G --> H
 
-Latest R12 summary:
+    classDef pass fill:#e6fcf5,stroke:#087f5b,stroke-width:2px,color:#063b2c;
+    classDef warn fill:#fff9db,stroke:#f08c00,stroke-width:2px,color:#4a2a00;
+    classDef fail fill:#fff5f5,stroke:#c92a2a,stroke-width:2px,color:#4d0000;
+```
 
-| Gate | Result |
+## Figure 3: Cascade State Model
+
+```mermaid
+stateDiagram-v2
+    [*] --> S_eff
+    S_eff --> U: incidence hazard
+    U --> D: diagnosis / backlog release
+    D --> A: ART initiation / linkage
+    A --> T: VL testing
+    T --> V: viral suppression
+    A --> L: ART interruption / LTFU
+    T --> L: VL testing loss
+    V --> L: suppression loss
+    L --> R: re-engagement queue
+    R --> A: restart ART
+    U --> X: mortality/removal
+    D --> X: mortality/removal
+    A --> X: mortality/removal
+    T --> X: mortality/removal
+    V --> X: mortality/removal
+```
+
+State variables:
+
+| Symbol | Meaning |
 | --- | --- |
-| Official annual challenge gate | Pass |
-| Annual incidence/deaths/PLHIV heads | Joint conserved weak-measurement/mass-balance heads scored |
-| R12-10B DOH program route vs carry-forward | Improves on 1y, 2y, 3y, 5y route means |
-| R12-10B DOH program route vs matched R10 | Fails at 1y, 3y, 5y; 2y R10 unavailable |
-| R12-09 annual-anchor trajectory vs matched R10 | Still passes at 3y and 5y |
-| Full mixed-lineage R10 trajectory | Still fails at 3y and 5y |
-| Full-cascade champion | Not promoted |
+| `S_eff` | effective population denominator available for new infections |
+| `U` | living with HIV, undiagnosed |
+| `D` | diagnosed, not on ART |
+| `A` | active ART without recent VL evidence |
+| `T` | VL-tested but not suppressed |
+| `V` | virally suppressed |
+| `L` | interrupted or lost from active pathway |
+| `R` | re-engaged/restart pathway |
+| `X` | removal, including mortality where supported |
 
-The latest exploratory queue is `R13`, run `p3d-r13-priority-queue-20260501-s00`. It materializes a research-council/auto-deep-researcher handoff as 50 predeclared, priority-ordered experiments. The queue is not a new champion claim; it is a bounded experiment program that scores annual conserved heads, DOH monthly/program routes, D/A transition processes, back-half conditional-rate claims, support partitions, and the Phase 2 determinant lockbox under blocked-time gates.
+## Figure 4: Evidence Role Contract
 
-R13 result: 11 experiments are promoted for next-wave investigation within their scoped claims, 27 are kept as diagnostics, 6 are rejected, and 6 are blocked by insufficient scoped splits. The dominant blocker remains the matched R10 gate, not carry-forward: 34 experiments improve over carry-forward but still do not beat horizon-matched R10.
+```mermaid
+flowchart LR
+    Raw["Raw extracted row"] --> Role{"Observation role"}
+    Role --> Direct["direct_target<br/>can train target process"]
+    Role --> Aux["auxiliary_likelihood<br/>can constrain but not define truth"]
+    Role --> Val["validation_only<br/>can score, not train holdout"]
+    Role --> Prior["prior_context<br/>covariate/prior only"]
+    Role --> Q["quarantined<br/>unscorable by default"]
 
-Key scores from the latest replay:
+    Direct --> Model["Phase3(dynamic)"]
+    Aux --> Model
+    Prior --> Model
+    Val --> Gate["External validation gate"]
+    Q --> Audit["lineage audit only"]
+```
 
-| Experiment/scope | Candidate MAE | Carry-forward MAE | Candidate R10-scope MAE | Matched R10 MAE | Status |
-| --- | ---: | ---: | ---: | ---: | --- |
-| R11-28 reference, all horizons mean | 0.3620 | 0.5512 | 0.1621 | 0.1135 | beats carry, fails R10 |
-| R12-09 route candidate mean | 0.1261 | 0.2613 | n/a | 0.1135 | route-specific pass, full replay still fails |
-| R12-10A annual challenge mean | 0.3806 | 0.5925 | n/a | n/a | conserved annual heads pass |
-| R12-10B program route mean | 0.5691 | 0.6204 | n/a | 0.1135 | beats carry, fails R10 |
+The model is intentionally strict: diagnosis counts, annual incidence estimates, ART stocks, VL testing rows, determinants, and hidden modes are not interchangeable.
 
-Annual-anchor route scores:
+## Experiment Timeline
 
-| Route | Horizon | Candidate | Carry-forward | Matched R10 | Status |
-| --- | ---: | ---: | ---: | ---: | --- |
-| slide annual anchor | 3y | 0.0434 | 0.2729 | 0.1157 | pass |
-| slide annual anchor | 5y | 0.0434 | 0.2729 | 0.1294 | pass |
+| Phase / Run | Main Question | Outcome |
+| --- | --- | --- |
+| Phase 0 | Can we extract structured HIV determinants and official support rows? | Yes: HARP/HASP/HIV_Data, WDI, WHO, PSA/FIES/YAFS, PhilHealth, UNAIDS-style support, literature rows |
+| Phase 1 | Can heterogeneous evidence become comparable tensors? | Yes: normalized tensors, roles, units, quality weights |
+| Phase 15 v2 | Can mixed-frequency evidence produce latent national/regional/provincial states? | Yes: active bridge into Phase 2 |
+| Phase 2 | Can lagged determinants and hidden modes be learned robustly? | Partly: useful structural payload, but determinants remain sensitivity-only |
+| TR-V3 / R10 | Can broad endpoint/readout families beat naive baselines? | Yes in old evidence universe; failed under expanded HARP/HASP support |
+| R11 | Can stock-consistency and trajectory gates stabilize quarterly cascade predictions? | Partly: R11-28 became locked research reference |
+| R12 | Can annual anchors and DOH program routes be separated? | Yes: route-aware evidence split clarified failure sources |
+| R13-R41 | Can national readout champions survive stricter gates? | R41 promoted as current national research champion |
+| R75 | Can annual public targets be challenged without leakage? | Pass with train-origin annual weak-measurement heads |
+| R80 | Can public annual series be projected 2025-2035? | Ready as public annual projection head |
+| R81 | Can Phase 2 become scenario knobs? | Directional sensitivity only, not numeric intervention effects |
+| R82/R83 | Does the quarterly champion emit annual incidence/deaths/PLHIV directly? | Blocked: locked R11-28-style predictions do not emit those quantities |
+| R84 | Can the conserved dynamic simulator emit annual ledger quantities? | Diagnostic: emissions exist, PLHIV improves, incidence/deaths do not pass |
 
-Interpretation: R12-09 is scientifically useful because it separates annual-anchor trajectory evidence from short-horizon program nowcasting evidence. It is not yet a final model because the full mixed-lineage trajectory still loses to R10 at longer horizons.
+## What Is Currently Defensible?
 
-R12-10 interpretation: the annual challenge gate is now operational with conserved annual heads, so annual incidence/deaths/PLHIV are no longer silently missing, independent, or replaced by quarterly diagnosis flow. The DOH program branch now uses a monthly latent reporting-intensity state rather than generic residual-shift selection, but the result is still not enough: it reduces error versus carry-forward while remaining far from R10 trajectory shape, especially for mixed quarterly diagnosis/ART evidence.
+### Allowed Claims
+
+- The repository has a staged evidence-to-model pipeline with explicit observation roles.
+- The national R41-style readout is the current internal research champion under the project gates.
+- Annual public targets can be scored in a leakage-aware way through R75/R80.
+- Phase 2 determinant structure can be used for sensitivity/scenario labels only.
+- R84 exposes the key mechanistic annual ledger quantities in the simulator.
+
+### Not Yet Allowed
+
+- “This beats AEM/Spectrum overall.”
+- “Phase 2 graph edges are causal intervention effects.”
+- “Subnational process model is validated province-by-province.”
+- “The quarterly model mechanistically beats annual public incidence/death targets.”
+- “Third-95 process claims are fully identified without stronger VL/suppression process evidence.”
 
 ## Repository Map
 
 ```text
 src/epigraph_ph/plugins/hiv.py
-    HIV domain contract: latent blocks, accepted evidence families, transition priors, and phase settings.
+    HIV domain contract: latent blocks, transitions, evidence families.
 
 src/epigraph_ph/harp_archive
-    HARP/HASP/HIV_Data ingestion, WDI/WHO/UNAIDS-style imports, official cascade anchors, and monthly/annual support data.
-
-src/epigraph_ph/aidsdatahub
-    AIDS Data Hub extraction helpers.
+    HARP/HASP/HIV_Data extraction and support data.
 
 src/epigraph_ph/phase0
-    Evidence extraction, citation ledgers, determinant bridges, and Phase 3 target contracts.
+    Evidence extraction, citation ledgers, official determinant bridges.
 
 src/epigraph_ph/phase1
-    Normalization and tensor construction.
+    Normalization, observation roles, tensors.
 
 src/epigraph_ph/phase15
-    Mixed-frequency hierarchical latent state estimation and reconciled factor rows.
+    Mixed-frequency latent state layer.
 
 src/epigraph_ph/phase2
-    Direct temporal surfaces, hidden low-rank structure, multiscale support, determinant robustness, and source-family falsification.
-
-src/epigraph_ph/phase3
-    Historical TR-V2/TR-V3 frontier, R10 family, strict diagnosis-kernel work, HMBA experiments, and expanded-HARP falsification lineage.
+    Direct temporal surfaces, hidden modes, determinant robustness.
 
 src/epigraph_ph/Phase3(dynamic)
-    Current canonical Phase 3 dynamics package: observation ledger, revision program, monthly shock work, incidence/diagnosis repair, R11/R12 sparse state-space gates, and latest benchmark reports.
+    Current canonical dynamic modelling package and experiment gates.
 
-tests
-    Contract, extraction, graph, Phase 3 dynamics, and experiment-regression tests.
-
-docs
-    Scientific audits, source probes, extracted PDFs/text, HARP/HASP/PhilHealth/PSA support, and phase planning notes.
+src/epigraph_ph/phase3
+    Historical TR-V2/TR-V3/R10 lineage; useful for comparison, not canonical for new claims.
 ```
 
-## Architecture
+## Key Phase3(dynamic) Files
+
+| File | Role |
+| --- | --- |
+| `data.py` | observation rows, state construction, stock-flow support |
+| `model.py` | dynamic hazards, incidence inflow, conservation, observation heads |
+| `r11_sparse_state_space.py` | R11-R41 candidate families and blocked-time gates |
+| `r53_publication_claim_registry.py` | claim registry and allowed-use summary |
+| `r75_bulk_unaids_annual_challenge.py` | annual public/UNAIDS-style validation gate |
+| `r80_public_annual_projection_head.py` | public annual projection head |
+| `r81_phase2_knob_admissibility_gate.py` | determinant knob admissibility |
+| `r82_quarterly_annual_bridge_gate.py` | required bridge contract |
+| `r83_quarterly_emission_bridge_audit.py` | actual quarterly prediction-emission audit |
+| `r84_conserved_quarterly_annual_ledger.py` | conserved dynamic annual ledger audit |
+
+## How To Reproduce The Latest Gates
+
+```bash
+cd /home/gaurav/codex_work/ModelHIV-PH
+
+PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
+  uvx --with numpy python -m phase3_dynamic.r83_quarterly_emission_bridge_audit
+
+PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
+  uvx --with numpy python -m phase3_dynamic.r84_conserved_quarterly_annual_ledger
+
+PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
+  uvx --with numpy python -m phase3_dynamic.r53_publication_claim_registry
+
+PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
+  uvx --with numpy --from pytest pytest \
+  'src/epigraph_ph/Phase3(dynamic)/tests/test_r11_sparse_state_space.py' \
+  -q -k 'r84 or r83 or r82 or r53'
+```
+
+Expected latest focused test result:
+
+```text
+9 passed, 167 deselected
+```
+
+## Latest Artifacts
+
+| Artifact | Path |
+| --- | --- |
+| Claim registry | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r53-publication-claim-registry-20260503-s00/analysis/r53_publication_claim_registry_report.json` |
+| R83 emission audit | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r83-quarterly-emission-bridge-audit-20260507-s00/analysis/r83_quarterly_emission_bridge_audit_report.json` |
+| R84 conserved ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r84-conserved-quarterly-annual-ledger-20260507-s00/analysis/r84_conserved_quarterly_annual_ledger_report.json` |
+
+## Roadmap
 
 ```mermaid
 flowchart LR
-    A["Phase 0: evidence extraction"] --> B["Phase 1: normalization"]
-    B --> C["Phase 15 v2: latent mixed-frequency states"]
-    C --> D["Phase 2: temporal structure and robustness"]
-    D --> E["Phase3(dynamic): conserved cascade and observation ledger"]
-    E --> F["Blocked-time benchmark gates"]
-    F --> G["Claim cards, dashboards, and paper figures"]
+    R84["R84 conserved ledger<br/>diagnostic only"] --> R85["R85 incidence/death support repair<br/>complete quarterly evidence"]
+    R85 --> R86["R86 annual-mechanistic gate<br/>must beat carry-forward"]
+    R86 --> R87["R87 subnational sparse hierarchy<br/>regional + proxy validation"]
+    R87 --> R88["R88 Phase 2 scenario lab<br/>directional knobs only until source-stable"]
 ```
 
-## Evidence Universe
+Next highest-value scientific step:
 
-The current evidence universe includes direct observations, auxiliary likelihood rows, validation-only annual estimates, determinant covariates, and quarantined rows. The important principle is that the model is not allowed to treat all rows as the same kind of truth.
+1. Repair incidence and mortality support rather than tuning readouts.
+2. Build complete quarterly annual-ledger coverage for every annual target split.
+3. Require R84-style emissions to beat carry-forward before using them in official-model comparisons.
+4. Only then connect Phase 2 determinant scenarios to 2026-2035 projections.
 
-Current source families include:
+## License And Use
 
-- DOH HARP/HASP reports and surveillance archives
-- expanded `HIV_Data` CSV/PDF exports, including key population and treatment cascade files
-- UNAIDS/AIDS Data Hub style annual incidence, deaths, PLHIV, and cascade series
-- World Bank WDI population and HIV indicator support
-- WHO mortality database support
-- PhilHealth annual reports and portal statistics
-- PSA, FIES, YAFS, poverty, demographic, and regional support data
-- scientific literature from PubMed/OpenAlex/Crossref-style pipelines
-
-The current rule is strict:
-
-- HARP diagnosis counts can train diagnosis/reporting processes.
-- Annual incidence/deaths estimates are validation-only or weak auxiliary evidence unless an explicit measurement-error head is active.
-- Phase 2 determinant edges are hypotheses or covariates, not validated causal mechanisms.
-- Hidden Phase 2 modes are shared latent shocks, not intervention targets.
-
-## Phase Timeline
-
-### Phase 0, Evidence Extraction And Ledger
-
-Purpose: turn literature, official PDFs, official CSVs, and extracted text into structured candidate evidence.
-
-Implemented:
-
-- structured numeric extraction from official and literature sources
-- citation evidence ledgers
-- determinant bridge code for official covariates
-- soft ontology tags, expected signs, measurement roles, and observation operators
-- HARP/HASP/HIV_Data, WDI, WHO mortality, PhilHealth, PSA/FIES/YAFS, and AIDS Data Hub ingestion support
-- source-family aware candidate extraction
-
-Important files:
-
-- `src/epigraph_ph/phase0/pipeline.py`
-- `src/epigraph_ph/phase0/citation_evidence_ledger.py`
-- `src/epigraph_ph/phase0/official_determinant_bridge.py`
-- `src/epigraph_ph/phase0/phase3_target_contract.py`
-- `src/epigraph_ph/harp_archive/pipeline.py`
-- `src/epigraph_ph/aidsdatahub/extractor.py`
-
-Scientific status:
-
-- Good for broad determinant discovery and structured support.
-- Still requires citation-grade review before strong causal determinant claims.
-
-### Phase 1, Normalization
-
-Purpose: convert heterogeneous evidence into comparable tensors and row contracts.
-
-Implemented:
-
-- aligned tensors
-- standardized tensors
-- denominator tensors
-- quality weights
-- measurement-role propagation
-- density and scale normalization
-- support for direct-context vs observability splits
-
-Important files:
-
-- `src/epigraph_ph/phase1/pipeline.py`
-
-Scientific status:
-
-- Good enough as a bridge into Phase15 v2.
-- Needs continued checks for support-partition leakage when new source families are added.
-
-### Phase 15 v2, Latent Mixed-Frequency State Layer
-
-Purpose: create latent national, regional, and provincial states from mixed-frequency evidence.
-
-Implemented:
-
-- mixed-frequency hierarchical latent states
-- sparse observation operators
-- context-only rows excluded from likelihood
-- province, region, and national tensors
-- reconciled factor rows
-
-Important files:
-
-- `src/epigraph_ph/phase15/pipeline.py`
-- `src/epigraph_ph/phase15/v2_engine.py`
-
-Scientific status:
-
-- This is the active bridge between raw normalized evidence and Phase 2 structure.
-- Legacy Phase15 block names can still appear in older artifacts, so current claims should use Phase15 v2 outputs.
-
-### Phase 2, Temporal Structure And Determinant Robustness
-
-Purpose: learn lagged determinant and latent-block structure without overclaiming causality.
-
-Implemented:
-
-- direct temporal surface over latent states
-- hidden-driver low-rank surface
-- hidden mode score tensor
-- multiscale DAG support, explicitly support-only
-- structural payloads for Phase 3
-- compatibility payloads for older consumers
-- source-family re-estimation ablation
-- determinant robustness checks
-- edge falsification scaffolds
-- official augmented baseline inputs
-
-Important files:
-
-- `src/epigraph_ph/phase2/pipeline.py`
-- `src/epigraph_ph/phase2/latent_temporal_graph.py`
-- `src/epigraph_ph/phase2/structural_payload.py`
-- `src/epigraph_ph/phase2/determinant_robustness.py`
-- `src/epigraph_ph/phase2/edge_falsification.py`
-- `src/epigraph_ph/phase2/source_reestimate_ablation.py`
-
-Scientific status:
-
-- Direct Phase 2 surfaces can be used as module-specific covariates after baseline models pass gates.
-- Hidden modes remain sidecar latent shocks.
-- Phase 2 edges should not be advertised as validated causal mechanisms until source ablation, time-window shift, placebo, and synthetic-recovery checks pass.
-
-### Historical Root Phase 3, TR-V3 And R10 Lineage
-
-Purpose: explore broad benchmark families, strict diagnosis kernels, hierarchical bundle search, and Phase 2 seeded model families.
-
-Implemented experiment families include:
-
-- strict spec-vs-code audits
-- strict diagnosis-delay kernel work
-- integrated autoresearch branches
-- HMBA module-bundle search
-- provincial and hierarchical diagnostics
-- R10 current champion and R10-neighborhood experiments
-- expanded-HARP compatibility failure tests
-- phase2-seeded champion, sidecar, coverage, and admissibility batches
-- GRASP-inspired and probabilistic trajectory audits
-
-Important files:
-
-- `src/epigraph_ph/phase3/frontier/integrated_autoresearch.py`
-- `src/epigraph_ph/phase3/frontier/hierarchical_autoresearch.py`
-- `src/epigraph_ph/phase3/frontier/strict_diagnosis_kernel_research.py`
-- `src/epigraph_ph/phase3/tr_v3_experiment_suite.py`
-- `src/epigraph_ph/phase3/tr_v3_current_champion_expanded_harp_compatibility_batch.py`
-- `src/epigraph_ph/phase3/tr_v3_phase2_seeded_champion_batch.py`
-
-Scientific conclusion:
-
-- R10-like endpoint/readout families were a useful head start, but expanded HARP/HASP/HIV_Data falsified exact R10 as a mechanistic champion.
-- R10 is now a benchmark/readout teacher, not a mechanistic truth model.
-
-### Phase3(dynamic), Current Canonical Dynamics
-
-Purpose: build a strict observation-ledger-driven HIV cascade model that can make claim-aware predictions without mixing incompatible evidence roles.
-
-Implemented:
-
-- `ObservationRoleLedger`
-- allowed-use enforcement
-- quarantine blocking
-- REV-style observation/model contracts
-- explicit population/inflow/incidence interfaces
-- diagnosis-flow and incidence repair branches
-- monthly shock and reporting nowcast branches
-- decomposition-inspired trend/support-shift/shock controls
-- back-half process states and conditional VL/suppression rate gates
-- re-engagement sensitivity gates
-- lifted residual anatomy against R10
-- R11 sparse state-space benchmark family
-- R12 route-aware and lineage-aware evaluation contracts
-
-Important files:
-
-- `src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/observation_ledger.py`
-- `src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/revision_program.py`
-- `src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/r11_sparse_state_space.py`
-- `src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/diagnosis_incidence_repair.py`
-- `src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/monthly_shock.py`
-- `src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/backhalf_channels.py`
-
-## R11 And R12 Experiment Timeline
-
-The R11/R12 sequence is the current model-development spine.
-
-### R11
-
-R11 moved the project from loose endpoint tuning to claim-aware state-space evaluation.
-
-Key branches:
-
-- `R11-00`: benchmark lock
-- `R11-01`: deterministic D/A/T/V reconciliation
-- `R11-02`: support-weighted observation operator
-- `R11-03`: stock-consistency gate
-- `R11-04`: reporting-shift observation model
-- `R11-05`: annual incidence weak-measurement head
-- `R11-06`: local-level state filter
-- `R11-07`: empirical-Bayes transition shrinkage
-- `R11-08`: linkage lag kernel
-- `R11-09`: support-partition calibration
-- `R11-10`: COVID/rebound reporting latent
-- `R11-11`: conditional VL/suppression rate model
-- `R11-12`: determinant lockbox
-- `R11-13`: R10 readout teacher
-- `R11-14`: posterior predictive and rate-gated back-half readout
-- `R11-15`: multi-horizon lifted readout gate
-- `R11-16` to `R11-18`: constrained shape heads and horizon-adaptive selectors
-- `R11-19` to `R11-20`: transition-process branches for D/A and era-stratified removal/reporting
-- `R11-21` to `R11-28`: selectors, diagnosis-flow repair, support-era adjustment, ART-specific horizon selection, lagged diagnosis, and promoted multi-horizon weighted reference
-
-Scientific conclusion:
-
-- R11-28 became the R12 research reference because it preserved stock/rate consistency and beat carry-forward, but it still failed R10 at longer horizons.
-
-### R12
-
-R12 asks a sharper question: is the remaining failure model dynamics, mixed observation lineage, or route-specific evidence mismatch?
-
-Key branches:
-
-- `R12-00`: promoted R11-28 reference lock
-- `R12-01`: long-horizon D/A stock-shape correction
-- `R12-02`: D/A transition process split
-- `R12-03`: D/A residual-source branch
-- `R12-04`: source/support lineage evaluation ablation
-- `R12-05`: lineage-stratified train/evaluate contract
-- `R12-06`: DOH quarterly support adequacy adjudication
-- `R12-07`: horizon-specific evidence router
-- `R12-08`: route-aware two-head nowcast/trajectory candidate
-- `R12-09`: stock-cone-safe annual trajectory head
-- `R12-10A`: official annual AEM/Spectrum-style challenge gate
-- `R12-10B`: DOH program nowcast and mixed quarterly trajectory branch
-
-Scientific conclusion:
-
-- R12-09 supports a route-specific annual-anchor trajectory claim.
-- R12-10A adds joint conserved annual incidence/death/PLHIV weak-measurement heads and passes the annual challenge gate.
-- R12-10B shows the remaining DOH program-nowcast gap is not solved by the first latent monthly reporting-intensity state process.
-- R12-09 does not yet support a full-cascade long-horizon champion claim.
-
-## Latest R12 Artifacts
-
-The compact latest R12-10 run is checked in under:
-
-```text
-src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r12-joint-annual-latent-monthly-20260501-s00/analysis
-```
-
-High-value files:
-
-- `r12_reference_branch_comparison.json`
-- `r12_reference_branch_comparison.md`
-- `r12_10a_official_annual_challenge_gate_report.json`
-- `r12_10a_official_annual_challenge_gate_dashboard.png`
-- `r12_10b_program_nowcast_mixed_quarterly_candidate_report.json`
-- `r12_10b_program_nowcast_mixed_quarterly_dashboard.png`
-- `r12_09_stock_cone_safe_annual_trajectory_candidate_report.json`
-- `r12_09_stock_cone_safe_annual_trajectory_full_report.json`
-- `r12_09_stock_cone_safe_annual_trajectory_dashboard.png`
-- `r10_horizon_matched_replay_report.json`
-
-The repository root `artifacts/` directory remains ignored because large Phase 0/Phase 1/Phase 15 replay artifacts can reach many gigabytes.
-
-## Latest R13 Artifacts
-
-The current 50-experiment queue is checked in under:
-
-```text
-src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r13-priority-queue-20260501-s00/analysis
-```
-
-High-value files:
-
-- `r13_priority_experiment_manifest.json`
-- `r13_priority_experiment_results.json`
-- `r13_priority_experiment_results.md`
-- `r13_priority_experiment_results.csv`
-- `r13_priority_experiment_dashboard.png`
-
-## How To Run
-
-This repository is developed in Ubuntu paths. Use `bash`, `python3`, and Linux paths.
-
-Install editable package:
-
-```bash
-python3 -m pip install -e .
-```
-
-Run core tests:
-
-```bash
-python3 -m pytest tests -q
-```
-
-Run the targeted current Phase3(dynamic) sparse-state test:
-
-```bash
-PYTHONPATH="src/epigraph_ph/Phase3(dynamic)/src:src" \
-uvx --from pytest --with numpy \
-pytest "src/epigraph_ph/Phase3(dynamic)/tests/test_r11_sparse_state_space.py"
-```
-
-Replay the latest R12 branch:
-
-```bash
-PYTHONPATH="src/epigraph_ph/Phase3(dynamic)/src:src" \
-uvx --from numpy --with matplotlib \
-python -m phase3_dynamic.cli r12-reference-branch \
-  --run-id p3d-r12-joint-annual-latent-monthly-local \
-  --start-year 2010 \
-  --end-year 2025 \
-  --min-train-years 5
-```
-
-## What Is Strong Today
-
-The project is currently strongest on:
-
-- explicit evidence provenance
-- observation-role enforcement
-- support-partition aware evaluation
-- source-family ablation scaffolds
-- blocked-time gates
-- carry-forward and R10-aware comparisons
-- stock-cone and conditional-rate non-regression gates
-- clear separation between direct Phase 2 covariates and hidden latent shocks
-
-## What Is Still Weak
-
-The project is not yet publishable as a superior all-purpose HIV forecast model because:
-
-- full mixed-lineage 3y/5y R10 trajectory gates still fail
-- true official AEM/Spectrum quarterly replay is not locked
-- incidence remains weakly observed and should stay validation-only or weak-measurement unless measurement error is explicit
-- province-level claims are still auxiliary unless stronger provincial truth support is added
-- Phase 2 determinant edges are not yet source-stable enough for causal language
-- ART interruption and re-engagement are not strongly observed without treatment-hub/cohort access
-
-## Near-Term Scientific Roadmap
-
-The next high-value scientific steps are:
-
-1. Calibrate the conserved annual head intervals against held-out official annual rows and report posterior predictive coverage, not only point error.
-2. Replace the current monthly latent-intensity scalar with a two-factor reporting/service state that separates support availability from program-volume shocks; the scalar latent process is cleaner than residual shifts but still far from R10.
-3. Keep R12-09 as a route-specific annual-anchor candidate, not a full champion.
-4. Promote Phase 2 determinants only after source-family re-estimation, time-window shift, placebo separation, and synthetic-recovery checks.
-5. Convert the current nested `Phase3(dynamic)` package into a cleaner `phase3_dynamic` layout only after import paths and artifact locators are migrated.
-
-## Plain-English Summary
-
-The project started as a broad evidence-to-graph system. It then learned that endpoint-style R10 models can look strong on old support but do not survive expanded HARP/HASP/HIV_Data cleanly. The current system therefore uses stricter observation roles, lineages, and blocked gates.
-
-As of R12-10, we can say:
-
-- We have a strong route-specific annual-anchor trajectory repair.
-- We beat carry-forward broadly under the current blocked contract.
-- We preserve stock and conditional-rate gates.
-- We now have annual official-style conserved heads for incidence, AIDS deaths, and estimated PLHIV.
-- We now use a latent monthly reporting-intensity state instead of a program residual-shift table.
-- We still do not beat R10 globally at 3y/5y mixed-lineage trajectory shape or on DOH program-nowcast route shape.
-
-That is the honest current frontier.
+This is research software for epidemiological modelling and scientific audit. Treat all outputs as exploratory unless the relevant claim is promoted in the claim registry and independently reviewed.

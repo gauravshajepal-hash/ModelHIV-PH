@@ -706,6 +706,7 @@ def _r13_filter_rows(rows: list[dict[str, Any]], *, scope: str, metrics: tuple[s
 def _r13_score_cached_predictions(
     *,
     rows: list[dict[str, Any]],
+    train_source_rows: list[dict[str, Any]] | None = None,
     family: str,
     split: dict[str, Any],
     prediction_cache: dict[tuple[str, str, int, tuple[int, ...]], tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]],
@@ -716,9 +717,10 @@ def _r13_score_cached_predictions(
     key = (family, scope_key, train_end_year, holdout_years)
     if key in prediction_cache:
         return prediction_cache[key]
+    train_source = rows if train_source_rows is None else train_source_rows
     train_rows = [
         dict(row)
-        for row in rows
+        for row in train_source
         if quarter_year(str(row.get("quarter") or "")) <= train_end_year
     ]
     holdout_rows = [
@@ -761,14 +763,18 @@ def _r13_model_spec_report(
     metrics = tuple(str(item) for item in tuple(spec.get("metrics") or R11_EVALUATION_METRICS))
     horizons = tuple(int(item) for item in tuple(spec.get("horizons") or (1,)))
     scope = str(spec.get("row_scope") or "all")
+    training_scope = str(spec.get("training_scope") or scope)
     family = str(spec.get("family") or "")
     scoped_rows = _r13_filter_rows(rows, scope=scope, metrics=metrics)
+    training_rows = _r13_filter_rows(rows, scope=training_scope, metrics=metrics)
     horizon_rows: list[dict[str, Any]] = []
     metric_rows: list[dict[str, Any]] = []
     blockers: list[str] = []
     stock_cone_violations = 0
     if not scoped_rows:
         blockers.append("no_rows_for_scope")
+    if not training_rows:
+        blockers.append("no_rows_for_training_scope")
     for horizon in horizons:
         splits = rolling_origin_splits(
             scoped_rows,
@@ -784,10 +790,11 @@ def _r13_model_spec_report(
         for split in splits:
             train_rows, holdout_rows, candidate_rows, carry_rows = _r13_score_cached_predictions(
                 rows=scoped_rows,
+                train_source_rows=training_rows,
                 family=family,
                 split=split,
                 prediction_cache=prediction_cache,
-                scope_key=scope,
+                scope_key=f"{scope}|train={training_scope}",
             )
             if not candidate_rows or not carry_rows:
                 continue
@@ -920,10 +927,12 @@ def _r13_model_spec_report(
         kept_claim = "not_evaluable"
     return {
         **{key: spec.get(key) for key in ("experiment_id", "priority", "layer", "title", "family", "row_scope", "hypothesis")},
+        "training_scope": training_scope,
         "candidate_family": spec.get("candidate_family"),
         "metrics": list(metrics),
         "horizons": list(horizons),
         "row_count": len(scoped_rows),
+        "training_row_count": len(training_rows),
         "horizon_rows": horizon_rows,
         "metric_rows": metric_rows,
         "candidate_mean_mae": None if not candidate_summary else float(np.mean(np.asarray(candidate_summary, dtype=np.float64))),

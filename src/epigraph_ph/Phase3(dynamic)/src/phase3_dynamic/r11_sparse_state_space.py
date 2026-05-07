@@ -60,6 +60,21 @@ CONSTRAINED_SHAPE_DIRECT_METRICS: tuple[str, ...] = (
     "new_diagnosed_cases_period",
 )
 R12_LONG_HORIZON_STOCK_METRICS: tuple[str, ...] = ("diagnosed_plhiv", "alive_on_art")
+R34_ART_RATIO_POLICY_IDS: tuple[str, ...] = (
+    "direct_positive_velocity",
+    "direct_median_velocity",
+    "diagnosed_ratio_positive_velocity__rate_logit_velocity",
+    "diagnosed_ratio_positive_velocity__rate_logit_trend",
+    "diagnosed_ratio_median_velocity__rate_logit_velocity",
+    "diagnosed_ratio_median_velocity__rate_logit_trend",
+)
+R36_METRIC_POLICY_IDS: tuple[str, ...] = ("carry_forward", "positive_velocity", "median_velocity")
+R39_FIXED_POLICY: dict[str, str] = {
+    "candidate_id": "r39_fixed_positive_velocity_art_ratio_trend",
+    "diagnosed_policy": "positive_velocity",
+    "flow_policy": "positive_velocity",
+    "art_policy": "diagnosed_ratio_median_velocity__rate_logit_trend",
+}
 R12_LINEAGE_DIAGNOSTIC_HORIZONS: tuple[int, ...] = (3, 5)
 R12_LINEAGE_AXES: tuple[str, ...] = (
     "source_family",
@@ -7409,6 +7424,908 @@ def _r19_joint_service_predictions(
     }
 
 
+def _r34_history_tuples(rows: list[dict[str, Any]], metric_name: str) -> list[tuple[int, float]]:
+    history: list[tuple[int, float]] = []
+    for row in sorted(rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(row.get("quarter") or "")
+        value = _finite_float(row.get(metric_name))
+        if not quarter or value is None:
+            continue
+        history.append((quarter_ordinal(quarter), float(value)))
+    return history
+
+
+def _r34_metric_policy_prediction(
+    rows: list[dict[str, Any]],
+    metric_name: str,
+    target_quarter: str,
+    policy_id: str,
+) -> float | None:
+    history = _r34_history_tuples(rows, metric_name)
+    if not history:
+        return None
+    target_ordinal = quarter_ordinal(target_quarter)
+    last_ordinal, last_value = history[-1]
+    if policy_id == "carry_forward":
+        return float(last_value)
+    diffs = [
+        (current[1] - previous[1]) / max(current[0] - previous[0], 1)
+        for previous, current in zip(history[:-1], history[1:])
+        if current[0] > previous[0]
+    ]
+    if policy_id == "positive_velocity":
+        positive = [value for value in diffs if value >= 0.0]
+        velocity = 0.0 if not positive else float(np.median(np.asarray(positive[-min(8, len(positive)) :], dtype=np.float64)))
+        return float(max(last_value + velocity * max(target_ordinal - last_ordinal, 0), 0.0))
+    if policy_id == "median_velocity":
+        velocity = 0.0 if not diffs else float(np.median(np.asarray(diffs[-min(8, len(diffs)) :], dtype=np.float64)))
+        return float(max(last_value + velocity * max(target_ordinal - last_ordinal, 0), 0.0))
+    raise ValueError(f"Unknown R34 metric policy: {policy_id}")
+
+
+def _r34_clip_rate(value: float) -> float:
+    eps = float(np.finfo(np.float64).eps)
+    return float(min(max(float(value), eps), 1.0 - eps))
+
+
+def _r34_logit(value: float) -> float:
+    clipped = _r34_clip_rate(value)
+    return float(np.log(clipped / (1.0 - clipped)))
+
+
+def _r34_inverse_logit(value: float) -> float:
+    if float(value) >= 0.0:
+        exp_neg = float(np.exp(-float(value)))
+        return float(1.0 / (1.0 + exp_neg))
+    exp_pos = float(np.exp(float(value)))
+    return float(exp_pos / (1.0 + exp_pos))
+
+
+def _r34_rate_history(
+    rows: list[dict[str, Any]],
+    *,
+    numerator_metric: str,
+    denominator_metric: str,
+) -> list[tuple[int, float]]:
+    history: list[tuple[int, float]] = []
+    for row in sorted(rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(row.get("quarter") or "")
+        numerator = _finite_float(row.get(numerator_metric))
+        denominator = _finite_float(row.get(denominator_metric))
+        if not quarter or numerator is None or denominator is None or denominator <= 0.0:
+            continue
+        rate = float(min(max(float(numerator) / float(denominator), 0.0), 1.0))
+        history.append((quarter_ordinal(quarter), rate))
+    return history
+
+
+def _r34_rate_policy_prediction(
+    rows: list[dict[str, Any]],
+    *,
+    numerator_metric: str,
+    denominator_metric: str,
+    target_quarter: str,
+    policy_id: str,
+) -> float | None:
+    history = _r34_rate_history(rows, numerator_metric=numerator_metric, denominator_metric=denominator_metric)
+    if not history:
+        return None
+    target_ordinal = quarter_ordinal(target_quarter)
+    last_ordinal, last_rate = history[-1]
+    if policy_id == "carry_forward":
+        return float(last_rate)
+    logits = [(ordinal, _r34_logit(rate)) for ordinal, rate in history]
+    if policy_id == "logit_velocity":
+        diffs = [
+            (current[1] - previous[1]) / max(current[0] - previous[0], 1)
+            for previous, current in zip(logits[:-1], logits[1:])
+            if current[0] > previous[0]
+        ]
+        velocity = 0.0 if not diffs else float(np.median(np.asarray(diffs[-min(8, len(diffs)) :], dtype=np.float64)))
+        return _r34_inverse_logit(_r34_logit(last_rate) + velocity * max(target_ordinal - last_ordinal, 0))
+    if policy_id == "logit_trend":
+        if len(logits) < 2:
+            return float(last_rate)
+        x = np.asarray([item[0] for item in logits], dtype=np.float64)
+        y = np.asarray([item[1] for item in logits], dtype=np.float64)
+        slope, intercept = np.polyfit(x - x[-1], y, 1)
+        return _r34_inverse_logit(float(intercept + slope * (target_ordinal - x[-1])))
+    raise ValueError(f"Unknown R34 rate policy: {policy_id}")
+
+
+def _r34_art_ratio_prediction(
+    train_rows: list[dict[str, Any]],
+    target_quarter: str,
+    policy_id: str,
+    *,
+    output_diagnosed_value: float | None,
+) -> float | None:
+    if policy_id.startswith("direct_"):
+        return _r34_metric_policy_prediction(
+            train_rows,
+            "alive_on_art",
+            target_quarter,
+            policy_id.removeprefix("direct_"),
+        )
+    if not policy_id.startswith("diagnosed_ratio_"):
+        raise ValueError(f"Unknown R34 ART policy: {policy_id}")
+    diagnosed_policy, rate_policy = policy_id.removeprefix("diagnosed_ratio_").split("__rate_", maxsplit=1)
+    latent_diagnosed = _r34_metric_policy_prediction(
+        train_rows,
+        "diagnosed_plhiv",
+        target_quarter,
+        diagnosed_policy,
+    )
+    ratio = _r34_rate_policy_prediction(
+        train_rows,
+        numerator_metric="alive_on_art",
+        denominator_metric="diagnosed_plhiv",
+        target_quarter=target_quarter,
+        policy_id=rate_policy,
+    )
+    if latent_diagnosed is None or ratio is None:
+        return None
+    latent_art = float(max(float(latent_diagnosed), 0.0) * float(ratio))
+    if output_diagnosed_value is None:
+        return float(max(latent_art, 0.0))
+    return float(min(max(latent_art, 0.0), max(float(output_diagnosed_value), 0.0)))
+
+
+def _fit_r34_art_ratio_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            target_art = _finite_float(holdout_row.get("alive_on_art"))
+            target_diagnosed = _finite_float(holdout_row.get("diagnosed_plhiv"))
+            if not quarter or target_art is None:
+                continue
+            scale = float(_metric_scale(internal_train, "alive_on_art"))
+            carry_art = _r34_metric_policy_prediction(internal_train, "alive_on_art", quarter, "carry_forward")
+            if carry_art is None:
+                continue
+            for policy_id in R34_ART_RATIO_POLICY_IDS:
+                predicted_art = _r34_art_ratio_prediction(
+                    internal_train,
+                    quarter,
+                    policy_id,
+                    output_diagnosed_value=target_diagnosed,
+                )
+                if predicted_art is None:
+                    continue
+                records.append(
+                    {
+                        "train_end_year": int(train_end_year),
+                        "quarter": quarter,
+                        "policy_id": policy_id,
+                        "target_alive_on_art": float(target_art),
+                        "predicted_alive_on_art": float(predicted_art),
+                        "carry_forward_alive_on_art": float(carry_art),
+                        "target_diagnosed_plhiv": target_diagnosed,
+                        "scale": scale,
+                        "stock_cone_violation": bool(
+                            target_diagnosed is not None
+                            and float(predicted_art) > float(target_diagnosed) + FLOAT_NONREGRESSION_TOLERANCE
+                        ),
+                    }
+                )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "selected_policy_id": "none",
+            "record_count": 0,
+            "reason": "no_internal_art_ratio_records",
+        }
+    candidate_rows: list[dict[str, Any]] = []
+    carry_errors = [
+        abs(float(row["carry_forward_alive_on_art"]) - float(row["target_alive_on_art"]))
+        / max(float(row["scale"]), float(np.finfo(np.float32).eps))
+        for row in records
+    ]
+    carry_mean = float(np.mean(np.asarray(carry_errors, dtype=np.float64))) if carry_errors else None
+    carry_worst = float(np.max(np.asarray(carry_errors, dtype=np.float64))) if carry_errors else None
+    best_row: dict[str, Any] | None = None
+    for policy_id in R34_ART_RATIO_POLICY_IDS:
+        policy_records = [row for row in records if str(row.get("policy_id") or "") == policy_id]
+        if not policy_records:
+            continue
+        errors = [
+            abs(float(row["predicted_alive_on_art"]) - float(row["target_alive_on_art"]))
+            / max(float(row["scale"]), float(np.finfo(np.float32).eps))
+            for row in policy_records
+        ]
+        mean_error = float(np.mean(np.asarray(errors, dtype=np.float64)))
+        worst_error = float(np.max(np.asarray(errors, dtype=np.float64)))
+        violations = sum(1 for row in policy_records if bool(row.get("stock_cone_violation")))
+        eligible = bool(
+            carry_mean is not None
+            and carry_worst is not None
+            and mean_error < float(carry_mean)
+            and worst_error <= float(carry_worst) + FLOAT_NONREGRESSION_TOLERANCE
+            and violations == 0
+        )
+        row = {
+            "policy_id": policy_id,
+            "record_count": len(policy_records),
+            "policy_mean_mae": mean_error,
+            "policy_worst_mae": worst_error,
+            "carry_forward_mean_mae": carry_mean,
+            "carry_forward_worst_mae": carry_worst,
+            "policy_minus_carry_forward_mean": None if carry_mean is None else float(mean_error - float(carry_mean)),
+            "policy_minus_carry_forward_worst": None if carry_worst is None else float(worst_error - float(carry_worst)),
+            "stock_cone_violation_count": int(violations),
+            "eligible": eligible,
+        }
+        candidate_rows.append(row)
+        if eligible and (best_row is None or mean_error < float(best_row["policy_mean_mae"])):
+            best_row = row
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "selected_policy_id": "none" if best_row is None else str(best_row["policy_id"]),
+        "record_count": len(records),
+        "carry_forward_mean_mae": carry_mean,
+        "carry_forward_worst_mae": carry_worst,
+        "selected_mean_mae": None if best_row is None else best_row.get("policy_mean_mae"),
+        "selected_worst_mae": None if best_row is None else best_row.get("policy_worst_mae"),
+        "candidate_policy_rows": candidate_rows,
+        "contract": (
+            "R34 selects an ART stock policy using internal blocked train-origin alive_on_art records only. "
+            "The selected policy must beat last-observed ART carry-forward in mean error, not worsen worst-case "
+            "ART error, and obey the D >= A stock cone. No R10 values or outer holdout targets are used."
+        ),
+    }
+
+
+def _r34_art_ratio_guarded_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r19_joint_service_predictions(train_rows, holdout_rows)
+    selector = _fit_r34_art_ratio_selector(
+        train_rows,
+        max_horizon_years=_holdout_max_horizon_years(train_rows, holdout_rows),
+    )
+    selected_policy = str(selector.get("selected_policy_id") or "none")
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    output: list[dict[str, Any]] = []
+    mutation_rows: list[dict[str, Any]] = []
+    if str(selector.get("status") or "") != "completed" or selected_policy == "none":
+        return [_project_prediction_row(dict(row)) for row in base_predictions], {
+            "base_family": "r19_joint_service_cascade_process",
+            "base_summary": base_summary,
+            "art_ratio_selector": selector,
+            "selected_policy_id": selected_policy,
+            "mutation_rows": [],
+            "contract": "R34 failed closed to the R19 base because no internal train-origin ART-ratio policy passed the selector.",
+        }
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(base_prediction)
+        quarter = str(row.get("quarter") or holdout_row.get("quarter") or "")
+        base_art = _finite_float(row.get("alive_on_art"))
+        output_diagnosed = _finite_float(row.get("diagnosed_plhiv"))
+        process_art = _r34_art_ratio_prediction(
+            train_rows,
+            quarter,
+            selected_policy,
+            output_diagnosed_value=output_diagnosed,
+        )
+        if process_art is not None:
+            row["alive_on_art"] = float(process_art)
+        row = _apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process)
+        output.append(row)
+        mutation_rows.append(
+            {
+                "quarter": quarter,
+                "selected_policy_id": selected_policy,
+                "base_alive_on_art": base_art,
+                "process_alive_on_art": process_art,
+                "final_alive_on_art": row.get("alive_on_art"),
+                "diagnosed_plhiv_unchanged": output_diagnosed,
+                "new_diagnosed_cases_period_unchanged": row.get("new_diagnosed_cases_period"),
+            }
+        )
+    return output, {
+        "base_family": "r19_joint_service_cascade_process",
+        "base_summary": base_summary,
+        "art_ratio_selector": selector,
+        "selected_policy_id": selected_policy,
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R34 keeps the R19 diagnosis-flow and diagnosed-stock trajectory fixed, replaces only alive_on_art "
+            "with the internally selected diagnosed/ART-ratio process, and then reapplies the train-fitted "
+            "conditional VL/suppression rate process to preserve the cascade cone."
+        ),
+    }
+
+
+def _r35_art_ratio_flow_guarded_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    base_predictions, base_summary = _r34_art_ratio_guarded_predictions(train_rows, holdout_rows)
+    output: list[dict[str, Any]] = []
+    mutation_rows: list[dict[str, Any]] = []
+    for base_prediction, holdout_row in zip(
+        base_predictions,
+        sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))),
+    ):
+        row = dict(base_prediction)
+        quarter = str(row.get("quarter") or holdout_row.get("quarter") or "")
+        base_flow = _finite_float(row.get("new_diagnosed_cases_period"))
+        repaired_flow = _r34_metric_policy_prediction(
+            train_rows,
+            "new_diagnosed_cases_period",
+            quarter,
+            "positive_velocity",
+        )
+        if repaired_flow is not None:
+            row["new_diagnosed_cases_period"] = float(repaired_flow)
+        output.append(_project_prediction_row(row))
+        mutation_rows.append(
+            {
+                "quarter": quarter,
+                "base_new_diagnosed_cases_period": base_flow,
+                "repaired_new_diagnosed_cases_period": repaired_flow,
+                "final_new_diagnosed_cases_period": row.get("new_diagnosed_cases_period"),
+                "flow_policy_id": "positive_velocity",
+            }
+        )
+    return output, {
+        "base_family": "r34_art_ratio_guarded_process",
+        "base_summary": base_summary,
+        "flow_policy_id": "positive_velocity",
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R35 keeps the R34 ART-ratio branch and adds the R31 train-only positive-velocity diagnosis-flow "
+            "repair. It mutates only `alive_on_art` through R34 and `new_diagnosed_cases_period` through the "
+            "predeclared positive-velocity flow policy; diagnosed stock remains fixed from the R19/R34 backbone."
+        ),
+    }
+
+
+def _fit_r36_metric_policy_selector(
+    train_rows: list[dict[str, Any]],
+    *,
+    metric_name: str,
+    max_horizon_years: int,
+) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            target = _finite_float(holdout_row.get(metric_name))
+            if not quarter or target is None:
+                continue
+            scale = float(_metric_scale(internal_train, metric_name))
+            for policy_id in R36_METRIC_POLICY_IDS:
+                prediction = _r34_metric_policy_prediction(internal_train, metric_name, quarter, policy_id)
+                if prediction is None:
+                    continue
+                records.append(
+                    {
+                        "train_end_year": int(train_end_year),
+                        "quarter": quarter,
+                        "metric_name": metric_name,
+                        "policy_id": policy_id,
+                        "prediction": float(prediction),
+                        "target": float(target),
+                        "scale": scale,
+                    }
+                )
+    if not records:
+        return {
+            "status": "not_estimable",
+            "metric_name": metric_name,
+            "selected_policy_id": "carry_forward",
+            "record_count": 0,
+            "reason": "no_internal_metric_policy_records",
+        }
+    candidate_rows: list[dict[str, Any]] = []
+    best_row: dict[str, Any] | None = None
+    carry_row: dict[str, Any] | None = None
+    for policy_id in R36_METRIC_POLICY_IDS:
+        policy_records = [row for row in records if str(row.get("policy_id") or "") == policy_id]
+        if not policy_records:
+            continue
+        errors = [
+            abs(float(row["prediction"]) - float(row["target"]))
+            / max(float(row["scale"]), float(np.finfo(np.float32).eps))
+            for row in policy_records
+        ]
+        row = {
+            "metric_name": metric_name,
+            "policy_id": policy_id,
+            "record_count": len(policy_records),
+            "policy_mean_mae": float(np.mean(np.asarray(errors, dtype=np.float64))),
+            "policy_worst_mae": float(np.max(np.asarray(errors, dtype=np.float64))),
+        }
+        candidate_rows.append(row)
+        if policy_id == "carry_forward":
+            carry_row = row
+    if carry_row is None:
+        return {
+            "status": "failed_closed",
+            "metric_name": metric_name,
+            "selected_policy_id": "carry_forward",
+            "record_count": len(records),
+            "candidate_policy_rows": candidate_rows,
+            "reason": "carry_forward_baseline_missing",
+        }
+    for row in candidate_rows:
+        eligible = bool(
+            str(row.get("policy_id") or "") != "carry_forward"
+            and float(row["policy_mean_mae"]) < float(carry_row["policy_mean_mae"])
+            and float(row["policy_worst_mae"]) <= float(carry_row["policy_worst_mae"]) + FLOAT_NONREGRESSION_TOLERANCE
+        )
+        row["eligible"] = eligible
+        row["policy_minus_carry_forward_mean"] = float(row["policy_mean_mae"] - float(carry_row["policy_mean_mae"]))
+        row["policy_minus_carry_forward_worst"] = float(row["policy_worst_mae"] - float(carry_row["policy_worst_mae"]))
+        if eligible and (best_row is None or float(row["policy_mean_mae"]) < float(best_row["policy_mean_mae"])):
+            best_row = row
+    selected = carry_row if best_row is None else best_row
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "metric_name": metric_name,
+        "selected_policy_id": str(selected.get("policy_id") or "carry_forward"),
+        "record_count": len(records),
+        "carry_forward_mean_mae": carry_row.get("policy_mean_mae"),
+        "carry_forward_worst_mae": carry_row.get("policy_worst_mae"),
+        "selected_mean_mae": selected.get("policy_mean_mae"),
+        "selected_worst_mae": selected.get("policy_worst_mae"),
+        "candidate_policy_rows": candidate_rows,
+        "contract": (
+            "R36 metric policy selector uses internal blocked train-origin evidence only and switches away from "
+            "carry-forward only when mean error improves and worst-case error does not regress."
+        ),
+    }
+
+
+def _r36_component_policy_cascade_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    max_horizon = _holdout_max_horizon_years(train_rows, holdout_rows)
+    diagnosed_selector = _fit_r36_metric_policy_selector(
+        train_rows,
+        metric_name="diagnosed_plhiv",
+        max_horizon_years=max_horizon,
+    )
+    flow_selector = _fit_r36_metric_policy_selector(
+        train_rows,
+        metric_name="new_diagnosed_cases_period",
+        max_horizon_years=max_horizon,
+    )
+    art_selector = _fit_r34_art_ratio_selector(train_rows, max_horizon_years=max_horizon)
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    diagnosed_policy = str(diagnosed_selector.get("selected_policy_id") or "carry_forward")
+    flow_policy = str(flow_selector.get("selected_policy_id") or "carry_forward")
+    art_policy = str(art_selector.get("selected_policy_id") or "none")
+    output: list[dict[str, Any]] = []
+    mutation_rows: list[dict[str, Any]] = []
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        diagnosed = _r34_metric_policy_prediction(train_rows, "diagnosed_plhiv", quarter, diagnosed_policy)
+        flow = _r34_metric_policy_prediction(train_rows, "new_diagnosed_cases_period", quarter, flow_policy)
+        art = None
+        if art_policy != "none" and diagnosed is not None:
+            art = _r34_art_ratio_prediction(
+                train_rows,
+                quarter,
+                art_policy,
+                output_diagnosed_value=float(diagnosed),
+            )
+        if art is None:
+            art = _r34_metric_policy_prediction(train_rows, "alive_on_art", quarter, "carry_forward")
+        row = {
+            "quarter": quarter,
+            "diagnosed_plhiv": diagnosed,
+            "alive_on_art": art,
+            "new_diagnosed_cases_period": flow,
+        }
+        row = _apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process)
+        output.append(row)
+        mutation_rows.append(
+            {
+                "quarter": quarter,
+                "diagnosed_policy_id": diagnosed_policy,
+                "flow_policy_id": flow_policy,
+                "art_policy_id": art_policy,
+                "diagnosed_plhiv": row.get("diagnosed_plhiv"),
+                "alive_on_art": row.get("alive_on_art"),
+                "new_diagnosed_cases_period": row.get("new_diagnosed_cases_period"),
+            }
+        )
+    return output, {
+        "diagnosed_selector": diagnosed_selector,
+        "flow_selector": flow_selector,
+        "art_ratio_selector": art_selector,
+        "back_half_rate_process": back_half_process,
+        "selected_policies": {
+            "diagnosed_plhiv": diagnosed_policy,
+            "new_diagnosed_cases_period": flow_policy,
+            "alive_on_art": art_policy,
+        },
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R36 is a fast exact component-policy cascade: diagnosed stock and diagnosis flow are selected from "
+            "blocked train-origin metric policies, ART is selected from the R34 diagnosed-ratio selector, and "
+            "VL/suppression follow the train-fitted conditional-rate process. It uses no R10 teacher and no "
+            "outer holdout target values."
+        ),
+    }
+
+
+def _apply_fixed_component_policy(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+    *,
+    policy: dict[str, str],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    back_half_process = _fit_back_half_rate_process(train_rows)
+    output: list[dict[str, Any]] = []
+    mutation_rows: list[dict[str, Any]] = []
+    for holdout_row in sorted(holdout_rows, key=lambda item: quarter_sort_key(str(item.get("quarter") or ""))):
+        quarter = str(holdout_row.get("quarter") or "")
+        diagnosed = _r34_metric_policy_prediction(train_rows, "diagnosed_plhiv", quarter, str(policy["diagnosed_policy"]))
+        flow = _r34_metric_policy_prediction(train_rows, "new_diagnosed_cases_period", quarter, str(policy["flow_policy"]))
+        art = None
+        if diagnosed is not None:
+            art = _r34_art_ratio_prediction(
+                train_rows,
+                quarter,
+                str(policy["art_policy"]),
+                output_diagnosed_value=float(diagnosed),
+            )
+        row = {
+            "quarter": quarter,
+            "diagnosed_plhiv": diagnosed,
+            "alive_on_art": art,
+            "new_diagnosed_cases_period": flow,
+        }
+        row = _apply_back_half_rate_process(_project_prediction_row(row), holdout_row, back_half_process)
+        output.append(row)
+        mutation_rows.append(
+            {
+                "quarter": quarter,
+                "candidate_id": str(policy.get("candidate_id") or ""),
+                "diagnosed_policy": str(policy["diagnosed_policy"]),
+                "flow_policy": str(policy["flow_policy"]),
+                "art_policy": str(policy["art_policy"]),
+                "diagnosed_plhiv": row.get("diagnosed_plhiv"),
+                "alive_on_art": row.get("alive_on_art"),
+                "new_diagnosed_cases_period": row.get("new_diagnosed_cases_period"),
+            }
+        )
+    return output, mutation_rows, back_half_process
+
+
+def _r39_fixed_policy_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    predictions, mutation_rows, back_half_process = _apply_fixed_component_policy(
+        train_rows,
+        holdout_rows,
+        policy=R39_FIXED_POLICY,
+    )
+    return predictions, {
+        "fixed_policy": dict(R39_FIXED_POLICY),
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R39 freezes the R37 best strict fixed policy as an explicit candidate family: diagnosed stock and "
+            "diagnosis flow use positive train velocity, ART uses diagnosed-stock median-velocity plus ART-ratio "
+            "logit trend, and VL/suppression use train-fitted conditional rates. This branch is R37-derived and "
+            "must pass an independent annual gate before promotion."
+        ),
+    }
+
+
+def _fit_r40_metric_policy_selector(
+    train_rows: list[dict[str, Any]],
+    *,
+    metric_name: str,
+    max_horizon_years: int,
+) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        scale = float(_metric_scale(internal_train, metric_name))
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            target = _finite_float(holdout_row.get(metric_name))
+            if not quarter or target is None:
+                continue
+            for policy_id in R36_METRIC_POLICY_IDS:
+                prediction = _r34_metric_policy_prediction(internal_train, metric_name, quarter, policy_id)
+                if prediction is None:
+                    continue
+                records.append(
+                    {
+                        "policy_id": policy_id,
+                        "error": abs(float(prediction) - float(target)) / max(scale, float(np.finfo(np.float32).eps)),
+                    }
+                )
+    if not records:
+        return {
+            "status": "failed_closed",
+            "metric_name": metric_name,
+            "selected_policy_id": "carry_forward",
+            "reason": "no_internal_records",
+        }
+    candidate_rows: list[dict[str, Any]] = []
+    for policy_id in R36_METRIC_POLICY_IDS:
+        errors = [float(row["error"]) for row in records if str(row.get("policy_id") or "") == policy_id]
+        if not errors:
+            continue
+        array = np.asarray(errors, dtype=np.float64)
+        candidate_rows.append(
+            {
+                "policy_id": policy_id,
+                "record_count": len(errors),
+                "mean_norm_error": float(np.mean(array)),
+                "p90_norm_error": float(np.percentile(array, 90)),
+                "worst_norm_error": float(np.max(array)),
+            }
+        )
+    carry = next((row for row in candidate_rows if str(row.get("policy_id") or "") == "carry_forward"), None)
+    if carry is None:
+        return {
+            "status": "failed_closed",
+            "metric_name": metric_name,
+            "selected_policy_id": "carry_forward",
+            "candidate_rows": candidate_rows,
+            "reason": "carry_forward_missing",
+        }
+    best_row: dict[str, Any] | None = None
+    for row in candidate_rows:
+        eligible = bool(
+            str(row.get("policy_id") or "") != "carry_forward"
+            and float(row["mean_norm_error"]) < float(carry["mean_norm_error"])
+            and float(row["p90_norm_error"]) <= float(carry["p90_norm_error"]) + FLOAT_NONREGRESSION_TOLERANCE
+        )
+        row["eligible"] = eligible
+        row["mean_minus_carry"] = float(row["mean_norm_error"] - float(carry["mean_norm_error"]))
+        row["p90_minus_carry"] = float(row["p90_norm_error"] - float(carry["p90_norm_error"]))
+        if eligible and (best_row is None or float(row["mean_norm_error"]) < float(best_row["mean_norm_error"])):
+            best_row = row
+    selected = carry if best_row is None else best_row
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "metric_name": metric_name,
+        "selected_policy_id": str(selected.get("policy_id") or "carry_forward"),
+        "candidate_rows": candidate_rows,
+        "contract": (
+            "R40 metric selector switches away from carry-forward only when internal train-origin mean error "
+            "improves and p90 error does not regress. Worst error is reported but not a hard gate because "
+            "diagnosis-flow has reporting shocks."
+        ),
+    }
+
+
+def _fit_r40_art_ratio_selector(train_rows: list[dict[str, Any]], *, max_horizon_years: int) -> dict[str, Any]:
+    years = sorted({quarter_year(str(row.get("quarter") or "")) for row in train_rows if row.get("quarter")})
+    records: list[dict[str, Any]] = []
+    for train_end_year in years[1:]:
+        internal_train = [
+            dict(row)
+            for row in train_rows
+            if quarter_year(str(row.get("quarter") or "")) <= int(train_end_year)
+        ]
+        internal_holdout = [
+            dict(row)
+            for row in train_rows
+            if int(train_end_year) < quarter_year(str(row.get("quarter") or "")) <= int(train_end_year) + int(max_horizon_years)
+        ]
+        if not internal_train or not internal_holdout:
+            continue
+        scale = float(_metric_scale(internal_train, "alive_on_art"))
+        for holdout_row in internal_holdout:
+            quarter = str(holdout_row.get("quarter") or "")
+            target_art = _finite_float(holdout_row.get("alive_on_art"))
+            target_diagnosed = _finite_float(holdout_row.get("diagnosed_plhiv"))
+            if not quarter or target_art is None:
+                continue
+            carry_art = _r34_metric_policy_prediction(internal_train, "alive_on_art", quarter, "carry_forward")
+            if carry_art is not None:
+                records.append(
+                    {
+                        "policy_id": "carry_forward",
+                        "error": abs(float(carry_art) - float(target_art)) / max(scale, float(np.finfo(np.float32).eps)),
+                    }
+                )
+            for policy_id in R34_ART_RATIO_POLICY_IDS:
+                prediction = _r34_art_ratio_prediction(
+                    internal_train,
+                    quarter,
+                    policy_id,
+                    output_diagnosed_value=target_diagnosed,
+                )
+                if prediction is None:
+                    continue
+                records.append(
+                    {
+                        "policy_id": policy_id,
+                        "error": abs(float(prediction) - float(target_art)) / max(scale, float(np.finfo(np.float32).eps)),
+                    }
+                )
+    if not records:
+        return {
+            "status": "failed_closed",
+            "selected_policy_id": "direct_carry_forward",
+            "reason": "no_internal_records",
+        }
+    candidate_rows: list[dict[str, Any]] = []
+    for policy_id in ("carry_forward", *R34_ART_RATIO_POLICY_IDS):
+        errors = [float(row["error"]) for row in records if str(row.get("policy_id") or "") == policy_id]
+        if not errors:
+            continue
+        array = np.asarray(errors, dtype=np.float64)
+        candidate_rows.append(
+            {
+                "policy_id": policy_id,
+                "record_count": len(errors),
+                "mean_norm_error": float(np.mean(array)),
+                "p90_norm_error": float(np.percentile(array, 90)),
+                "worst_norm_error": float(np.max(array)),
+            }
+        )
+    carry = next((row for row in candidate_rows if str(row.get("policy_id") or "") == "carry_forward"), None)
+    if carry is None:
+        return {
+            "status": "failed_closed",
+            "selected_policy_id": "direct_carry_forward",
+            "candidate_rows": candidate_rows,
+            "reason": "carry_forward_missing",
+        }
+    best_row: dict[str, Any] | None = None
+    for row in candidate_rows:
+        eligible = bool(
+            str(row.get("policy_id") or "") != "carry_forward"
+            and float(row["mean_norm_error"]) < float(carry["mean_norm_error"])
+            and float(row["p90_norm_error"]) <= float(carry["p90_norm_error"]) + FLOAT_NONREGRESSION_TOLERANCE
+        )
+        row["eligible"] = eligible
+        row["mean_minus_carry"] = float(row["mean_norm_error"] - float(carry["mean_norm_error"]))
+        row["p90_minus_carry"] = float(row["p90_norm_error"] - float(carry["p90_norm_error"]))
+        if eligible and (best_row is None or float(row["mean_norm_error"]) < float(best_row["mean_norm_error"])):
+            best_row = row
+    selected = carry if best_row is None else best_row
+    selected_policy = "direct_carry_forward" if str(selected.get("policy_id") or "") == "carry_forward" else str(selected.get("policy_id") or "")
+    return {
+        "status": "completed" if best_row is not None else "failed_closed",
+        "selected_policy_id": selected_policy,
+        "candidate_rows": candidate_rows,
+        "contract": "R40 ART selector uses internal train-origin alive_on_art errors with a p90 non-regression gate.",
+    }
+
+
+def _r40_p90_policy_selector_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    max_horizon = _holdout_max_horizon_years(train_rows, holdout_rows)
+    diagnosed_selector = _fit_r40_metric_policy_selector(train_rows, metric_name="diagnosed_plhiv", max_horizon_years=max_horizon)
+    flow_selector = _fit_r40_metric_policy_selector(train_rows, metric_name="new_diagnosed_cases_period", max_horizon_years=max_horizon)
+    art_selector = _fit_r40_art_ratio_selector(train_rows, max_horizon_years=max_horizon)
+    diagnosed_policy = str(diagnosed_selector.get("selected_policy_id") or "carry_forward")
+    flow_policy = str(flow_selector.get("selected_policy_id") or "carry_forward")
+    art_policy = str(art_selector.get("selected_policy_id") or "direct_carry_forward")
+    policy = {
+        "candidate_id": "r40_p90_policy_selector",
+        "diagnosed_policy": diagnosed_policy,
+        "flow_policy": flow_policy,
+        "art_policy": art_policy,
+    }
+    predictions, mutation_rows, back_half_process = _apply_fixed_component_policy(train_rows, holdout_rows, policy=policy)
+    return predictions, {
+        "selected_policies": {
+            "diagnosed_plhiv": diagnosed_policy,
+            "new_diagnosed_cases_period": flow_policy,
+            "alive_on_art": art_policy,
+        },
+        "diagnosed_selector": diagnosed_selector,
+        "flow_selector": flow_selector,
+        "art_selector": art_selector,
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R40 uses module-local train-origin selectors with p90 non-regression gates. It is designed to "
+            "handle reporting shocks without hard-wiring the R37 strict-scan winner."
+        ),
+    }
+
+
+def _r41_growth_phase_policy(train_rows: list[dict[str, Any]], metric_name: str) -> str:
+    history = _r34_history_tuples(train_rows, metric_name)
+    if len(history) < 2:
+        return "carry_forward"
+    return "positive_velocity" if float(history[-1][1]) >= float(history[0][1]) else "median_velocity"
+
+
+def _r41_art_ratio_phase_policy(train_rows: list[dict[str, Any]]) -> str:
+    history = _r34_rate_history(
+        train_rows,
+        numerator_metric="alive_on_art",
+        denominator_metric="diagnosed_plhiv",
+    )
+    if len(history) < 2:
+        return "direct_median_velocity"
+    if float(history[-1][1]) >= float(history[0][1]):
+        return "diagnosed_ratio_median_velocity__rate_logit_trend"
+    return "diagnosed_ratio_positive_velocity__rate_logit_velocity"
+
+
+def _r41_monotone_growth_component_predictions(
+    train_rows: list[dict[str, Any]],
+    holdout_rows: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    policy = {
+        "candidate_id": "r41_monotone_growth_component_policy",
+        "diagnosed_policy": _r41_growth_phase_policy(train_rows, "diagnosed_plhiv"),
+        "flow_policy": _r41_growth_phase_policy(train_rows, "new_diagnosed_cases_period"),
+        "art_policy": _r41_art_ratio_phase_policy(train_rows),
+    }
+    predictions, mutation_rows, back_half_process = _apply_fixed_component_policy(
+        train_rows,
+        holdout_rows,
+        policy=policy,
+    )
+    return predictions, {
+        "selected_policy": policy,
+        "back_half_rate_process": back_half_process,
+        "mutation_rows": mutation_rows,
+        "contract": (
+            "R41 selects component policies from train-only epidemic phase signs: growing diagnosed stock and "
+            "diagnosis flow use positive velocity; growing ART coverage uses diagnosed-stock plus ART-ratio "
+            "logit trend. No R10 predictions, strict holdout targets, or hand-set numeric thresholds enter "
+            "the selector."
+        ),
+    }
+
+
 def _r19_rate_logit(rate: float) -> float:
     eps = float(np.finfo(np.float32).eps)
     bounded = min(max(float(rate), eps), 1.0 - eps)
@@ -11749,6 +12666,78 @@ def _candidate_predictions(
                 "R19-lineage keeps the R19 ART/service branch fixed and adds a source-lineage-aware "
                 "local-level state-space observation process for VL testing and suppression conditional rates. "
                 "The process cannot directly mutate diagnosed stock, ART stock, or diagnosis flow."
+            ),
+        }
+
+    if family == "r34_art_ratio_guarded_process":
+        predictions, summary = _r34_art_ratio_guarded_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R34 wraps R19 with a train-origin ART diagnosed-ratio selector. It can mutate only "
+                "`alive_on_art`; diagnosed stock and diagnosis flow remain from R19, and VL/suppression are "
+                "recomputed by the existing train-fitted conditional-rate process to preserve the stock cone."
+            ),
+        }
+
+    if family == "r35_art_ratio_flow_guarded_process":
+        predictions, summary = _r35_art_ratio_flow_guarded_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R35 combines R34's train-origin ART diagnosed-ratio process with R31's train-origin positive "
+                "diagnosis-flow velocity repair. It does not mutate diagnosed stock and remains subject to the "
+                "same R10/carry-forward/annual gates."
+            ),
+        }
+
+    if family == "r36_component_policy_cascade_process":
+        predictions, summary = _r36_component_policy_cascade_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R36 is a fast exact component-policy cascade with train-origin selectors for diagnosed stock, "
+                "diagnosis flow, ART ratio, and back-half rates. It is a falsification branch for the R32/R33 "
+                "aggregate signal, not an R10 teacher."
+            ),
+        }
+
+    if family == "r39_fixed_positive_velocity_art_ratio_process":
+        predictions, summary = _r39_fixed_policy_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R39 freezes the R37 best fixed component-policy candidate as an explicit branch. It is not "
+                "promotion-grade merely because it passes the R37 scan; it must pass annual and future external "
+                "validation gates because the fixed policy was selected after strict-scan inspection."
+            ),
+        }
+
+    if family == "r40_p90_policy_selector_process":
+        predictions, summary = _r40_p90_policy_selector_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R40 selects diagnosed, diagnosis-flow, and ART-ratio policies from internal train-window "
+                "observed errors using p90 non-regression gates. It is a train-selected alternative to the "
+                "R39 strict-scan-fixed branch."
+            ),
+        }
+
+    if family == "r41_monotone_growth_component_process":
+        predictions, summary = _r41_monotone_growth_component_predictions(train_rows, holdout_rows)
+        return predictions, {
+            "family": family,
+            **summary,
+            "contract": (
+                "R41 is a train-only monotone epidemic-phase component branch. It chooses positive velocity for "
+                "growing diagnosed stock and diagnosis flow, ART-ratio logit trend for growing ART coverage, and "
+                "then applies the train-fitted conditional VL/suppression process."
             ),
         }
 

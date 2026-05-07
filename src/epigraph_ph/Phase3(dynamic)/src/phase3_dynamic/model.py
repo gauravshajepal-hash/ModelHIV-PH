@@ -290,7 +290,9 @@ def _simulate_sequence(
             "new_diagnosed_cases_period": float(u_to_d),
             "tested_for_viral_load": state_sum(current_state, VL_TESTED_STATE_NAMES),
             "virally_suppressed": float(current_state["V"]),
+            "estimated_plhiv": state_sum(current_state, STATE_NAMES),
             "incident_infections_period": float((stock_balance.get("stock_balance") or {}).get("incidence_inflow") or 0.0),
+            "aids_deaths_period": float((((stock_balance.get("stock_balance") or {}).get("exit_channel_outflows") or {}).get("mortality_removal")) or 0.0),
             "net_attrition_outflow_period": float((stock_balance.get("stock_balance") or {}).get("attrition_outflow") or 0.0),
         }
         prediction_rows.append(prediction)
@@ -453,7 +455,11 @@ def _apply_observation_model(raw_prediction_rows: list[dict[str, float]], observ
             suppressed = min(max(float(suppressed), 0.0), alive)
         if tested is not None and suppressed is not None:
             tested = min(alive, max(float(tested), float(suppressed)))
-        calibrated_rows.append({"quarter": quarter, "diagnosed_plhiv": diagnosed, "alive_on_art": alive, "new_diagnosed_cases_period": new_diag, "tested_for_viral_load": tested, "virally_suppressed": suppressed})
+        calibrated_row = {"quarter": quarter, "diagnosed_plhiv": diagnosed, "alive_on_art": alive, "new_diagnosed_cases_period": new_diag, "tested_for_viral_load": tested, "virally_suppressed": suppressed}
+        for ledger_metric in ("estimated_plhiv", "incident_infections_period", "aids_deaths_period", "net_attrition_outflow_period"):
+            if row.get(ledger_metric) is not None:
+                calibrated_row[ledger_metric] = float(row.get(ledger_metric) or 0.0)
+        calibrated_rows.append(calibrated_row)
     return calibrated_rows
 
 def _forecast_origin_index(quarter_index: dict[str, int], train_quarters: list[str]) -> int:
@@ -856,4 +862,3 @@ def simulate_holdout(
         exit_channel_state_outflow_map=exit_channel_state_outflow_map,
     )
     return {"prediction_rows": raw_result["prediction_rows"], "trajectory_rows": raw_result["trajectory_rows"], "mae": float(normalized_mae(raw_result["prediction_rows"], holdout_rows, dataset.metric_scales, eps=dataset.eps)), "smape": float(smape(raw_result["prediction_rows"], holdout_rows, eps=dataset.eps))}
-
