@@ -167,6 +167,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R86 | Can train-origin annual calibration turn the complete ledger into a benchmark win? | Pass: annual calibrated ledger beats carry-forward with complete validation-only target coverage |
 | R87 | Can train-backtested raw emission ratio/trend calibration fix incidence/deaths? | Diagnostic: free process rescaling is unstable and loses to carry-forward |
 | R88 | Can a guarded process-or-carry selector improve the annual ledger without overfitting weak channels? | Pass: guarded annual ledger beats carry-forward by retaining raw PLHIV and rejecting weak raw incidence/death |
+| R89 | Is there enough direct process evidence to claim raw incidence/death mechanisms are identified? | Diagnostic: direct incidence support is absent; reported-death bridge loses to carry-forward |
 
 ## What Is Currently Defensible?
 
@@ -177,6 +178,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - Annual public targets can be scored in a leakage-aware way through R75/R80.
 - R86 is a scoped annual-ledger model win against carry-forward on held-out annual incidence, AIDS deaths, and PLHIV.
 - R88 is a conservative guarded annual-ledger win: it improves the annual ledger by keeping raw PLHIV and using carry-forward priors for weak incidence/death channels.
+- R89 blocks raw incidence/death mechanism claims under the active evidence ledger.
 - Phase 2 determinant structure can be used for sensitivity/scenario labels only.
 - R84 exposes the key mechanistic annual ledger quantities in the simulator.
 - R85 shows the annual bridge failure was process quality, not missing quarterly emission coverage.
@@ -187,6 +189,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - “Phase 2 graph edges are causal intervention effects.”
 - “Subnational process model is validated province-by-province.”
 - “The raw quarterly mechanistic incidence/death process beats annual public targets without annual calibration.”
+- “The raw incidence and AIDS-death mechanisms are identified from direct process evidence.”
 - “Third-95 process claims are fully identified without stronger VL/suppression process evidence.”
 
 ## Repository Map
@@ -271,6 +274,8 @@ Expected latest focused test result:
 | R87 process calibration diagnostic | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r87-train-backtested-emission-process-calibration-20260507-s00/analysis/r87_train_backtested_emission_process_calibration_report.json` |
 | R88 guarded annual ledger selector | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r88-guarded-annual-ledger-selector-20260507-s00/analysis/r88_guarded_annual_ledger_selector_report.json` |
 | R88 tracked GitHub summary | `docs/phase3_r88_guarded_annual_ledger_summary_20260507.md` |
+| R89 incidence/mortality support gate | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r89-incidence-mortality-mechanism-support-gate-20260507-s00/analysis/r89_incidence_mortality_mechanism_support_gate_report.json` |
+| R89 tracked GitHub summary | `docs/phase3_r89_mechanism_support_summary_20260507.md` |
 
 ## Roadmap
 
@@ -279,8 +284,9 @@ flowchart LR
     R85["R85 forecast grid ledger<br/>diagnostic only"] --> R86["R86 annual-calibrated ledger<br/>scoped annual win"]
     R86 --> R87["R87 raw emission ratio calibration<br/>diagnostic only"]
     R87 --> R88["R88 guarded annual ledger<br/>scoped conservative win"]
-    R88 --> R89["R89 raw incidence/death mechanism<br/>mortality + incidence evidence"]
-    R89 --> R90["R90 subnational sparse hierarchy<br/>regional + proxy validation"]
+    R88 --> R89["R89 mechanism support gate<br/>diagnostic only"]
+    R89 --> R90["R90 incidence/death evidence expansion<br/>direct support needed"]
+    R90 --> R91["R91 subnational sparse hierarchy<br/>regional + proxy validation"]
 ```
 
 Next highest-value scientific step:

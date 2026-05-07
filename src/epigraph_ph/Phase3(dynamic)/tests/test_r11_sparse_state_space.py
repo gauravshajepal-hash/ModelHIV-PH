@@ -314,6 +314,11 @@ from phase3_dynamic.r88_guarded_annual_ledger_selector import (
     _gate as _r88_gate,
     _internal_guarded_metric_selector as _r88_internal_guarded_metric_selector,
 )
+from phase3_dynamic.r89_incidence_mortality_mechanism_support_gate import (
+    _gate as _r89_gate,
+    _metric_support_summary as _r89_metric_support_summary,
+    _reported_death_annual_proxy as _r89_reported_death_annual_proxy,
+)
 from phase3_dynamic.model import _apply_observation_model as _phase3_apply_observation_model
 from phase3_dynamic.model import _simulate_sequence as _phase3_simulate_sequence
 
@@ -5913,3 +5918,81 @@ def test_r88_gate_promotes_complete_better_guarded_selector() -> None:
 
     assert gate["status"] == "guarded_annual_ledger_selector_pass"
     assert gate["blockers"] == []
+
+
+def test_r89_reported_death_proxy_annualizes_partial_year_support() -> None:
+    rows = [
+        {
+            "quarter": "2024-Q1",
+            "deaths_reported_period": 10.0,
+            "metric_provenance": {"deaths_reported_period": {"source_id": "q1"}},
+        },
+        {
+            "quarter": "2024-Q3",
+            "deaths_reported_period": 20.0,
+            "metric_provenance": {"deaths_reported_period": {"source_id": "q3"}},
+        },
+    ]
+
+    proxy = _r89_reported_death_annual_proxy(rows)
+
+    assert proxy[2024]["observed_quarter_count"] == 2
+    assert proxy[2024]["reported_deaths_sum"] == 30.0
+    assert proxy[2024]["annualized_reported_deaths"] == 60.0
+
+
+def test_r89_support_summary_tracks_roles_and_allowed_use() -> None:
+    rows = [
+        {
+            "quarter": "2024-Q4",
+            "incident_infections_period": 5.0,
+            "metric_provenance": {
+                "incident_infections_period": {
+                    "observation_role": "auxiliary_likelihood",
+                    "allowed_use": "auxiliary_likelihood",
+                    "measurement_semantics": "flow_count",
+                    "source_id": "synthetic_test",
+                }
+            },
+        }
+    ]
+
+    summary = _r89_metric_support_summary(rows, "incident_infections_period")
+
+    assert summary["count"] == 1
+    assert summary["year_count"] == 1
+    assert summary["observation_roles"] == {"auxiliary_likelihood": 1}
+    assert summary["allowed_use"] == {"auxiliary_likelihood": 1}
+
+
+def test_r89_gate_blocks_when_incidence_support_absent_even_if_deaths_exist() -> None:
+    support_rows = [
+        {"metric_name": "incident_infections_period", "count": 0},
+        {"metric_name": "annual_new_infections", "count": 10},
+        {"metric_name": "deaths_reported_period", "count": 10},
+        {"metric_name": "annual_aids_deaths", "count": 10},
+    ]
+    family_rows = [
+        {
+            "candidate_mean_norm_error": 0.1,
+            "carry_forward_mean_norm_error": 0.2,
+            "candidate_interval_coverage": 1.0,
+            "carry_forward_interval_coverage": 1.0,
+        }
+    ]
+    score_rows = [
+        {
+            "observation_role": "validation_only",
+            "allowed_use": "validation_only",
+        }
+    ]
+
+    gate = _r89_gate(
+        support_rows=support_rows,
+        mortality_family_rows=family_rows,
+        mortality_score_rows=score_rows,
+        target_rows=[{"year": 2024}],
+    )
+
+    assert gate["status"] == "incidence_mortality_mechanism_support_diagnostic_only"
+    assert "direct_incidence_process_support_absent" in gate["blockers"]
