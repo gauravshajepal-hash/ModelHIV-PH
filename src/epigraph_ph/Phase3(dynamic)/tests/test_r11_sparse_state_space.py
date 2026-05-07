@@ -295,6 +295,11 @@ from phase3_dynamic.r83_quarterly_emission_bridge_audit import (
     _gate as _r83_gate,
 )
 from phase3_dynamic.r84_conserved_quarterly_annual_ledger import _gate as _r84_gate
+from phase3_dynamic.r85_annual_ledger_forecast_grid import (
+    _forecast_grid_rows as _r85_forecast_grid_rows,
+    _gate as _r85_gate,
+    _quarter_grid as _r85_quarter_grid,
+)
 from phase3_dynamic.model import _apply_observation_model as _phase3_apply_observation_model
 from phase3_dynamic.model import _simulate_sequence as _phase3_simulate_sequence
 
@@ -5653,3 +5658,75 @@ def test_r84_gate_blocks_incomplete_target_coverage() -> None:
 
     assert gate["status"] == "conserved_quarterly_annual_ledger_diagnostic_only"
     assert "annual_new_infections_incomplete_target_coverage" in gate["blockers"]
+
+
+def test_r85_quarter_grid_expands_each_holdout_year() -> None:
+    assert _r85_quarter_grid([2024, 2025]) == [
+        "2024-Q1",
+        "2024-Q2",
+        "2024-Q3",
+        "2024-Q4",
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4",
+    ]
+
+
+def test_r85_forecast_grid_strips_targets_and_uses_train_population_context() -> None:
+    rows = [
+        {
+            "quarter": "2023-Q4",
+            "population_total": 1000.0,
+            "metric_provenance": {"population_total": {"source_id": "train_population"}},
+        },
+        {
+            "quarter": "2024-Q4",
+            "diagnosed_plhiv": 10.0,
+            "alive_on_art": 9.0,
+            "annual_new_infections": 11.0,
+            "annual_aids_deaths": 1.0,
+            "estimated_plhiv": 20.0,
+            "population_total": 1200.0,
+            "metric_provenance": {
+                "annual_new_infections": {"allowed_use": "validation_only"},
+                "population_total": {"source_id": "future_population"},
+            },
+        },
+    ]
+
+    grid = _r85_forecast_grid_rows(rows, holdout_years=[2024], train_end_year=2023)
+    q4 = [row for row in grid if row["quarter"] == "2024-Q4"][0]
+
+    assert len(grid) == 4
+    assert "annual_new_infections" not in q4
+    assert "diagnosed_plhiv" not in q4
+    assert q4["population_total"] == 1000.0
+    assert q4["metric_provenance"]["population_total"]["source_anchor_quarter"] == "2023-Q4"
+
+
+def test_r85_gate_promotes_complete_better_forecast_grid() -> None:
+    score_rows = []
+    for metric_name in ("annual_new_infections", "annual_aids_deaths", "estimated_plhiv"):
+        score_rows.append(
+            {
+                "metric_name": metric_name,
+                "candidate_norm_error": 0.1,
+                "carry_forward_norm_error": 0.2,
+                "observation_role": "validation_only",
+                "allowed_use": "validation_only",
+            }
+        )
+    family_rows = [
+        {
+            "candidate_mean_norm_error": 0.1,
+            "carry_forward_mean_norm_error": 0.2,
+            "candidate_interval_coverage": 1.0,
+            "carry_forward_interval_coverage": 1.0,
+        }
+    ]
+
+    gate = _r85_gate(score_rows=score_rows, family_rows=family_rows, target_rows=[{"year": 2024}])
+
+    assert gate["status"] == "annual_ledger_forecast_grid_pass"
+    assert gate["blockers"] == []

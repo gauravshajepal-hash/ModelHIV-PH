@@ -20,11 +20,11 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 | Annual public challenge | `R75` passes with weak-measurement annual heads | Annual incidence/deaths/PLHIV can be scored without holdout leakage, but this is not yet a quarterly mechanistic bridge |
 | Public annual projection | `R80` ready | 2025-2035 public annual projection head exists as a separate annual track |
 | Phase 2 determinant knobs | `R81` directional sensitivity only | Determinants can label scenarios, not provide numeric intervention effects |
-| Quarterly-to-annual bridge | `R82/R83` blocked; `R84` diagnostic only | The quarterly model now exposes conserved ledger quantities, but it still does not beat carry-forward on annual public targets |
+| Quarterly-to-annual bridge | `R82/R83` blocked; `R84/R85` diagnostic only | The quarterly model now exposes complete conserved ledger quantities on a forecast grid, but it still does not beat carry-forward on annual public targets |
 
-### Latest R84 Verdict
+### Latest R84/R85 Verdict
 
-`R84` added a conserved quarterly annual ledger to the dynamic simulator:
+`R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` then repaired the annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid:
 
 ```text
 S_eff -> incident_infections_period -> U
@@ -32,14 +32,14 @@ state-specific mortality/removal -> aids_deaths_period
 U + D + A + T + V + L + R -> estimated_plhiv
 ```
 
-| Annual Target | Scored / Target Entries | Candidate Mean Error | Carry-Forward Mean Error | Verdict |
+| Annual Target | R85 Scored / Target Entries | R85 Candidate Mean Error | Carry-Forward Mean Error | Verdict |
 | --- | ---: | ---: | ---: | --- |
-| annual new infections | 3 / 28 | 0.6722 | 0.3116 | weak and incomplete |
-| annual AIDS deaths | 3 / 28 | 1.7468 | 0.4764 | weak and incomplete |
-| estimated PLHIV | 28 / 28 | 0.2396 | 0.3818 | improves over carry-forward |
-| all annual targets | mixed | 0.4107 | 0.3900 | diagnostic only |
+| annual new infections | 28 / 28 | 0.4558 | 0.3116 | complete but weaker |
+| annual AIDS deaths | 28 / 28 | 1.3640 | 0.4764 | complete but much weaker |
+| estimated PLHIV | 28 / 28 | 0.1048 | 0.3818 | improves over carry-forward |
+| all annual targets | 84 / 84 | 0.6415 | 0.3900 | diagnostic only |
 
-Interpretation: the conserved state ledger is now visible, which is necessary. It is not sufficient. PLHIV stock is promising; incidence and AIDS-death emissions need stronger evidence-backed quarterly support before annual mechanistic claims are publishable.
+Interpretation: the conserved state ledger is now visible and complete. That is necessary but not sufficient. PLHIV stock is promising; incidence and AIDS-death processes are the blocker and need stronger evidence-backed transition/mortality structure before annual mechanistic claims are publishable.
 
 ## Figure 1: System Architecture
 
@@ -158,7 +158,8 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R80 | Can public annual series be projected 2025-2035? | Ready as public annual projection head |
 | R81 | Can Phase 2 become scenario knobs? | Directional sensitivity only, not numeric intervention effects |
 | R82/R83 | Does the quarterly champion emit annual incidence/deaths/PLHIV directly? | Blocked: locked R11-28-style predictions do not emit those quantities |
-| R84 | Can the conserved dynamic simulator emit annual ledger quantities? | Diagnostic: emissions exist, PLHIV improves, incidence/deaths do not pass |
+| R84 | Can the conserved dynamic simulator emit annual ledger quantities? | Diagnostic: emissions exist, PLHIV improves, incidence/deaths are incomplete |
+| R85 | Does a complete unscored quarterly forecast grid fix the annual bridge? | Diagnostic: coverage fixed, but incidence/deaths still lose to carry-forward |
 
 ## What Is Currently Defensible?
 
@@ -169,6 +170,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - Annual public targets can be scored in a leakage-aware way through R75/R80.
 - Phase 2 determinant structure can be used for sensitivity/scenario labels only.
 - R84 exposes the key mechanistic annual ledger quantities in the simulator.
+- R85 shows the annual bridge failure is now process quality, not missing quarterly emission coverage.
 
 ### Not Yet Allowed
 
@@ -254,13 +256,13 @@ Expected latest focused test result:
 | Claim registry | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r53-publication-claim-registry-20260503-s00/analysis/r53_publication_claim_registry_report.json` |
 | R83 emission audit | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r83-quarterly-emission-bridge-audit-20260507-s00/analysis/r83_quarterly_emission_bridge_audit_report.json` |
 | R84 conserved ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r84-conserved-quarterly-annual-ledger-20260507-s00/analysis/r84_conserved_quarterly_annual_ledger_report.json` |
+| R85 forecast grid ledger | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r85-annual-ledger-forecast-grid-20260507-s00/analysis/r85_annual_ledger_forecast_grid_report.json` |
 
 ## Roadmap
 
 ```mermaid
 flowchart LR
-    R84["R84 conserved ledger<br/>diagnostic only"] --> R85["R85 incidence/death support repair<br/>complete quarterly evidence"]
-    R85 --> R86["R86 annual-mechanistic gate<br/>must beat carry-forward"]
+    R85["R85 forecast grid ledger<br/>diagnostic only"] --> R86["R86 incidence/death process repair<br/>must beat carry-forward"]
     R86 --> R87["R87 subnational sparse hierarchy<br/>regional + proxy validation"]
     R87 --> R88["R88 Phase 2 scenario lab<br/>directional knobs only until source-stable"]
 ```
