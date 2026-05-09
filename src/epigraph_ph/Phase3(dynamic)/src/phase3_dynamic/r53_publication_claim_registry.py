@@ -324,6 +324,14 @@ R89_DEFAULT_REPORT = (
     / "analysis"
     / "r89_incidence_mortality_mechanism_support_gate_report.json"
 )
+R90_DEFAULT_REPORT = (
+    sandbox_repo_root()
+    / "artifacts"
+    / "runs"
+    / "p3d-r90-claim-grade-gate-20260509-s00"
+    / "analysis"
+    / "r90_claim_grade_gate_report.json"
+)
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1443,6 +1451,41 @@ def _incidence_mortality_mechanism_support_claim(r89: dict[str, Any], path: Path
     }
 
 
+def _claim_grade_gate_claim(r90: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(r90.get("claim_grade_gate") or {})
+    status = str(r90.get("status") or gate.get("status") or "")
+    if status == "claim_grade_annual_readout_and_mechanisms_ready":
+        claim_status = "annual_readout_and_mechanisms_claim_grade_ready"
+        allowed = "R90 clears annual/readout and raw incidence/death mechanism-support claims against the locked artifacts."
+    elif status == "claim_grade_annual_readout_ready_mechanisms_blocked":
+        claim_status = "annual_readout_claim_grade_ready_mechanisms_blocked"
+        allowed = (
+            "R90 clears R86/R88 as scoped annual/readout claims while explicitly blocking raw incidence/death mechanism claims."
+        )
+    elif status:
+        claim_status = "diagnostic_only"
+        allowed = "R90 is evaluable but one or more claim-grade annual/readout requirements failed."
+    else:
+        claim_status = "blocked"
+        allowed = "R90 claim-grade gate artifact is missing or not evaluable."
+    return {
+        "claim_id": "phase3_r90_claim_grade_gate",
+        "claim_scope": "publication_claim_grade_adjudication_for_r86_r88_r89",
+        "claim_status": claim_status,
+        "model_family": "claim_grade_gate_over_locked_annual_and_mechanism_artifacts",
+        "primary_gate": status,
+        "blockers": list(gate.get("blockers") or ([] if claim_status != "blocked" else ["r90_claim_grade_gate_missing"])),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": allowed,
+        "claim_limit": (
+            "R90 is an adjudication gate only. It does not create a new forecast model, refit parameters, or convert "
+            "annual/readout wins into identified incidence, mortality, determinant, or official-model-replacement claims."
+        ),
+        "key_metrics": gate,
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -1487,6 +1530,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     r87_process_calibration_status = str((by_id.get("phase3_r87_train_backtested_emission_process_calibration") or {}).get("claim_status"))
     r88_guarded_annual_status = str((by_id.get("phase3_r88_guarded_annual_ledger_selector") or {}).get("claim_status"))
     r89_mechanism_support_status = str((by_id.get("phase3_r89_incidence_mortality_mechanism_support_gate") or {}).get("claim_status"))
+    r90_claim_grade_status = str((by_id.get("phase3_r90_claim_grade_gate") or {}).get("claim_status"))
     subnational_ok = regional_r63_ok or regional_r62_ok or regional_r61_ok or regional_r60_ok or regional_anchor_ensemble_ok or regional_pareto_ensemble_ok or regional_split_guarded_ok or regional_adapter_ok or regional_readout_ok
     adapter_stability_status = str((by_id.get("regional_adapter_split_stability_claim") or {}).get("claim_status"))
     split_guarded_selector_status = str((by_id.get("regional_split_guarded_selector_claim") or {}).get("claim_status"))
@@ -1550,6 +1594,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "phase3_r87_process_calibration_status": r87_process_calibration_status,
         "phase3_r88_guarded_annual_status": r88_guarded_annual_status,
         "phase3_r89_mechanism_support_status": r89_mechanism_support_status,
+        "phase3_r90_claim_grade_status": r90_claim_grade_status,
         "regional_adapter_stability_status": adapter_stability_status,
         "regional_split_guarded_selector_status": split_guarded_selector_status,
         "regional_candidate_ceiling_status": candidate_ceiling_status,
@@ -1636,6 +1681,7 @@ def _write_markdown(path: Path, report: dict[str, Any]) -> None:
         f"- Phase 3 R87 process calibration status: `{gate.get('phase3_r87_process_calibration_status')}`",
         f"- Phase 3 R88 guarded annual status: `{gate.get('phase3_r88_guarded_annual_status')}`",
         f"- Phase 3 R89 mechanism support status: `{gate.get('phase3_r89_mechanism_support_status')}`",
+        f"- Phase 3 R90 claim-grade status: `{gate.get('phase3_r90_claim_grade_status')}`",
         f"- Regional adapter stability status: `{gate.get('regional_adapter_stability_status')}`",
         f"- Regional split-guarded selector status: `{gate.get('regional_split_guarded_selector_status')}`",
         f"- Regional candidate ceiling status: `{gate.get('regional_candidate_ceiling_status')}`",
@@ -1698,6 +1744,7 @@ def run_r53_publication_claim_registry(
     r87_report_path: Path | None = None,
     r88_report_path: Path | None = None,
     r89_report_path: Path | None = None,
+    r90_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -1738,6 +1785,7 @@ def run_r53_publication_claim_registry(
     r87_path = Path(r87_report_path) if r87_report_path is not None else R87_DEFAULT_REPORT
     r88_path = Path(r88_report_path) if r88_report_path is not None else R88_DEFAULT_REPORT
     r89_path = Path(r89_report_path) if r89_report_path is not None else R89_DEFAULT_REPORT
+    r90_path = Path(r90_report_path) if r90_report_path is not None else R90_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -1777,6 +1825,7 @@ def run_r53_publication_claim_registry(
     r87 = _load_report(r87_path)
     r88 = _load_report(r88_path)
     r89 = _load_report(r89_path)
+    r90 = _load_report(r90_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -1844,6 +1893,7 @@ def run_r53_publication_claim_registry(
         _train_backtested_emission_process_calibration_claim(r87, r87_path),
         _guarded_annual_ledger_selector_claim(r88, r88_path),
         _incidence_mortality_mechanism_support_claim(r89, r89_path),
+        _claim_grade_gate_claim(r90, r90_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -1914,6 +1964,7 @@ def _main() -> None:
     parser.add_argument("--r87-report-path", default=None)
     parser.add_argument("--r88-report-path", default=None)
     parser.add_argument("--r89-report-path", default=None)
+    parser.add_argument("--r90-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -1956,6 +2007,7 @@ def _main() -> None:
         r87_report_path=None if args.r87_report_path is None else Path(args.r87_report_path),
         r88_report_path=None if args.r88_report_path is None else Path(args.r88_report_path),
         r89_report_path=None if args.r89_report_path is None else Path(args.r89_report_path),
+        r90_report_path=None if args.r90_report_path is None else Path(args.r90_report_path),
     )
 
 
