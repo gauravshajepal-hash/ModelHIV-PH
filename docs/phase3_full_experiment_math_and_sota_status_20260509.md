@@ -2,7 +2,7 @@
 
 Generated: 2026-05-09
 
-This document summarizes the project state after the R90/R91 claim-grade gates. It is intentionally conservative: it separates readout wins from mechanistic claims, and it separates internal benchmarks from official HIV-estimation systems.
+This document summarizes the project state after the R90-R92 claim-grade and process-repair gates. It is intentionally conservative: it separates readout wins from mechanistic claims, and it separates internal benchmarks from official HIV-estimation systems.
 
 ## Executive Verdict
 
@@ -13,6 +13,7 @@ The project has produced a credible evidence-to-model pipeline and several real 
 - Annual validation: `R86` and `R88` are scoped annual/readout wins versus carry-forward.
 - Claim safety: `R90` clears R86/R88 as claim-grade annual/readout claims and blocks raw incidence/death mechanism claims.
 - Mechanism expansion: `R91` confirms the mechanism block; diagnosis-flow and reported-death proxy bridges are not enough.
+- Process repair: `R92` finds a stronger train-origin proxy signal, but still blocks mechanism claims because direct incidence support is absent and mortality source-family stability fails.
 
 The project has not yet beaten official/SOTA HIV-estimation systems in the broad sense. It has not yet reproduced or defeated Spectrum/EPP/AEM/Naomi-like outputs under matched official input files. It also does not yet identify raw incidence or AIDS-death mechanisms from direct process evidence.
 
@@ -211,6 +212,7 @@ Plain English: R88 refuses to overfit weak incidence/death channels. It only tru
 | R89 | Are raw incidence/death mechanisms directly supported? | No. Direct incidence support count `0`; death bridge worse than carry-forward. |
 | R90 | Are R86/R88 safe publication claims? | Yes for annual/readout; mechanisms blocked. |
 | R91 | Can proxy bridges rescue mechanism support? | No. Diagnosis-flow incidence proxy worse than carry-forward; mortality bridge ties and is source-family unstable. |
+| R92 | Can process-repair family selection rescue mechanism support? | Signal only. Incidence/death proxy bridges beat carry-forward, but direct incidence support is absent and mortality source-family ablation is unstable. |
 
 ## Key Quantitative Status
 
@@ -227,6 +229,8 @@ Plain English: R88 refuses to overfit weak incidence/death channels. It only tru
 | R89 death bridge | 0.5529 | carry-forward 0.4764 | blocked |
 | R91 diagnosis-flow incidence proxy | 0.4859 | carry-forward 0.3116 | blocked |
 | R91 reported-death AIDS-death bridge | 0.4764 | carry-forward 0.4764 | tie, source-unstable |
+| R92 diagnosis-flow incidence process repair | 0.0497 | carry-forward 0.3116 | signal diagnostic, mechanism blocked |
+| R92 reported-death mortality process repair | 0.1636 | carry-forward 0.4764 | signal diagnostic, source-unstable |
 
 ## What Is Defensible Now
 
@@ -237,13 +241,14 @@ Allowed:
 - R52/R54/R58/R59 show regional readout/adapter signal, but most regional claims are mean-level or split-limited.
 - R86 and R88 are claim-grade scoped annual/readout wins versus carry-forward.
 - Phase 2 determinants can be used for scenario labels and sensitivity analyses only.
-- R89-R91 correctly block raw incidence/death mechanism claims.
+- R89-R92 correctly block raw incidence/death mechanism claims while showing that R92 contains a useful proxy process signal.
 
 Not allowed:
 
 - Broad claim that this beats Spectrum/EPP/AEM/Naomi overall.
 - Mechanistic claim that raw quarterly incidence is identified.
 - Mechanistic claim that AIDS deaths are identified from reported-death data.
+- Claim that R92 proxy process repair is direct incidence or mortality identification.
 - Causal claim that Phase 2 determinant knobs quantify intervention effects.
 - Province-level process validation.
 - Third-95 process claims beyond the observed/support-limited back-half readout evidence.
@@ -254,15 +259,15 @@ The largest gap is not another optimizer. It is evidence and identifiability:
 
 ```text
 direct incidence process support = 0
-reported-death bridge <= carry-forward
+reported-death bridge source-family stability fails
 subnational truth sparse
 Phase 2 determinants source-stable only as sensitivity labels
 official Spectrum/AEM output files absent
 ```
 
-The next defensible research step is therefore R92:
+The next defensible research step is therefore R93:
 
-1. Build a mortality observation-process model with reporting delay, ascertainment, and source-family uncertainty.
-2. Search/acquire stronger direct or incidence-adjacent public evidence for the Philippines.
-3. Re-run R90-style claim gates after the mechanism-support evidence improves.
-4. Build an open AEM/Spectrum-style comparator from public data if official country files remain unavailable.
+1. Build an open AEM/Spectrum-style annual comparator from public data if official country files remain unavailable.
+2. Keep R92 as a process-signal diagnostic until direct incidence support and mortality source-family stability improve.
+3. Search/acquire stronger direct or incidence-adjacent public evidence for the Philippines.
+4. Re-run R90-style claim gates after the mechanism-support evidence improves.

@@ -9,6 +9,7 @@
 ![Determinants](https://img.shields.io/badge/Phase_2_determinants-sensitivity_only-orange)
 ![Annual bridge](https://img.shields.io/badge/quarterly_to_annual_bridge-scoped_annual_win-green)
 ![Claim grade](https://img.shields.io/badge/R90-annual_readout_ready_mechanisms_blocked-orange)
+![Mechanism repair](https://img.shields.io/badge/R92-process_signal_diagnostic-orange)
 
 This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM replacement, and not a policy engine without external review. Its purpose is scientific: make every model claim traceable to data roles, blocked-time evaluation, failure anatomy, and explicit claim cards.
 
@@ -24,8 +25,9 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 | Quarterly-to-annual bridge | `R86` and `R88` scoped annual model wins | Complete quarterly ledger plus train-origin calibration/guarding beats carry-forward on held-out annual incidence, AIDS deaths, and PLHIV targets |
 | Claim-grade adjudication | `R90` annual readout ready, mechanisms blocked | R86/R88 are publication-grade scoped annual/readout wins; raw incidence/death mechanism claims remain blocked by R89 |
 | Mechanism-support expansion | `R91` diagnostic only | Diagnosis-flow and reported-death proxy bridges do not beat or stably improve carry-forward, so mechanism claims remain blocked |
+| Process-repair queue | `R92` mortality/process signal diagnostic | Train-origin proxy process repair improves incidence/death bridges, but mechanism claims remain blocked by absent direct incidence support and mortality source-family instability |
 
-### Latest R84-R91 Verdict
+### Latest R84-R92 Verdict
 
 `R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head. `R87` tested free raw-emission process rescaling and failed. `R88` kept the raw quarterly process only where train-window evidence beat carry-forward and guarded weak incidence/death channels with a carry-forward prior:
 
@@ -48,7 +50,9 @@ R88 adds a second conservative win: all annual targets score `0.2976` versus car
 
 R89 then asked whether raw incidence and AIDS-death mechanisms are directly supported. It remains diagnostic-only: direct incidence-process support is absent and the reported-death bridge loses to carry-forward (`0.5529` versus `0.4764` mean normalized error). R90 is the claim-grade adjudicator over R86/R88/R89. It reports `claim_grade_annual_readout_ready_mechanisms_blocked`: R86 and R88 are safe scoped annual/readout claims, but raw incidence/death mechanism claims are still blocked.
 
-R91 tested whether train-origin proxy bridges could repair that mechanism-support gap. They did not. Diagnosis-flow to annual incidence scored `0.4859` versus carry-forward `0.3116`; reported deaths to annual AIDS deaths tied carry-forward at `0.4764` and failed source-family stability. The result reinforces the claim boundary: the project has annual/readout wins, not identified raw incidence/death mechanisms.
+R91 tested whether train-origin proxy bridges could repair that mechanism-support gap. They did not. Diagnosis-flow to annual incidence scored `0.4859` versus carry-forward `0.3116`; reported deaths to annual AIDS deaths tied carry-forward at `0.4764` and failed source-family stability. The result reinforced the claim boundary: the project had annual/readout wins, not identified raw incidence/death mechanisms.
+
+R92 then replaced the simple proxy bridge with train-origin process-repair family selection. This found real signal: diagnosis-flow to annual incidence scored `0.0497` versus carry-forward `0.3116`, and reported deaths to annual AIDS deaths scored `0.1636` versus carry-forward `0.4764`, both with full interval coverage. It still does not promote a raw mechanism claim because direct incidence-process support remains zero and mortality source-family ablation is unstable. R92 is therefore a process-signal diagnostic and experiment queue, not a final model win.
 
 ### Position Versus SOTA
 
@@ -99,6 +103,7 @@ flowchart TB
     I["Annual-calibrated ledger R86<br/>SCOPED WIN"]:::pass
     J["R90 claim-grade gate<br/>ANNUAL READY, MECHANISMS BLOCKED"]:::warn
     K["R91 mechanism expansion<br/>DIAGNOSTIC ONLY"]:::warn
+    L["R92 process repair<br/>SIGNAL, CLAIM BLOCKED"]:::warn
     H["Broad 'better than official models' claim<br/>NOT YET ALLOWED"]:::fail
 
     A --> H
@@ -111,6 +116,7 @@ flowchart TB
     I --> H
     J --> H
     K --> H
+    L --> H
 
     classDef pass fill:#e6fcf5,stroke:#087f5b,stroke-width:2px,color:#063b2c;
     classDef warn fill:#fff9db,stroke:#f08c00,stroke-width:2px,color:#4a2a00;
@@ -197,6 +203,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R89 | Is there enough direct process evidence to claim raw incidence/death mechanisms are identified? | Diagnostic: direct incidence support is absent; reported-death bridge loses to carry-forward |
 | R90 | Are R86/R88/R89 safe to cite as publication claims? | Pass for scoped annual/readout claims; blocks raw incidence/death mechanism claims |
 | R91 | Can train-origin proxy bridges rescue incidence/death mechanism support? | Diagnostic: diagnosis-flow incidence proxy loses; reported-death bridge only ties and is source-family unstable |
+| R92 | Can train-origin process-repair families rescue incidence/death mechanism support? | Signal diagnostic: proxy process repair beats carry-forward, but direct incidence support and mortality source-family stability still block mechanism claims |
 
 ## What Is Currently Defensible?
 
@@ -210,6 +217,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - R90 clears R86/R88 as claim-grade scoped annual/readout wins under validation-only, complete-support, per-metric, per-horizon, p90, and interval-coverage checks.
 - R89 blocks raw incidence/death mechanism claims under the active evidence ledger.
 - R91 confirms that diagnosis-flow and reported-death proxy bridges do not yet justify raw incidence/death mechanism claims.
+- R92 shows a train-origin process-repair signal for diagnosis-flow and reported-death bridges, but only as a diagnostic/experiment queue.
 - Phase 2 determinant structure can be used for sensitivity/scenario labels only.
 - R84 exposes the key mechanistic annual ledger quantities in the simulator.
 - R85 shows the annual bridge failure was process quality, not missing quarterly emission coverage.
@@ -221,6 +229,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - “Subnational process model is validated province-by-province.”
 - “The raw quarterly mechanistic incidence/death process beats annual public targets without annual calibration.”
 - “The raw incidence and AIDS-death mechanisms are identified from direct process evidence.”
+- “R92’s proxy bridge is an identified incidence or mortality mechanism.”
 - “Third-95 process claims are fully identified without stronger VL/suppression process evidence.”
 
 ## Repository Map
@@ -267,6 +276,7 @@ src/epigraph_ph/phase3
 | `r84_conserved_quarterly_annual_ledger.py` | conserved dynamic annual ledger audit |
 | `r90_claim_grade_gate.py` | claim-grade adjudication over R86/R88/R89 |
 | `r91_mechanism_support_expansion_gate.py` | proxy bridge and source-family ablation gate for incidence/death mechanisms |
+| `r92_process_repair_experiment_queue.py` | train-origin process-repair queue for incidence/death mechanism support |
 
 ## How To Reproduce The Latest Gates
 
@@ -289,19 +299,23 @@ PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
   uvx --with numpy python -m phase3_dynamic.r91_mechanism_support_expansion_gate
 
 PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
+  uvx --with numpy python -m phase3_dynamic.r92_process_repair_experiment_queue
+
+PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
   uvx --with numpy python -m phase3_dynamic.r53_publication_claim_registry
 
 PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
   uvx --with numpy --from pytest pytest \
   'src/epigraph_ph/Phase3(dynamic)/tests/test_r90_claim_grade_gate.py' \
   'src/epigraph_ph/Phase3(dynamic)/tests/test_r91_mechanism_support_expansion_gate.py' \
+  'src/epigraph_ph/Phase3(dynamic)/tests/test_r92_process_repair_experiment_queue.py' \
   -q
 ```
 
 Expected latest focused test result:
 
 ```text
-8 passed
+11 passed
 ```
 
 ## Latest Artifacts
@@ -323,6 +337,8 @@ Expected latest focused test result:
 | R90 tracked GitHub summary | `docs/phase3_r90_claim_grade_gate_summary_20260509.md` |
 | R91 mechanism-support expansion gate | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r91-mechanism-support-expansion-gate-20260509-s00/analysis/r91_mechanism_support_expansion_gate_report.json` |
 | R91 tracked GitHub summary | `docs/phase3_r91_mechanism_support_expansion_summary_20260509.md` |
+| R92 process-repair experiment queue | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r92-process-repair-experiment-queue-20260509-s00/analysis/r92_process_repair_experiment_queue_report.json` |
+| R92 tracked GitHub summary | `docs/phase3_r92_process_repair_experiment_queue_summary_20260509.md` |
 | Full experiment/math/SOTA audit | `docs/phase3_full_experiment_math_and_sota_status_20260509.md` |
 
 ## Roadmap
@@ -335,14 +351,15 @@ flowchart LR
     R88 --> R89["R89 mechanism support gate<br/>diagnostic only"]
     R89 --> R90["R90 claim-grade adjudication<br/>annual ready, mechanisms blocked"]
     R90 --> R91["R91 mechanism-support expansion<br/>diagnostic only"]
-    R91 --> R92["R92 evidence/process repair<br/>death ascertainment + incidence evidence"]
+    R91 --> R92["R92 process repair<br/>signal, claim blocked"]
+    R92 --> R93["R93 public incumbent comparator<br/>queued"]
 ```
 
 Next highest-value scientific step:
 
 1. Freeze R86/R88 as scoped annual/readout claims under R90.
-2. Build R92 as evidence/process repair: stronger public mortality support, death-ascertainment/reporting-delay model, and direct incidence-adjacent process evidence.
-3. Add AEM/Spectrum-style external annual comparison when official outputs become available or public equivalents are reconstructed.
+2. Treat R92 as a useful process-signal diagnostic, not a mechanism win.
+3. Build R93: an open AEM/Spectrum-style external annual comparator from public data while official outputs remain unavailable.
 4. Only then connect Phase 2 determinant scenarios to 2026-2035 projections.
 
 ## License And Use
