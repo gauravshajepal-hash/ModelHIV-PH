@@ -25,7 +25,7 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 | Claim-grade adjudication | `R90` annual readout ready, mechanisms blocked | R86/R88 are publication-grade scoped annual/readout wins; raw incidence/death mechanism claims remain blocked by R89 |
 | Mechanism-support expansion | `R91` diagnostic only | Diagnosis-flow and reported-death proxy bridges do not beat or stably improve carry-forward, so mechanism claims remain blocked |
 
-### Latest R84-R90 Verdict
+### Latest R84-R91 Verdict
 
 `R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head. `R87` tested free raw-emission process rescaling and failed. `R88` kept the raw quarterly process only where train-window evidence beat carry-forward and guarded weak incidence/death channels with a carry-forward prior:
 
@@ -49,6 +49,22 @@ R88 adds a second conservative win: all annual targets score `0.2976` versus car
 R89 then asked whether raw incidence and AIDS-death mechanisms are directly supported. It remains diagnostic-only: direct incidence-process support is absent and the reported-death bridge loses to carry-forward (`0.5529` versus `0.4764` mean normalized error). R90 is the claim-grade adjudicator over R86/R88/R89. It reports `claim_grade_annual_readout_ready_mechanisms_blocked`: R86 and R88 are safe scoped annual/readout claims, but raw incidence/death mechanism claims are still blocked.
 
 R91 tested whether train-origin proxy bridges could repair that mechanism-support gap. They did not. Diagnosis-flow to annual incidence scored `0.4859` versus carry-forward `0.3116`; reported deaths to annual AIDS deaths tied carry-forward at `0.4764` and failed source-family stability. The result reinforces the claim boundary: the project has annual/readout wins, not identified raw incidence/death mechanisms.
+
+### Position Versus SOTA
+
+The current model is not yet a broad replacement for Spectrum/EPP/AEM/Naomi-style official estimation systems. UNAIDS describes Spectrum/EPP as country-team annual estimation software using surveillance, programme data, demographic assumptions, uncertainty ranges, and expert review; Naomi is a Bayesian small-area model for subnational PLHIV, ART coverage, and incidence in supported settings. This repository is currently stronger as an auditable research pipeline and internal blocked-time readout system than as an official-model replacement.
+
+The precise status is:
+
+| Comparison | Current Status |
+| --- | --- |
+| Versus carry-forward | R41, R75, R86, and R88 have real wins on their scoped gates |
+| Versus internal R10 family | R41 beats strict matched R10 on national 1y/3y/5y mapped routes |
+| Versus public annual proxy | Not beaten broadly; R78 public annual proxy v2 remains stronger than the annual model head |
+| Versus Spectrum/EPP/AEM | Not yet claimable because official Philippines files/outputs are not in the repo |
+| Versus Naomi-style subnational estimation | Not yet; regional adapters are mean-promoted but split-stability is limited |
+
+Full math and experiment audit: [phase3_full_experiment_math_and_sota_status_20260509.md](docs/phase3_full_experiment_math_and_sota_status_20260509.md).
 
 ## Figure 1: System Architecture
 
@@ -285,7 +301,7 @@ PYTHONPATH='src/epigraph_ph/Phase3(dynamic)/src' \
 Expected latest focused test result:
 
 ```text
-7 passed
+8 passed
 ```
 
 ## Latest Artifacts
@@ -307,6 +323,7 @@ Expected latest focused test result:
 | R90 tracked GitHub summary | `docs/phase3_r90_claim_grade_gate_summary_20260509.md` |
 | R91 mechanism-support expansion gate | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r91-mechanism-support-expansion-gate-20260509-s00/analysis/r91_mechanism_support_expansion_gate_report.json` |
 | R91 tracked GitHub summary | `docs/phase3_r91_mechanism_support_expansion_summary_20260509.md` |
+| Full experiment/math/SOTA audit | `docs/phase3_full_experiment_math_and_sota_status_20260509.md` |
 
 ## Roadmap
 
