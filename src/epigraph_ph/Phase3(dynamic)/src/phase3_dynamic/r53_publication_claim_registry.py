@@ -348,6 +348,14 @@ R92_DEFAULT_REPORT = (
     / "analysis"
     / "r92_process_repair_experiment_queue_report.json"
 )
+R93_DEFAULT_REPORT = (
+    sandbox_repo_root()
+    / "artifacts"
+    / "runs"
+    / "p3d-r93-open-public-incumbent-comparator-20260510-s00"
+    / "analysis"
+    / "r93_open_public_incumbent_comparator_report.json"
+)
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1584,6 +1592,51 @@ def _process_repair_experiment_queue_claim(r92: dict[str, Any], path: Path) -> d
     }
 
 
+def _open_public_incumbent_comparator_claim(r93: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(r93.get("open_public_incumbent_comparator_gate") or {})
+    status = str(r93.get("status") or gate.get("status") or "")
+    if status == "public_incumbent_comparator_ready_model_beats_incumbent":
+        claim_status = "annual_superiority_ready_against_open_public_incumbent"
+        allowed = "R93 clears a broad annual superiority claim against the open public AEM/Spectrum-style incumbent comparator."
+    elif status == "public_incumbent_comparator_ready_model_blocked":
+        claim_status = "annual_superiority_blocked_by_open_public_incumbent"
+        allowed = (
+            "R93 freezes the open public annual incumbent comparator and blocks broad annual superiority claims "
+            "until the Phase 3 annual head beats it on matched blocked-time scores."
+        )
+    elif status == "public_incumbent_comparator_blocked":
+        claim_status = "comparator_blocked"
+        allowed = "R93 could not establish an evaluable public incumbent comparator."
+    else:
+        claim_status = "blocked"
+        allowed = "R93 open public incumbent comparator artifact is missing or not evaluable."
+    return {
+        "claim_id": "phase3_r93_open_public_incumbent_comparator",
+        "claim_scope": "public_annual_incumbent_comparison",
+        "claim_status": claim_status,
+        "model_family": r93.get("candidate_family") or "open_public_aem_spectrum_style_annual_incumbent_comparator",
+        "primary_gate": status,
+        "blockers": list(gate.get("blockers") or ([] if claim_status != "blocked" else ["r93_open_public_incumbent_missing"])),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": allowed,
+        "claim_limit": (
+            "R93 compares against an open public incumbent proxy, not official Philippines AEM/Spectrum files. "
+            "It governs annual incidence/deaths/PLHIV superiority claims only, not quarterly cascade, determinant, or subnational claims."
+        ),
+        "key_metrics": {
+            "annual_superiority_status": gate.get("annual_superiority_status"),
+            "incumbent_family": gate.get("incumbent_family"),
+            "incumbent_mean_norm_error": gate.get("incumbent_mean_norm_error"),
+            "matched_model_mean_norm_error": gate.get("matched_model_mean_norm_error"),
+            "matched_incumbent_mean_norm_error": gate.get("matched_incumbent_mean_norm_error"),
+            "matched_model_minus_incumbent_mean_norm_error": gate.get("matched_model_minus_incumbent_mean_norm_error"),
+            "matched_model_interval_coverage": gate.get("matched_model_interval_coverage"),
+            "matched_incumbent_interval_coverage": gate.get("matched_incumbent_interval_coverage"),
+        },
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -1631,6 +1684,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     r90_claim_grade_status = str((by_id.get("phase3_r90_claim_grade_gate") or {}).get("claim_status"))
     r91_mechanism_expansion_status = str((by_id.get("phase3_r91_mechanism_support_expansion_gate") or {}).get("claim_status"))
     r92_process_repair_status = str((by_id.get("phase3_r92_process_repair_experiment_queue") or {}).get("claim_status"))
+    r93_public_incumbent_status = str((by_id.get("phase3_r93_open_public_incumbent_comparator") or {}).get("claim_status"))
     subnational_ok = regional_r63_ok or regional_r62_ok or regional_r61_ok or regional_r60_ok or regional_anchor_ensemble_ok or regional_pareto_ensemble_ok or regional_split_guarded_ok or regional_adapter_ok or regional_readout_ok
     adapter_stability_status = str((by_id.get("regional_adapter_split_stability_claim") or {}).get("claim_status"))
     split_guarded_selector_status = str((by_id.get("regional_split_guarded_selector_claim") or {}).get("claim_status"))
@@ -1697,6 +1751,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "phase3_r90_claim_grade_status": r90_claim_grade_status,
         "phase3_r91_mechanism_expansion_status": r91_mechanism_expansion_status,
         "phase3_r92_process_repair_status": r92_process_repair_status,
+        "phase3_r93_public_incumbent_status": r93_public_incumbent_status,
         "regional_adapter_stability_status": adapter_stability_status,
         "regional_split_guarded_selector_status": split_guarded_selector_status,
         "regional_candidate_ceiling_status": candidate_ceiling_status,
@@ -1786,6 +1841,7 @@ def _write_markdown(path: Path, report: dict[str, Any]) -> None:
         f"- Phase 3 R90 claim-grade status: `{gate.get('phase3_r90_claim_grade_status')}`",
         f"- Phase 3 R91 mechanism expansion status: `{gate.get('phase3_r91_mechanism_expansion_status')}`",
         f"- Phase 3 R92 process-repair status: `{gate.get('phase3_r92_process_repair_status')}`",
+        f"- Phase 3 R93 public-incumbent status: `{gate.get('phase3_r93_public_incumbent_status')}`",
         f"- Regional adapter stability status: `{gate.get('regional_adapter_stability_status')}`",
         f"- Regional split-guarded selector status: `{gate.get('regional_split_guarded_selector_status')}`",
         f"- Regional candidate ceiling status: `{gate.get('regional_candidate_ceiling_status')}`",
@@ -1851,6 +1907,7 @@ def run_r53_publication_claim_registry(
     r90_report_path: Path | None = None,
     r91_report_path: Path | None = None,
     r92_report_path: Path | None = None,
+    r93_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -1894,6 +1951,7 @@ def run_r53_publication_claim_registry(
     r90_path = Path(r90_report_path) if r90_report_path is not None else R90_DEFAULT_REPORT
     r91_path = Path(r91_report_path) if r91_report_path is not None else R91_DEFAULT_REPORT
     r92_path = Path(r92_report_path) if r92_report_path is not None else R92_DEFAULT_REPORT
+    r93_path = Path(r93_report_path) if r93_report_path is not None else R93_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -1936,6 +1994,7 @@ def run_r53_publication_claim_registry(
     r90 = _load_report(r90_path)
     r91 = _load_report(r91_path)
     r92 = _load_report(r92_path)
+    r93 = _load_report(r93_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -2006,6 +2065,7 @@ def run_r53_publication_claim_registry(
         _claim_grade_gate_claim(r90, r90_path),
         _mechanism_support_expansion_claim(r91, r91_path),
         _process_repair_experiment_queue_claim(r92, r92_path),
+        _open_public_incumbent_comparator_claim(r93, r93_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -2079,6 +2139,7 @@ def _main() -> None:
     parser.add_argument("--r90-report-path", default=None)
     parser.add_argument("--r91-report-path", default=None)
     parser.add_argument("--r92-report-path", default=None)
+    parser.add_argument("--r93-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -2124,6 +2185,7 @@ def _main() -> None:
         r90_report_path=None if args.r90_report_path is None else Path(args.r90_report_path),
         r91_report_path=None if args.r91_report_path is None else Path(args.r91_report_path),
         r92_report_path=None if args.r92_report_path is None else Path(args.r92_report_path),
+        r93_report_path=None if args.r93_report_path is None else Path(args.r93_report_path),
     )
 
 

@@ -1,8 +1,8 @@
 # Phase 3 Full Experiment, Mathematics, And SOTA Status
 
-Generated: 2026-05-09
+Generated: 2026-05-09; updated through R93 on 2026-05-10
 
-This document summarizes the project state after the R90-R92 claim-grade and process-repair gates. It is intentionally conservative: it separates readout wins from mechanistic claims, and it separates internal benchmarks from official HIV-estimation systems.
+This document summarizes the project state after the R90-R93 claim-grade, process-repair, and public-incumbent gates. It is intentionally conservative: it separates readout wins from mechanistic claims, and it separates internal benchmarks from official HIV-estimation systems.
 
 ## Executive Verdict
 
@@ -14,6 +14,7 @@ The project has produced a credible evidence-to-model pipeline and several real 
 - Claim safety: `R90` clears R86/R88 as claim-grade annual/readout claims and blocks raw incidence/death mechanism claims.
 - Mechanism expansion: `R91` confirms the mechanism block; diagnosis-flow and reported-death proxy bridges are not enough.
 - Process repair: `R92` finds a stronger train-origin proxy signal, but still blocks mechanism claims because direct incidence support is absent and mortality source-family stability fails.
+- Public incumbent: `R93` freezes R78 as the open AEM/Spectrum-style annual incumbent comparator and blocks broad annual superiority for the current Phase 3 annual head.
 
 The project has not yet beaten official/SOTA HIV-estimation systems in the broad sense. It has not yet reproduced or defeated Spectrum/EPP/AEM/Naomi-like outputs under matched official input files. It also does not yet identify raw incidence or AIDS-death mechanisms from direct process evidence.
 
@@ -23,7 +24,7 @@ Current official and near-official HIV estimation practice is dominated by:
 
 | Model family | What it does | Where our project stands |
 | --- | --- | --- |
-| UNAIDS Spectrum/EPP | National HIV estimation using surveillance, surveys, ART programme data, demographic/natural-history assumptions, and uncertainty ranges. UNAIDS describes annual country-team use of Spectrum/EPP and direct use of case reporting/mortality data where appropriate: <https://www.unaids.org/en/dataanalysis/knowyourresponse/HIVdata_estimates> | We have not imported official Philippines Spectrum files, so we cannot claim head-to-head superiority. We can compare against public annual targets and internal baselines. |
+| UNAIDS Spectrum/EPP | National HIV estimation using surveillance, surveys, ART programme data, demographic/natural-history assumptions, and uncertainty ranges. UNAIDS describes annual country-team use of Spectrum/EPP and direct use of case reporting/mortality data where appropriate: <https://www.unaids.org/en/dataanalysis/knowyourresponse/HIVdata_estimates> | We have not imported official Philippines Spectrum files, so we cannot claim head-to-head superiority. R93 provides an open public annual incumbent comparator and currently blocks broad annual superiority. |
 | AIDS Epidemic Model (AEM) in Spectrum | Behaviour-driven incidence trend generation, especially relevant for concentrated epidemics/key populations. The Spectrum manual describes AEM as estimating incidence trends from sexual and needle-sharing behaviours: <https://avenirhealth.org/Download/Spectrum/Manuals/SpectrumManualE.pdf> | Our determinant/Phase 2 graph is conceptually aligned with this direction, but R81 says determinants are directional sensitivity only, not fitted quantitative effects. |
 | CSAVR / case surveillance and vital registration | Uses case reporting and AIDS-related mortality where surveillance/survey data are weak but programme/vital data are stronger. | This is exactly the R89-R91 blocker. Reported deaths are present, but the bridge to annual AIDS-death estimates is not better/stable enough yet. |
 | Naomi small-area estimation | Bayesian subnational model jointly estimating PLHIV, ART coverage, incidence, and new infections from multiple subnational sources. UNAIDS 2024 methods describe Naomi as combining multiple outcomes and data sources in a Bayesian small-area model: <https://www.unaids.org/sites/default/files/media_asset/2024-unaids-global-aids-update-annex2-methods_en.pdf> | Our subnational layer has mean-level regional readout wins, but not strict split-stable process claims. Province-level validation remains insufficient. |
@@ -213,6 +214,7 @@ Plain English: R88 refuses to overfit weak incidence/death channels. It only tru
 | R90 | Are R86/R88 safe publication claims? | Yes for annual/readout; mechanisms blocked. |
 | R91 | Can proxy bridges rescue mechanism support? | No. Diagnosis-flow incidence proxy worse than carry-forward; mortality bridge ties and is source-family unstable. |
 | R92 | Can process-repair family selection rescue mechanism support? | Signal only. Incidence/death proxy bridges beat carry-forward, but direct incidence support is absent and mortality source-family ablation is unstable. |
+| R93 | Can an open public annual incumbent comparator be locked? | Yes. Comparator is ready, but current annual head is blocked versus R78 public proxy v2. |
 
 ## Key Quantitative Status
 
@@ -231,6 +233,8 @@ Plain English: R88 refuses to overfit weak incidence/death channels. It only tru
 | R91 reported-death AIDS-death bridge | 0.4764 | carry-forward 0.4764 | tie, source-unstable |
 | R92 diagnosis-flow incidence process repair | 0.0497 | carry-forward 0.3116 | signal diagnostic, mechanism blocked |
 | R92 reported-death mortality process repair | 0.1636 | carry-forward 0.4764 | signal diagnostic, source-unstable |
+| R93 current annual head | 0.2435 | R78 public incumbent 0.1638 | annual superiority blocked |
+| R93 current annual head coverage | 0.7500 | R78 public incumbent 0.9286 | coverage worse than incumbent |
 
 ## What Is Defensible Now
 
@@ -240,6 +244,7 @@ Allowed:
 - R41 is the current national quarterly readout research champion under strict mapped gates.
 - R52/R54/R58/R59 show regional readout/adapter signal, but most regional claims are mean-level or split-limited.
 - R86 and R88 are claim-grade scoped annual/readout wins versus carry-forward.
+- R93 establishes an open public annual incumbent comparator while official Philippines AEM/Spectrum outputs are absent.
 - Phase 2 determinants can be used for scenario labels and sensitivity analyses only.
 - R89-R92 correctly block raw incidence/death mechanism claims while showing that R92 contains a useful proxy process signal.
 
@@ -249,6 +254,7 @@ Not allowed:
 - Mechanistic claim that raw quarterly incidence is identified.
 - Mechanistic claim that AIDS deaths are identified from reported-death data.
 - Claim that R92 proxy process repair is direct incidence or mortality identification.
+- Broad annual superiority against AEM/Spectrum-style incumbents.
 - Causal claim that Phase 2 determinant knobs quantify intervention effects.
 - Province-level process validation.
 - Third-95 process claims beyond the observed/support-limited back-half readout evidence.
@@ -263,11 +269,12 @@ reported-death bridge source-family stability fails
 subnational truth sparse
 Phase 2 determinants source-stable only as sensitivity labels
 official Spectrum/AEM output files absent
+open public annual incumbent beats current annual head
 ```
 
-The next defensible research step is therefore R93:
+The next defensible research step is therefore R94:
 
-1. Build an open AEM/Spectrum-style annual comparator from public data if official country files remain unavailable.
-2. Keep R92 as a process-signal diagnostic until direct incidence support and mortality source-family stability improve.
-3. Search/acquire stronger direct or incidence-adjacent public evidence for the Philippines.
-4. Re-run R90-style claim gates after the mechanism-support evidence improves.
+1. Search/acquire stronger direct or incidence-adjacent public evidence for the Philippines.
+2. Build an incidence repair gate that targets annual new infections specifically, because R93 localizes the public-incumbent gap there.
+3. Keep R92 as a process-signal diagnostic until direct incidence support and mortality source-family stability improve.
+4. Re-run R90/R93-style claim gates after the incidence-support evidence improves.
