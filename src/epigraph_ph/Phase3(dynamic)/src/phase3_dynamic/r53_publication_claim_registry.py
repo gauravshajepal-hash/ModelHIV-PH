@@ -356,6 +356,14 @@ R93_DEFAULT_REPORT = (
     / "analysis"
     / "r93_open_public_incumbent_comparator_report.json"
 )
+R94_DEFAULT_REPORT = (
+    sandbox_repo_root()
+    / "artifacts"
+    / "runs"
+    / "p3d-r94-2026-q1-hasp-intake-gate-20260520-s00"
+    / "analysis"
+    / "r94_2026_q1_hasp_intake_gate_report.json"
+)
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1637,6 +1645,46 @@ def _open_public_incumbent_comparator_claim(r93: dict[str, Any], path: Path) -> 
     }
 
 
+def _latest_hasp_intake_claim(r94: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(r94.get("q1_holdout_gate") or {})
+    status = str(r94.get("status") or gate.get("status") or "")
+    if status == "r94_q1_hasp_anchor_promoted_for_future_initialization":
+        claim_status = "near_term_hasp_holdout_passed"
+        allowed = (
+            "R94 shows the frozen R41 national branch trained through 2025-Q4 beats carry-forward on the newly "
+            "supplied official 2026-Q1 HASP program metrics. The Q1 row may initialize future forecasts."
+        )
+    elif status == "r94_q1_hasp_intake_only":
+        claim_status = "latest_hasp_intake_only"
+        allowed = "R94 extracts the latest HASP PDF but does not promote a model-update anchor."
+    else:
+        claim_status = "blocked"
+        allowed = "R94 latest HASP intake artifact is missing or not evaluable."
+    return {
+        "claim_id": "phase3_r94_2026_q1_hasp_intake_gate",
+        "claim_scope": "latest_hasp_program_holdout_and_future_anchor",
+        "claim_status": claim_status,
+        "model_family": r94.get("candidate_family") or "r41_monotone_growth_component_process",
+        "primary_gate": status,
+        "blockers": list(gate.get("blockers") or ([] if claim_status != "blocked" else ["r94_latest_hasp_intake_missing"])),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": allowed,
+        "claim_limit": (
+            "R94 is a post-2025 near-term holdout and evidence-intake gate. It does not change the R93 annual "
+            "incumbent result and does not allow broad AEM/Spectrum superiority, determinant-causal, or subnational process claims."
+        ),
+        "key_metrics": {
+            "extracted_row_count": r94.get("extracted_row_count"),
+            "candidate_mean_norm_error": gate.get("candidate_mean_norm_error"),
+            "carry_forward_mean_norm_error": gate.get("carry_forward_mean_norm_error"),
+            "candidate_minus_carry_mean_norm_error": gate.get("candidate_minus_carry_mean_norm_error"),
+            "scored_metric_count": gate.get("scored_metric_count"),
+            "observation_role_counts": r94.get("observation_role_counts"),
+        },
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -1685,6 +1733,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     r91_mechanism_expansion_status = str((by_id.get("phase3_r91_mechanism_support_expansion_gate") or {}).get("claim_status"))
     r92_process_repair_status = str((by_id.get("phase3_r92_process_repair_experiment_queue") or {}).get("claim_status"))
     r93_public_incumbent_status = str((by_id.get("phase3_r93_open_public_incumbent_comparator") or {}).get("claim_status"))
+    r94_latest_hasp_status = str((by_id.get("phase3_r94_2026_q1_hasp_intake_gate") or {}).get("claim_status"))
     subnational_ok = regional_r63_ok or regional_r62_ok or regional_r61_ok or regional_r60_ok or regional_anchor_ensemble_ok or regional_pareto_ensemble_ok or regional_split_guarded_ok or regional_adapter_ok or regional_readout_ok
     adapter_stability_status = str((by_id.get("regional_adapter_split_stability_claim") or {}).get("claim_status"))
     split_guarded_selector_status = str((by_id.get("regional_split_guarded_selector_claim") or {}).get("claim_status"))
@@ -1752,6 +1801,7 @@ def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "phase3_r91_mechanism_expansion_status": r91_mechanism_expansion_status,
         "phase3_r92_process_repair_status": r92_process_repair_status,
         "phase3_r93_public_incumbent_status": r93_public_incumbent_status,
+        "phase3_r94_latest_hasp_status": r94_latest_hasp_status,
         "regional_adapter_stability_status": adapter_stability_status,
         "regional_split_guarded_selector_status": split_guarded_selector_status,
         "regional_candidate_ceiling_status": candidate_ceiling_status,
@@ -1908,6 +1958,7 @@ def run_r53_publication_claim_registry(
     r91_report_path: Path | None = None,
     r92_report_path: Path | None = None,
     r93_report_path: Path | None = None,
+    r94_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -1952,6 +2003,7 @@ def run_r53_publication_claim_registry(
     r91_path = Path(r91_report_path) if r91_report_path is not None else R91_DEFAULT_REPORT
     r92_path = Path(r92_report_path) if r92_report_path is not None else R92_DEFAULT_REPORT
     r93_path = Path(r93_report_path) if r93_report_path is not None else R93_DEFAULT_REPORT
+    r94_path = Path(r94_report_path) if r94_report_path is not None else R94_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -1995,6 +2047,7 @@ def run_r53_publication_claim_registry(
     r91 = _load_report(r91_path)
     r92 = _load_report(r92_path)
     r93 = _load_report(r93_path)
+    r94 = _load_report(r94_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -2066,6 +2119,7 @@ def run_r53_publication_claim_registry(
         _mechanism_support_expansion_claim(r91, r91_path),
         _process_repair_experiment_queue_claim(r92, r92_path),
         _open_public_incumbent_comparator_claim(r93, r93_path),
+        _latest_hasp_intake_claim(r94, r94_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -2140,6 +2194,7 @@ def _main() -> None:
     parser.add_argument("--r91-report-path", default=None)
     parser.add_argument("--r92-report-path", default=None)
     parser.add_argument("--r93-report-path", default=None)
+    parser.add_argument("--r94-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -2186,6 +2241,7 @@ def _main() -> None:
         r91_report_path=None if args.r91_report_path is None else Path(args.r91_report_path),
         r92_report_path=None if args.r92_report_path is None else Path(args.r92_report_path),
         r93_report_path=None if args.r93_report_path is None else Path(args.r93_report_path),
+        r94_report_path=None if args.r94_report_path is None else Path(args.r94_report_path),
     )
 
 
