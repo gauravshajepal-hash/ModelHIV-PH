@@ -12,6 +12,7 @@
 ![Mechanism repair](https://img.shields.io/badge/R92-process_signal_diagnostic-orange)
 ![Public incumbent](https://img.shields.io/badge/R93-annual_superiority_blocked-orange)
 ![Latest HASP](https://img.shields.io/badge/R94-2026_Q1_HASP_holdout_pass-green)
+![Latest HASP Q2](https://img.shields.io/badge/R95-2026_Q2_stock_anchor_flow_shock-orange)
 
 This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM replacement, and not a policy engine without external review. Its purpose is scientific: make every model claim traceable to data roles, blocked-time evaluation, failure anatomy, and explicit claim cards.
 
@@ -30,8 +31,9 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 | Process-repair queue | `R92` mortality/process signal diagnostic | Train-origin proxy process repair improves incidence/death bridges, but mechanism claims remain blocked by absent direct incidence support and mortality source-family instability |
 | Open public incumbent | `R93` comparator ready, annual superiority blocked | R78 public annual proxy is now the open AEM/Spectrum-style incumbent comparator; current annual head does not beat it |
 | Latest 2026-Q1 HASP intake | `R94` post-2025 holdout passes | User-provided official 2026-Q1 HASP PDF was extracted into 519 typed rows; R41 beats carry-forward on the five main 2026-Q1 program metrics |
+| Latest 2026-Q2 HASP intake | `R95` stock anchor passes, diagnosis flow shock flagged | User-provided official 2026-Q2 HASP PDF was extracted into 529 typed rows; Q1-anchored R41 beats carry-forward on stock/back-half metrics but loses on new diagnoses |
 
-### Latest R84-R93 Verdict
+### Latest R84-R95 Verdict
 
 `R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head. `R87` tested free raw-emission process rescaling and failed. `R88` kept the raw quarterly process only where train-window evidence beat carry-forward and guarded weak incidence/death channels with a carry-forward prior:
 
@@ -75,6 +77,22 @@ The main scientific result is a true near-term holdout check: R41 is trained onl
 | new diagnoses, Q1 | 4,633 | 4,706 | 4,277 | 74 | 356 |
 
 Mean normalized error is `0.0120` for R41 versus `0.0851` for carry-forward. This promotes the 2026-Q1 direct-target row as a future-forecast initialization anchor, not as a retrospective training improvement. Broad annual superiority over the open public AEM/Spectrum-style incumbent remains blocked by R93.
+
+### Latest R95 Verdict: 2026-Q2 HASP External Holdout
+
+`R95` ingests the newer user-provided official `2026_Q2 HIV & AIDS Surveillance of the Philippines.pdf` as a second post-2025 evidence update. It extracts `529` typed rows from the PDF: national cascade stocks, diagnosis flow, deaths, PrEP, ART outcomes, VL/suppression, regional/age/key-population cascade rows, and quality flags for regional annex totals that do not exactly reconcile to the national cascade.
+
+The result is scientifically mixed. Using the `2026-Q1` HASP row as the previous anchor, the R41 branch beats Q1 carry-forward on the four stock/back-half metrics, but it loses on Q2 new diagnoses because the official Q2 diagnosis count dropped to `2,994`.
+
+| Metric | 2026-Q2 HASP Actual | Q1-Anchored R41 Forecast | Q1 Carry-forward | R41 Absolute Error | Carry Absolute Error |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| diagnosed PLHIV | 159,997 | 161,700 | 157,350 | 1,703 | 2,647 |
+| alive on ART | 111,154 | 113,069 | 108,367 | 1,915 | 2,787 |
+| tested for viral load | 65,630 | 64,077 | 61,413 | 1,553 | 4,217 |
+| virally suppressed | 63,850 | 62,123 | 59,540 | 1,727 | 4,310 |
+| new diagnoses, Q2 | 2,994 | 5,113 | 4,633 | 2,119 | 1,639 |
+
+Overall mean normalized error is `0.0916` for R41 versus `0.0934` for Q1 carry-forward, so the full five-metric margin is narrow. The stock-only gate is stronger: `0.0196` for R41 versus `0.0433` for carry-forward. R95 therefore promotes the Q2 stock row for future forecast initialization, but it explicitly flags diagnosis flow as a reporting/service shock and blocks diagnosis-flow/incidence process claims from this update.
 
 ### Position Versus SOTA
 
@@ -128,6 +146,7 @@ flowchart TB
     L["R92 process repair<br/>SIGNAL, CLAIM BLOCKED"]:::warn
     M["R93 public incumbent<br/>ANNUAL SUPERIORITY BLOCKED"]:::warn
     N["R94 2026-Q1 HASP<br/>NEAR-TERM HOLDOUT PASS"]:::pass
+    O["R95 2026-Q2 HASP<br/>STOCK ANCHOR, FLOW SHOCK"]:::warn
     H["Broad 'better than official models' claim<br/>NOT YET ALLOWED"]:::fail
 
     A --> H
@@ -143,6 +162,7 @@ flowchart TB
     L --> H
     M --> H
     N --> H
+    O --> H
 
     classDef pass fill:#e6fcf5,stroke:#087f5b,stroke-width:2px,color:#063b2c;
     classDef warn fill:#fff9db,stroke:#f08c00,stroke-width:2px,color:#4a2a00;
@@ -232,6 +252,7 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R92 | Can train-origin process-repair families rescue incidence/death mechanism support? | Signal diagnostic: proxy process repair beats carry-forward, but direct incidence support and mortality source-family stability still block mechanism claims |
 | R93 | Can we lock an open AEM/Spectrum-style public annual incumbent? | Comparator ready; annual superiority blocked because R78 public proxy v2 beats the current annual head |
 | R94 | Does the current national champion survive the new official 2026-Q1 HASP PDF? | Pass as near-term holdout: R41 beats carry-forward on diagnosed PLHIV, ART, VL-tested, suppressed, and Q1 diagnoses; Q1 rows become future initialization anchors |
+| R95 | Does the Q1-anchored national champion survive the official 2026-Q2 HASP PDF? | Mixed pass: stock/back-half metrics beat Q1 carry-forward, but Q2 diagnosis flow regresses and is flagged as a reporting/service shock |
 
 ## What Is Currently Defensible?
 
@@ -249,6 +270,8 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 - R93 provides an open public annual incumbent comparator for annual incidence, AIDS deaths, and estimated PLHIV.
 - R94 shows the frozen R41 national branch generalizes well to the newly supplied 2026-Q1 official HASP program metrics.
 - The 2026-Q1 HASP direct-target row can initialize forecasts after 2026-Q1; it cannot be used to claim a retroactive Q1 training improvement.
+- R95 shows the Q1-anchored R41 branch remains useful for 2026-Q2 stock/back-half initialization, but diagnosis flow is shock-flagged and cannot support incidence-process claims.
+- The 2026-Q2 HASP stock row can initialize forecasts after 2026-Q2; it cannot be used to retroactively tune the Q2 holdout or claim normal diagnosis-flow dynamics.
 - Phase 2 determinant structure can be used for sensitivity/scenario labels only.
 - R84 exposes the key mechanistic annual ledger quantities in the simulator.
 - R85 shows the annual bridge failure was process quality, not missing quarterly emission coverage.
@@ -378,6 +401,9 @@ Expected latest focused test result:
 | R92 tracked GitHub summary | `docs/phase3_r92_process_repair_experiment_queue_summary_20260509.md` |
 | R93 open public incumbent comparator | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-open-public-incumbent-comparator-20260510-s00/analysis/r93_open_public_incumbent_comparator_report.json` |
 | R93 tracked GitHub summary | `docs/phase3_r93_open_public_incumbent_comparator_summary_20260510.md` |
+| R94 2026-Q1 HASP intake gate | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r94-2026-q1-hasp-intake-gate-20260520-s00/analysis/r94_2026_q1_hasp_intake_gate_report.json` |
+| R95 2026-Q2 HASP intake gate | `src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r95-2026-q2-hasp-intake-gate-20260910-s00/analysis/r95_2026_q2_hasp_intake_gate_report.json` |
+| R95 tracked GitHub summary | `docs/phase3_r95_2026_q2_hasp_intake_summary_20260910.md` |
 | Full experiment/math/SOTA audit | `docs/phase3_full_experiment_math_and_sota_status_20260509.md` |
 
 ## Roadmap
@@ -392,7 +418,8 @@ flowchart LR
     R90 --> R91["R91 mechanism-support expansion<br/>diagnostic only"]
     R91 --> R92["R92 process repair<br/>signal, claim blocked"]
     R92 --> R93["R93 public incumbent comparator<br/>ready, model blocked"]
-    R93 --> R94["R94 incidence evidence scanner<br/>queued"]
+    R93 --> R94["R94 2026-Q1 HASP<br/>holdout pass"]
+    R94 --> R95["R95 2026-Q2 HASP<br/>stock anchor, flow shock"]
 ```
 
 Next highest-value scientific step:
@@ -400,7 +427,7 @@ Next highest-value scientific step:
 1. Freeze R86/R88 as scoped annual/readout claims under R90.
 2. Treat R92 as a useful process-signal diagnostic, not a mechanism win.
 3. Treat R93 as the open annual incumbent comparator and keep broad annual superiority blocked.
-4. Build R94: targeted direct incidence-adjacent evidence scanner and incidence repair gate.
+4. Use R95 as a stock initialization anchor after 2026-Q2, but model the Q2 diagnosis-flow collapse as a reporting/service-intensity shock before making any incidence-process claim.
 
 ## License And Use
 
