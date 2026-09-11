@@ -1,0 +1,98 @@
+{
+  "R41_frozen_source_sha256": "e1bcd804a7c96904558c6d988d3ceb2e0b1b7e785a9613e0e3302eb55a34fe00",
+  "R41_reference_unchanged": {
+    "alive_on_art": 119454.34190258167,
+    "cascade_projection_changed": false,
+    "diagnosed_plhiv": 168231.0,
+    "new_diagnosed_cases_period": 3954.0,
+    "quarter": "2026-Q4",
+    "tested_for_viral_load": 70530.8712153088,
+    "virally_suppressed": 68617.95104521509
+  },
+  "generated_at": "2026-09-11T11:37:15.098480+00:00",
+  "information_cutoff": "2026-09-11T11:37:15.098480+00:00",
+  "monthly_candidates": [
+    {
+      "family": "quarter_carry",
+      "monthly_points": [
+        1217.0,
+        851.0,
+        926.0
+      ],
+      "prediction": 2994.0,
+      "selected": false,
+      "training_end_month": "2026-06",
+      "training_report_period": "2026-Q2",
+      "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "unobserved_gap_months": 3
+    },
+    {
+      "family": "last_month",
+      "monthly_points": [
+        926.0,
+        926.0,
+        926.0
+      ],
+      "prediction": 2778.0,
+      "selected": false,
+      "training_end_month": "2026-06",
+      "training_report_period": "2026-Q2",
+      "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "unobserved_gap_months": 3
+    },
+    {
+      "family": "historical_mean",
+      "monthly_points": [
+        1478.9285714285713,
+        1478.9285714285713,
+        1478.9285714285713
+      ],
+      "prediction": 4436.785714285714,
+      "selected": true,
+      "training_end_month": "2026-06",
+      "training_report_period": "2026-Q2",
+      "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "unobserved_gap_months": 3
+    },
+    {
+      "family": "local_level",
+      "monthly_points": [
+        979.0877936941754,
+        979.0877936941754,
+        979.0877936941754
+      ],
+      "prediction": 2937.2633810825264,
+      "selected": false,
+      "training_end_month": "2026-06",
+      "training_report_period": "2026-Q2",
+      "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "unobserved_gap_months": 3
+    },
+    {
+      "family": "local_level_drift",
+      "monthly_points": [
+        937.2276145014562,
+        928.0345739984939,
+        918.9316097119887
+      ],
+      "prediction": 2784.193798211939,
+      "selected": false,
+      "training_end_month": "2026-06",
+      "training_report_period": "2026-Q2",
+      "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "unobserved_gap_months": 3
+    }
+  ],
+  "observed_outcome": null,
+  "outcome_definition": "sum the three target-month cells in that report's monthly diagnosis table, not a substituted headline or later revision",
+  "outcome_policy": "first complete Q4 HASP report; later revisions scored separately; absent outcomes remain unscored",
+  "promotion_policy": "no promotion from a single future quarter; retain existing full-cascade gates",
+  "quarter_carry_definition": "repeat most recently observed quarter across the unobserved gap",
+  "scoring_metric": "new_diagnosed_cases_period",
+  "selected_monthly_family": "historical_mean",
+  "status": "prospective_forecasts_frozen_unscored",
+  "stock_cone_valid": true,
+  "target_end": "2026-12-31",
+  "target_period": "2026-Q4",
+  "target_start": "2026-10-01"
+}

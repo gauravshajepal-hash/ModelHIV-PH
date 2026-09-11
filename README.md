@@ -18,6 +18,18 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 
 ## Scientific Snapshot
 
+### September 11 Update: R97 Report-Vintage Audit
+
+**Report dates and revised counts change the evaluation.** R97 extracts **246 report-month rows from eight quarterly reports**, quarantines two ambiguous image tables, and preserves every source version. Across 204 overlapping-month comparisons, 43 counts change, all downward. An additions-only reporting-delay model cannot explain those revisions; their cause is not identified.
+
+![R97 report revisions and prospective forecast lock](docs/figures/phase3_r97_dashboard.png)
+
+The SHIP mirror posted Q4-2025 in February 2026 and Q1/Q2-2026 in August. Under those posting dates, the historical mean beats carry-forward on Q1 but loses on Q2. These are **mirror-availability sensitivity results, not verified original-release backtests**. R41 remains unchanged.
+
+We have frozen **Q4-2026 point forecasts before the quarter starts**: selected monthly historical mean **4,437 diagnoses**, carry-forward **2,994**, and frozen R41 **3,954**. All remain **unobserved and unscored**; neither a single future quarter nor the preserved stock cone establishes a full-cascade model win.
+
+[R97 equations, comparisons, and limitations](docs/phase3_r97_report_vintages_20260911.md) | [Dated Q4 forecast lock](docs/phase3_r97_prospective_Q4_lock_20260911.json) | [Ledger and figure checksums](docs/phase3_r97_bundle_manifest_20260911.json)
+
 ### September 11 Update: R96 Monthly Diagnosis Test
 
 R96 repaired a PDF extraction bug that had omitted monthly diagnosis rows: Q1 now supplies **39 months** and Q2 **42 months**, with the March revision retained separately for each report. The five-family monthly experiment improves historical MAE from **771 to 661 diagnoses** using a nested selector, but its preferred forecast is the historical mean. The fitted local-level models lose to carry-forward. Q2 error improves while Q1 regresses slightly against R41, so **R41 remains the reference and R96 is diagnostic-only**.
@@ -261,6 +273,8 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R93 | Can we lock an open AEM/Spectrum-style public annual incumbent? | Comparator ready; annual superiority blocked because R78 public proxy v2 beats the current annual head |
 | R94 | Does the current national champion survive the new official 2026-Q1 HASP PDF? | Pass as near-term holdout: R41 beats carry-forward on diagnosed PLHIV, ART, VL-tested, suppressed, and Q1 diagnoses; Q1 rows become future initialization anchors |
 | R95 | Does the Q1-anchored national champion survive the official 2026-Q2 HASP PDF? | Mixed pass: stock/back-half metrics beat Q1 carry-forward, but Q2 diagnosis flow regresses and is flagged as a reporting/service shock |
+| R96 | Do train-fitted monthly diagnosis state models improve the recovered monthly series? | Nested historical selector improves carry-forward; local-level models lose. Q1 regresses versus R41; diagnostic-only |
+| R97 | Do report revisions and posting delays change which data a forecast could use? | Eight vintage tables accepted; signed revisions and availability sensitivity documented. Q4-2026 predictions frozen, unscored; no promotion |
 
 ## What Is Currently Defensible?
 

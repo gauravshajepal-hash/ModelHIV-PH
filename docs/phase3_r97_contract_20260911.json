@@ -1,0 +1,23 @@
+{
+  "OCR": "right-column then whole-page fallback; one image and one Tesseract thread; unique PSM 3/6 agreement across layouts; verify AVG where present; mask printed future placeholders",
+  "claim": "report-vintage and declared-mirror-availability sensitivity",
+  "date_semantics": "mirror_posting_date is not first_publication_date or proof of historical file bytes",
+  "historical_origins": [
+    "2026-01-01",
+    "2026-04-01"
+  ],
+  "no_promotion": [
+    "first release and historical bytes not verified",
+    "only two target quarters",
+    "reporting and biological processes still confounded",
+    "no regional or AEM comparison"
+  ],
+  "outcome_definition": "sum the three target-month cells in that report's monthly diagnosis table, not a substituted headline or later revision",
+  "prospective_information_cutoff": "generation timestamp; target quarter must not have begun",
+  "prospective_target": "2026-Q4",
+  "schema": "r97.report_vintages.v1",
+  "score": "reported diagnosis count absolute error; propagate all unobserved gap months",
+  "selection": "earlier target blocks whose report was posted by this origin; otherwise carry-forward",
+  "source": "DOH HASP PDFs; SHIP WordPress posting metadata",
+  "training": "one entire eligible report vintage; never backfill its history from a newer report"
+}

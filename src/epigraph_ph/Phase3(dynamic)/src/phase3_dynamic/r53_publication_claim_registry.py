@@ -373,6 +373,7 @@ R95_DEFAULT_REPORT = (
     / "r95_2026_q2_hasp_intake_gate_report.json"
 )
 R96_DEFAULT_REPORT = sandbox_repo_root() / "artifacts/runs/p3d-r96-monthly-diagnosis-state-20260911-s01/report.json"
+R97_DEFAULT_REPORT = sandbox_repo_root() / "artifacts/runs/p3d-r97-report-vintages-20260911-s01/report.json"
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1765,6 +1766,26 @@ def _monthly_diagnosis_state_claim(report: dict[str, Any], path: Path) -> dict[s
     }
 
 
+def _report_vintage_claim(report: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(report.get("gate") or {})
+    return {
+        "claim_id": "phase3_r97_report_vintages",
+        "claim_scope": "declared_mirror_availability_and_prospective_forecast_lock",
+        "claim_status": "diagnostic_only" if gate else "blocked",
+        "model_family": "frozen_r96_families_no_new_epidemic_parameters",
+        "primary_gate": gate.get("status", "missing"),
+        "blockers": report.get("contract", {}).get("no_promotion", ["r97_report_missing"]),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": "Report-vintage revisions and mirror-availability sensitivity; Q4 forecasts are frozen but unscored.",
+        "claim_limit": "No model promotion, verified original release dates, identified reporting process, regional or AEM superiority claim.",
+        "key_metrics": {"accepted_reports": report.get("accepted_reports"),
+                        "quarantined_reports": report.get("quarantined_reports"),
+                        "monthly_vintage_rows": report.get("monthly_vintage_rows"),
+                        "prospective_status": report.get("prospective_Q4", {}).get("status")},
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -2045,6 +2066,7 @@ def run_r53_publication_claim_registry(
     r94_report_path: Path | None = None,
     r95_report_path: Path | None = None,
     r96_report_path: Path | None = None,
+    r97_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -2092,6 +2114,7 @@ def run_r53_publication_claim_registry(
     r94_path = Path(r94_report_path) if r94_report_path is not None else R94_DEFAULT_REPORT
     r95_path = Path(r95_report_path) if r95_report_path is not None else R95_DEFAULT_REPORT
     r96_path = Path(r96_report_path) if r96_report_path is not None else R96_DEFAULT_REPORT
+    r97_path = Path(r97_report_path) if r97_report_path is not None else R97_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -2138,6 +2161,7 @@ def run_r53_publication_claim_registry(
     r94 = _load_report(r94_path)
     r95 = _load_report(r95_path)
     r96 = _load_report(r96_path)
+    r97 = _load_report(r97_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -2212,6 +2236,7 @@ def run_r53_publication_claim_registry(
         _latest_hasp_intake_claim(r94, r94_path),
         _latest_hasp_q2_intake_claim(r95, r95_path),
         _monthly_diagnosis_state_claim(r96, r96_path),
+        _report_vintage_claim(r97, r97_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -2289,6 +2314,7 @@ def _main() -> None:
     parser.add_argument("--r94-report-path", default=None)
     parser.add_argument("--r95-report-path", default=None)
     parser.add_argument("--r96-report-path", default=None)
+    parser.add_argument("--r97-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -2338,6 +2364,7 @@ def _main() -> None:
         r94_report_path=None if args.r94_report_path is None else Path(args.r94_report_path),
         r95_report_path=None if args.r95_report_path is None else Path(args.r95_report_path),
         r96_report_path=None if args.r96_report_path is None else Path(args.r96_report_path),
+        r97_report_path=None if args.r97_report_path is None else Path(args.r97_report_path),
     )
 
 

@@ -1,0 +1,2480 @@
+{
+  "accepted_reports": 8,
+  "availability_replays": [
+    {
+      "absolute_error": 950.0,
+      "actual": 4633,
+      "family": "quarter_carry",
+      "issued_at": "2026-01-01",
+      "monthly_points": [
+        2176.0,
+        1608.0,
+        1799.0
+      ],
+      "prediction": 5583.0,
+      "selected": true,
+      "target_period": "2026-Q1",
+      "target_posted_at": "2026-08-26T08:43:38Z",
+      "training_end_month": "2025-09",
+      "training_report_period": "2025-Q3",
+      "training_source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 764.0,
+      "actual": 4633,
+      "family": "last_month",
+      "issued_at": "2026-01-01",
+      "monthly_points": [
+        1799.0,
+        1799.0,
+        1799.0
+      ],
+      "prediction": 5397.0,
+      "selected": false,
+      "target_period": "2026-Q1",
+      "target_posted_at": "2026-08-26T08:43:38Z",
+      "training_end_month": "2025-09",
+      "training_report_period": "2025-Q3",
+      "training_source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 58.90909090909099,
+      "actual": 4633,
+      "family": "historical_mean",
+      "issued_at": "2026-01-01",
+      "monthly_points": [
+        1524.6969696969697,
+        1524.6969696969697,
+        1524.6969696969697
+      ],
+      "prediction": 4574.090909090909,
+      "selected": false,
+      "target_period": "2026-Q1",
+      "target_posted_at": "2026-08-26T08:43:38Z",
+      "training_end_month": "2025-09",
+      "training_report_period": "2025-Q3",
+      "training_source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 601.15004997493,
+      "actual": 4633,
+      "family": "local_level",
+      "issued_at": "2026-01-01",
+      "monthly_points": [
+        1744.7166833249767,
+        1744.7166833249767,
+        1744.7166833249767
+      ],
+      "prediction": 5234.15004997493,
+      "selected": false,
+      "target_period": "2026-Q1",
+      "target_posted_at": "2026-08-26T08:43:38Z",
+      "training_end_month": "2025-09",
+      "training_report_period": "2025-Q3",
+      "training_source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 607.9124879941155,
+      "actual": 4633,
+      "family": "local_level_drift",
+      "issued_at": "2026-01-01",
+      "monthly_points": [
+        1733.8143256208994,
+        1746.9377376166244,
+        1760.160424756592
+      ],
+      "prediction": 5240.9124879941155,
+      "selected": false,
+      "target_period": "2026-Q1",
+      "target_posted_at": "2026-08-26T08:43:38Z",
+      "training_end_month": "2025-09",
+      "training_report_period": "2025-Q3",
+      "training_source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 1283.0,
+      "actual": 2994,
+      "family": "quarter_carry",
+      "issued_at": "2026-04-01",
+      "monthly_points": [
+        1538.0,
+        1331.0,
+        1408.0
+      ],
+      "prediction": 4277.0,
+      "selected": true,
+      "target_period": "2026-Q2",
+      "target_posted_at": "2026-08-26T08:44:51Z",
+      "training_end_month": "2025-12",
+      "training_report_period": "2025-Q4",
+      "training_source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 1230.0,
+      "actual": 2994,
+      "family": "last_month",
+      "issued_at": "2026-04-01",
+      "monthly_points": [
+        1408.0,
+        1408.0,
+        1408.0
+      ],
+      "prediction": 4224.0,
+      "selected": false,
+      "target_period": "2026-Q2",
+      "target_posted_at": "2026-08-26T08:44:51Z",
+      "training_end_month": "2025-12",
+      "training_report_period": "2025-Q4",
+      "training_source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 1547.416666666667,
+      "actual": 2994,
+      "family": "historical_mean",
+      "issued_at": "2026-04-01",
+      "monthly_points": [
+        1513.8055555555557,
+        1513.8055555555557,
+        1513.8055555555557
+      ],
+      "prediction": 4541.416666666667,
+      "selected": false,
+      "target_period": "2026-Q2",
+      "target_posted_at": "2026-08-26T08:44:51Z",
+      "training_end_month": "2025-12",
+      "training_report_period": "2025-Q4",
+      "training_source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 1507.1530296218007,
+      "actual": 2994,
+      "family": "local_level",
+      "issued_at": "2026-04-01",
+      "monthly_points": [
+        1500.3843432072667,
+        1500.3843432072667,
+        1500.3843432072667
+      ],
+      "prediction": 4501.153029621801,
+      "selected": false,
+      "target_period": "2026-Q2",
+      "target_posted_at": "2026-08-26T08:44:51Z",
+      "training_end_month": "2025-12",
+      "training_report_period": "2025-Q4",
+      "training_source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "unobserved_gap_months": 3
+    },
+    {
+      "absolute_error": 1984.2380580135077,
+      "actual": 2994,
+      "family": "local_level_drift",
+      "issued_at": "2026-04-01",
+      "monthly_points": [
+        1651.1338508656931,
+        1659.3989036069129,
+        1667.705303540902
+      ],
+      "prediction": 4978.238058013508,
+      "selected": false,
+      "target_period": "2026-Q2",
+      "target_posted_at": "2026-08-26T08:44:51Z",
+      "training_end_month": "2025-12",
+      "training_report_period": "2025-Q4",
+      "training_source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "unobserved_gap_months": 3
+    }
+  ],
+  "catalog": [
+    {
+      "end_month": "2024-03",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-11-22T10:50:46Z",
+      "period": "2024-Q1",
+      "reason": "OCR incomplete/disagrees: expected [2023, 2024], agreed [2023]",
+      "source_page": "https://www.ship.ph/january-march-2024/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "c631f9f1168eff646c82d1df87de4020a0b816ac721b9684302c8eaf79d9c044",
+      "status": "quarantined",
+      "title": "January \u2013 March 2024"
+    },
+    {
+      "end_month": "2024-06",
+      "extraction_method": "tesseract_psm3_psm6_consensus_through_right_column_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-11-22T10:53:57Z",
+      "period": "2024-Q2",
+      "source_page": "https://www.ship.ph/april-june-2024/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "3deae8dbd54834cbfd3d480c84ff3180d366ea5897b699fe8037409d35ca7685",
+      "status": "accepted",
+      "title": "April \u2013 June 2024",
+      "values": [
+        1445,
+        1291,
+        2076,
+        1237,
+        1250,
+        1518,
+        1554,
+        1572,
+        1569,
+        1501,
+        1277,
+        952,
+        1083,
+        1162,
+        1161,
+        1219,
+        1335,
+        2767
+      ]
+    },
+    {
+      "end_month": "2024-09",
+      "extraction_method": "tesseract_psm3_psm6_consensus_through_right_column_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-11-22T10:56:09Z",
+      "period": "2024-Q3",
+      "source_page": "https://www.ship.ph/may-july-2024/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q3-2024-1.pdf",
+      "source_sha256": "938ea0716dd38accb6b79d428c2a7cd4cc1903643289723f8b53385e466353c5",
+      "status": "accepted",
+      "title": "July \u2013 September 2024",
+      "values": [
+        1445,
+        1291,
+        2076,
+        1237,
+        1250,
+        1518,
+        1554,
+        1572,
+        1569,
+        1501,
+        1277,
+        952,
+        1083,
+        1162,
+        1161,
+        1219,
+        1335,
+        2766,
+        1654,
+        1577,
+        1364
+      ]
+    },
+    {
+      "end_month": "2024-12",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-11-22T11:02:08Z",
+      "period": "2024-Q4",
+      "reason": "OCR incomplete/disagrees: expected [2023, 2024], agreed []",
+      "source_page": "https://www.ship.ph/october-december-2024/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q4-HIV-AIDS-Surveillance-of-the-Philippines-2.pdf",
+      "source_sha256": "9ac03ba1ea36e74be5406830ef823cfdec7ca2a7bccefcde5ffd9e4220107b9e",
+      "status": "quarantined",
+      "title": "October \u2013 December 2024"
+    },
+    {
+      "end_month": "2025-03",
+      "extraction_method": "tesseract_psm3_psm6_consensus_through_right_column_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-11-22T11:04:08Z",
+      "period": "2025-Q1",
+      "source_page": "https://www.ship.ph/january-march-2025/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q1-2025.pdf",
+      "source_sha256": "3795823c79719bfc1e747f7b155335cc475101ba321126417465a8ccbe7a7d5a",
+      "status": "accepted",
+      "title": "January \u2013 March 2025",
+      "values": [
+        1443,
+        1289,
+        2076,
+        1236,
+        1249,
+        1516,
+        1553,
+        1570,
+        1567,
+        1499,
+        1277,
+        950,
+        1081,
+        1159,
+        1161,
+        1218,
+        1334,
+        2762,
+        1652,
+        1574,
+        1362,
+        1549,
+        1305,
+        1357,
+        1811,
+        1691,
+        1599
+      ]
+    },
+    {
+      "end_month": "2025-06",
+      "extraction_method": "tesseract_psm3_psm6_consensus_through_right_column_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-11-22T11:07:47Z",
+      "period": "2025-Q2",
+      "source_page": "https://www.ship.ph/april-june-2025/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/2025_Q2-HIV-AIDS-Surveillance-Report-of-the-Philippines-1.pdf",
+      "source_sha256": "cae66b4eeb3a43cd78b3a14b596e8324f373f75fc7a0c850ad08e99e36a8a82f",
+      "status": "accepted",
+      "title": "April \u2013 June 2025",
+      "values": [
+        1443,
+        1289,
+        2076,
+        1236,
+        1249,
+        1516,
+        1553,
+        1570,
+        1567,
+        1499,
+        1277,
+        950,
+        1081,
+        1159,
+        1161,
+        1218,
+        1334,
+        2761,
+        1652,
+        1574,
+        1362,
+        1549,
+        1305,
+        1356,
+        1810,
+        1690,
+        1592,
+        1610,
+        1630,
+        1739
+      ]
+    },
+    {
+      "end_month": "2025-09",
+      "extraction_method": "tesseract_psm3_psm6_consensus_through_right_column_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "8370379307618f6ef81c0da1bb5033834c3b89c1683549a2f70449baad0363e2",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2025&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2025-12-01T09:59:53Z",
+      "period": "2025-Q3",
+      "source_page": "https://www.ship.ph/july-september-2025/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-REPORT-2025_-Q3_signed-1.pdf",
+      "source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "status": "accepted",
+      "title": "July \u2013 September 2025",
+      "values": [
+        1443,
+        1289,
+        2076,
+        1236,
+        1249,
+        1516,
+        1553,
+        1570,
+        1567,
+        1499,
+        1277,
+        950,
+        1081,
+        1159,
+        1161,
+        1218,
+        1334,
+        2761,
+        1652,
+        1572,
+        1362,
+        1549,
+        1305,
+        1356,
+        1808,
+        1689,
+        1585,
+        1606,
+        1594,
+        1715,
+        2176,
+        1608,
+        1799
+      ]
+    },
+    {
+      "end_month": "2025-12",
+      "extraction_method": "tesseract_psm3_psm6_consensus_through_whole_page_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "b082b06d88605f727091ac915ae7d3c26c39446470a5da2ad0f41b2d67644365",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2026&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2026-02-26T00:38:21Z",
+      "period": "2025-Q4",
+      "source_page": "https://www.ship.ph/q4-2025/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2025_Q4-HIV-AIDS-Surveillance-Report-of-the-Philippines-2.pdf",
+      "source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "status": "accepted",
+      "title": "October \u2013 December 2025",
+      "values": [
+        1443,
+        1289,
+        2076,
+        1236,
+        1249,
+        1516,
+        1553,
+        1570,
+        1567,
+        1499,
+        1277,
+        950,
+        1081,
+        1159,
+        1161,
+        1218,
+        1334,
+        2761,
+        1652,
+        1571,
+        1362,
+        1549,
+        1305,
+        1355,
+        1807,
+        1689,
+        1584,
+        1606,
+        1594,
+        1715,
+        2176,
+        1608,
+        1708,
+        1538,
+        1331,
+        1408
+      ]
+    },
+    {
+      "end_month": "2026-03",
+      "extraction_method": "pdf_text_numeric_rows_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "b082b06d88605f727091ac915ae7d3c26c39446470a5da2ad0f41b2d67644365",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2026&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2026-08-26T08:43:38Z",
+      "period": "2026-Q1",
+      "source_page": "https://www.ship.ph/january-march-2026/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "7e52f138a8e45c8222d22c6b1d51a5c39ec6b47b011ba580ff69e3d9885eb6a2",
+      "status": "accepted",
+      "title": "January \u2013 March 2026",
+      "values": [
+        1443,
+        1289,
+        2076,
+        1236,
+        1249,
+        1516,
+        1553,
+        1570,
+        1567,
+        1499,
+        1277,
+        950,
+        1081,
+        1159,
+        1161,
+        1218,
+        1334,
+        2761,
+        1652,
+        1570,
+        1362,
+        1549,
+        1305,
+        1355,
+        1807,
+        1689,
+        1583,
+        1606,
+        1594,
+        1715,
+        2176,
+        1607,
+        1708,
+        1537,
+        1330,
+        1407,
+        1690,
+        1407,
+        1536
+      ]
+    },
+    {
+      "end_month": "2026-06",
+      "extraction_method": "pdf_text_numeric_rows_average_checked",
+      "first_publication_date": null,
+      "historical_bytes_verified": false,
+      "metadata_snapshot_sha256": "b082b06d88605f727091ac915ae7d3c26c39446470a5da2ad0f41b2d67644365",
+      "metadata_url": "https://www.ship.ph/wp-json/wp/v2/posts?search=2026&per_page=100&_fields=id%2Cdate_gmt%2Clink%2Ctitle%2Ccontent",
+      "mirror_posted_at": "2026-08-26T08:44:51Z",
+      "period": "2026-Q2",
+      "source_page": "https://www.ship.ph/april-june-2026/",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "status": "accepted",
+      "title": "April \u2013 June 2026",
+      "values": [
+        1443,
+        1289,
+        2076,
+        1236,
+        1249,
+        1516,
+        1553,
+        1570,
+        1567,
+        1499,
+        1277,
+        950,
+        1081,
+        1159,
+        1161,
+        1218,
+        1334,
+        2761,
+        1652,
+        1570,
+        1362,
+        1549,
+        1305,
+        1355,
+        1807,
+        1689,
+        1583,
+        1606,
+        1594,
+        1715,
+        2176,
+        1607,
+        1708,
+        1537,
+        1330,
+        1407,
+        1690,
+        1407,
+        1533,
+        1217,
+        851,
+        926
+      ]
+    }
+  ],
+  "contract": {
+    "OCR": "right-column then whole-page fallback; one image and one Tesseract thread; unique PSM 3/6 agreement across layouts; verify AVG where present; mask printed future placeholders",
+    "claim": "report-vintage and declared-mirror-availability sensitivity",
+    "date_semantics": "mirror_posting_date is not first_publication_date or proof of historical file bytes",
+    "historical_origins": [
+      "2026-01-01",
+      "2026-04-01"
+    ],
+    "no_promotion": [
+      "first release and historical bytes not verified",
+      "only two target quarters",
+      "reporting and biological processes still confounded",
+      "no regional or AEM comparison"
+    ],
+    "outcome_definition": "sum the three target-month cells in that report's monthly diagnosis table, not a substituted headline or later revision",
+    "prospective_information_cutoff": "generation timestamp; target quarter must not have begun",
+    "prospective_target": "2026-Q4",
+    "schema": "r97.report_vintages.v1",
+    "score": "reported diagnosis count absolute error; propagate all unobserved gap months",
+    "selection": "earlier target blocks whose report was posted by this origin; otherwise carry-forward",
+    "source": "DOH HASP PDFs; SHIP WordPress posting metadata",
+    "training": "one entire eligible report vintage; never backfill its history from a newer report"
+  },
+  "gate": {
+    "R41_changed": false,
+    "champion": null,
+    "first_release_confirmed": false,
+    "historical_bytes_verified": false,
+    "publication_superiority_allowed": false,
+    "status": "diagnostic_and_prospective_lock_only"
+  },
+  "generated_at": "2026-09-11T11:37:15.098480+00:00",
+  "laboratory_context": [
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2025-Q2",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/2025_Q2-HIV-AIDS-Surveillance-Report-of-the-Philippines-1.pdf",
+      "source_sha256": "cae66b4eeb3a43cd78b3a14b596e8324f373f75fc7a0c850ad08e99e36a8a82f",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021\nto 118",
+      "value": 118
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2024-Q2",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "3deae8dbd54834cbfd3d480c84ff3180d366ea5897b699fe8037409d35ca7685",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021 to 61",
+      "value": 61
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2025-Q4",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2025_Q4-HIV-AIDS-Surveillance-Report-of-the-Philippines-2.pdf",
+      "source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021 to\n      195",
+      "value": 195
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2026-Q1",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "7e52f138a8e45c8222d22c6b1d51a5c39ec6b47b011ba580ff69e3d9885eb6a2",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021 to 195",
+      "value": 195
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2026-Q2",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021 to 195",
+      "value": 195
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2025-Q1",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q1-2025.pdf",
+      "source_sha256": "3795823c79719bfc1e747f7b155335cc475101ba321126417465a8ccbe7a7d5a",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021\nto 104",
+      "value": 104
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2024-Q3",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q3-2024-1.pdf",
+      "source_sha256": "938ea0716dd38accb6b79d428c2a7cd4cc1903643289723f8b53385e466353c5",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021 to 74",
+      "value": 74
+    },
+    {
+      "allowed_use": "context_only_not_monthly_completeness_denominator",
+      "measurement_semantics": "reporting_process_covariate",
+      "metric_id": "confirming_laboratories_asof_count",
+      "observation_role": "prior_context",
+      "period": "2025-Q3",
+      "source_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-REPORT-2025_-Q3_signed-1.pdf",
+      "source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "source_span": "(CrCLs) in OHASIS increased from 26 facilities in 2021\n to 193",
+      "value": 193
+    }
+  ],
+  "monthly_vintage_rows": 246,
+  "prospective_Q4": {
+    "R41_frozen_source_sha256": "e1bcd804a7c96904558c6d988d3ceb2e0b1b7e785a9613e0e3302eb55a34fe00",
+    "R41_reference_unchanged": {
+      "alive_on_art": 119454.34190258167,
+      "cascade_projection_changed": false,
+      "diagnosed_plhiv": 168231.0,
+      "new_diagnosed_cases_period": 3954.0,
+      "quarter": "2026-Q4",
+      "tested_for_viral_load": 70530.8712153088,
+      "virally_suppressed": 68617.95104521509
+    },
+    "generated_at": "2026-09-11T11:37:15.098480+00:00",
+    "information_cutoff": "2026-09-11T11:37:15.098480+00:00",
+    "monthly_candidates": [
+      {
+        "family": "quarter_carry",
+        "monthly_points": [
+          1217.0,
+          851.0,
+          926.0
+        ],
+        "prediction": 2994.0,
+        "selected": false,
+        "training_end_month": "2026-06",
+        "training_report_period": "2026-Q2",
+        "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+        "unobserved_gap_months": 3
+      },
+      {
+        "family": "last_month",
+        "monthly_points": [
+          926.0,
+          926.0,
+          926.0
+        ],
+        "prediction": 2778.0,
+        "selected": false,
+        "training_end_month": "2026-06",
+        "training_report_period": "2026-Q2",
+        "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+        "unobserved_gap_months": 3
+      },
+      {
+        "family": "historical_mean",
+        "monthly_points": [
+          1478.9285714285713,
+          1478.9285714285713,
+          1478.9285714285713
+        ],
+        "prediction": 4436.785714285714,
+        "selected": true,
+        "training_end_month": "2026-06",
+        "training_report_period": "2026-Q2",
+        "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+        "unobserved_gap_months": 3
+      },
+      {
+        "family": "local_level",
+        "monthly_points": [
+          979.0877936941754,
+          979.0877936941754,
+          979.0877936941754
+        ],
+        "prediction": 2937.2633810825264,
+        "selected": false,
+        "training_end_month": "2026-06",
+        "training_report_period": "2026-Q2",
+        "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+        "unobserved_gap_months": 3
+      },
+      {
+        "family": "local_level_drift",
+        "monthly_points": [
+          937.2276145014562,
+          928.0345739984939,
+          918.9316097119887
+        ],
+        "prediction": 2784.193798211939,
+        "selected": false,
+        "training_end_month": "2026-06",
+        "training_report_period": "2026-Q2",
+        "training_source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+        "unobserved_gap_months": 3
+      }
+    ],
+    "observed_outcome": null,
+    "outcome_definition": "sum the three target-month cells in that report's monthly diagnosis table, not a substituted headline or later revision",
+    "outcome_policy": "first complete Q4 HASP report; later revisions scored separately; absent outcomes remain unscored",
+    "promotion_policy": "no promotion from a single future quarter; retain existing full-cascade gates",
+    "quarter_carry_definition": "repeat most recently observed quarter across the unobserved gap",
+    "scoring_metric": "new_diagnosed_cases_period",
+    "selected_monthly_family": "historical_mean",
+    "status": "prospective_forecasts_frozen_unscored",
+    "stock_cone_valid": true,
+    "target_end": "2026-12-31",
+    "target_period": "2026-Q4",
+    "target_start": "2026-10-01"
+  },
+  "quarantined_reports": 2,
+  "revisions": [
+    {
+      "earlier_count": 1445,
+      "earlier_period": "2024-Q2",
+      "later_count": 1445,
+      "later_period": "2024-Q3",
+      "month": "2023-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1291,
+      "earlier_period": "2024-Q2",
+      "later_count": 1291,
+      "later_period": "2024-Q3",
+      "month": "2023-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2024-Q2",
+      "later_count": 2076,
+      "later_period": "2024-Q3",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1237,
+      "earlier_period": "2024-Q2",
+      "later_count": 1237,
+      "later_period": "2024-Q3",
+      "month": "2023-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1250,
+      "earlier_period": "2024-Q2",
+      "later_count": 1250,
+      "later_period": "2024-Q3",
+      "month": "2023-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1518,
+      "earlier_period": "2024-Q2",
+      "later_count": 1518,
+      "later_period": "2024-Q3",
+      "month": "2023-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1554,
+      "earlier_period": "2024-Q2",
+      "later_count": 1554,
+      "later_period": "2024-Q3",
+      "month": "2023-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1572,
+      "earlier_period": "2024-Q2",
+      "later_count": 1572,
+      "later_period": "2024-Q3",
+      "month": "2023-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1569,
+      "earlier_period": "2024-Q2",
+      "later_count": 1569,
+      "later_period": "2024-Q3",
+      "month": "2023-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1501,
+      "earlier_period": "2024-Q2",
+      "later_count": 1501,
+      "later_period": "2024-Q3",
+      "month": "2023-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2024-Q2",
+      "later_count": 1277,
+      "later_period": "2024-Q3",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 952,
+      "earlier_period": "2024-Q2",
+      "later_count": 952,
+      "later_period": "2024-Q3",
+      "month": "2023-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1083,
+      "earlier_period": "2024-Q2",
+      "later_count": 1083,
+      "later_period": "2024-Q3",
+      "month": "2024-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1162,
+      "earlier_period": "2024-Q2",
+      "later_count": 1162,
+      "later_period": "2024-Q3",
+      "month": "2024-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2024-Q2",
+      "later_count": 1161,
+      "later_period": "2024-Q3",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1219,
+      "earlier_period": "2024-Q2",
+      "later_count": 1219,
+      "later_period": "2024-Q3",
+      "month": "2024-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1335,
+      "earlier_period": "2024-Q2",
+      "later_count": 1335,
+      "later_period": "2024-Q3",
+      "month": "2024-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2767,
+      "earlier_period": "2024-Q2",
+      "later_count": 2766,
+      "later_period": "2024-Q3",
+      "month": "2024-06",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1445,
+      "earlier_period": "2024-Q3",
+      "later_count": 1443,
+      "later_period": "2025-Q1",
+      "month": "2023-01",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1291,
+      "earlier_period": "2024-Q3",
+      "later_count": 1289,
+      "later_period": "2025-Q1",
+      "month": "2023-02",
+      "revision": -2
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2024-Q3",
+      "later_count": 2076,
+      "later_period": "2025-Q1",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1237,
+      "earlier_period": "2024-Q3",
+      "later_count": 1236,
+      "later_period": "2025-Q1",
+      "month": "2023-04",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1250,
+      "earlier_period": "2024-Q3",
+      "later_count": 1249,
+      "later_period": "2025-Q1",
+      "month": "2023-05",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1518,
+      "earlier_period": "2024-Q3",
+      "later_count": 1516,
+      "later_period": "2025-Q1",
+      "month": "2023-06",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1554,
+      "earlier_period": "2024-Q3",
+      "later_count": 1553,
+      "later_period": "2025-Q1",
+      "month": "2023-07",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1572,
+      "earlier_period": "2024-Q3",
+      "later_count": 1570,
+      "later_period": "2025-Q1",
+      "month": "2023-08",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1569,
+      "earlier_period": "2024-Q3",
+      "later_count": 1567,
+      "later_period": "2025-Q1",
+      "month": "2023-09",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1501,
+      "earlier_period": "2024-Q3",
+      "later_count": 1499,
+      "later_period": "2025-Q1",
+      "month": "2023-10",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2024-Q3",
+      "later_count": 1277,
+      "later_period": "2025-Q1",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 952,
+      "earlier_period": "2024-Q3",
+      "later_count": 950,
+      "later_period": "2025-Q1",
+      "month": "2023-12",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1083,
+      "earlier_period": "2024-Q3",
+      "later_count": 1081,
+      "later_period": "2025-Q1",
+      "month": "2024-01",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1162,
+      "earlier_period": "2024-Q3",
+      "later_count": 1159,
+      "later_period": "2025-Q1",
+      "month": "2024-02",
+      "revision": -3
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2024-Q3",
+      "later_count": 1161,
+      "later_period": "2025-Q1",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1219,
+      "earlier_period": "2024-Q3",
+      "later_count": 1218,
+      "later_period": "2025-Q1",
+      "month": "2024-04",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1335,
+      "earlier_period": "2024-Q3",
+      "later_count": 1334,
+      "later_period": "2025-Q1",
+      "month": "2024-05",
+      "revision": -1
+    },
+    {
+      "earlier_count": 2766,
+      "earlier_period": "2024-Q3",
+      "later_count": 2762,
+      "later_period": "2025-Q1",
+      "month": "2024-06",
+      "revision": -4
+    },
+    {
+      "earlier_count": 1654,
+      "earlier_period": "2024-Q3",
+      "later_count": 1652,
+      "later_period": "2025-Q1",
+      "month": "2024-07",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1577,
+      "earlier_period": "2024-Q3",
+      "later_count": 1574,
+      "later_period": "2025-Q1",
+      "month": "2024-08",
+      "revision": -3
+    },
+    {
+      "earlier_count": 1364,
+      "earlier_period": "2024-Q3",
+      "later_count": 1362,
+      "later_period": "2025-Q1",
+      "month": "2024-09",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1443,
+      "earlier_period": "2025-Q1",
+      "later_count": 1443,
+      "later_period": "2025-Q2",
+      "month": "2023-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1289,
+      "earlier_period": "2025-Q1",
+      "later_count": 1289,
+      "later_period": "2025-Q2",
+      "month": "2023-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2025-Q1",
+      "later_count": 2076,
+      "later_period": "2025-Q2",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1236,
+      "earlier_period": "2025-Q1",
+      "later_count": 1236,
+      "later_period": "2025-Q2",
+      "month": "2023-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1249,
+      "earlier_period": "2025-Q1",
+      "later_count": 1249,
+      "later_period": "2025-Q2",
+      "month": "2023-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1516,
+      "earlier_period": "2025-Q1",
+      "later_count": 1516,
+      "later_period": "2025-Q2",
+      "month": "2023-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1553,
+      "earlier_period": "2025-Q1",
+      "later_count": 1553,
+      "later_period": "2025-Q2",
+      "month": "2023-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1570,
+      "earlier_period": "2025-Q1",
+      "later_count": 1570,
+      "later_period": "2025-Q2",
+      "month": "2023-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1567,
+      "earlier_period": "2025-Q1",
+      "later_count": 1567,
+      "later_period": "2025-Q2",
+      "month": "2023-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1499,
+      "earlier_period": "2025-Q1",
+      "later_count": 1499,
+      "later_period": "2025-Q2",
+      "month": "2023-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2025-Q1",
+      "later_count": 1277,
+      "later_period": "2025-Q2",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 950,
+      "earlier_period": "2025-Q1",
+      "later_count": 950,
+      "later_period": "2025-Q2",
+      "month": "2023-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1081,
+      "earlier_period": "2025-Q1",
+      "later_count": 1081,
+      "later_period": "2025-Q2",
+      "month": "2024-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1159,
+      "earlier_period": "2025-Q1",
+      "later_count": 1159,
+      "later_period": "2025-Q2",
+      "month": "2024-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2025-Q1",
+      "later_count": 1161,
+      "later_period": "2025-Q2",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1218,
+      "earlier_period": "2025-Q1",
+      "later_count": 1218,
+      "later_period": "2025-Q2",
+      "month": "2024-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1334,
+      "earlier_period": "2025-Q1",
+      "later_count": 1334,
+      "later_period": "2025-Q2",
+      "month": "2024-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2762,
+      "earlier_period": "2025-Q1",
+      "later_count": 2761,
+      "later_period": "2025-Q2",
+      "month": "2024-06",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1652,
+      "earlier_period": "2025-Q1",
+      "later_count": 1652,
+      "later_period": "2025-Q2",
+      "month": "2024-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1574,
+      "earlier_period": "2025-Q1",
+      "later_count": 1574,
+      "later_period": "2025-Q2",
+      "month": "2024-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1362,
+      "earlier_period": "2025-Q1",
+      "later_count": 1362,
+      "later_period": "2025-Q2",
+      "month": "2024-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1549,
+      "earlier_period": "2025-Q1",
+      "later_count": 1549,
+      "later_period": "2025-Q2",
+      "month": "2024-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1305,
+      "earlier_period": "2025-Q1",
+      "later_count": 1305,
+      "later_period": "2025-Q2",
+      "month": "2024-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1357,
+      "earlier_period": "2025-Q1",
+      "later_count": 1356,
+      "later_period": "2025-Q2",
+      "month": "2024-12",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1811,
+      "earlier_period": "2025-Q1",
+      "later_count": 1810,
+      "later_period": "2025-Q2",
+      "month": "2025-01",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1691,
+      "earlier_period": "2025-Q1",
+      "later_count": 1690,
+      "later_period": "2025-Q2",
+      "month": "2025-02",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1599,
+      "earlier_period": "2025-Q1",
+      "later_count": 1592,
+      "later_period": "2025-Q2",
+      "month": "2025-03",
+      "revision": -7
+    },
+    {
+      "earlier_count": 1443,
+      "earlier_period": "2025-Q2",
+      "later_count": 1443,
+      "later_period": "2025-Q3",
+      "month": "2023-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1289,
+      "earlier_period": "2025-Q2",
+      "later_count": 1289,
+      "later_period": "2025-Q3",
+      "month": "2023-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2025-Q2",
+      "later_count": 2076,
+      "later_period": "2025-Q3",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1236,
+      "earlier_period": "2025-Q2",
+      "later_count": 1236,
+      "later_period": "2025-Q3",
+      "month": "2023-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1249,
+      "earlier_period": "2025-Q2",
+      "later_count": 1249,
+      "later_period": "2025-Q3",
+      "month": "2023-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1516,
+      "earlier_period": "2025-Q2",
+      "later_count": 1516,
+      "later_period": "2025-Q3",
+      "month": "2023-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1553,
+      "earlier_period": "2025-Q2",
+      "later_count": 1553,
+      "later_period": "2025-Q3",
+      "month": "2023-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1570,
+      "earlier_period": "2025-Q2",
+      "later_count": 1570,
+      "later_period": "2025-Q3",
+      "month": "2023-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1567,
+      "earlier_period": "2025-Q2",
+      "later_count": 1567,
+      "later_period": "2025-Q3",
+      "month": "2023-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1499,
+      "earlier_period": "2025-Q2",
+      "later_count": 1499,
+      "later_period": "2025-Q3",
+      "month": "2023-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2025-Q2",
+      "later_count": 1277,
+      "later_period": "2025-Q3",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 950,
+      "earlier_period": "2025-Q2",
+      "later_count": 950,
+      "later_period": "2025-Q3",
+      "month": "2023-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1081,
+      "earlier_period": "2025-Q2",
+      "later_count": 1081,
+      "later_period": "2025-Q3",
+      "month": "2024-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1159,
+      "earlier_period": "2025-Q2",
+      "later_count": 1159,
+      "later_period": "2025-Q3",
+      "month": "2024-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2025-Q2",
+      "later_count": 1161,
+      "later_period": "2025-Q3",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1218,
+      "earlier_period": "2025-Q2",
+      "later_count": 1218,
+      "later_period": "2025-Q3",
+      "month": "2024-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1334,
+      "earlier_period": "2025-Q2",
+      "later_count": 1334,
+      "later_period": "2025-Q3",
+      "month": "2024-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2761,
+      "earlier_period": "2025-Q2",
+      "later_count": 2761,
+      "later_period": "2025-Q3",
+      "month": "2024-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1652,
+      "earlier_period": "2025-Q2",
+      "later_count": 1652,
+      "later_period": "2025-Q3",
+      "month": "2024-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1574,
+      "earlier_period": "2025-Q2",
+      "later_count": 1572,
+      "later_period": "2025-Q3",
+      "month": "2024-08",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1362,
+      "earlier_period": "2025-Q2",
+      "later_count": 1362,
+      "later_period": "2025-Q3",
+      "month": "2024-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1549,
+      "earlier_period": "2025-Q2",
+      "later_count": 1549,
+      "later_period": "2025-Q3",
+      "month": "2024-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1305,
+      "earlier_period": "2025-Q2",
+      "later_count": 1305,
+      "later_period": "2025-Q3",
+      "month": "2024-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1356,
+      "earlier_period": "2025-Q2",
+      "later_count": 1356,
+      "later_period": "2025-Q3",
+      "month": "2024-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1810,
+      "earlier_period": "2025-Q2",
+      "later_count": 1808,
+      "later_period": "2025-Q3",
+      "month": "2025-01",
+      "revision": -2
+    },
+    {
+      "earlier_count": 1690,
+      "earlier_period": "2025-Q2",
+      "later_count": 1689,
+      "later_period": "2025-Q3",
+      "month": "2025-02",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1592,
+      "earlier_period": "2025-Q2",
+      "later_count": 1585,
+      "later_period": "2025-Q3",
+      "month": "2025-03",
+      "revision": -7
+    },
+    {
+      "earlier_count": 1610,
+      "earlier_period": "2025-Q2",
+      "later_count": 1606,
+      "later_period": "2025-Q3",
+      "month": "2025-04",
+      "revision": -4
+    },
+    {
+      "earlier_count": 1630,
+      "earlier_period": "2025-Q2",
+      "later_count": 1594,
+      "later_period": "2025-Q3",
+      "month": "2025-05",
+      "revision": -36
+    },
+    {
+      "earlier_count": 1739,
+      "earlier_period": "2025-Q2",
+      "later_count": 1715,
+      "later_period": "2025-Q3",
+      "month": "2025-06",
+      "revision": -24
+    },
+    {
+      "earlier_count": 1443,
+      "earlier_period": "2025-Q3",
+      "later_count": 1443,
+      "later_period": "2025-Q4",
+      "month": "2023-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1289,
+      "earlier_period": "2025-Q3",
+      "later_count": 1289,
+      "later_period": "2025-Q4",
+      "month": "2023-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2025-Q3",
+      "later_count": 2076,
+      "later_period": "2025-Q4",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1236,
+      "earlier_period": "2025-Q3",
+      "later_count": 1236,
+      "later_period": "2025-Q4",
+      "month": "2023-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1249,
+      "earlier_period": "2025-Q3",
+      "later_count": 1249,
+      "later_period": "2025-Q4",
+      "month": "2023-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1516,
+      "earlier_period": "2025-Q3",
+      "later_count": 1516,
+      "later_period": "2025-Q4",
+      "month": "2023-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1553,
+      "earlier_period": "2025-Q3",
+      "later_count": 1553,
+      "later_period": "2025-Q4",
+      "month": "2023-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1570,
+      "earlier_period": "2025-Q3",
+      "later_count": 1570,
+      "later_period": "2025-Q4",
+      "month": "2023-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1567,
+      "earlier_period": "2025-Q3",
+      "later_count": 1567,
+      "later_period": "2025-Q4",
+      "month": "2023-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1499,
+      "earlier_period": "2025-Q3",
+      "later_count": 1499,
+      "later_period": "2025-Q4",
+      "month": "2023-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2025-Q3",
+      "later_count": 1277,
+      "later_period": "2025-Q4",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 950,
+      "earlier_period": "2025-Q3",
+      "later_count": 950,
+      "later_period": "2025-Q4",
+      "month": "2023-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1081,
+      "earlier_period": "2025-Q3",
+      "later_count": 1081,
+      "later_period": "2025-Q4",
+      "month": "2024-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1159,
+      "earlier_period": "2025-Q3",
+      "later_count": 1159,
+      "later_period": "2025-Q4",
+      "month": "2024-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2025-Q3",
+      "later_count": 1161,
+      "later_period": "2025-Q4",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1218,
+      "earlier_period": "2025-Q3",
+      "later_count": 1218,
+      "later_period": "2025-Q4",
+      "month": "2024-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1334,
+      "earlier_period": "2025-Q3",
+      "later_count": 1334,
+      "later_period": "2025-Q4",
+      "month": "2024-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2761,
+      "earlier_period": "2025-Q3",
+      "later_count": 2761,
+      "later_period": "2025-Q4",
+      "month": "2024-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1652,
+      "earlier_period": "2025-Q3",
+      "later_count": 1652,
+      "later_period": "2025-Q4",
+      "month": "2024-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1572,
+      "earlier_period": "2025-Q3",
+      "later_count": 1571,
+      "later_period": "2025-Q4",
+      "month": "2024-08",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1362,
+      "earlier_period": "2025-Q3",
+      "later_count": 1362,
+      "later_period": "2025-Q4",
+      "month": "2024-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1549,
+      "earlier_period": "2025-Q3",
+      "later_count": 1549,
+      "later_period": "2025-Q4",
+      "month": "2024-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1305,
+      "earlier_period": "2025-Q3",
+      "later_count": 1305,
+      "later_period": "2025-Q4",
+      "month": "2024-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1356,
+      "earlier_period": "2025-Q3",
+      "later_count": 1355,
+      "later_period": "2025-Q4",
+      "month": "2024-12",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1808,
+      "earlier_period": "2025-Q3",
+      "later_count": 1807,
+      "later_period": "2025-Q4",
+      "month": "2025-01",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1689,
+      "earlier_period": "2025-Q3",
+      "later_count": 1689,
+      "later_period": "2025-Q4",
+      "month": "2025-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1585,
+      "earlier_period": "2025-Q3",
+      "later_count": 1584,
+      "later_period": "2025-Q4",
+      "month": "2025-03",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1606,
+      "earlier_period": "2025-Q3",
+      "later_count": 1606,
+      "later_period": "2025-Q4",
+      "month": "2025-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1594,
+      "earlier_period": "2025-Q3",
+      "later_count": 1594,
+      "later_period": "2025-Q4",
+      "month": "2025-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1715,
+      "earlier_period": "2025-Q3",
+      "later_count": 1715,
+      "later_period": "2025-Q4",
+      "month": "2025-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2176,
+      "earlier_period": "2025-Q3",
+      "later_count": 2176,
+      "later_period": "2025-Q4",
+      "month": "2025-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1608,
+      "earlier_period": "2025-Q3",
+      "later_count": 1608,
+      "later_period": "2025-Q4",
+      "month": "2025-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1799,
+      "earlier_period": "2025-Q3",
+      "later_count": 1708,
+      "later_period": "2025-Q4",
+      "month": "2025-09",
+      "revision": -91
+    },
+    {
+      "earlier_count": 1443,
+      "earlier_period": "2025-Q4",
+      "later_count": 1443,
+      "later_period": "2026-Q1",
+      "month": "2023-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1289,
+      "earlier_period": "2025-Q4",
+      "later_count": 1289,
+      "later_period": "2026-Q1",
+      "month": "2023-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2025-Q4",
+      "later_count": 2076,
+      "later_period": "2026-Q1",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1236,
+      "earlier_period": "2025-Q4",
+      "later_count": 1236,
+      "later_period": "2026-Q1",
+      "month": "2023-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1249,
+      "earlier_period": "2025-Q4",
+      "later_count": 1249,
+      "later_period": "2026-Q1",
+      "month": "2023-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1516,
+      "earlier_period": "2025-Q4",
+      "later_count": 1516,
+      "later_period": "2026-Q1",
+      "month": "2023-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1553,
+      "earlier_period": "2025-Q4",
+      "later_count": 1553,
+      "later_period": "2026-Q1",
+      "month": "2023-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1570,
+      "earlier_period": "2025-Q4",
+      "later_count": 1570,
+      "later_period": "2026-Q1",
+      "month": "2023-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1567,
+      "earlier_period": "2025-Q4",
+      "later_count": 1567,
+      "later_period": "2026-Q1",
+      "month": "2023-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1499,
+      "earlier_period": "2025-Q4",
+      "later_count": 1499,
+      "later_period": "2026-Q1",
+      "month": "2023-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2025-Q4",
+      "later_count": 1277,
+      "later_period": "2026-Q1",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 950,
+      "earlier_period": "2025-Q4",
+      "later_count": 950,
+      "later_period": "2026-Q1",
+      "month": "2023-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1081,
+      "earlier_period": "2025-Q4",
+      "later_count": 1081,
+      "later_period": "2026-Q1",
+      "month": "2024-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1159,
+      "earlier_period": "2025-Q4",
+      "later_count": 1159,
+      "later_period": "2026-Q1",
+      "month": "2024-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2025-Q4",
+      "later_count": 1161,
+      "later_period": "2026-Q1",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1218,
+      "earlier_period": "2025-Q4",
+      "later_count": 1218,
+      "later_period": "2026-Q1",
+      "month": "2024-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1334,
+      "earlier_period": "2025-Q4",
+      "later_count": 1334,
+      "later_period": "2026-Q1",
+      "month": "2024-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2761,
+      "earlier_period": "2025-Q4",
+      "later_count": 2761,
+      "later_period": "2026-Q1",
+      "month": "2024-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1652,
+      "earlier_period": "2025-Q4",
+      "later_count": 1652,
+      "later_period": "2026-Q1",
+      "month": "2024-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1571,
+      "earlier_period": "2025-Q4",
+      "later_count": 1570,
+      "later_period": "2026-Q1",
+      "month": "2024-08",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1362,
+      "earlier_period": "2025-Q4",
+      "later_count": 1362,
+      "later_period": "2026-Q1",
+      "month": "2024-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1549,
+      "earlier_period": "2025-Q4",
+      "later_count": 1549,
+      "later_period": "2026-Q1",
+      "month": "2024-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1305,
+      "earlier_period": "2025-Q4",
+      "later_count": 1305,
+      "later_period": "2026-Q1",
+      "month": "2024-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1355,
+      "earlier_period": "2025-Q4",
+      "later_count": 1355,
+      "later_period": "2026-Q1",
+      "month": "2024-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1807,
+      "earlier_period": "2025-Q4",
+      "later_count": 1807,
+      "later_period": "2026-Q1",
+      "month": "2025-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1689,
+      "earlier_period": "2025-Q4",
+      "later_count": 1689,
+      "later_period": "2026-Q1",
+      "month": "2025-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1584,
+      "earlier_period": "2025-Q4",
+      "later_count": 1583,
+      "later_period": "2026-Q1",
+      "month": "2025-03",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1606,
+      "earlier_period": "2025-Q4",
+      "later_count": 1606,
+      "later_period": "2026-Q1",
+      "month": "2025-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1594,
+      "earlier_period": "2025-Q4",
+      "later_count": 1594,
+      "later_period": "2026-Q1",
+      "month": "2025-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1715,
+      "earlier_period": "2025-Q4",
+      "later_count": 1715,
+      "later_period": "2026-Q1",
+      "month": "2025-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2176,
+      "earlier_period": "2025-Q4",
+      "later_count": 2176,
+      "later_period": "2026-Q1",
+      "month": "2025-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1608,
+      "earlier_period": "2025-Q4",
+      "later_count": 1607,
+      "later_period": "2026-Q1",
+      "month": "2025-08",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1708,
+      "earlier_period": "2025-Q4",
+      "later_count": 1708,
+      "later_period": "2026-Q1",
+      "month": "2025-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1538,
+      "earlier_period": "2025-Q4",
+      "later_count": 1537,
+      "later_period": "2026-Q1",
+      "month": "2025-10",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1331,
+      "earlier_period": "2025-Q4",
+      "later_count": 1330,
+      "later_period": "2026-Q1",
+      "month": "2025-11",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1408,
+      "earlier_period": "2025-Q4",
+      "later_count": 1407,
+      "later_period": "2026-Q1",
+      "month": "2025-12",
+      "revision": -1
+    },
+    {
+      "earlier_count": 1443,
+      "earlier_period": "2026-Q1",
+      "later_count": 1443,
+      "later_period": "2026-Q2",
+      "month": "2023-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1289,
+      "earlier_period": "2026-Q1",
+      "later_count": 1289,
+      "later_period": "2026-Q2",
+      "month": "2023-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2076,
+      "earlier_period": "2026-Q1",
+      "later_count": 2076,
+      "later_period": "2026-Q2",
+      "month": "2023-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1236,
+      "earlier_period": "2026-Q1",
+      "later_count": 1236,
+      "later_period": "2026-Q2",
+      "month": "2023-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1249,
+      "earlier_period": "2026-Q1",
+      "later_count": 1249,
+      "later_period": "2026-Q2",
+      "month": "2023-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1516,
+      "earlier_period": "2026-Q1",
+      "later_count": 1516,
+      "later_period": "2026-Q2",
+      "month": "2023-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1553,
+      "earlier_period": "2026-Q1",
+      "later_count": 1553,
+      "later_period": "2026-Q2",
+      "month": "2023-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1570,
+      "earlier_period": "2026-Q1",
+      "later_count": 1570,
+      "later_period": "2026-Q2",
+      "month": "2023-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1567,
+      "earlier_period": "2026-Q1",
+      "later_count": 1567,
+      "later_period": "2026-Q2",
+      "month": "2023-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1499,
+      "earlier_period": "2026-Q1",
+      "later_count": 1499,
+      "later_period": "2026-Q2",
+      "month": "2023-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1277,
+      "earlier_period": "2026-Q1",
+      "later_count": 1277,
+      "later_period": "2026-Q2",
+      "month": "2023-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 950,
+      "earlier_period": "2026-Q1",
+      "later_count": 950,
+      "later_period": "2026-Q2",
+      "month": "2023-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1081,
+      "earlier_period": "2026-Q1",
+      "later_count": 1081,
+      "later_period": "2026-Q2",
+      "month": "2024-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1159,
+      "earlier_period": "2026-Q1",
+      "later_count": 1159,
+      "later_period": "2026-Q2",
+      "month": "2024-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1161,
+      "earlier_period": "2026-Q1",
+      "later_count": 1161,
+      "later_period": "2026-Q2",
+      "month": "2024-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1218,
+      "earlier_period": "2026-Q1",
+      "later_count": 1218,
+      "later_period": "2026-Q2",
+      "month": "2024-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1334,
+      "earlier_period": "2026-Q1",
+      "later_count": 1334,
+      "later_period": "2026-Q2",
+      "month": "2024-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2761,
+      "earlier_period": "2026-Q1",
+      "later_count": 2761,
+      "later_period": "2026-Q2",
+      "month": "2024-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1652,
+      "earlier_period": "2026-Q1",
+      "later_count": 1652,
+      "later_period": "2026-Q2",
+      "month": "2024-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1570,
+      "earlier_period": "2026-Q1",
+      "later_count": 1570,
+      "later_period": "2026-Q2",
+      "month": "2024-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1362,
+      "earlier_period": "2026-Q1",
+      "later_count": 1362,
+      "later_period": "2026-Q2",
+      "month": "2024-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1549,
+      "earlier_period": "2026-Q1",
+      "later_count": 1549,
+      "later_period": "2026-Q2",
+      "month": "2024-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1305,
+      "earlier_period": "2026-Q1",
+      "later_count": 1305,
+      "later_period": "2026-Q2",
+      "month": "2024-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1355,
+      "earlier_period": "2026-Q1",
+      "later_count": 1355,
+      "later_period": "2026-Q2",
+      "month": "2024-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1807,
+      "earlier_period": "2026-Q1",
+      "later_count": 1807,
+      "later_period": "2026-Q2",
+      "month": "2025-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1689,
+      "earlier_period": "2026-Q1",
+      "later_count": 1689,
+      "later_period": "2026-Q2",
+      "month": "2025-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1583,
+      "earlier_period": "2026-Q1",
+      "later_count": 1583,
+      "later_period": "2026-Q2",
+      "month": "2025-03",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1606,
+      "earlier_period": "2026-Q1",
+      "later_count": 1606,
+      "later_period": "2026-Q2",
+      "month": "2025-04",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1594,
+      "earlier_period": "2026-Q1",
+      "later_count": 1594,
+      "later_period": "2026-Q2",
+      "month": "2025-05",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1715,
+      "earlier_period": "2026-Q1",
+      "later_count": 1715,
+      "later_period": "2026-Q2",
+      "month": "2025-06",
+      "revision": 0
+    },
+    {
+      "earlier_count": 2176,
+      "earlier_period": "2026-Q1",
+      "later_count": 2176,
+      "later_period": "2026-Q2",
+      "month": "2025-07",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1607,
+      "earlier_period": "2026-Q1",
+      "later_count": 1607,
+      "later_period": "2026-Q2",
+      "month": "2025-08",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1708,
+      "earlier_period": "2026-Q1",
+      "later_count": 1708,
+      "later_period": "2026-Q2",
+      "month": "2025-09",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1537,
+      "earlier_period": "2026-Q1",
+      "later_count": 1537,
+      "later_period": "2026-Q2",
+      "month": "2025-10",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1330,
+      "earlier_period": "2026-Q1",
+      "later_count": 1330,
+      "later_period": "2026-Q2",
+      "month": "2025-11",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1407,
+      "earlier_period": "2026-Q1",
+      "later_count": 1407,
+      "later_period": "2026-Q2",
+      "month": "2025-12",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1690,
+      "earlier_period": "2026-Q1",
+      "later_count": 1690,
+      "later_period": "2026-Q2",
+      "month": "2026-01",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1407,
+      "earlier_period": "2026-Q1",
+      "later_count": 1407,
+      "later_period": "2026-Q2",
+      "month": "2026-02",
+      "revision": 0
+    },
+    {
+      "earlier_count": 1536,
+      "earlier_period": "2026-Q1",
+      "later_count": 1533,
+      "later_period": "2026-Q2",
+      "month": "2026-03",
+      "revision": -3
+    }
+  ],
+  "run_id": "p3d-r97-report-vintages-20260911-s01",
+  "selection_decisions": [
+    {
+      "family": "quarter_carry",
+      "origin": "2026-01-01",
+      "reason": "only previously completed blocks posted by origin can select a family",
+      "target": "2026-Q1"
+    },
+    {
+      "family": "quarter_carry",
+      "origin": "2026-04-01",
+      "reason": "only previously completed blocks posted by origin can select a family",
+      "target": "2026-Q2"
+    }
+  ]
+}
