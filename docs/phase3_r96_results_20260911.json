@@ -1,0 +1,1280 @@
+{
+  "Q2_innovations": [
+    {
+      "bounded_descriptive_driver": -0.757748346597543,
+      "interpretation": "post-outcome innovation; cause unidentifiable",
+      "month": "2026-04",
+      "standardized_surprise": -1.1612167011802408,
+      "used_in_forecast": false
+    },
+    {
+      "bounded_descriptive_driver": -0.9451289838402871,
+      "interpretation": "post-outcome innovation; cause unidentifiable",
+      "month": "2026-05",
+      "standardized_surprise": -2.8929796424464023,
+      "used_in_forecast": false
+    },
+    {
+      "bounded_descriptive_driver": -0.9236665983934995,
+      "interpretation": "post-outcome innovation; cause unidentifiable",
+      "month": "2026-06",
+      "standardized_surprise": -2.4104217021887515,
+      "used_in_forecast": false
+    }
+  ],
+  "candidate_challenges": [
+    {
+      "absolute_error": 359.0,
+      "actual": 4633.0,
+      "family": "quarter_carry",
+      "prediction": 4274.0,
+      "quarter": "2026-Q1",
+      "selected": false
+    },
+    {
+      "absolute_error": 412.0,
+      "actual": 4633.0,
+      "family": "last_month",
+      "prediction": 4221.0,
+      "quarter": "2026-Q1",
+      "selected": false
+    },
+    {
+      "absolute_error": 92.08333333333303,
+      "actual": 4633.0,
+      "family": "historical_mean",
+      "prediction": 4540.916666666667,
+      "quarter": "2026-Q1",
+      "selected": true
+    },
+    {
+      "absolute_error": 133.85854115477014,
+      "actual": 4633.0,
+      "family": "local_level",
+      "prediction": 4499.14145884523,
+      "quarter": "2026-Q1",
+      "selected": false
+    },
+    {
+      "absolute_error": 269.45470187968294,
+      "actual": 4633.0,
+      "family": "local_level_drift",
+      "prediction": 4902.454701879683,
+      "quarter": "2026-Q1",
+      "selected": false
+    },
+    {
+      "absolute_error": 1639.0,
+      "actual": 2994.0,
+      "family": "quarter_carry",
+      "prediction": 4633.0,
+      "quarter": "2026-Q2",
+      "selected": false
+    },
+    {
+      "absolute_error": 1614.0,
+      "actual": 2994.0,
+      "family": "last_month",
+      "prediction": 4608.0,
+      "quarter": "2026-Q2",
+      "selected": false
+    },
+    {
+      "absolute_error": 1554.0,
+      "actual": 2994.0,
+      "family": "historical_mean",
+      "prediction": 4548.0,
+      "quarter": "2026-Q2",
+      "selected": true
+    },
+    {
+      "absolute_error": 1595.364954670551,
+      "actual": 2994.0,
+      "family": "local_level",
+      "prediction": 4589.364954670551,
+      "quarter": "2026-Q2",
+      "selected": false
+    },
+    {
+      "absolute_error": 1890.3966907863387,
+      "actual": 2994.0,
+      "family": "local_level_drift",
+      "prediction": 4884.396690786339,
+      "quarter": "2026-Q2",
+      "selected": false
+    }
+  ],
+  "contract": {
+    "availability": "historical issue dates unavailable; time-blocked retrospective replay only",
+    "equations": [
+      "z_t = log(1 + Y_t) = ell_t + epsilon_t",
+      "ell_t = ell_(t-1) + d + eta_t",
+      "Var(eta_t) = theta*sigma2; Var(epsilon_t) = (1-theta)*sigma2",
+      "theta in [0,1]; sigma2 and optional d profiled by train-prefix Gaussian likelihood",
+      "point_t = max(0, exp(E[ell_t|train])-1); quarter point = sum(monthly marginal medians)"
+    ],
+    "families": [
+      "quarter_carry",
+      "last_month",
+      "historical_mean",
+      "local_level",
+      "local_level_drift"
+    ],
+    "forbidden_uses": [
+      "incidence_truth",
+      "regional_effect_claim",
+      "causal_reporting_shock",
+      "AEM_superiority"
+    ],
+    "identified_process": "reported diagnosis intensity only; reporting vs diagnosis volume not separately identified",
+    "initial_months": 12,
+    "measurement": "reported monthly new diagnoses, not infections or reporting completeness",
+    "outer_evaluation": "nonoverlapping quarters; refit on prefix only; latest Q1 vintage frozen for Q2 inputs",
+    "q2_status": "already inspected before candidate design; not an untouched prospective test",
+    "schema_version": "r96.monthly_diagnosis_state.v1",
+    "selection": "minimum mean complete-quarter absolute error on inner rolling origins",
+    "strict_promotion_requires": [
+      "historical_nested_MAE_and_p90_not_worse_than_quarter_carry",
+      "Q1_Q2_each_not_worse_than_carry_and_frozen_R41",
+      "frozen_stock_values_and_conditional_rates_preserved",
+      "independently_timestamped_forecast_and_report_vintages"
+    ],
+    "uncertainty": "95% conditional observation intervals; excludes parameter and source-revision uncertainty"
+  },
+  "extraction": {
+    "Q1_flags": [
+      {
+        "absolute_difference": 100.0,
+        "flag_id": "annex_regional_sum_check_estimated_plhiv",
+        "interpretation": "regional annex and national cascade are close enough for extraction use",
+        "metric_id": "estimated_plhiv",
+        "national_value": 288000.0,
+        "regional_sum": 287900.0,
+        "status": "pass"
+      },
+      {
+        "absolute_difference": 1101.0,
+        "flag_id": "annex_regional_sum_check_diagnosed_plhiv",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "diagnosed_plhiv",
+        "national_value": 157350.0,
+        "regional_sum": 156249.0,
+        "status": "warn"
+      },
+      {
+        "absolute_difference": 3020.0,
+        "flag_id": "annex_regional_sum_check_alive_on_art",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "alive_on_art",
+        "national_value": 108367.0,
+        "regional_sum": 105347.0,
+        "status": "warn"
+      },
+      {
+        "absolute_difference": 1016.0,
+        "flag_id": "annex_regional_sum_check_tested_for_viral_load",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "tested_for_viral_load",
+        "national_value": 61413.0,
+        "regional_sum": 60397.0,
+        "status": "warn"
+      },
+      {
+        "absolute_difference": 919.0,
+        "flag_id": "annex_regional_sum_check_virally_suppressed",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "virally_suppressed",
+        "national_value": 59540.0,
+        "regional_sum": 58621.0,
+        "status": "warn"
+      },
+      {
+        "age_text_sum": 204.0,
+        "flag_id": "death_age_text_sum_check",
+        "interpretation": "PDF paragraph reports 477 deaths but the age-count values visible in text sum to 204; do not use the age-death breakdown until manually table-verified.",
+        "metric_id": "deaths_reported_period",
+        "q1_deaths": 477.0,
+        "status": "warn"
+      }
+    ],
+    "Q1_months": 39,
+    "Q1_rows": 536,
+    "Q2_flags": [
+      {
+        "absolute_difference": 100.0,
+        "flag_id": "annex_regional_sum_check_estimated_plhiv",
+        "interpretation": "regional annex and national cascade are close enough for extraction use",
+        "metric_id": "estimated_plhiv",
+        "national_value": 288000.0,
+        "regional_sum": 287900.0,
+        "status": "pass"
+      },
+      {
+        "absolute_difference": 1113.0,
+        "flag_id": "annex_regional_sum_check_diagnosed_plhiv",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "diagnosed_plhiv",
+        "national_value": 159997.0,
+        "regional_sum": 158884.0,
+        "status": "warn"
+      },
+      {
+        "absolute_difference": 4170.0,
+        "flag_id": "annex_regional_sum_check_alive_on_art",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "alive_on_art",
+        "national_value": 111154.0,
+        "regional_sum": 106984.0,
+        "status": "warn"
+      },
+      {
+        "absolute_difference": 1119.0,
+        "flag_id": "annex_regional_sum_check_tested_for_viral_load",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "tested_for_viral_load",
+        "national_value": 65630.0,
+        "regional_sum": 64511.0,
+        "status": "warn"
+      },
+      {
+        "absolute_difference": 1049.0,
+        "flag_id": "annex_regional_sum_check_virally_suppressed",
+        "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+        "metric_id": "virally_suppressed",
+        "national_value": 63850.0,
+        "regional_sum": 62801.0,
+        "status": "warn"
+      }
+    ],
+    "Q2_months": 42,
+    "Q2_rows": 562
+  },
+  "future_Q3": {
+    "available_at_generation": "2026-09-11",
+    "champion_replacement": false,
+    "family": "historical_mean",
+    "fit": null,
+    "lower95": null,
+    "months": [
+      "2026-07",
+      "2026-08",
+      "2026-09"
+    ],
+    "origin": "2026-06",
+    "points": [
+      1478.9285714285713,
+      1478.9285714285713,
+      1478.9285714285713
+    ],
+    "prospective": false,
+    "quarter_prediction": 4436.785714285714,
+    "selection_scores": {
+      "historical_mean": 668.6801842601842,
+      "last_month": 1059.3,
+      "local_level": 909.8220514402747,
+      "local_level_drift": 991.0306363299487,
+      "quarter_carry": 816.0
+    },
+    "status": "provisional_research_forecast",
+    "upper95": null
+  },
+  "gate": {
+    "R41_changed": false,
+    "allowed_claim": "retrospective monthly reported-diagnosis forecasting comparison",
+    "blockers": [
+      "historical_issue_dates_unverified",
+      "Q2_already_inspected_before_experiment_design",
+      "reporting_vs_diagnosis_volume_not_identified",
+      "Q1_or_Q2_fails_matched_carry_or_R41"
+    ],
+    "challenge_pass": false,
+    "champion": null,
+    "history_pass": true,
+    "status": "diagnostic_only"
+  },
+  "generated_at": "2026-09-11T04:28:58.533614+00:00",
+  "historical_folds": [
+    {
+      "absolute_error": 325.0,
+      "actual": 3401.0,
+      "family": "quarter_carry",
+      "origin": "2023-12",
+      "prediction": 3726.0,
+      "target_end": "2024-03",
+      "train_scaled_error": 0.07547169811320754,
+      "training_max_month": "2023-12",
+      "training_rows": 12
+    },
+    {
+      "absolute_error": 551.0,
+      "actual": 3401.0,
+      "family": "last_month",
+      "origin": "2023-12",
+      "prediction": 2850.0,
+      "target_end": "2024-03",
+      "train_scaled_error": 0.12795355587808419,
+      "training_max_month": "2023-12",
+      "training_rows": 12
+    },
+    {
+      "absolute_error": 905.25,
+      "actual": 3401.0,
+      "family": "historical_mean",
+      "origin": "2023-12",
+      "prediction": 4306.25,
+      "target_end": "2024-03",
+      "train_scaled_error": 0.21021770682148042,
+      "training_max_month": "2023-12",
+      "training_rows": 12
+    },
+    {
+      "absolute_error": 747.3215690630141,
+      "actual": 3401.0,
+      "family": "local_level",
+      "origin": "2023-12",
+      "prediction": 4148.321569063014,
+      "target_end": "2024-03",
+      "train_scaled_error": 0.17354347031942272,
+      "training_max_month": "2023-12",
+      "training_rows": 12
+    },
+    {
+      "absolute_error": 308.4578048498033,
+      "actual": 3401.0,
+      "family": "local_level_drift",
+      "origin": "2023-12",
+      "prediction": 3709.4578048498033,
+      "target_end": "2024-03",
+      "train_scaled_error": 0.07163025947165244,
+      "training_max_month": "2023-12",
+      "training_rows": 12
+    },
+    {
+      "absolute_error": 1912.0,
+      "actual": 5313.0,
+      "family": "quarter_carry",
+      "origin": "2024-03",
+      "prediction": 3401.0,
+      "target_end": "2024-06",
+      "train_scaled_error": 0.46349267914282943,
+      "training_max_month": "2024-03",
+      "training_rows": 15
+    },
+    {
+      "absolute_error": 1830.0,
+      "actual": 5313.0,
+      "family": "last_month",
+      "origin": "2024-03",
+      "prediction": 3483.0,
+      "target_end": "2024-06",
+      "train_scaled_error": 0.44361485503733156,
+      "training_max_month": "2024-03",
+      "training_rows": 15
+    },
+    {
+      "absolute_error": 1187.8000000000002,
+      "actual": 5313.0,
+      "family": "historical_mean",
+      "origin": "2024-03",
+      "prediction": 4125.2,
+      "target_end": "2024-06",
+      "train_scaled_error": 0.2879375545428101,
+      "training_max_month": "2024-03",
+      "training_rows": 15
+    },
+    {
+      "absolute_error": 1834.7571238349346,
+      "actual": 5313.0,
+      "family": "local_level",
+      "origin": "2024-03",
+      "prediction": 3478.2428761650654,
+      "target_end": "2024-06",
+      "train_scaled_error": 0.44476804126707425,
+      "training_max_month": "2024-03",
+      "training_rows": 15
+    },
+    {
+      "absolute_error": 2015.001368786884,
+      "actual": 5313.0,
+      "family": "local_level_drift",
+      "origin": "2024-03",
+      "prediction": 3297.998631213116,
+      "target_end": "2024-06",
+      "train_scaled_error": 0.48846149733028316,
+      "training_max_month": "2024-03",
+      "training_rows": 15
+    },
+    {
+      "absolute_error": 729.0,
+      "actual": 4584.0,
+      "family": "quarter_carry",
+      "origin": "2024-06",
+      "prediction": 5313.0,
+      "target_end": "2024-09",
+      "train_scaled_error": 0.1686263926905432,
+      "training_max_month": "2024-06",
+      "training_rows": 18
+    },
+    {
+      "absolute_error": 3699.0,
+      "actual": 4584.0,
+      "family": "last_month",
+      "origin": "2024-06",
+      "prediction": 8283.0,
+      "target_end": "2024-09",
+      "train_scaled_error": 0.8556228073557192,
+      "training_max_month": "2024-06",
+      "training_rows": 18
+    },
+    {
+      "absolute_error": 260.83333333333303,
+      "actual": 4584.0,
+      "family": "historical_mean",
+      "origin": "2024-06",
+      "prediction": 4323.166666666667,
+      "target_end": "2024-09",
+      "train_scaled_error": 0.06033386021049378,
+      "training_max_month": "2024-06",
+      "training_rows": 18
+    },
+    {
+      "absolute_error": 1853.8457194067141,
+      "actual": 4584.0,
+      "family": "local_level",
+      "origin": "2024-06",
+      "prediction": 6437.845719406714,
+      "target_end": "2024-09",
+      "train_scaled_error": 0.42881662039555435,
+      "training_max_month": "2024-06",
+      "training_rows": 18
+    },
+    {
+      "absolute_error": 2372.4956969007717,
+      "actual": 4584.0,
+      "family": "local_level_drift",
+      "origin": "2024-06",
+      "prediction": 6956.495696900772,
+      "target_end": "2024-09",
+      "train_scaled_error": 0.5487865446395246,
+      "training_max_month": "2024-06",
+      "training_rows": 18
+    },
+    {
+      "absolute_error": 375.0,
+      "actual": 4209.0,
+      "family": "quarter_carry",
+      "origin": "2024-09",
+      "prediction": 4584.0,
+      "target_end": "2024-12",
+      "train_scaled_error": 0.0860007207679455,
+      "training_max_month": "2024-09",
+      "training_rows": 21
+    },
+    {
+      "absolute_error": 123.0,
+      "actual": 4209.0,
+      "family": "last_month",
+      "origin": "2024-09",
+      "prediction": 4086.0,
+      "target_end": "2024-12",
+      "train_scaled_error": 0.028208236411886124,
+      "training_max_month": "2024-09",
+      "training_rows": 21
+    },
+    {
+      "absolute_error": 151.42857142857065,
+      "actual": 4209.0,
+      "family": "historical_mean",
+      "origin": "2024-09",
+      "prediction": 4360.428571428571,
+      "target_end": "2024-12",
+      "train_scaled_error": 0.03472791010057972,
+      "training_max_month": "2024-09",
+      "training_rows": 21
+    },
+    {
+      "absolute_error": 360.06506619395077,
+      "actual": 4209.0,
+      "family": "local_level",
+      "origin": "2024-09",
+      "prediction": 4569.065066193951,
+      "target_end": "2024-12",
+      "train_scaled_error": 0.08257561390943406,
+      "training_max_month": "2024-09",
+      "training_rows": 21
+    },
+    {
+      "absolute_error": 408.2065220706627,
+      "actual": 4209.0,
+      "family": "local_level_drift",
+      "origin": "2024-09",
+      "prediction": 4617.206522070663,
+      "target_end": "2024-12",
+      "train_scaled_error": 0.09361614698734198,
+      "training_max_month": "2024-09",
+      "training_rows": 21
+    },
+    {
+      "absolute_error": 870.0,
+      "actual": 5079.0,
+      "family": "quarter_carry",
+      "origin": "2024-12",
+      "prediction": 4209.0,
+      "target_end": "2025-03",
+      "train_scaled_error": 0.2003915697339629,
+      "training_max_month": "2024-12",
+      "training_rows": 24
+    },
+    {
+      "absolute_error": 1014.0,
+      "actual": 5079.0,
+      "family": "last_month",
+      "origin": "2024-12",
+      "prediction": 4065.0,
+      "target_end": "2025-03",
+      "train_scaled_error": 0.23355982955199817,
+      "training_max_month": "2024-12",
+      "training_rows": 24
+    },
+    {
+      "absolute_error": 737.5,
+      "actual": 5079.0,
+      "family": "historical_mean",
+      "origin": "2024-12",
+      "prediction": 4341.5,
+      "target_end": "2025-03",
+      "train_scaled_error": 0.169872163998618,
+      "training_max_month": "2024-12",
+      "training_rows": 24
+    },
+    {
+      "absolute_error": 842.0636137928605,
+      "actual": 5079.0,
+      "family": "local_level",
+      "origin": "2024-12",
+      "prediction": 4236.93638620714,
+      "target_end": "2025-03",
+      "train_scaled_error": 0.19395683837218944,
+      "training_max_month": "2024-12",
+      "training_rows": 24
+    },
+    {
+      "absolute_error": 814.4404139853423,
+      "actual": 5079.0,
+      "family": "local_level_drift",
+      "origin": "2024-12",
+      "prediction": 4264.559586014658,
+      "target_end": "2025-03",
+      "train_scaled_error": 0.1875942448428751,
+      "training_max_month": "2024-12",
+      "training_rows": 24
+    },
+    {
+      "absolute_error": 164.0,
+      "actual": 4915.0,
+      "family": "quarter_carry",
+      "origin": "2025-03",
+      "prediction": 5079.0,
+      "target_end": "2025-06",
+      "train_scaled_error": 0.037075180226570546,
+      "training_max_month": "2025-03",
+      "training_rows": 27
+    },
+    {
+      "absolute_error": 166.0,
+      "actual": 4915.0,
+      "family": "last_month",
+      "origin": "2025-03",
+      "prediction": 4749.0,
+      "target_end": "2025-06",
+      "train_scaled_error": 0.03752731657079702,
+      "training_max_month": "2025-03",
+      "training_rows": 27
+    },
+    {
+      "absolute_error": 491.55555555555566,
+      "actual": 4915.0,
+      "family": "historical_mean",
+      "origin": "2025-03",
+      "prediction": 4423.444444444444,
+      "target_end": "2025-06",
+      "train_scaled_error": 0.11112506593655022,
+      "training_max_month": "2025-03",
+      "training_rows": 27
+    },
+    {
+      "absolute_error": 231.47062379639647,
+      "actual": 4915.0,
+      "family": "local_level",
+      "origin": "2025-03",
+      "prediction": 4683.5293762036035,
+      "target_end": "2025-06",
+      "train_scaled_error": 0.052328140819561636,
+      "training_max_month": "2025-03",
+      "training_rows": 27
+    },
+    {
+      "absolute_error": 310.81824136153955,
+      "actual": 4915.0,
+      "family": "local_level_drift",
+      "origin": "2025-03",
+      "prediction": 4604.18175863846,
+      "target_end": "2025-06",
+      "train_scaled_error": 0.07026611168405356,
+      "training_max_month": "2025-03",
+      "training_rows": 27
+    },
+    {
+      "absolute_error": 576.0,
+      "actual": 5491.0,
+      "family": "quarter_carry",
+      "origin": "2025-06",
+      "prediction": 4915.0,
+      "target_end": "2025-09",
+      "train_scaled_error": 0.12878415239458035,
+      "training_max_month": "2025-06",
+      "training_rows": 30
+    },
+    {
+      "absolute_error": 346.0,
+      "actual": 5491.0,
+      "family": "last_month",
+      "origin": "2025-06",
+      "prediction": 5145.0,
+      "target_end": "2025-09",
+      "train_scaled_error": 0.07735992487591112,
+      "training_max_month": "2025-06",
+      "training_rows": 30
+    },
+    {
+      "absolute_error": 1018.4000000000005,
+      "actual": 5491.0,
+      "family": "historical_mean",
+      "origin": "2025-06",
+      "prediction": 4472.599999999999,
+      "target_end": "2025-09",
+      "train_scaled_error": 0.2276975361087512,
+      "training_max_month": "2025-06",
+      "training_rows": 30
+    },
+    {
+      "absolute_error": 635.3238109753956,
+      "actual": 5491.0,
+      "family": "local_level",
+      "origin": "2025-06",
+      "prediction": 4855.676189024604,
+      "target_end": "2025-09",
+      "train_scaled_error": 0.14204798349402936,
+      "training_max_month": "2025-06",
+      "training_rows": 30
+    },
+    {
+      "absolute_error": 704.6929971106838,
+      "actual": 5491.0,
+      "family": "local_level_drift",
+      "origin": "2025-06",
+      "prediction": 4786.307002889316,
+      "target_end": "2025-09",
+      "train_scaled_error": 0.15755779571405534,
+      "training_max_month": "2025-06",
+      "training_rows": 30
+    },
+    {
+      "absolute_error": 1217.0,
+      "actual": 4274.0,
+      "family": "quarter_carry",
+      "origin": "2025-09",
+      "prediction": 5491.0,
+      "target_end": "2025-12",
+      "train_scaled_error": 0.2665830296513133,
+      "training_max_month": "2025-09",
+      "training_rows": 33
+    },
+    {
+      "absolute_error": 850.0,
+      "actual": 4274.0,
+      "family": "last_month",
+      "origin": "2025-09",
+      "prediction": 5124.0,
+      "target_end": "2025-12",
+      "train_scaled_error": 0.1861919270366609,
+      "training_max_month": "2025-09",
+      "training_rows": 33
+    },
+    {
+      "absolute_error": 291.181818181818,
+      "actual": 4274.0,
+      "family": "historical_mean",
+      "origin": "2025-09",
+      "prediction": 4565.181818181818,
+      "target_end": "2025-12",
+      "train_scaled_error": 0.0637831809944839,
+      "training_max_month": "2025-09",
+      "training_rows": 33
+    },
+    {
+      "absolute_error": 869.7953097359614,
+      "actual": 4274.0,
+      "family": "local_level",
+      "origin": "2025-09",
+      "prediction": 5143.795309735961,
+      "target_end": "2025-12",
+      "train_scaled_error": 0.1905280762908094,
+      "training_max_month": "2025-09",
+      "training_rows": 33
+    },
+    {
+      "absolute_error": 814.3580164269806,
+      "actual": 4274.0,
+      "family": "local_level_drift",
+      "origin": "2025-09",
+      "prediction": 5088.358016426981,
+      "target_end": "2025-12",
+      "train_scaled_error": 0.17838457456034384,
+      "training_max_month": "2025-09",
+      "training_rows": 33
+    }
+  ],
+  "history": {
+    "historical_mean": {
+      "MAE": 630.4936598124098,
+      "folds": 8,
+      "mean_train_scaled_error": 0.1457118723392209,
+      "p90_absolute_error": 1069.2200000000005
+    },
+    "last_month": {
+      "MAE": 1072.375,
+      "folds": 8,
+      "mean_train_scaled_error": 0.2487548065897985,
+      "p90_absolute_error": 2390.7
+    },
+    "local_level": {
+      "MAE": 921.8303545999034,
+      "folds": 8,
+      "mean_train_scaled_error": 0.2135705981085094,
+      "p90_absolute_error": 1840.4837025064685
+    },
+    "local_level_drift": {
+      "MAE": 968.5588826865835,
+      "folds": 8,
+      "mean_train_scaled_error": 0.22453714690376625,
+      "p90_absolute_error": 2122.2496672210505
+    },
+    "nested_selector": {
+      "MAE": 661.3625809107702,
+      "folds": 8,
+      "mean_train_scaled_error": 0.15393411409912094,
+      "p90_absolute_error": 1317.3804106360653
+    },
+    "quarter_carry": {
+      "MAE": 771.0,
+      "folds": 8,
+      "mean_train_scaled_error": 0.1783031778401191,
+      "p90_absolute_error": 1425.5
+    }
+  },
+  "monthly_predictions": [
+    {
+      "actual": 1690.0,
+      "family": "quarter_carry",
+      "lower95": null,
+      "month": "2026-01",
+      "origin": "2025-12",
+      "prediction": 1537.0,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1407.0,
+      "family": "quarter_carry",
+      "lower95": null,
+      "month": "2026-02",
+      "origin": "2025-12",
+      "prediction": 1330.0,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1536.0,
+      "family": "quarter_carry",
+      "lower95": null,
+      "month": "2026-03",
+      "origin": "2025-12",
+      "prediction": 1407.0,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1690.0,
+      "family": "last_month",
+      "lower95": null,
+      "month": "2026-01",
+      "origin": "2025-12",
+      "prediction": 1407.0,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1407.0,
+      "family": "last_month",
+      "lower95": null,
+      "month": "2026-02",
+      "origin": "2025-12",
+      "prediction": 1407.0,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1536.0,
+      "family": "last_month",
+      "lower95": null,
+      "month": "2026-03",
+      "origin": "2025-12",
+      "prediction": 1407.0,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1690.0,
+      "family": "historical_mean",
+      "lower95": null,
+      "month": "2026-01",
+      "origin": "2025-12",
+      "prediction": 1513.638888888889,
+      "quarter": "2026-Q1",
+      "selected": true,
+      "upper95": null
+    },
+    {
+      "actual": 1407.0,
+      "family": "historical_mean",
+      "lower95": null,
+      "month": "2026-02",
+      "origin": "2025-12",
+      "prediction": 1513.638888888889,
+      "quarter": "2026-Q1",
+      "selected": true,
+      "upper95": null
+    },
+    {
+      "actual": 1536.0,
+      "family": "historical_mean",
+      "lower95": null,
+      "month": "2026-03",
+      "origin": "2025-12",
+      "prediction": 1513.638888888889,
+      "quarter": "2026-Q1",
+      "selected": true,
+      "upper95": null
+    },
+    {
+      "actual": 1690.0,
+      "family": "local_level",
+      "lower95": 1004.7835650064478,
+      "month": "2026-01",
+      "origin": "2025-12",
+      "prediction": 1499.7138196150765,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": 2238.191459018556
+    },
+    {
+      "actual": 1407.0,
+      "family": "local_level",
+      "lower95": 984.6786180603392,
+      "month": "2026-02",
+      "origin": "2025-12",
+      "prediction": 1499.7138196150765,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": 2283.8643839059173
+    },
+    {
+      "actual": 1536.0,
+      "family": "local_level",
+      "lower95": 965.870864160657,
+      "month": "2026-03",
+      "origin": "2025-12",
+      "prediction": 1499.7138196150765,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": 2328.3099956412098
+    },
+    {
+      "actual": 1690.0,
+      "family": "local_level_drift",
+      "lower95": 1105.8559055935832,
+      "month": "2026-01",
+      "origin": "2025-12",
+      "prediction": 1626.0195268454117,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": 2390.6324856365422
+    },
+    {
+      "actual": 1407.0,
+      "family": "local_level_drift",
+      "lower95": 1111.3789190440834,
+      "month": "2026-02",
+      "origin": "2025-12",
+      "prediction": 1634.1380639427732,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": 2402.5663049531086
+    },
+    {
+      "actual": 1536.0,
+      "family": "local_level_drift",
+      "lower95": 1116.9294913461217,
+      "month": "2026-03",
+      "origin": "2025-12",
+      "prediction": 1642.2971110914978,
+      "quarter": "2026-Q1",
+      "selected": false,
+      "upper95": 2414.5596718984707
+    },
+    {
+      "actual": 1217.0,
+      "family": "quarter_carry",
+      "lower95": null,
+      "month": "2026-04",
+      "origin": "2026-03",
+      "prediction": 1690.0,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 851.0,
+      "family": "quarter_carry",
+      "lower95": null,
+      "month": "2026-05",
+      "origin": "2026-03",
+      "prediction": 1407.0,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 926.0,
+      "family": "quarter_carry",
+      "lower95": null,
+      "month": "2026-06",
+      "origin": "2026-03",
+      "prediction": 1536.0,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1217.0,
+      "family": "last_month",
+      "lower95": null,
+      "month": "2026-04",
+      "origin": "2026-03",
+      "prediction": 1536.0,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 851.0,
+      "family": "last_month",
+      "lower95": null,
+      "month": "2026-05",
+      "origin": "2026-03",
+      "prediction": 1536.0,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 926.0,
+      "family": "last_month",
+      "lower95": null,
+      "month": "2026-06",
+      "origin": "2026-03",
+      "prediction": 1536.0,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": null
+    },
+    {
+      "actual": 1217.0,
+      "family": "historical_mean",
+      "lower95": null,
+      "month": "2026-04",
+      "origin": "2026-03",
+      "prediction": 1516.0,
+      "quarter": "2026-Q2",
+      "selected": true,
+      "upper95": null
+    },
+    {
+      "actual": 851.0,
+      "family": "historical_mean",
+      "lower95": null,
+      "month": "2026-05",
+      "origin": "2026-03",
+      "prediction": 1516.0,
+      "quarter": "2026-Q2",
+      "selected": true,
+      "upper95": null
+    },
+    {
+      "actual": 926.0,
+      "family": "historical_mean",
+      "lower95": null,
+      "month": "2026-06",
+      "origin": "2026-03",
+      "prediction": 1516.0,
+      "quarter": "2026-Q2",
+      "selected": true,
+      "upper95": null
+    },
+    {
+      "actual": 1217.0,
+      "family": "local_level",
+      "lower95": 1039.7957805386784,
+      "month": "2026-04",
+      "origin": "2026-03",
+      "prediction": 1529.7883182235169,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": 2250.4626971265857
+    },
+    {
+      "actual": 851.0,
+      "family": "local_level",
+      "lower95": 1028.225582318291,
+      "month": "2026-05",
+      "origin": "2026-03",
+      "prediction": 1529.7883182235169,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": 2275.772862496637
+    },
+    {
+      "actual": 926.0,
+      "family": "local_level",
+      "lower95": 1017.0957953834508,
+      "month": "2026-06",
+      "origin": "2026-03",
+      "prediction": 1529.7883182235169,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": 2300.662462250921
+    },
+    {
+      "actual": 1217.0,
+      "family": "local_level_drift",
+      "lower95": 1116.2559740233737,
+      "month": "2026-04",
+      "origin": "2026-03",
+      "prediction": 1621.118989406966,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": 2354.1183229024546
+    },
+    {
+      "actual": 851.0,
+      "family": "local_level_drift",
+      "lower95": 1121.0794951867838,
+      "month": "2026-05",
+      "origin": "2026-03",
+      "prediction": 1628.1221520276117,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": 2364.286058262102
+    },
+    {
+      "actual": 926.0,
+      "family": "local_level_drift",
+      "lower95": 1125.9238409033444,
+      "month": "2026-06",
+      "origin": "2026-03",
+      "prediction": 1635.1555493517608,
+      "quarter": "2026-Q2",
+      "selected": false,
+      "upper95": 2374.497690712328
+    }
+  ],
+  "nested_choices": [
+    {
+      "absolute_error": 325.0,
+      "actual": 3401.0,
+      "family": "quarter_carry",
+      "inner_fold_count": 0,
+      "origin": "2023-12",
+      "prediction": 3726.0,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2024-03",
+      "train_scaled_error": 0.07547169811320754,
+      "training_max_month": "2023-12",
+      "training_rows": 12
+    },
+    {
+      "absolute_error": 2015.001368786884,
+      "actual": 5313.0,
+      "family": "local_level_drift",
+      "inner_fold_count": 1,
+      "origin": "2024-03",
+      "prediction": 3297.998631213116,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2024-06",
+      "train_scaled_error": 0.48846149733028316,
+      "training_max_month": "2024-03",
+      "training_rows": 15
+    },
+    {
+      "absolute_error": 260.83333333333303,
+      "actual": 4584.0,
+      "family": "historical_mean",
+      "inner_fold_count": 2,
+      "origin": "2024-06",
+      "prediction": 4323.166666666667,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2024-09",
+      "train_scaled_error": 0.06033386021049378,
+      "training_max_month": "2024-06",
+      "training_rows": 18
+    },
+    {
+      "absolute_error": 151.42857142857065,
+      "actual": 4209.0,
+      "family": "historical_mean",
+      "inner_fold_count": 3,
+      "origin": "2024-09",
+      "prediction": 4360.428571428571,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2024-12",
+      "train_scaled_error": 0.03472791010057972,
+      "training_max_month": "2024-09",
+      "training_rows": 21
+    },
+    {
+      "absolute_error": 737.5,
+      "actual": 5079.0,
+      "family": "historical_mean",
+      "inner_fold_count": 4,
+      "origin": "2024-12",
+      "prediction": 4341.5,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2025-03",
+      "train_scaled_error": 0.169872163998618,
+      "training_max_month": "2024-12",
+      "training_rows": 24
+    },
+    {
+      "absolute_error": 491.55555555555566,
+      "actual": 4915.0,
+      "family": "historical_mean",
+      "inner_fold_count": 5,
+      "origin": "2025-03",
+      "prediction": 4423.444444444444,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2025-06",
+      "train_scaled_error": 0.11112506593655022,
+      "training_max_month": "2025-03",
+      "training_rows": 27
+    },
+    {
+      "absolute_error": 1018.4000000000005,
+      "actual": 5491.0,
+      "family": "historical_mean",
+      "inner_fold_count": 6,
+      "origin": "2025-06",
+      "prediction": 4472.599999999999,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2025-09",
+      "train_scaled_error": 0.2276975361087512,
+      "training_max_month": "2025-06",
+      "training_rows": 30
+    },
+    {
+      "absolute_error": 291.181818181818,
+      "actual": 4274.0,
+      "family": "historical_mean",
+      "inner_fold_count": 7,
+      "origin": "2025-09",
+      "prediction": 4565.181818181818,
+      "selection_scope": "past_complete_quarters_only",
+      "target_end": "2025-12",
+      "train_scaled_error": 0.0637831809944839,
+      "training_max_month": "2025-09",
+      "training_rows": 33
+    }
+  ],
+  "quarter_comparisons": [
+    {
+      "R41_absolute_error": 73.5,
+      "R41_prediction": 4706.5,
+      "actual": 4633.0,
+      "carry_absolute_error": 359.0,
+      "carry_prediction": 4274.0,
+      "frozen_R41_carry_prediction": 4277.0,
+      "inner_scores": {
+        "historical_mean": 630.4936598124098,
+        "last_month": 1072.375,
+        "local_level": 921.8303545999034,
+        "local_level_drift": 968.5588826865835,
+        "quarter_carry": 771.0
+      },
+      "quarter": "2026-Q1",
+      "selected_absolute_error": 92.08333333333303,
+      "selected_family": "historical_mean",
+      "selected_prediction": 4540.916666666667,
+      "training_max_month": "2025-12",
+      "training_vintage": "2026-Q1"
+    },
+    {
+      "R41_absolute_error": 2119.0,
+      "R41_prediction": 5113.0,
+      "actual": 2994.0,
+      "carry_absolute_error": 1639.0,
+      "carry_prediction": 4633.0,
+      "frozen_R41_carry_prediction": 4633.0,
+      "inner_scores": {
+        "historical_mean": 570.6702902036235,
+        "last_month": 999.0,
+        "local_level": 834.2779308837776,
+        "local_level_drift": 890.8806403747056,
+        "quarter_carry": 725.2222222222222
+      },
+      "quarter": "2026-Q2",
+      "selected_absolute_error": 1554.0,
+      "selected_family": "historical_mean",
+      "selected_prediction": 4548.0,
+      "training_max_month": "2026-03",
+      "training_vintage": "2026-Q1"
+    }
+  ],
+  "report_revisions": [
+    {
+      "Q1_row_hash": "da9d453845e44510a8c940edc9e6eaf4f506f3342ae36bf1a62ba0dca6f70af7",
+      "Q1_value": 1536.0,
+      "Q2_row_hash": "e022b1f3aa6f9000b54b1be828d967d88007e8ad32a419f8793691f6ae6aacc5",
+      "Q2_value": 1533.0,
+      "month": "2026-03"
+    }
+  ],
+  "run_id": "p3d-r96-monthly-diagnosis-state-20260911-s01",
+  "stock_guard": {
+    "boundary": "diagnosis readout comparison does not validate state-flow reconciliation",
+    "conditional_rates_unchanged": true,
+    "dynamics_coupled": false,
+    "stock_cone_valid": true,
+    "values_unchanged": {
+      "alive_on_art": 113068.55846329583,
+      "diagnosed_plhiv": 161700.0,
+      "tested_for_viral_load": 64077.434836309825,
+      "virally_suppressed": 62123.17376050489
+    }
+  }
+}

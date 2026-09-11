@@ -18,6 +18,14 @@ This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM rep
 
 ## Scientific Snapshot
 
+### September 11 Update: R96 Monthly Diagnosis Test
+
+R96 repaired a PDF extraction bug that had omitted monthly diagnosis rows: Q1 now supplies **39 months** and Q2 **42 months**, with the March revision retained separately for each report. The five-family monthly experiment improves historical MAE from **771 to 661 diagnoses** using a nested selector, but its preferred forecast is the historical mean. The fitted local-level models lose to carry-forward. Q2 error improves while Q1 regresses slightly against R41, so **R41 remains the reference and R96 is diagnostic-only**.
+
+![R96 monthly diagnosis comparison](docs/figures/phase3_r96_dashboard.png)
+
+[Equations, all comparisons, extraction corrections, and next experiments](docs/phase3_r96_monthly_diagnosis_state_20260911.md). R96 has no prospective or AEM-superiority claim: Q2 was already inspected, and historical report issue dates have not been verified. Older R94/R95 extraction totals below describe their frozen original artifacts; corrected totals are 536 and 562 rows respectively.
+
 | Layer | Current Status | What It Means |
 | --- | --- | --- |
 | National quarterly cascade | `R41` promoted as current national research champion | Useful readout/forecast champion under locked gates, not a final official-model replacement |

@@ -26,7 +26,9 @@ def test_r95_extracts_core_q2_rows(tmp_path: Path) -> None:
     median CD4 count among these patients at enrollment was 176 cells/mm3.
     From April to June 2026, 352 deaths from any cause were reported.
     Since January 1984, a total of 11,069 deaths have been reported.
-    2026    1690      1407      1533          1217     851     926                                                          1271
+    Figure 3. Number of monthly newly diagnosed HIV cases, Jan 2026 - Jun 2026
+    left column prose.    2026    1690      1407      1533          1217     851     926                                                          1271
+    Geographic Distribution
     Care Cascade by Region
     1 9,500 4,765 50% 3,317 70% 1,910 58% 1,860 97% 56%
     """

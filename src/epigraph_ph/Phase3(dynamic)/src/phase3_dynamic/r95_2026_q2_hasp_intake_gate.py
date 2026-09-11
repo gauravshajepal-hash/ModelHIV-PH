@@ -326,16 +326,13 @@ def _extract_national_rows(text: str, source_path: Path) -> list[dict[str, Any]]
 
 
 def _extract_monthly_diagnosis_rows(text: str, source_path: Path) -> list[dict[str, Any]]:
+    from .hasp_monthly_table import parse_monthly_diagnosis_table
+
     rows: list[dict[str, Any]] = []
-    for line in text.splitlines():
-        match = re.match(r"^\s*(202[3-6])\s+([\d\s]+)$", line)
-        if not match:
-            continue
-        year = int(match.group(1))
-        values = [int(value) for value in re.findall(r"\d+", match.group(2))]
-        if len(values) <= 1:
-            continue
-        monthly_values = values[:-1]
+    for table_row in parse_monthly_diagnosis_table(text, end_month="2026-06"):
+        year = table_row["year"]
+        monthly_values = table_row["counts"]
+        values = monthly_values + [table_row["average"]]
         for month_index, value in enumerate(monthly_values[:12], start=1):
             _add_row(
                 rows,

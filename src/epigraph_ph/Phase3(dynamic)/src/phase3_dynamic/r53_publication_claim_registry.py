@@ -372,6 +372,7 @@ R95_DEFAULT_REPORT = (
     / "analysis"
     / "r95_2026_q2_hasp_intake_gate_report.json"
 )
+R96_DEFAULT_REPORT = sandbox_repo_root() / "artifacts/runs/p3d-r96-monthly-diagnosis-state-20260911-s01/report.json"
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1746,6 +1747,24 @@ def _latest_hasp_q2_intake_claim(r95: dict[str, Any], path: Path) -> dict[str, A
     }
 
 
+def _monthly_diagnosis_state_claim(report: dict[str, Any], path: Path) -> dict[str, Any]:
+    gate = dict(report.get("gate") or {})
+    return {
+        "claim_id": "phase3_r96_monthly_diagnosis_state",
+        "claim_scope": "retrospective_monthly_diagnosis_forecast",
+        "claim_status": "diagnostic_only" if gate else "blocked",
+        "model_family": "train_selected_monthly_baseline_and_local_level",
+        "primary_gate": gate.get("status", "missing"),
+        "blockers": gate.get("blockers", ["r96_report_missing"]),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": gate.get("allowed_claim", "No R96 claim without its evidence report"),
+        "claim_limit": "No R41 replacement, identified reporting shock, regional effect, or AEM superiority claim; historical issue dates are unverified and Q2 was previously inspected.",
+        "key_metrics": {"history": report.get("history"), "extraction": report.get("extraction"),
+                        "quarter_comparisons": report.get("quarter_comparisons")},
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -2025,6 +2044,7 @@ def run_r53_publication_claim_registry(
     r93_report_path: Path | None = None,
     r94_report_path: Path | None = None,
     r95_report_path: Path | None = None,
+    r96_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -2071,6 +2091,7 @@ def run_r53_publication_claim_registry(
     r93_path = Path(r93_report_path) if r93_report_path is not None else R93_DEFAULT_REPORT
     r94_path = Path(r94_report_path) if r94_report_path is not None else R94_DEFAULT_REPORT
     r95_path = Path(r95_report_path) if r95_report_path is not None else R95_DEFAULT_REPORT
+    r96_path = Path(r96_report_path) if r96_report_path is not None else R96_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -2116,6 +2137,7 @@ def run_r53_publication_claim_registry(
     r93 = _load_report(r93_path)
     r94 = _load_report(r94_path)
     r95 = _load_report(r95_path)
+    r96 = _load_report(r96_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -2189,6 +2211,7 @@ def run_r53_publication_claim_registry(
         _open_public_incumbent_comparator_claim(r93, r93_path),
         _latest_hasp_intake_claim(r94, r94_path),
         _latest_hasp_q2_intake_claim(r95, r95_path),
+        _monthly_diagnosis_state_claim(r96, r96_path),
         _determinant_claim(r46, r46_path),
     ]
     gate = _registry_gate(claim_rows)
@@ -2265,6 +2288,7 @@ def _main() -> None:
     parser.add_argument("--r93-report-path", default=None)
     parser.add_argument("--r94-report-path", default=None)
     parser.add_argument("--r95-report-path", default=None)
+    parser.add_argument("--r96-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -2313,6 +2337,7 @@ def _main() -> None:
         r93_report_path=None if args.r93_report_path is None else Path(args.r93_report_path),
         r94_report_path=None if args.r94_report_path is None else Path(args.r94_report_path),
         r95_report_path=None if args.r95_report_path is None else Path(args.r95_report_path),
+        r96_report_path=None if args.r96_report_path is None else Path(args.r96_report_path),
     )
 
 
