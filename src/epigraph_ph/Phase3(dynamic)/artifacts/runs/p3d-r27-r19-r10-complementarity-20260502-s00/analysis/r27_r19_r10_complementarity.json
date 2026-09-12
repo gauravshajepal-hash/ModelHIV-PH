@@ -1,0 +1,98 @@
+{
+  "artifact_paths": {
+    "csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r27-r19-r10-complementarity-20260502-s00/analysis/r27_r19_r10_complementarity_split_rows.csv",
+    "dashboard_png": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r27-r19-r10-complementarity-20260502-s00/analysis/r27_r19_r10_complementarity_dashboard.png",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r27-r19-r10-complementarity-20260502-s00/analysis/r27_r19_r10_complementarity.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r27-r19-r10-complementarity-20260502-s00/analysis/r27_r19_r10_complementarity.md"
+  },
+  "blockers": [
+    "oracle_not_strictly_better_than_matched_r10"
+  ],
+  "contract": "This fast R27 mode is an upper-bound diagnostic over locked R24 fairness rows. It asks whether any non-leaky train-origin R19/R10 selector could be worth a dense replay; if the oracle itself cannot strictly beat matched R10, a learned selector cannot be expected to do so.",
+  "family": "r27_r19_r10_train_origin_complementarity",
+  "generated_at": "2026-05-02T11:47:18.049941+00:00",
+  "horizon_rows": [
+    {
+      "blockers": [],
+      "carry_forward_mean_mae": 0.28697436438140306,
+      "fusion_mean_mae": 0.07472894582132304,
+      "fusion_minus_r10": -0.020574512909021972,
+      "fusion_minus_r19": 0.0,
+      "horizon_years": 1,
+      "matched_r10_mean_mae": 0.09530345873034501,
+      "phase3_family": "r19_joint_service_cascade_process",
+      "r19_mean_mae": 0.07472894582132304,
+      "row_scope": "full_sentinel_r19",
+      "split_rows": [],
+      "status": "pass"
+    },
+    {
+      "blockers": [],
+      "carry_forward_mean_mae": 0.5278718299428302,
+      "fusion_mean_mae": 0.11196855677854647,
+      "fusion_minus_r10": -0.0036820254426155885,
+      "fusion_minus_r19": 0.0,
+      "horizon_years": 3,
+      "matched_r10_mean_mae": 0.11565058222116206,
+      "phase3_family": "r19_joint_service_cascade_process",
+      "r19_mean_mae": 0.11196855677854647,
+      "row_scope": "full_sentinel_r19",
+      "split_rows": [],
+      "status": "pass"
+    },
+    {
+      "blockers": [
+        "oracle_not_strictly_better_than_matched_r10"
+      ],
+      "carry_forward_mean_mae": 0.8387643744603296,
+      "fusion_mean_mae": 0.12942108775021025,
+      "fusion_minus_r10": 0.0,
+      "fusion_minus_r19": -0.00763302663651344,
+      "horizon_years": 5,
+      "matched_r10_mean_mae": 0.12942108775021025,
+      "phase3_family": "r19_joint_service_cascade_process",
+      "r19_mean_mae": 0.13705411438672369,
+      "row_scope": "full_sentinel_r19",
+      "split_rows": [],
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "oracle_not_strictly_better_than_matched_r10"
+      ],
+      "carry_forward_mean_mae": 0.5365953883119511,
+      "fusion_mean_mae": 0.11565058222116206,
+      "fusion_minus_r10": 0.0,
+      "fusion_minus_r19": -0.0269537976517924,
+      "horizon_years": 3,
+      "matched_r10_mean_mae": 0.11565058222116206,
+      "phase3_family": "r23_recent_origin_program_coupled_process",
+      "r19_mean_mae": 0.14260437987295446,
+      "row_scope": "program_best_phase3",
+      "split_rows": [],
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "oracle_not_strictly_better_than_matched_r10"
+      ],
+      "carry_forward_mean_mae": 0.9671842817967539,
+      "fusion_mean_mae": 0.12942108775021025,
+      "fusion_minus_r10": 0.0,
+      "fusion_minus_r19": -0.050278975561881184,
+      "horizon_years": 5,
+      "matched_r10_mean_mae": 0.12942108775021025,
+      "phase3_family": "r22_program_metric_coupled_process",
+      "r19_mean_mae": 0.17970006331209143,
+      "row_scope": "program_best_phase3",
+      "split_rows": [],
+      "status": "fail"
+    }
+  ],
+  "mode": "aggregate_oracle_upper_bound_from_r24",
+  "promotion_eligible": false,
+  "run_id": "p3d-r27-r19-r10-complementarity-20260502-s00",
+  "schema_version": "phase3_dynamic.r27_r19_r10_complementarity.v1",
+  "source_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/scientific_audits/phase3_r24_matched_r10_fairness_audit_results_20260502.json",
+  "verdict": "R27 oracle complementarity does not beat matched R10 in every audited route. Even choosing the better of Phase3/R19-family and R10 per horizon cannot clear the program route or full h5 gate."
+}

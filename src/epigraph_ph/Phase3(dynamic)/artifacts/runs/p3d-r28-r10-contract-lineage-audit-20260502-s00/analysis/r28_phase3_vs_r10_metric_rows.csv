@@ -1,0 +1,14 @@
+carry_forward_mean_norm_error,comparison_contract,horizon_years,matched_r10_mean_norm_error,metric_name,phase3_candidate_mean_norm_error,phase3_entry_count,phase3_minus_r10_mean_norm_error,r10_entry_count,row_scope
+0.11744895369970307,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,1,0.0710267129029538,alive_on_art,0.04759294860956599,15,-0.02343376429338781,43,all
+0.05273548778735363,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,1,0.07571752185963149,diagnosed_plhiv,0.016007407972377496,15,-0.05971011388725399,35,all
+0.25734488180606707,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,1,0.14255685006877342,new_diagnosed_cases_period,0.13317356574019296,14,-0.00938328432858046,38,all
+0.15549220546541914,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,3,0.07795137553043029,alive_on_art,0.09754380561368434,42,0.01959243008325405,117,all
+0.09515641123435284,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,3,0.10336715471457801,diagnosed_plhiv,0.058951619268423586,42,-0.044415535446154425,94,all
+0.3514672994302558,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,3,0.18543519083107568,new_diagnosed_cases_period,0.16690693080647487,39,-0.018528260024600812,103,all
+0.176585250406457,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,5,0.08126180317211722,alive_on_art,0.13142574216433928,65,0.05016393899222206,175,all
+0.1326409400644861,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,5,0.14654602920445745,diagnosed_plhiv,0.09255020228758776,65,-0.05399582691686969,140,all
+0.4279598857583642,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,5,0.20239888859255137,new_diagnosed_cases_period,0.23510558913247406,62,0.032706700539922695,155,all
+0.15549220546541914,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,3,0.07795137553043029,alive_on_art,0.09413152988826383,31,0.016180154357833543,117,program
+0.3514672994302558,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,3,0.18543519083107568,new_diagnosed_cases_period,0.138054195306432,31,-0.04738099552464367,103,program
+0.176585250406457,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,5,0.08126180317211722,alive_on_art,0.17689240391760452,50,0.0956306007454873,175,program
+0.4279598857583642,approximate_metric_horizon_comparison; split scopes differ between R13 and dense R10 replay,5,0.20239888859255137,new_diagnosed_cases_period,0.2246716919721276,50,0.02227280337957624,155,program

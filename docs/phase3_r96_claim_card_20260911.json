@@ -1,0 +1,14 @@
+{
+  "R41_changed": false,
+  "allowed_claim": "retrospective monthly reported-diagnosis forecasting comparison",
+  "blockers": [
+    "historical_issue_dates_unverified",
+    "Q2_already_inspected_before_experiment_design",
+    "reporting_vs_diagnosis_volume_not_identified",
+    "Q1_or_Q2_fails_matched_carry_or_R41"
+  ],
+  "challenge_pass": false,
+  "champion": null,
+  "history_pass": true,
+  "status": "diagnostic_only"
+}

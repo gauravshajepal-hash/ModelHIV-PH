@@ -1,0 +1,2106 @@
+{
+  "audited_at": "2026-09-12T11:32:17.484041+00:00",
+  "code_hashes": {
+    "annual_benchmark_contract.py": "efd103fe5bab0b31511562aba0e1bb297264b1b3374bd7dae7266b032c46f63f",
+    "r75_bulk_unaids_annual_challenge.py": "56f496a112029ee4eb8e7b63b5f7743246457844425244fbcde5ae973293f21e",
+    "r78_public_annual_family_expansion.py": "f6db069dce38137cece360c963ffddf6061726dc60251a70d59e5f99dcbb28b9"
+  },
+  "effective_claim": "retrospective_estimate_agreement_only",
+  "fresh_fit_performed": false,
+  "historical_models_changed": false,
+  "metric_split_audits": [
+    {
+      "holdout_years": [
+        2019
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 9,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 9,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 9,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019,
+        2020,
+        2021
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 9,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019,
+        2020,
+        2021
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 9,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019,
+        2020,
+        2021
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 9,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "horizon_years": 5,
+      "legacy_design_rows": 9,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "horizon_years": 5,
+      "legacy_design_rows": 9,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "horizon_years": 5,
+      "legacy_design_rows": 9,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 9,
+      "train_end_year": 2018,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 10,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 10,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 10,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020,
+        2021,
+        2022
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 10,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020,
+        2021,
+        2022
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 10,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020,
+        2021,
+        2022
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 10,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "horizon_years": 5,
+      "legacy_design_rows": 10,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "horizon_years": 5,
+      "legacy_design_rows": 10,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "horizon_years": 5,
+      "legacy_design_rows": 10,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 10,
+      "train_end_year": 2019,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2021
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 11,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 11,
+      "train_end_year": 2020,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2021
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 11,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 11,
+      "train_end_year": 2020,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2021
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 11,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 11,
+      "train_end_year": 2020,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2021,
+        2022,
+        2023
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 11,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 11,
+      "train_end_year": 2020,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2021,
+        2022,
+        2023
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 11,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 11,
+      "train_end_year": 2020,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2021,
+        2022,
+        2023
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 11,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 11,
+      "train_end_year": 2020,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2022
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 12,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 12,
+      "train_end_year": 2021,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2022
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 12,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 12,
+      "train_end_year": 2021,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2022
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 12,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 12,
+      "train_end_year": 2021,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2022,
+        2023,
+        2024
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 12,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 12,
+      "train_end_year": 2021,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2022,
+        2023,
+        2024
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 12,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 12,
+      "train_end_year": 2021,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2022,
+        2023,
+        2024
+      ],
+      "horizon_years": 3,
+      "legacy_design_rows": 12,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 12,
+      "train_end_year": 2021,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2023
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 13,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 13,
+      "train_end_year": 2022,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2022-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2023
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 13,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 13,
+      "train_end_year": 2022,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2022-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2023
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 13,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 13,
+      "train_end_year": 2022,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2022-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2024
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 14,
+      "metric": "annual_aids_deaths",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 14,
+      "train_end_year": 2023,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2022-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2023-Q4",
+          "reason": "annual_aids_deaths: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2024
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 14,
+      "metric": "annual_new_infections",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 14,
+      "train_end_year": 2023,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2022-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2023-Q4",
+          "reason": "annual_new_infections: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    },
+    {
+      "holdout_years": [
+        2024
+      ],
+      "horizon_years": 1,
+      "legacy_design_rows": 14,
+      "metric": "estimated_plhiv",
+      "new_model_fit_performed": false,
+      "strictly_inadmissible_rows": 14,
+      "train_end_year": 2023,
+      "violations": [
+        {
+          "quarter": "2010-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2011-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2012-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2013-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2014-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2015-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2016-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2017-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2018-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2019-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2020-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2021-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2022-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        },
+        {
+          "quarter": "2023-Q4",
+          "reason": "estimated_plhiv: role 'validation_only' cannot enter a training likelihood"
+        }
+      ]
+    }
+  ],
+  "official_superiority": false,
+  "predictive_interval_calibration_established": false,
+  "required_repairs": [
+    "explicit origin-scoped training/evaluation role separation without relabeling validation rows",
+    "report-vintage and publication-availability lock for predictive claims",
+    "predictive distributions evaluated against independent outcomes, not target interval containment",
+    "actual official forecasts on a common outcome; locally fitted proxies remain internal baselines"
+  ],
+  "schema": "annual_benchmark_integrity.v1",
+  "source_csv_sha256": "ac39d85b60ef7d48ea65d778c552478a0871528a47d11d92d934d5b2110a83ac",
+  "source_filename": "r69_annual_external_challenge_rows.csv",
+  "source_vintages": [
+    "unaids_estimates_2025"
+  ],
+  "split_count": 12,
+  "target_row_count": 45,
+  "violating_metric_split_count": 36
+}

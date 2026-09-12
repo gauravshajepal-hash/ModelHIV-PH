@@ -1,0 +1,123 @@
+{
+  "contract": "materialized from active ObservationRoleLedger-compatible source rows",
+  "generated_at": "2026-05-01T00:16:26.543252+00:00",
+  "observation_row_count": 30,
+  "schema_version": "phase3_dynamic.r11_split_manifest.v1",
+  "split_count": 7,
+  "splits": [
+    {
+      "holdout_years": [
+        2019
+      ],
+      "train_end_year": 2018,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018
+      ]
+    },
+    {
+      "holdout_years": [
+        2020
+      ],
+      "train_end_year": 2019,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019
+      ]
+    },
+    {
+      "holdout_years": [
+        2021
+      ],
+      "train_end_year": 2020,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ]
+    },
+    {
+      "holdout_years": [
+        2022
+      ],
+      "train_end_year": 2021,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021
+      ]
+    },
+    {
+      "holdout_years": [
+        2023
+      ],
+      "train_end_year": 2022,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ]
+    },
+    {
+      "holdout_years": [
+        2024
+      ],
+      "train_end_year": 2023,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ]
+    },
+    {
+      "holdout_years": [
+        2025
+      ],
+      "train_end_year": 2024,
+      "train_years": [
+        2012,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ]
+    }
+  ],
+  "year_max": 2025,
+  "year_min": 2012
+}

@@ -1,0 +1,1460 @@
+{
+  "artifact_paths": {
+    "csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r30-strict-r13-family-scan-20260502-s00/analysis/r30_strict_r13_family_scan_rows.csv",
+    "dashboard_png": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r30-strict-r13-family-scan-20260502-s00/analysis/r30_strict_r13_family_scan_dashboard.png",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r30-strict-r13-family-scan-20260502-s00/analysis/r30_strict_r13_family_scan.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r30-strict-r13-family-scan-20260502-s00/analysis/r30_strict_r13_family_scan.md"
+  },
+  "blockers": [
+    "no_existing_r13_family_beats_strict_mapped_r10_on_required_horizons"
+  ],
+  "generated_at": "2026-05-02T12:10:26.205259+00:00",
+  "passing_rows": [],
+  "promotion_eligible": false,
+  "r13_report_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r19-joint-service-r13-queue-20260502-final-v3/analysis/r13_priority_experiment_results.json",
+  "r29_report_path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r29-strict-ledger-matched-r10-gate-20260502-s00/analysis/r29_strict_ledger_matched_r10_gate.json",
+  "r29_schema_version": "phase3_dynamic.r29_strict_ledger_matched_r10_gate.v1",
+  "run_id": "p3d-r30-strict-r13-family-scan-20260502-s00",
+  "scan_rows": [
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "promote_for_next_wave",
+      "experiment_id": "R13-021",
+      "family": "support_partition_calibration",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08823461184256355,
+          "candidate_minus_strict_r10": -0.012493760806632781,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.012493760806632781,
+      "mean_candidate_minus_strict_r10": -0.012493760806632781,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-049",
+      "family": "multi_horizon_weighted_process",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.09108534006249573,
+          "candidate_minus_strict_r10": -0.0096430325867006,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.0096430325867006,
+      "mean_candidate_minus_strict_r10": -0.0096430325867006,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "reject",
+      "experiment_id": "R13-024",
+      "family": "linkage_lag_plus_support_partition",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.11095088439525001,
+          "candidate_minus_strict_r10": 0.01022251174605368,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.01022251174605368,
+      "mean_candidate_minus_strict_r10": 0.01022251174605368,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-050",
+      "family": "r19_joint_service_cascade_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.07472894582132304,
+          "candidate_minus_strict_r10": -0.02599942682787329,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.11196855677854647,
+          "candidate_minus_strict_r10": -0.005131043890052173,
+          "horizon_years": 3,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.13705411438672369,
+          "candidate_minus_strict_r10": 0.010242920123925553,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.010242920123925553,
+      "mean_candidate_minus_strict_r10": -0.006962516864666636,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-023",
+      "family": "linkage_lag_kernel",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.13564070512107226,
+          "candidate_minus_strict_r10": 0.03491233247187593,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.03491233247187593,
+      "mean_candidate_minus_strict_r10": 0.03491233247187593,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-007",
+      "family": "r12_da_process_split_transition",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.07965259395589494,
+          "candidate_minus_strict_r10": -0.021075778693301392,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.14680655520381883,
+          "candidate_minus_strict_r10": 0.02970695453522018,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.18601528898195405,
+          "candidate_minus_strict_r10": 0.059204094719155914,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.059204094719155914,
+      "mean_candidate_minus_strict_r10": 0.02261175685369157,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-008",
+      "family": "r12_da_residual_source_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08367523165368022,
+          "candidate_minus_strict_r10": -0.01705314099551611,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.1513493027869343,
+          "candidate_minus_strict_r10": 0.03424970211833564,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.18772497406292607,
+          "candidate_minus_strict_r10": 0.06091377980012794,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.06091377980012794,
+      "mean_candidate_minus_strict_r10": 0.026036780307649155,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-009",
+      "family": "era_datv_transition_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08003781448937222,
+          "candidate_minus_strict_r10": -0.02069055815982411,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.14778863287166605,
+          "candidate_minus_strict_r10": 0.0306890322030674,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.1887211494790413,
+          "candidate_minus_strict_r10": 0.06190995521624318,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.06190995521624318,
+      "mean_candidate_minus_strict_r10": 0.023969476419828824,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "reject",
+      "experiment_id": "R13-022",
+      "family": "transition_shrinkage",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.18300360116090952,
+          "candidate_minus_strict_r10": 0.08227522851171319,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.08227522851171319,
+      "mean_candidate_minus_strict_r10": 0.08227522851171319,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "reject",
+      "experiment_id": "R13-019",
+      "family": "local_level_filter",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.19235327967686414,
+          "candidate_minus_strict_r10": 0.0916249070276678,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.0916249070276678,
+      "mean_candidate_minus_strict_r10": 0.0916249070276678,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-003",
+      "family": "multi_horizon_weighted_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.09108534006249573,
+          "candidate_minus_strict_r10": -0.0096430325867006,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.14904325416653394,
+          "candidate_minus_strict_r10": 0.03194365349793529,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.23240795203672612,
+          "candidate_minus_strict_r10": 0.10559675777392799,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.10559675777392799,
+      "mean_candidate_minus_strict_r10": 0.042632459561720897,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-011",
+      "family": "diagnosis_lag_stock_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.10692044431588368,
+          "candidate_minus_strict_r10": 0.0061920716666873515,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.18845663321690023,
+          "candidate_minus_strict_r10": 0.07135703254830159,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.2425558513303285,
+          "candidate_minus_strict_r10": 0.11574465706753037,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.11574465706753037,
+      "mean_candidate_minus_strict_r10": 0.06443125376083976,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-013",
+      "family": "support_era_diagnosis_flow_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.10637466963255497,
+          "candidate_minus_strict_r10": 0.00564629698335864,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.18965436307181371,
+          "candidate_minus_strict_r10": 0.07255476240321507,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.24375358118524196,
+          "candidate_minus_strict_r10": 0.11694238692244383,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.11694238692244383,
+      "mean_candidate_minus_strict_r10": 0.06504781543633918,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-010",
+      "family": "datv_transition_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08624342009504751,
+          "candidate_minus_strict_r10": -0.01448495255414882,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.16802696926037378,
+          "candidate_minus_strict_r10": 0.05092736859177513,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.25727995928045877,
+          "candidate_minus_strict_r10": 0.13046876501766064,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.13046876501766064,
+      "mean_candidate_minus_strict_r10": 0.05563706035176232,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-015",
+      "family": "art_horizon_selector_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.07370491538229072,
+          "candidate_minus_strict_r10": -0.02702345726690561,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.21203182303109053,
+          "candidate_minus_strict_r10": 0.09493222236249188,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.26749354425960453,
+          "candidate_minus_strict_r10": 0.1406823499968064,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.1406823499968064,
+      "mean_candidate_minus_strict_r10": 0.06953037169746422,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-037",
+      "family": "constrained_trajectory_shape_head",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.0858535242191176,
+          "candidate_minus_strict_r10": -0.014874848430078733,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.21724327443318114,
+          "candidate_minus_strict_r10": 0.1001436737645825,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.3024009214057223,
+          "candidate_minus_strict_r10": 0.17558972714292415,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.17558972714292415,
+      "mean_candidate_minus_strict_r10": 0.0869528508258093,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-036",
+      "family": "r12_route_aware_two_head_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.09108534006249573,
+          "candidate_minus_strict_r10": -0.0096430325867006,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.18076758495930512,
+          "candidate_minus_strict_r10": 0.06366798429070647,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.30330069826604455,
+          "candidate_minus_strict_r10": 0.17648950400324642,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.17648950400324642,
+      "mean_candidate_minus_strict_r10": 0.07683815190241743,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-039",
+      "family": "trajectory_shape_head",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.0858535242191176,
+          "candidate_minus_strict_r10": -0.014874848430078733,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.23719960316656272,
+          "candidate_minus_strict_r10": 0.12010000249796407,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.36194589898578494,
+          "candidate_minus_strict_r10": 0.2351347047229868,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.2351347047229868,
+      "mean_candidate_minus_strict_r10": 0.11345328626362405,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-038",
+      "family": "horizon_adaptive_constrained_shape_head",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08823461184256355,
+          "candidate_minus_strict_r10": -0.012493760806632781,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.2309038222610095,
+          "candidate_minus_strict_r10": 0.11380422159241085,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.37335136882125675,
+          "candidate_minus_strict_r10": 0.2465401745584586,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.2465401745584586,
+      "mean_candidate_minus_strict_r10": 0.11595021178141222,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-018",
+      "family": "r10_style_readout_teacher",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08823461184256355,
+          "candidate_minus_strict_r10": -0.012493760806632781,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.23335085960077254,
+          "candidate_minus_strict_r10": 0.11625125893217389,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.37545513110772727,
+          "candidate_minus_strict_r10": 0.24864393684492914,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.24864393684492914,
+      "mean_candidate_minus_strict_r10": 0.11746714499015676,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-014",
+      "family": "diagnosed_reporting_bias_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.0566566737258931,
+          "candidate_minus_strict_r10": -0.04407169892330323,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.210472361349423,
+          "candidate_minus_strict_r10": 0.09337276068082434,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.38129360062189666,
+          "candidate_minus_strict_r10": 0.2544824063590985,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.2544824063590985,
+      "mean_candidate_minus_strict_r10": 0.1012611560388732,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "reject",
+      "experiment_id": "R13-020",
+      "family": "support_reporting_bias",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.3578179766878404,
+          "candidate_minus_strict_r10": 0.25708960403864406,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.25708960403864406,
+      "mean_candidate_minus_strict_r10": 0.25708960403864406,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "promote_for_next_wave",
+      "experiment_id": "R13-017",
+      "family": "back_half_conditional_rates",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.07370491538229072,
+          "candidate_minus_strict_r10": -0.02702345726690561,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.2539272553040238,
+          "candidate_minus_strict_r10": 0.13682765463542518,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.4573293322187317,
+          "candidate_minus_strict_r10": 0.33051813795593354,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.33051813795593354,
+      "mean_candidate_minus_strict_r10": 0.1467741117748177,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "reject",
+      "experiment_id": "R13-012",
+      "family": "stock_flow_reconciliation_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.30142331442884723,
+          "candidate_minus_strict_r10": 0.20069494177965091,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.4383728318240308,
+          "candidate_minus_strict_r10": 0.32127323115543216,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.5557089923688666,
+          "candidate_minus_strict_r10": 0.4288977981060685,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.4288977981060685,
+      "mean_candidate_minus_strict_r10": 0.31695532368038387,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "all",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h1"
+      ],
+      "covered_horizons": [
+        3,
+        5
+      ],
+      "decision": "promote_for_next_wave",
+      "experiment_id": "R13-004",
+      "family": "r12_stock_cone_safe_annual_trajectory_process",
+      "horizon_count": 2,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.04770596651932397,
+          "candidate_minus_strict_r10": -0.06939363414927469,
+          "horizon_years": 3,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.04770596651932397,
+          "candidate_minus_strict_r10": -0.07910522774347417,
+          "horizon_years": 5,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.06939363414927469,
+      "mean_candidate_minus_strict_r10": -0.07424943094637443,
+      "missing_required_horizons": [
+        1
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "annual_anchor",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h1"
+      ],
+      "covered_horizons": [
+        3,
+        5
+      ],
+      "decision": "promote_for_next_wave",
+      "experiment_id": "R13-025",
+      "family": "r12_long_horizon_stock_shape_process",
+      "horizon_count": 2,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.06159437500915221,
+          "candidate_minus_strict_r10": -0.05550522565944644,
+          "horizon_years": 3,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.06159437500915221,
+          "candidate_minus_strict_r10": -0.06521681925364592,
+          "horizon_years": 5,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.05550522565944644,
+      "mean_candidate_minus_strict_r10": -0.060361022456546176,
+      "missing_required_horizons": [
+        1
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "annual_anchor",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-033",
+      "family": "multi_horizon_weighted_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.09108534006249573,
+          "candidate_minus_strict_r10": -0.0096430325867006,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.14904325416653394,
+          "candidate_minus_strict_r10": 0.03194365349793529,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.23240795203672612,
+          "candidate_minus_strict_r10": 0.10559675777392799,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.10559675777392799,
+      "mean_candidate_minus_strict_r10": 0.042632459561720897,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "common_support",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-034",
+      "family": "multi_horizon_weighted_process",
+      "horizon_count": 3,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.09108534006249573,
+          "candidate_minus_strict_r10": -0.0096430325867006,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        },
+        {
+          "candidate_mean_mae": 0.14904325416653394,
+          "candidate_minus_strict_r10": 0.03194365349793529,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.23240795203672612,
+          "candidate_minus_strict_r10": 0.10559675777392799,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.10559675777392799,
+      "mean_candidate_minus_strict_r10": 0.042632459561720897,
+      "missing_required_horizons": [],
+      "reference_scope": "all_mapped",
+      "row_scope": "exact_observed",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "promote_for_next_wave",
+      "experiment_id": "R13-032",
+      "family": "multi_horizon_weighted_process",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.1124581582066254,
+          "candidate_minus_strict_r10": 0.011729785557429068,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.10072837264919633
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.011729785557429068,
+      "mean_candidate_minus_strict_r10": 0.011729785557429068,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "pre_2020",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-026",
+      "family": "r14_two_factor_program_process",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.06112912052773699,
+          "candidate_minus_strict_r10": -0.05482349677507262,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.05482349677507262,
+      "mean_candidate_minus_strict_r10": -0.05482349677507262,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-002",
+      "family": "r14_two_factor_program_process",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.08359337981686718,
+          "candidate_minus_strict_r10": -0.032359237485942424,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.032359237485942424,
+      "mean_candidate_minus_strict_r10": -0.032359237485942424,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-044",
+      "family": "linkage_lag_kernel",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.11306347563276302,
+          "candidate_minus_strict_r10": -0.0028891416700465855,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        }
+      ],
+      "max_candidate_minus_strict_r10": -0.0028891416700465855,
+      "mean_candidate_minus_strict_r10": -0.0028891416700465855,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-041",
+      "family": "support_era_diagnosis_flow_process",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.13643133442629504,
+          "candidate_minus_strict_r10": 0.020478717123485438,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.020478717123485438,
+      "mean_candidate_minus_strict_r10": 0.020478717123485438,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-043",
+      "family": "diagnosed_reporting_bias_process",
+      "horizon_count": 2,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.04346433459334263,
+          "candidate_minus_strict_r10": -0.07248828270946697,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        },
+        {
+          "candidate_mean_mae": 0.15631623110920131,
+          "candidate_minus_strict_r10": 0.02283340864802752,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.1334828224611738
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.02283340864802752,
+      "mean_candidate_minus_strict_r10": -0.024827437030719726,
+      "missing_required_horizons": [
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-006",
+      "family": "r19_joint_service_cascade_process",
+      "horizon_count": 2,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.1429971183853582,
+          "candidate_minus_strict_r10": 0.009514295924184402,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.1334828224611738
+        },
+        {
+          "candidate_mean_mae": 0.18501163577024152,
+          "candidate_minus_strict_r10": 0.05365517786933918,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.13135645790090233
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.05365517786933918,
+      "mean_candidate_minus_strict_r10": 0.03158473689676179,
+      "missing_required_horizons": [],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1,
+        3
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-040",
+      "family": "art_horizon_selector_process",
+      "horizon_count": 2,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.06986680012966986,
+          "candidate_minus_strict_r10": -0.04608581717313974,
+          "horizon_years": 1,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        },
+        {
+          "candidate_mean_mae": 0.2237928157746398,
+          "candidate_minus_strict_r10": 0.09030999331346601,
+          "horizon_years": 3,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.1334828224611738
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.09030999331346601,
+      "mean_candidate_minus_strict_r10": 0.022112088070163134,
+      "missing_required_horizons": [
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h3_h5",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        1
+      ],
+      "decision": "reject",
+      "experiment_id": "R13-042",
+      "family": "stock_flow_reconciliation_process",
+      "horizon_count": 1,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.875689886557024,
+          "candidate_minus_strict_r10": 0.7597372692542144,
+          "horizon_years": 1,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.1159526173028096
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.7597372692542144,
+      "mean_candidate_minus_strict_r10": 0.7597372692542144,
+      "missing_required_horizons": [
+        3,
+        5
+      ],
+      "reference_scope": "program_mapped",
+      "row_scope": "program",
+      "status": "fail"
+    },
+    {
+      "blockers": [
+        "missing_required_horizons_h1",
+        "strict_r10_gate_failed"
+      ],
+      "covered_horizons": [
+        3,
+        5
+      ],
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R13-029",
+      "family": "multi_horizon_weighted_process",
+      "horizon_count": 2,
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.09358126286669223,
+          "candidate_minus_strict_r10": -0.023518337801906417,
+          "horizon_years": 3,
+          "status": "pass",
+          "strict_matched_r10_mean_mae": 0.11709960066859865
+        },
+        {
+          "candidate_mean_mae": 0.14138251260076246,
+          "candidate_minus_strict_r10": 0.014571318337964323,
+          "horizon_years": 5,
+          "status": "fail",
+          "strict_matched_r10_mean_mae": 0.12681119426279813
+        }
+      ],
+      "max_candidate_minus_strict_r10": 0.014571318337964323,
+      "mean_candidate_minus_strict_r10": -0.004473509731971047,
+      "missing_required_horizons": [
+        1
+      ],
+      "reference_scope": "all_mapped",
+      "row_scope": "q4_only",
+      "status": "fail"
+    }
+  ],
+  "schema_version": "phase3_dynamic.r30_strict_r13_family_scan.v1",
+  "verdict": "R30 found no already-run R13 family that beats strict mapped R10 on required long-horizon routes."
+}

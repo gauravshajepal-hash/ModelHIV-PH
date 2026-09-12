@@ -1,0 +1,32 @@
+{
+  "code": {
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/hasp_monthly_table.py": "562502059701af89d343698e24b9924dafd38ebacdcf26f28e3a3551d05928c6",
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/r94_2026_q1_hasp_intake_gate.py": "9de6813d8811452d39ef76e289d3af2be3de2bf0da860862aa59a978e07f464b",
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/r95_2026_q2_hasp_intake_gate.py": "6a265fdd1d398ba71409b730b411f08bdd0a63be3d33c4b160dd5442e0576f6b",
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/src/phase3_dynamic/r96_monthly_diagnosis_state.py": "d4730d0f257fadb5a10f94b3b18897e9ba6d9bdce4c69b4b44482721db1ea668"
+  },
+  "git_head": "5bd32a70ee53acdcbd520e719619907956d41413",
+  "inputs": {
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r94-2026-q1-hasp-intake-gate-20260520-s00/analysis/r94_2026_q1_hasp_intake_gate_report.json": "d68033b19dbe267ecd1799615dbb6bdfb6321f1401e761742b5e2f83f0aa85b3",
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r95-2026-q2-hasp-intake-gate-20260910-s00/analysis/r95_2026_q2_hasp_intake_gate_report.json": "e1bcd804a7c96904558c6d988d3ceb2e0b1b7e785a9613e0e3302eb55a34fe00",
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf": "7e52f138a8e45c8222d22c6b1d51a5c39ec6b47b011ba580ff69e3d9885eb6a2",
+    "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6"
+  },
+  "matplotlib": "3.11.1",
+  "numpy": "2.4.6",
+  "outputs": {
+    "candidate_challenges.csv": "7205eafe0065fb0ba6681c50073304364b0d730757c1ea6461a11f286a9b7edd",
+    "claim_card.json": "b8cf00fa8a492c7c0da19b484dc6e71a85a96aa0cbca8fb99b79f21d9dc90201",
+    "contract.json": "70d23302edcdfb254577cdaa539dcf4236c846ad495fc87be03131c1408cf819",
+    "dashboard.pdf": "8e88014b651f9a598a872781f8f0e94c9f05e551c009ab7cbea5050475cc02c1",
+    "dashboard.png": "f57d18c3768deb50aa34779e3bc9f9e0fbd138bd19b8fbbd2136c4a992fdee5e",
+    "dashboard.svg": "b96c7379605f66f273e1dc69ccfcce0abc2de1b976fe688ff46e12eea9d8fa89",
+    "historical_folds.csv": "1db597f6cfdd5a4049837970639572d1db5debb646c7465c66cab2f25eb92f80",
+    "monthly_predictions.csv": "e9778e5e1c727b80530ed30e981d4501e61aa5e0876cfd1fe4fc3a80b435fc64",
+    "observation_ledger.json": "cb5e21a6b2fbcc65f885c84e15ff11ce62d052d407dd70c7cd0f69e56a5cc9dc",
+    "report.json": "19f3d2f0d2698741c813e9cab1d69f702409c0f40d98e715eaaca8b220e42491"
+  },
+  "python": "3.11.15",
+  "run_id": "p3d-r96-monthly-diagnosis-state-20260911-s01",
+  "scipy": "1.17.1"
+}

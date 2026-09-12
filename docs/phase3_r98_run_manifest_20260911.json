@@ -1,0 +1,26 @@
+{
+  "R97_lock_sha256": "b864d7ede3f0db4e913868f106f04639ccc255304603d6894b1c69f86a502ccf",
+  "code_hashes": {
+    "ahd_observation.py": "0386aa656a6ecb86ae902578526b411adffe8d1f7c5cd1a3c5b46d569dd0d747",
+    "r98_ahd_missingness.py": "508ea484e866c7937f86f9aa648a73adc49c2fbf15ef7e61dd1de96dfb74c561"
+  },
+  "input_catalog_sha256": "bd7a82abbc05685140b6ad816864d9c2c10f7206f8708f4da1670bdf85c81077",
+  "outputs": {
+    "claim_card.json": "be3f9adbd6344c2ee0e3e43b3ca056a00d9d733ba1ea664991568ef64ce90207",
+    "contract.json": "28bd5190ff99e2df3604e90292e06360d16e70894c6fffee4cf71d6d109bcff4",
+    "observation_ledger.json": "54c2331a408ebbfbde42bea4232f8263f32ef7a3d6df2d215b0b3971f15a90c3",
+    "report.json": "faced24bda2cad82cf822cdb804ab049e73865f8f1ddbfcda9f833a550e36533"
+  },
+  "source_pdf_hashes": {
+    "src/epigraph_ph/harp_archive/HIV_Data/2025_Q2-HIV-AIDS-Surveillance-Report-of-the-Philippines-1.pdf": "cae66b4eeb3a43cd78b3a14b596e8324f373f75fc7a0c850ad08e99e36a8a82f",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf": "c631f9f1168eff646c82d1df87de4020a0b816ac721b9684302c8eaf79d9c044",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf": "3deae8dbd54834cbfd3d480c84ff3180d366ea5897b699fe8037409d35ca7685",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q4-HIV-AIDS-Surveillance-of-the-Philippines-2.pdf": "9ac03ba1ea36e74be5406830ef823cfdec7ca2a7bccefcde5ffd9e4220107b9e",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2025_Q4-HIV-AIDS-Surveillance-Report-of-the-Philippines-2.pdf": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf": "7e52f138a8e45c8222d22c6b1d51a5c39ec6b47b011ba580ff69e3d9885eb6a2",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q1-2025.pdf": "3795823c79719bfc1e747f7b155335cc475101ba321126417465a8ccbe7a7d5a",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q3-2024-1.pdf": "938ea0716dd38accb6b79d428c2a7cd4cc1903643289723f8b53385e466353c5",
+    "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-REPORT-2025_-Q3_signed-1.pdf": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0"
+  }
+}

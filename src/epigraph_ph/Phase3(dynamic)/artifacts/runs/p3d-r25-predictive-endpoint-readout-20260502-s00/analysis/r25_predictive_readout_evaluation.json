@@ -1,0 +1,1387 @@
+{
+  "annual_gate_status": "inherited_from_locked_r19_reference_when_include_annual_gate_false",
+  "artifact_paths": {
+    "csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r25-predictive-endpoint-readout-20260502-s00/analysis/r25_predictive_readout_evaluation.csv",
+    "dashboard_png": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r25-predictive-endpoint-readout-20260502-s00/analysis/r25_predictive_readout_dashboard.png",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r25-predictive-endpoint-readout-20260502-s00/analysis/r25_predictive_readout_evaluation.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r25-predictive-endpoint-readout-20260502-s00/analysis/r25_predictive_readout_evaluation.md"
+  },
+  "baseline_source_run_id": "harp-archive-wdi-standard-20260412-s19",
+  "candidate_family": "r25_r19_predictive_endpoint_readout",
+  "end_year": 2025,
+  "generated_at": "2026-05-02T11:22:37.306328+00:00",
+  "include_annual_gate": false,
+  "min_train_years": 5,
+  "promotion_eligible": false,
+  "r10_metric_scope": [
+    "diagnosed_plhiv",
+    "alive_on_art",
+    "new_diagnosed_cases_period"
+  ],
+  "r25_target_blockers": {
+    "R25-002": [
+      "matched_r10_gate_failed"
+    ],
+    "R25-003": [
+      "matched_r10_gate_failed"
+    ]
+  },
+  "reference_family": "r19_joint_service_cascade_process",
+  "results": [
+    {
+      "blockers": [
+        "matched_r10_gate_failed"
+      ],
+      "candidate_family": null,
+      "candidate_mean_mae": 0.6432938820846293,
+      "carry_forward_mean_mae": 0.7518898350543525,
+      "carry_gate": "pass",
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R25-002",
+      "family": "r25_r19_predictive_endpoint_readout",
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.4280998869495744,
+          "candidate_minus_carry_forward_mean_mae": -0.10849550136237668,
+          "candidate_minus_r10_reference_mae": 0.06587027517375077,
+          "carry_forward_mean_mae": 0.5365953883119511,
+          "horizon_years": 3,
+          "r10_comparable_candidate_mean_mae": 0.18152085739491283,
+          "r10_horizon_reference_mae": 0.11565058222116206,
+          "split_count": 6
+        },
+        {
+          "candidate_mean_mae": 0.8584878772196843,
+          "candidate_minus_carry_forward_mean_mae": -0.10869640457706953,
+          "candidate_minus_r10_reference_mae": 0.21621089944739616,
+          "carry_forward_mean_mae": 0.9671842817967539,
+          "horizon_years": 5,
+          "r10_comparable_candidate_mean_mae": 0.3456319871976064,
+          "r10_horizon_reference_mae": 0.12942108775021025,
+          "split_count": 6
+        }
+      ],
+      "horizons": [
+        3,
+        5
+      ],
+      "hypothesis": "A separate predictive endpoint head constrained by the R19 research contract should close the program-route R10-scope gap without weakening the full service trajectory.",
+      "kept_claim": "beats_carry_forward_but_not_all_promotion_gates",
+      "layer": "program_route",
+      "metric_rows": [
+        {
+          "candidate_mean_norm_error": 0.1759357403113614,
+          "carry_forward_mean_norm_error": 0.36682676382908247,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.3898989545611874,
+          "carry_forward_mean_norm_error": 0.571107544141252,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.4303761121952702,
+          "carry_forward_mean_norm_error": 0.5756002043248766,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.2017968210089841,
+          "carry_forward_mean_norm_error": 0.10331720801658605,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.14943057045094735,
+          "carry_forward_mean_norm_error": 0.360860017363771,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.3504925708909126,
+          "carry_forward_mean_norm_error": 0.4562072943473245,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.40261860987692144,
+          "carry_forward_mean_norm_error": 0.5083333333333333,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.19517349467899364,
+          "carry_forward_mean_norm_error": 0.17563552327500825,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.3693238810616367,
+          "carry_forward_mean_norm_error": 0.6158715152074158,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 1.6051731360177695,
+          "carry_forward_mean_norm_error": 1.7744549945277608,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 1.7570092905217398,
+          "carry_forward_mean_norm_error": 1.9306998556998558,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.1708364643934001,
+          "carry_forward_mean_norm_error": 0.5127104655001651,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.24366436066266817,
+          "carry_forward_mean_norm_error": 0.3600616020856131,
+          "entry_count": 11,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.2271124712071007,
+          "carry_forward_mean_norm_error": 1.351823801303113,
+          "entry_count": 10,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.2762412911897107,
+          "carry_forward_mean_norm_error": 1.400952621285723,
+          "entry_count": 10,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.2132250397398021,
+          "carry_forward_mean_norm_error": 0.30375861620496813,
+          "entry_count": 11,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.14480328685258964,
+          "carry_forward_mean_norm_error": 0.20974103585657372,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.33483560126027156,
+          "carry_forward_mean_norm_error": 0.3951581818720906,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.37842108519693507,
+          "carry_forward_mean_norm_error": 0.4387406580771702,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.15767347807577692,
+          "carry_forward_mean_norm_error": 0.21988080034057048,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.02477420280893914,
+          "carry_forward_mean_norm_error": 0.06524103436092218,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.18807280505975982,
+          "carry_forward_mean_norm_error": 0.22092535811814307,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.2564917655612416,
+          "carry_forward_mean_norm_error": 0.288865230802828,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.13161294869385454,
+          "carry_forward_mean_norm_error": 0.1390716030821274,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.9394115049133266,
+          "carry_forward_mean_norm_error": 1.0030418460859005,
+          "entry_count": 6,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 2.251368891615807,
+          "carry_forward_mean_norm_error": 2.3238523274478333,
+          "entry_count": 5,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 2.197895379323877,
+          "carry_forward_mean_norm_error": 2.2559850161757193,
+          "entry_count": 5,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.31835982492513243,
+          "carry_forward_mean_norm_error": 0.28553328726099975,
+          "entry_count": 6,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.7119060994501472,
+          "carry_forward_mean_norm_error": 0.891033825306845,
+          "entry_count": 9,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 1.6582530905399162,
+          "carry_forward_mean_norm_error": 1.7870929097524182,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 1.8418717608740782,
+          "carry_forward_mean_norm_error": 1.9707115800865802,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.2966371671337096,
+          "carry_forward_mean_norm_error": 0.3621290488243278,
+          "entry_count": 9,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.5922040856719011,
+          "carry_forward_mean_norm_error": 0.9389743353240944,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 2.627946019124558,
+          "carry_forward_mean_norm_error": 2.870699182794311,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 2.952410308972149,
+          "carry_forward_mean_norm_error": 3.2014856355765446,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.37331184744342943,
+          "carry_forward_mean_norm_error": 0.667822163530318,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.24366436066266817,
+          "carry_forward_mean_norm_error": 0.3600616020856131,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.2271124712071007,
+          "carry_forward_mean_norm_error": 1.351823801303113,
+          "entry_count": 10,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.2762412911897107,
+          "carry_forward_mean_norm_error": 1.400952621285723,
+          "entry_count": 10,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.2132250397398021,
+          "carry_forward_mean_norm_error": 0.30375861620496813,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.14480328685258964,
+          "carry_forward_mean_norm_error": 0.20974103585657372,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.33483560126027156,
+          "carry_forward_mean_norm_error": 0.3951581818720906,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.37842108519693507,
+          "carry_forward_mean_norm_error": 0.4387406580771702,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.15767347807577692,
+          "carry_forward_mean_norm_error": 0.21988080034057048,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.02477420280893914,
+          "carry_forward_mean_norm_error": 0.06524103436092218,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.18807280505975982,
+          "carry_forward_mean_norm_error": 0.22092535811814307,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.2564917655612416,
+          "carry_forward_mean_norm_error": 0.288865230802828,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.13161294869385454,
+          "carry_forward_mean_norm_error": 0.1390716030821274,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2024
+        }
+      ],
+      "metrics": [
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 2,
+      "r10_comparable_candidate_mean_mae": 0.2635764222962596,
+      "r10_gate": "fail",
+      "r10_reference_mae": 0.12253583498568615,
+      "row_count": 29,
+      "row_scope": "program",
+      "stock_cone_violation_count": 0,
+      "title": "R25 predictive endpoint readout on program route"
+    },
+    {
+      "blockers": [
+        "matched_r10_gate_failed"
+      ],
+      "candidate_family": null,
+      "candidate_mean_mae": 0.47375409380589667,
+      "carry_forward_mean_mae": 0.5512035229281876,
+      "carry_gate": "pass",
+      "decision": "keep_as_diagnostic",
+      "experiment_id": "R25-003",
+      "family": "r25_r19_predictive_endpoint_readout",
+      "horizon_rows": [
+        {
+          "candidate_mean_mae": 0.25614742087533454,
+          "candidate_minus_carry_forward_mean_mae": -0.030826943506068516,
+          "candidate_minus_r10_reference_mae": 0.03404089417287193,
+          "carry_forward_mean_mae": 0.28697436438140306,
+          "horizon_years": 1,
+          "r10_comparable_candidate_mean_mae": 0.12934435290321694,
+          "r10_horizon_reference_mae": 0.09530345873034501,
+          "split_count": 7
+        },
+        {
+          "candidate_mean_mae": 0.435516455906827,
+          "candidate_minus_carry_forward_mean_mae": -0.09235537403600319,
+          "candidate_minus_r10_reference_mae": 0.13073518664900075,
+          "carry_forward_mean_mae": 0.5278718299428302,
+          "horizon_years": 3,
+          "r10_comparable_candidate_mean_mae": 0.2463857688701628,
+          "r10_horizon_reference_mae": 0.11565058222116206,
+          "split_count": 7
+        },
+        {
+          "candidate_mean_mae": 0.7295984046355286,
+          "candidate_minus_carry_forward_mean_mae": -0.10916596982480098,
+          "candidate_minus_r10_reference_mae": 0.22752107534346563,
+          "carry_forward_mean_mae": 0.8387643744603296,
+          "horizon_years": 5,
+          "r10_comparable_candidate_mean_mae": 0.3569421630936759,
+          "r10_horizon_reference_mae": 0.12942108775021025,
+          "split_count": 7
+        }
+      ],
+      "horizons": [
+        1,
+        3,
+        5
+      ],
+      "hypothesis": "The predictive endpoint head should beat matched R10 across h1/h3/h5 while preserving the Phase 3 full-cascade scoring scope.",
+      "kept_claim": "beats_carry_forward_but_not_all_promotion_gates",
+      "layer": "full_publication_sentinel",
+      "metric_rows": [
+        {
+          "candidate_mean_norm_error": 0.2764760592639897,
+          "carry_forward_mean_norm_error": 0.2052225519287834,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.1699238158330573,
+          "carry_forward_mean_norm_error": 0.2971844981782047,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.7387448354110431,
+          "carry_forward_mean_norm_error": 0.8595505617977528,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.715715864342224,
+          "carry_forward_mean_norm_error": 0.8125319257619615,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.050103662750518314,
+          "carry_forward_mean_norm_error": 0.04664823773324119,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.45443288193071446,
+          "carry_forward_mean_norm_error": 0.10148006415487211,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.001659772228180379,
+          "carry_forward_mean_norm_error": 0.1073744956845922,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.4246427561123707,
+          "carry_forward_mean_norm_error": 0.3189280326559588,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.4069051996468881,
+          "carry_forward_mean_norm_error": 0.3011904761904762,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.27797953119841534,
+          "carry_forward_mean_norm_error": 0.19742489270386265,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.034397312590208326,
+          "carry_forward_mean_norm_error": 0.13632473719840082,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.09969562109438052,
+          "carry_forward_mean_norm_error": 0.1959093319805382,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.7734102199794782,
+          "carry_forward_mean_norm_error": 0.8389386813381844,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.8083060680528226,
+          "carry_forward_mean_norm_error": 0.8755411255411255,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": null,
+          "carry_forward_mean_norm_error": null,
+          "entry_count": 0,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.05867541927071625,
+          "carry_forward_mean_norm_error": 0.15699608830538195,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.13792106125754391,
+          "carry_forward_mean_norm_error": 0.21900005784470625,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.03273992250227701,
+          "carry_forward_mean_norm_error": 0.04833907408488528,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.008561479112294604,
+          "carry_forward_mean_norm_error": 0.08964047569945693,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.3512710465500165,
+          "carry_forward_mean_norm_error": 0.3512710465500165,
+          "entry_count": 1,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.053024599003215746,
+          "carry_forward_mean_norm_error": 0.11966268665416639,
+          "entry_count": 3,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.09299850260725602,
+          "carry_forward_mean_norm_error": 0.14456166990926012,
+          "entry_count": 3,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.7513092520401087,
+          "carry_forward_mean_norm_error": 0.8114662805591135,
+          "entry_count": 2,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.739066995201896,
+          "carry_forward_mean_norm_error": 0.799224023720901,
+          "entry_count": 2,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.13438245112064856,
+          "carry_forward_mean_norm_error": 0.18655221745350503,
+          "entry_count": 3,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.026065928070838053,
+          "carry_forward_mean_norm_error": 0.08205338033488607,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.10099933598937584,
+          "carry_forward_mean_norm_error": 0.1382503320053121,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.17342711462094812,
+          "carry_forward_mean_norm_error": 0.20803065792984848,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.17514759870935254,
+          "carry_forward_mean_norm_error": 0.20974941665821245,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.14452958705832272,
+          "carry_forward_mean_norm_error": 0.1743295019157088,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.03121478664413012,
+          "carry_forward_mean_norm_error": 0.08729205586691577,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.021820620969878985,
+          "carry_forward_mean_norm_error": 0.06524103436092218,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.18570993958851173,
+          "carry_forward_mean_norm_error": 0.22092535811814307,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.2541289000899935,
+          "carry_forward_mean_norm_error": 0.288865230802828,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.13161294869385454,
+          "carry_forward_mean_norm_error": 0.1390716030821274,
+          "entry_count": 4,
+          "horizon_years": 1,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.7111994153160311,
+          "carry_forward_mean_norm_error": 0.34708492298996746,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.22932538368113065,
+          "carry_forward_mean_norm_error": 0.48384674837142544,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.7391804145353017,
+          "carry_forward_mean_norm_error": 0.9807918673087213,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.762154244150706,
+          "carry_forward_mean_norm_error": 0.9557863669901812,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.2017968210089841,
+          "carry_forward_mean_norm_error": 0.10331720801658605,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.8672369798860435,
+          "carry_forward_mean_norm_error": 0.26708686232026785,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.13725039579183904,
+          "carry_forward_mean_norm_error": 0.3486798427046627,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.33652211451707564,
+          "carry_forward_mean_norm_error": 0.4774750791256248,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.3893861407305561,
+          "carry_forward_mean_norm_error": 0.5303391053391054,
+          "entry_count": 3,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.19517349467899364,
+          "carry_forward_mean_norm_error": 0.17563552327500825,
+          "entry_count": 2,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.3024243135953708,
+          "carry_forward_mean_norm_error": 0.37343755987278227,
+          "entry_count": 5,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.3153982290681855,
+          "carry_forward_mean_norm_error": 0.5318790785620402,
+          "entry_count": 5,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 1.3972324070081967,
+          "carry_forward_mean_norm_error": 1.5405759162303663,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 1.5198334849045105,
+          "carry_forward_mean_norm_error": 1.6669101731601732,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.1708364643934001,
+          "carry_forward_mean_norm_error": 0.5127104655001651,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.14912738579650195,
+          "carry_forward_mean_norm_error": 0.35498628658783327,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.33213767522125603,
+          "carry_forward_mean_norm_error": 0.5018968243256271,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.8043032429866231,
+          "carry_forward_mean_norm_error": 0.9715853648365762,
+          "entry_count": 7,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.8618006020766175,
+          "carry_forward_mean_norm_error": 1.0384369874986499,
+          "entry_count": 7,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.30641813284982344,
+          "carry_forward_mean_norm_error": 0.5801419610432486,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.12347647276507388,
+          "carry_forward_mean_norm_error": 0.27896534395062533,
+          "entry_count": 11,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.23974754504760354,
+          "carry_forward_mean_norm_error": 0.3600616020856131,
+          "entry_count": 11,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.222915883048103,
+          "carry_forward_mean_norm_error": 1.351823801303113,
+          "entry_count": 10,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.2720447030307132,
+          "carry_forward_mean_norm_error": 1.400952621285723,
+          "entry_count": 10,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.19899692164902308,
+          "carry_forward_mean_norm_error": 0.30375861620496813,
+          "entry_count": 11,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.05574719879138865,
+          "carry_forward_mean_norm_error": 0.15652461286667507,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.14268924302788843,
+          "carry_forward_mean_norm_error": 0.20974103585657372,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.33287180391606996,
+          "carry_forward_mean_norm_error": 0.3951581818720906,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.3764573857692224,
+          "carry_forward_mean_norm_error": 0.4387406580771702,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.14686180206486332,
+          "carry_forward_mean_norm_error": 0.21988080034057048,
+          "entry_count": 8,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.03121478664413012,
+          "carry_forward_mean_norm_error": 0.08729205586691577,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.021820620969878985,
+          "carry_forward_mean_norm_error": 0.06524103436092218,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.18570993958851173,
+          "carry_forward_mean_norm_error": 0.22092535811814307,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.2541289000899935,
+          "carry_forward_mean_norm_error": 0.288865230802828,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.13161294869385454,
+          "carry_forward_mean_norm_error": 0.1390716030821274,
+          "entry_count": 4,
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.8202118489790804,
+          "carry_forward_mean_norm_error": 0.6641627808393388,
+          "entry_count": 7,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.8532248142715184,
+          "carry_forward_mean_norm_error": 0.9623053991387877,
+          "entry_count": 7,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 2.1157646320937613,
+          "carry_forward_mean_norm_error": 2.236570358480471,
+          "entry_count": 6,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 2.06919790078016,
+          "carry_forward_mean_norm_error": 2.166013962199898,
+          "entry_count": 6,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 0.31835982492513243,
+          "carry_forward_mean_norm_error": 0.28553328726099975,
+          "entry_count": 6,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2018
+        },
+        {
+          "candidate_mean_norm_error": 1.1330966936140787,
+          "carry_forward_mean_norm_error": 0.5920749036270012,
+          "entry_count": 10,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.6520044941524948,
+          "carry_forward_mean_norm_error": 0.8343623921148051,
+          "entry_count": 10,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 1.5082895473431925,
+          "carry_forward_mean_norm_error": 1.6463059918557303,
+          "entry_count": 9,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 1.6775439210478278,
+          "carry_forward_mean_norm_error": 1.8155603655603656,
+          "entry_count": 9,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.2966371671337096,
+          "carry_forward_mean_norm_error": 0.3621290488243278,
+          "entry_count": 9,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2019
+        },
+        {
+          "candidate_mean_norm_error": 0.3252859496360972,
+          "carry_forward_mean_norm_error": 0.6113375837482057,
+          "entry_count": 13,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.554318819165938,
+          "carry_forward_mean_norm_error": 0.8818154889130517,
+          "entry_count": 13,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 2.473401369195802,
+          "carry_forward_mean_norm_error": 2.701385807672967,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 2.773734955562206,
+          "carry_forward_mean_norm_error": 3.0076569264069257,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.37331184744342943,
+          "carry_forward_mean_norm_error": 0.667822163530318,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2020
+        },
+        {
+          "candidate_mean_norm_error": 0.19681767344094245,
+          "carry_forward_mean_norm_error": 0.4528610823853844,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.41019569185482263,
+          "carry_forward_mean_norm_error": 0.6213389121338911,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 1.1233460575736698,
+          "carry_forward_mean_norm_error": 1.3366751760703541,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 1.258117444647974,
+          "carry_forward_mean_norm_error": 1.4773992763268902,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.37372023037422414,
+          "carry_forward_mean_norm_error": 0.667822163530318,
+          "entry_count": 12,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2021
+        },
+        {
+          "candidate_mean_norm_error": 0.12347647276507388,
+          "carry_forward_mean_norm_error": 0.27896534395062533,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.23974754504760354,
+          "carry_forward_mean_norm_error": 0.3600616020856131,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.222915883048103,
+          "carry_forward_mean_norm_error": 1.351823801303113,
+          "entry_count": 10,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 1.2720447030307132,
+          "carry_forward_mean_norm_error": 1.400952621285723,
+          "entry_count": 10,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.19899692164902308,
+          "carry_forward_mean_norm_error": 0.30375861620496813,
+          "entry_count": 11,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2022
+        },
+        {
+          "candidate_mean_norm_error": 0.05574719879138865,
+          "carry_forward_mean_norm_error": 0.15652461286667507,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.14268924302788843,
+          "carry_forward_mean_norm_error": 0.20974103585657372,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.33287180391606996,
+          "carry_forward_mean_norm_error": 0.3951581818720906,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.3764573857692224,
+          "carry_forward_mean_norm_error": 0.4387406580771702,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.14686180206486332,
+          "carry_forward_mean_norm_error": 0.21988080034057048,
+          "entry_count": 8,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2023
+        },
+        {
+          "candidate_mean_norm_error": 0.03121478664413012,
+          "carry_forward_mean_norm_error": 0.08729205586691577,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "diagnosed_plhiv",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.021820620969878985,
+          "carry_forward_mean_norm_error": 0.06524103436092218,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.18570993958851173,
+          "carry_forward_mean_norm_error": 0.22092535811814307,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.2541289000899935,
+          "carry_forward_mean_norm_error": 0.288865230802828,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "train_end_year": 2024
+        },
+        {
+          "candidate_mean_norm_error": 0.13161294869385454,
+          "carry_forward_mean_norm_error": 0.1390716030821274,
+          "entry_count": 4,
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "train_end_year": 2024
+        }
+      ],
+      "metrics": [
+        "diagnosed_plhiv",
+        "alive_on_art",
+        "tested_for_viral_load",
+        "virally_suppressed",
+        "new_diagnosed_cases_period"
+      ],
+      "priority": 3,
+      "r10_comparable_candidate_mean_mae": 0.2442240949556852,
+      "r10_gate": "fail",
+      "r10_reference_mae": 0.11345837623390577,
+      "row_count": 30,
+      "row_scope": "all",
+      "stock_cone_violation_count": 0,
+      "title": "R25 predictive endpoint readout full sentinel"
+    }
+  ],
+  "run_id": "p3d-r25-predictive-endpoint-readout-20260502-s00",
+  "schema_version": "phase3_dynamic.r25_predictive_readout_evaluation.v1",
+  "source_run_id": "tr-v3-current-champion-expanded-harp-compatibility-20260419-s00",
+  "start_year": 2010,
+  "verdict": "R25 does not yet satisfy the active goal. It is diagnostic unless all target R25 gates all promote; remaining blockers are recorded in the result table."
+}

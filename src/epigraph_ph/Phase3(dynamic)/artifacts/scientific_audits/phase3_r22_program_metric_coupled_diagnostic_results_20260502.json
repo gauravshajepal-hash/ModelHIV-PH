@@ -1,0 +1,132 @@
+{
+  "schema_version": "phase3_dynamic.r22_program_metric_coupled_diagnostic.v1",
+  "run_context": "direct exact R13-006 program-route replay using official rolling_origin_splits, start_year=2010, end_year=2025, min_train_years=5",
+  "families": {
+    "r19_joint_service_cascade_process": {
+      "horizon_rows": [
+        {
+          "horizon_years": 3,
+          "candidate_mean_mae": 0.37406991906028547,
+          "carry_forward_mean_mae": 0.5365953883119511,
+          "r10_comparable_candidate_mean_mae": 0.1429971183853582,
+          "r10_horizon_reference_mae": 0.11565058222116206
+        },
+        {
+          "horizon_years": 5,
+          "candidate_mean_mae": 0.6409292968558129,
+          "carry_forward_mean_mae": 0.9671842817967539,
+          "r10_comparable_candidate_mean_mae": 0.18501163577024152,
+          "r10_horizon_reference_mae": 0.12942108775021025
+        }
+      ],
+      "metric_rows": [
+        {
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "candidate_mean_norm_error": 0.1335036063654163
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "candidate_mean_norm_error": 0.6132513761413843
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "candidate_mean_norm_error": 0.6789589455052404
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "candidate_mean_norm_error": 0.15249063040529998
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "candidate_mean_norm_error": 0.15847308675714697
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "candidate_mean_norm_error": 1.087903121542855
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "candidate_mean_norm_error": 1.2139950205644408
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "candidate_mean_norm_error": 0.21155018478333598
+        }
+      ]
+    },
+    "r22_program_metric_coupled_process": {
+      "horizon_rows": [
+        {
+          "horizon_years": 3,
+          "candidate_mean_mae": 0.3597548704105189,
+          "carry_forward_mean_mae": 0.5365953883119511,
+          "r10_comparable_candidate_mean_mae": 0.14813474354337722,
+          "r10_horizon_reference_mae": 0.11565058222116206
+        },
+        {
+          "horizon_years": 5,
+          "candidate_mean_mae": 0.6135970695404589,
+          "carry_forward_mean_mae": 0.9671842817967539,
+          "r10_comparable_candidate_mean_mae": 0.17970006331209143,
+          "r10_horizon_reference_mae": 0.12942108775021025
+        }
+      ],
+      "metric_rows": [
+        {
+          "horizon_years": 3,
+          "metric_name": "alive_on_art",
+          "candidate_mean_norm_error": 0.14418565243377005
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "tested_for_viral_load",
+          "candidate_mean_norm_error": 0.5816586177006547
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "virally_suppressed",
+          "candidate_mean_norm_error": 0.6390560159700421
+        },
+        {
+          "horizon_years": 3,
+          "metric_name": "new_diagnosed_cases_period",
+          "candidate_mean_norm_error": 0.1520838346529844
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "alive_on_art",
+          "candidate_mean_norm_error": 0.1482567375931625
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "tested_for_viral_load",
+          "candidate_mean_norm_error": 1.0406198413302883
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "virally_suppressed",
+          "candidate_mean_norm_error": 1.157864970166974
+        },
+        {
+          "horizon_years": 5,
+          "metric_name": "new_diagnosed_cases_period",
+          "candidate_mean_norm_error": 0.2111433890310204
+        }
+      ]
+    }
+  },
+  "decision": "keep_as_diagnostic",
+  "blockers": [
+    "matched_r10_gate_failed",
+    "h3_r10_scope_regressed_vs_r19"
+  ],
+  "interpretation": "R22 improves full program-route MAE and h5 R10-scope error but worsens h3 R10-scope because ART error increases at h3. It should not replace R19 as active reference."
+}

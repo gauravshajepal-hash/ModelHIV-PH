@@ -1,0 +1,3491 @@
+{
+  "accepted_partitions": [
+    {
+      "advanced": 1122,
+      "allowed_use": [
+        "classification_likelihood",
+        "partial_identification",
+        "conditional_forecast_evaluation"
+      ],
+      "bounds": [
+        0.21995687120172516,
+        0.9494216820231327
+      ],
+      "classified_fraction": 0.27053518917859243,
+      "complete_case_fraction": 0.8130434782608695,
+      "definition_scope": "as_reported_HASP; not automatically harmonized to WHO 2025",
+      "definition_span": "AHD definition is based on clinical criteria of WHO staging 3 and 4 while immunologic criterion is based on baseline CD4 results (<200 cells/mm3",
+      "extraction_method": "first_page_numeric_spans_containment_and_sum_checked",
+      "first_release_verified": false,
+      "geography": "national",
+      "known_nonadvanced": 258,
+      "leakage_status": "event_cutoff_and_optional_mirror_release_filter_required",
+      "measurement_semantics": "joint_classification_count",
+      "metric_id": "ahd_classification_partition",
+      "mirror_posted_at": "2025-11-22T11:04:08Z",
+      "nominal_nonadvanced": 3979,
+      "observation_role": "auxiliary_likelihood",
+      "period": "2025-Q1",
+      "population": "newly_reported_diagnoses_all_ages",
+      "row_hash": "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+      "source_id": "3795823c79719bfc1e747f7b155335cc475101ba321126417465a8ccbe7a7d5a",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q1-2025.pdf",
+      "source_sha256": "3795823c79719bfc1e747f7b155335cc475101ba321126417465a8ccbe7a7d5a",
+      "source_spans": [
+        "there were 5,101 confirmed HIV-positive individuals",
+        "1,122 (22%) had an advanced HIV infection",
+        "3,979 cases had non-advanced HIV infection. Of these, 3,721 (94%) had no data on immunologic/clinical criteria"
+      ],
+      "source_tier": "official_surveillance_report",
+      "status": "accepted",
+      "support_partition": "explicit_unknown_status_partition",
+      "time_end": "2025-Q1",
+      "time_granularity": "quarter",
+      "time_start": "2025-Q1",
+      "total_diagnoses": 5101,
+      "unit": "people",
+      "unknown": 3721,
+      "value": {
+        "advanced": 1122,
+        "known_nonadvanced": 258,
+        "unknown": 3721
+      }
+    },
+    {
+      "advanced": 1026,
+      "allowed_use": [
+        "classification_likelihood",
+        "partial_identification",
+        "conditional_forecast_evaluation"
+      ],
+      "bounds": [
+        0.2060654749949789,
+        0.4348262703354087
+      ],
+      "classified_fraction": 0.7712392046595702,
+      "complete_case_fraction": 0.2671875,
+      "definition_scope": "as_reported_HASP; not automatically harmonized to WHO 2025",
+      "definition_span": "AHD definition is based on clinical criteria of WHO staging 3 and 4 or immunologic criterion of baseline CD4 result <200 cells/mm3",
+      "extraction_method": "first_page_numeric_spans_containment_and_sum_checked",
+      "first_release_verified": false,
+      "geography": "national",
+      "known_nonadvanced": 2814,
+      "leakage_status": "event_cutoff_and_optional_mirror_release_filter_required",
+      "measurement_semantics": "joint_classification_count",
+      "metric_id": "ahd_classification_partition",
+      "mirror_posted_at": "2025-11-22T11:07:47Z",
+      "nominal_nonadvanced": 3953,
+      "observation_role": "auxiliary_likelihood",
+      "period": "2025-Q2",
+      "population": "newly_reported_diagnoses_all_ages",
+      "row_hash": "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+      "source_id": "cae66b4eeb3a43cd78b3a14b596e8324f373f75fc7a0c850ad08e99e36a8a82f",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/2025_Q2-HIV-AIDS-Surveillance-Report-of-the-Philippines-1.pdf",
+      "source_sha256": "cae66b4eeb3a43cd78b3a14b596e8324f373f75fc7a0c850ad08e99e36a8a82f",
+      "source_spans": [
+        "there were 4,979 confirmed HIV-positive individuals",
+        "1,026 (21%) had an advanced HIV infection",
+        "3,953 cases had non-advanced HIV infection. Of these, 1,139 (29%) had no data on immunologic/clinical criteria"
+      ],
+      "source_tier": "official_surveillance_report",
+      "status": "accepted",
+      "support_partition": "explicit_unknown_status_partition",
+      "time_end": "2025-Q2",
+      "time_granularity": "quarter",
+      "time_start": "2025-Q2",
+      "total_diagnoses": 4979,
+      "unit": "people",
+      "unknown": 1139,
+      "value": {
+        "advanced": 1026,
+        "known_nonadvanced": 2814,
+        "unknown": 1139
+      }
+    },
+    {
+      "advanced": 895,
+      "allowed_use": [
+        "classification_likelihood",
+        "partial_identification",
+        "conditional_forecast_evaluation"
+      ],
+      "bounds": [
+        0.16030807809421457,
+        0.4415188966505463
+      ],
+      "classified_fraction": 0.7187891814436683,
+      "complete_case_fraction": 0.22302516820333915,
+      "definition_scope": "as_reported_HASP; not automatically harmonized to WHO 2025",
+      "definition_span": "AHD definition is based on clinical criteria of WHO staging 3 and 4 or immunologic criterion of baseline CD4 result <200 cells/mm3",
+      "extraction_method": "first_page_numeric_spans_containment_and_sum_checked",
+      "first_release_verified": false,
+      "geography": "national",
+      "known_nonadvanced": 3118,
+      "leakage_status": "event_cutoff_and_optional_mirror_release_filter_required",
+      "measurement_semantics": "joint_classification_count",
+      "metric_id": "ahd_classification_partition",
+      "mirror_posted_at": "2025-12-01T09:59:53Z",
+      "nominal_nonadvanced": 4688,
+      "observation_role": "auxiliary_likelihood",
+      "period": "2025-Q3",
+      "population": "newly_reported_diagnoses_all_ages",
+      "row_hash": "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+      "source_id": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-REPORT-2025_-Q3_signed-1.pdf",
+      "source_sha256": "e6a4675449d61ba724f3f429873710ad05fc8571bd9ddb841c693ebc69938bc0",
+      "source_spans": [
+        "there were 5,583 confirmed HIV-positive individuals",
+        "895 (16%) had an advanced HIV infection",
+        "4,688 cases had non-advanced HIV infection. Of these, 1,570 (33%) had no data on immunologic/clinical criteria"
+      ],
+      "source_tier": "official_surveillance_report",
+      "status": "accepted",
+      "support_partition": "explicit_unknown_status_partition",
+      "time_end": "2025-Q3",
+      "time_granularity": "quarter",
+      "time_start": "2025-Q3",
+      "total_diagnoses": 5583,
+      "unit": "people",
+      "unknown": 1570,
+      "value": {
+        "advanced": 895,
+        "known_nonadvanced": 3118,
+        "unknown": 1570
+      }
+    },
+    {
+      "advanced": 1069,
+      "allowed_use": [
+        "classification_likelihood",
+        "partial_identification",
+        "conditional_forecast_evaluation"
+      ],
+      "bounds": [
+        0.24994154781388825,
+        0.4673836801496376
+      ],
+      "classified_fraction": 0.7825578676642506,
+      "complete_case_fraction": 0.3193904989542874,
+      "definition_scope": "as_reported_HASP; not automatically harmonized to WHO 2025",
+      "definition_span": "AHD definition is based on clinical criteria of WHO staging 3 and 4 or immunologic criterion of baseline CD4 result <200 cells/mm3",
+      "extraction_method": "first_page_numeric_spans_containment_and_sum_checked",
+      "first_release_verified": false,
+      "geography": "national",
+      "known_nonadvanced": 2278,
+      "leakage_status": "event_cutoff_and_optional_mirror_release_filter_required",
+      "measurement_semantics": "joint_classification_count",
+      "metric_id": "ahd_classification_partition",
+      "mirror_posted_at": "2026-02-26T00:38:21Z",
+      "nominal_nonadvanced": 3208,
+      "observation_role": "auxiliary_likelihood",
+      "period": "2025-Q4",
+      "population": "newly_reported_diagnoses_all_ages",
+      "row_hash": "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+      "source_id": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2025_Q4-HIV-AIDS-Surveillance-Report-of-the-Philippines-2.pdf",
+      "source_sha256": "185b0425fd11de8650fef86ea735b53106814dde4dd4c6ea1359968921342e17",
+      "source_spans": [
+        "there were 4,277 confirmed HIV-positive individuals",
+        "1,069 (25%) had an advanced HIV infection",
+        "3,208 cases had non-advanced HIV infection. Of these, 930 (29%) had no data on immunologic/clinical criteria"
+      ],
+      "source_tier": "official_surveillance_report",
+      "status": "accepted",
+      "support_partition": "explicit_unknown_status_partition",
+      "time_end": "2025-Q4",
+      "time_granularity": "quarter",
+      "time_start": "2025-Q4",
+      "total_diagnoses": 4277,
+      "unit": "people",
+      "unknown": 930,
+      "value": {
+        "advanced": 1069,
+        "known_nonadvanced": 2278,
+        "unknown": 930
+      }
+    },
+    {
+      "advanced": 1104,
+      "allowed_use": [
+        "classification_likelihood",
+        "partial_identification",
+        "conditional_forecast_evaluation"
+      ],
+      "bounds": [
+        0.23829052449816535,
+        0.49643859270451113
+      ],
+      "classified_fraction": 0.7418519317936543,
+      "complete_case_fraction": 0.32121035787023566,
+      "definition_scope": "as_reported_HASP; not automatically harmonized to WHO 2025",
+      "definition_span": "AHD definition is based on clinical criteria of WHO staging 3 and 4 or immunologic criterion of baseline CD4 result <200 cells/mm3",
+      "extraction_method": "first_page_numeric_spans_containment_and_sum_checked",
+      "first_release_verified": false,
+      "geography": "national",
+      "known_nonadvanced": 2333,
+      "leakage_status": "event_cutoff_and_optional_mirror_release_filter_required",
+      "measurement_semantics": "joint_classification_count",
+      "metric_id": "ahd_classification_partition",
+      "mirror_posted_at": "2026-08-26T08:43:38Z",
+      "nominal_nonadvanced": 3529,
+      "observation_role": "auxiliary_likelihood",
+      "period": "2026-Q1",
+      "population": "newly_reported_diagnoses_all_ages",
+      "row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "source_id": "7e52f138a8e45c8222d22c6b1d51a5c39ec6b47b011ba580ff69e3d9885eb6a2",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "7e52f138a8e45c8222d22c6b1d51a5c39ec6b47b011ba580ff69e3d9885eb6a2",
+      "source_spans": [
+        "there were 4,633 confirmed HIV-positive individuals",
+        "1,104 (24%) had an advanced HIV disease",
+        "3,529 cases had non-advanced HIV infection. Of these, 1196 (33%) had no data on immunologic/clinical criteria"
+      ],
+      "source_tier": "official_surveillance_report",
+      "status": "accepted",
+      "support_partition": "explicit_unknown_status_partition",
+      "time_end": "2026-Q1",
+      "time_granularity": "quarter",
+      "time_start": "2026-Q1",
+      "total_diagnoses": 4633,
+      "unit": "people",
+      "unknown": 1196,
+      "value": {
+        "advanced": 1104,
+        "known_nonadvanced": 2333,
+        "unknown": 1196
+      }
+    },
+    {
+      "advanced": 828,
+      "allowed_use": [
+        "classification_likelihood",
+        "partial_identification",
+        "conditional_forecast_evaluation"
+      ],
+      "bounds": [
+        0.27655310621242485,
+        0.8550434201736807
+      ],
+      "classified_fraction": 0.42150968603874417,
+      "complete_case_fraction": 0.6561014263074485,
+      "definition_scope": "as_reported_HASP; not automatically harmonized to WHO 2025",
+      "definition_span": "AHD definition is based on clinical criteria of WHO staging 3 and 4 or immunologic criterion of baseline CD4 result <200 cells/mm3",
+      "extraction_method": "first_page_numeric_spans_containment_and_sum_checked",
+      "first_release_verified": false,
+      "geography": "national",
+      "known_nonadvanced": 434,
+      "leakage_status": "event_cutoff_and_optional_mirror_release_filter_required",
+      "measurement_semantics": "joint_classification_count",
+      "metric_id": "ahd_classification_partition",
+      "mirror_posted_at": "2026-08-26T08:44:51Z",
+      "nominal_nonadvanced": 2166,
+      "observation_role": "auxiliary_likelihood",
+      "period": "2026-Q2",
+      "population": "newly_reported_diagnoses_all_ages",
+      "row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "source_id": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2026_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "c1a9b4edf74fc9894f4e8ef3938faa84a4fc0830288432130cc302a3e7fce5c6",
+      "source_spans": [
+        "there were 2,994 confirmed HIV-positive individuals",
+        "828 (28%) had an advanced HIV disease",
+        "2,166 cases had non-advanced HIV infection. Of these, 1,732 (80%) had no data on immunologic/clinical criteria"
+      ],
+      "source_tier": "official_surveillance_report",
+      "status": "accepted",
+      "support_partition": "explicit_unknown_status_partition",
+      "time_end": "2026-Q2",
+      "time_granularity": "quarter",
+      "time_start": "2026-Q2",
+      "total_diagnoses": 2994,
+      "unit": "people",
+      "unknown": 1732,
+      "value": {
+        "advanced": 828,
+        "known_nonadvanced": 434,
+        "unknown": 1732
+      }
+    }
+  ],
+  "common_p_profile_identified_set": [
+    0.27655310621242485,
+    0.4348262703354087
+  ],
+  "contract": {
+    "blockers": [
+      "arbitrary status-dependent missingness prevents point identification",
+      "only six recent reconciled quarterly status partitions",
+      "first-release dates/historical PDF bytes unverified",
+      "AHD is not infection duration without a validated CD4/progression observation model"
+    ],
+    "bounds": "[A/N,(A+M)/N]; sharp finite-cohort bounds assuming known labels correct, not confidence intervals",
+    "controls": "naive binary likelihood explicitly collapses unknown into nonadvanced, diagnostic only",
+    "definition_policy": "Preserve each HASP report's AHD definition; do not relabel to current WHO thresholds or pediatric definitions.",
+    "evaluation": "expanding event-time blocks AND declared-mirror-availability blocks; same three-category targets for every family",
+    "families": [
+      "last_status_mix",
+      "pooled_status_mix",
+      "recent_coverage_pooled_known_mix"
+    ],
+    "freeze": "R41 and R97 Q4 forecasts unchanged; no prior run overwritten",
+    "likelihood": "(A,E,M)|N ~ Multinomial(N, (p*q_A,(1-p)*q_E,1-p*q_A-(1-p)*q_E))",
+    "partitions": [
+      "known_advanced",
+      "known_nonadvanced",
+      "unknown_immunologic_clinical_status"
+    ],
+    "profile": "profile separate q_A,q_E for each evidence quarter; no pseudo-counts or handmade hazard weights",
+    "role_gate": "only accepted auxiliary_likelihood classification rows; annual incidence excluded",
+    "schema": "r98.ahd_missingness.v1",
+    "scope": "national reported AHD classification; not incidence or diagnosis-delay identification",
+    "score": "mean per-case multinomial deviance, equally weighted quarters; conditional on target N, not an unconditional count forecast",
+    "selection": "no champion selection from this small diagnostic experiment",
+    "source": "R97 locked report catalog; first-page quarterly HASP footnotes",
+    "unknown_policy": "Unknown is not nonadvanced. Accept only explicit Of these containment and exact count reconciliation."
+  },
+  "event_time_scores": [
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "last_status_mix",
+      "observed_counts": [
+        1026,
+        2814,
+        1139
+      ],
+      "per_case_deviance": 2.1707740353289533,
+      "period": "2025-Q2",
+      "predicted_probabilities": [
+        0.21995687120172516,
+        0.05057831797686728,
+        0.7294648108214076
+      ],
+      "score_status": "finite",
+      "target_row_hash": "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495"
+      ],
+      "training_periods": [
+        "2025-Q1"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        1026,
+        2814,
+        1139
+      ],
+      "per_case_deviance": 2.1707740353289533,
+      "period": "2025-Q2",
+      "predicted_probabilities": [
+        0.21995687120172516,
+        0.05057831797686728,
+        0.7294648108214076
+      ],
+      "score_status": "finite",
+      "target_row_hash": "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495"
+      ],
+      "training_periods": [
+        "2025-Q1"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        1026,
+        2814,
+        1139
+      ],
+      "per_case_deviance": 2.1707740353289533,
+      "period": "2025-Q2",
+      "predicted_probabilities": [
+        0.21995687120172513,
+        0.050578317976867286,
+        0.7294648108214076
+      ],
+      "score_status": "finite",
+      "target_row_hash": "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495"
+      ],
+      "training_periods": [
+        "2025-Q1"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "last_status_mix",
+      "observed_counts": [
+        895,
+        3118,
+        1570
+      ],
+      "per_case_deviance": 0.022288142965241228,
+      "period": "2025-Q3",
+      "predicted_probabilities": [
+        0.2060654749949789,
+        0.5651737296645912,
+        0.2287607953404298
+      ],
+      "score_status": "finite",
+      "target_row_hash": "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        895,
+        3118,
+        1570
+      ],
+      "per_case_deviance": 0.2820503923158746,
+      "period": "2025-Q3",
+      "predicted_probabilities": [
+        0.2130952380952381,
+        0.3047619047619048,
+        0.48214285714285715
+      ],
+      "score_status": "finite",
+      "target_row_hash": "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        895,
+        3118,
+        1570
+      ],
+      "per_case_deviance": 0.12878521551478406,
+      "period": "2025-Q3",
+      "predicted_probabilities": [
+        0.31736050030819096,
+        0.4538787043513792,
+        0.2287607953404298
+      ],
+      "score_status": "finite",
+      "target_row_hash": "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "last_status_mix",
+      "observed_counts": [
+        1069,
+        2278,
+        930
+      ],
+      "per_case_deviance": 0.05966012678678701,
+      "period": "2025-Q4",
+      "predicted_probabilities": [
+        0.16030807809421457,
+        0.5584811033494537,
+        0.28121081855633173
+      ],
+      "score_status": "finite",
+      "target_row_hash": "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        1069,
+        2278,
+        930
+      ],
+      "per_case_deviance": 0.16744641188388723,
+      "period": "2025-Q4",
+      "predicted_probabilities": [
+        0.19427951222626572,
+        0.39519887633275874,
+        0.41052161144097554
+      ],
+      "score_status": "finite",
+      "target_row_hash": "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        1069,
+        2278,
+        930
+      ],
+      "per_case_deviance": 0.021564066631910805,
+      "period": "2025-Q4",
+      "predicted_probabilities": [
+        0.23689759332103139,
+        0.481891588122637,
+        0.2812108185563317
+      ],
+      "score_status": "finite",
+      "target_row_hash": "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "last_status_mix",
+      "observed_counts": [
+        1104,
+        2333,
+        1196
+      ],
+      "per_case_deviance": 0.009351210980455106,
+      "period": "2026-Q1",
+      "predicted_probabilities": [
+        0.24994154781388825,
+        0.5326163198503624,
+        0.21744213233574936
+      ],
+      "score_status": "finite",
+      "target_row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        1104,
+        2333,
+        1196
+      ],
+      "per_case_deviance": 0.05588509555546893,
+      "period": "2026-Q1",
+      "predicted_probabilities": [
+        0.2062186559679037,
+        0.4246740220661986,
+        0.3691073219658977
+      ],
+      "score_status": "finite",
+      "target_row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        1104,
+        2333,
+        1196
+      ],
+      "per_case_deviance": 0.009448169337478095,
+      "period": "2026-Q1",
+      "predicted_probabilities": [
+        0.2557931599233226,
+        0.526764707740928,
+        0.21744213233574938
+      ],
+      "score_status": "finite",
+      "target_row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "last_status_mix",
+      "observed_counts": [
+        828,
+        434,
+        1732
+      ],
+      "per_case_deviance": 0.6548980527244127,
+      "period": "2026-Q2",
+      "predicted_probabilities": [
+        0.23829052449816535,
+        0.5035614072954889,
+        0.2581480682063458
+      ],
+      "score_status": "finite",
+      "target_row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+        "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4",
+        "2026-Q1"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        828,
+        434,
+        1732
+      ],
+      "per_case_deviance": 0.41210682809055144,
+      "period": "2026-Q2",
+      "predicted_probabilities": [
+        0.21226549464859806,
+        0.439547470801286,
+        0.34818703455011596
+      ],
+      "score_status": "finite",
+      "target_row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+        "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4",
+        "2026-Q1"
+      ]
+    },
+    {
+      "evaluation": "event_time_retrospective",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        828,
+        434,
+        1732
+      ],
+      "per_case_deviance": 0.6492029363573314,
+      "period": "2026-Q2",
+      "predicted_probabilities": [
+        0.24158704353097962,
+        0.5002648882626746,
+        0.2581480682063457
+      ],
+      "score_status": "finite",
+      "target_row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111",
+        "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4",
+        "2026-Q1"
+      ]
+    }
+  ],
+  "event_time_skips": [
+    {
+      "period": "2025-Q1",
+      "reason": "no eligible earlier classification partition"
+    }
+  ],
+  "event_time_summary": [
+    {
+      "blocked_quarters": 5,
+      "family": "last_status_mix",
+      "finite_scores": 5,
+      "mean_per_case_deviance": 0.5833943137571698
+    },
+    {
+      "blocked_quarters": 5,
+      "family": "pooled_status_mix",
+      "finite_scores": 5,
+      "mean_per_case_deviance": 0.617652552634947
+    },
+    {
+      "blocked_quarters": 5,
+      "family": "recent_coverage_pooled_known_mix",
+      "finite_scores": 5,
+      "mean_per_case_deviance": 0.5959548846340915
+    }
+  ],
+  "frozen_R97_sha256_after": "b864d7ede3f0db4e913868f106f04639ccc255304603d6894b1c69f86a502ccf",
+  "frozen_R97_sha256_before": "b864d7ede3f0db4e913868f106f04639ccc255304603d6894b1c69f86a502ccf",
+  "gate": {
+    "R41_changed": false,
+    "R97_Q4_changed": false,
+    "backlog_point_estimate": null,
+    "backlog_point_estimate_reason": "not identifiable from classification alone",
+    "blocked_time_diagnosis_forecast_improvement": null,
+    "champion": null,
+    "claim_limit": "Classification likelihood diagnostic only; no epidemic, intervention, regional or AEM superiority claim",
+    "incidence_training_rows": 0,
+    "status": "observation_semantics_corrected_mechanism_identification_blocked"
+  },
+  "generated_at": "2026-09-11T12:00:54.390407+00:00",
+  "mirror_time_scores": [
+    {
+      "evaluation": "mirror_availability",
+      "family": "last_status_mix",
+      "observed_counts": [
+        1104,
+        2333,
+        1196
+      ],
+      "per_case_deviance": 0.040480901733333664,
+      "period": "2026-Q1",
+      "predicted_probabilities": [
+        0.16030807809421457,
+        0.5584811033494537,
+        0.28121081855633173
+      ],
+      "score_status": "finite",
+      "target_row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3"
+      ]
+    },
+    {
+      "evaluation": "mirror_availability",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        1104,
+        2333,
+        1196
+      ],
+      "per_case_deviance": 0.10184957321832512,
+      "period": "2026-Q1",
+      "predicted_probabilities": [
+        0.19427951222626572,
+        0.39519887633275874,
+        0.41052161144097554
+      ],
+      "score_status": "finite",
+      "target_row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3"
+      ]
+    },
+    {
+      "evaluation": "mirror_availability",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        1104,
+        2333,
+        1196
+      ],
+      "per_case_deviance": 0.0029137084262697748,
+      "period": "2026-Q1",
+      "predicted_probabilities": [
+        0.23689759332103139,
+        0.481891588122637,
+        0.2812108185563317
+      ],
+      "score_status": "finite",
+      "target_row_hash": "9022f02284e715d782045b2b03716e515bba92c798d42eeb519cebd5ca8c9cde",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3"
+      ]
+    },
+    {
+      "evaluation": "mirror_availability",
+      "family": "last_status_mix",
+      "observed_counts": [
+        828,
+        434,
+        1732
+      ],
+      "per_case_deviance": 0.8107703890702055,
+      "period": "2026-Q2",
+      "predicted_probabilities": [
+        0.24994154781388825,
+        0.5326163198503624,
+        0.21744213233574936
+      ],
+      "score_status": "finite",
+      "target_row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4"
+      ]
+    },
+    {
+      "evaluation": "mirror_availability",
+      "family": "pooled_status_mix",
+      "observed_counts": [
+        828,
+        434,
+        1732
+      ],
+      "per_case_deviance": 0.37056485057958416,
+      "period": "2026-Q2",
+      "predicted_probabilities": [
+        0.2062186559679037,
+        0.4246740220661986,
+        0.3691073219658977
+      ],
+      "score_status": "finite",
+      "target_row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4"
+      ]
+    },
+    {
+      "evaluation": "mirror_availability",
+      "family": "recent_coverage_pooled_known_mix",
+      "observed_counts": [
+        828,
+        434,
+        1732
+      ],
+      "per_case_deviance": 0.8011731374829538,
+      "period": "2026-Q2",
+      "predicted_probabilities": [
+        0.2557931599233226,
+        0.526764707740928,
+        0.21744213233574938
+      ],
+      "score_status": "finite",
+      "target_row_hash": "e5a3eda98a531586ffe85cb38ac8edb98fb74482b2338d8d29e7f06a1057d1e9",
+      "train_row_hashes": [
+        "131541821d4c57841f880e35f8add923357845e8b75e0241285f58cf8d7bd495",
+        "8c01ef808c0f22edc2f7bba92f81a2770a2aee16553424375dd507e62df11d16",
+        "3b32ab67efca1f5d63b7b4336a6d7333f1c135c3e5c238a0d1ac6defe9641070",
+        "aaf83198c9242f9e7630cf915fe9690445706a6ae12bcf7d2e050b3527d90111"
+      ],
+      "training_periods": [
+        "2025-Q1",
+        "2025-Q2",
+        "2025-Q3",
+        "2025-Q4"
+      ]
+    }
+  ],
+  "mirror_time_skips": [
+    {
+      "period": "2025-Q1",
+      "reason": "no eligible earlier classification partition"
+    },
+    {
+      "period": "2025-Q2",
+      "reason": "no eligible earlier classification partition"
+    },
+    {
+      "period": "2025-Q3",
+      "reason": "no eligible earlier classification partition"
+    },
+    {
+      "period": "2025-Q4",
+      "reason": "no eligible earlier classification partition"
+    }
+  ],
+  "mirror_time_summary": [
+    {
+      "blocked_quarters": 2,
+      "family": "last_status_mix",
+      "finite_scores": 2,
+      "mean_per_case_deviance": 0.42562564540176956
+    },
+    {
+      "blocked_quarters": 2,
+      "family": "pooled_status_mix",
+      "finite_scores": 2,
+      "mean_per_case_deviance": 0.23620721189895463
+    },
+    {
+      "blocked_quarters": 2,
+      "family": "recent_coverage_pooled_known_mix",
+      "finite_scores": 2,
+      "mean_per_case_deviance": 0.4020434229546118
+    }
+  ],
+  "profile_rows": [
+    {
+      "mar": null,
+      "naive_binary": null,
+      "p": 0.0,
+      "profile": null
+    },
+    {
+      "mar": 52301.139935937994,
+      "naive_binary": 43748.38453464775,
+      "p": 0.0025,
+      "profile": 43748.38453464775
+    },
+    {
+      "mar": 43978.76329610329,
+      "naive_binary": 35477.641548006286,
+      "p": 0.005,
+      "profile": 35477.641548006286
+    },
+    {
+      "mar": 39134.02940099195,
+      "naive_binary": 30684.671202207905,
+      "p": 0.0075,
+      "profile": 30684.67120220791
+    },
+    {
+      "mar": 35713.19940934781,
+      "naive_binary": 27315.735311211203,
+      "p": 0.01,
+      "profile": 27315.735311211203
+    },
+    {
+      "mar": 33072.65435062161,
+      "naive_binary": 24727.215564651706,
+      "p": 0.0125,
+      "profile": 24727.215564651713
+    },
+    {
+      "mar": 30925.709577499918,
+      "naive_binary": 22632.427980421227,
+      "p": 0.015,
+      "profile": 22632.427980421227
+    },
+    {
+      "mar": 29119.439112970304,
+      "naive_binary": 20878.44725178396,
+      "p": 0.0175,
+      "profile": 20878.44725178396
+    },
+    {
+      "mar": 27562.560077535676,
+      "naive_binary": 19373.991174642706,
+      "p": 0.02,
+      "profile": 19373.991174642706
+    },
+    {
+      "mar": 26196.193409741838,
+      "naive_binary": 18060.181368118538,
+      "p": 0.0225,
+      "profile": 18060.181368118538
+    },
+    {
+      "mar": 24980.13714123184,
+      "naive_binary": 16896.81654965834,
+      "p": 0.025,
+      "profile": 16896.81654965834
+    },
+    {
+      "mar": 23885.717064760036,
+      "naive_binary": 15855.223203102472,
+      "p": 0.0275,
+      "profile": 15855.223203102472
+    },
+    {
+      "mar": 22891.761409480925,
+      "naive_binary": 14914.230254028038,
+      "p": 0.03,
+      "profile": 14914.23025402804
+    },
+    {
+      "mar": 21982.19228807897,
+      "naive_binary": 14057.76051693377,
+      "p": 0.0325,
+      "profile": 14057.76051693377
+    },
+    {
+      "mar": 21144.51228118923,
+      "naive_binary": 13273.317279716459,
+      "p": 0.035,
+      "profile": 13273.317279716463
+    },
+    {
+      "mar": 20368.814421083207,
+      "naive_binary": 12550.994287413341,
+      "p": 0.0375,
+      "profile": 12550.99428741334
+    },
+    {
+      "mar": 19647.11234237253,
+      "naive_binary": 11882.805892963046,
+      "p": 0.04,
+      "profile": 11882.805892963046
+    },
+    {
+      "mar": 18972.873863612567,
+      "naive_binary": 11262.220638867188,
+      "p": 0.0425,
+      "profile": 11262.220638867188
+    },
+    {
+      "mar": 18340.688088614643,
+      "naive_binary": 10683.828358561339,
+      "p": 0.045,
+      "profile": 10683.828358561343
+    },
+    {
+      "mar": 17746.022634192326,
+      "naive_binary": 10143.09740422091,
+      "p": 0.0475,
+      "profile": 10143.09740422091
+    },
+    {
+      "mar": 17185.043202104487,
+      "naive_binary": 9636.194218764478,
+      "p": 0.05,
+      "profile": 9636.19421876448
+    },
+    {
+      "mar": 16654.47721805037,
+      "naive_binary": 9159.846974909953,
+      "p": 0.0525,
+      "profile": 9159.846974909955
+    },
+    {
+      "mar": 16151.509221685768,
+      "naive_binary": 8711.240965252722,
+      "p": 0.055,
+      "profile": 8711.240965252722
+    },
+    {
+      "mar": 15673.69952934486,
+      "naive_binary": 8287.937265050177,
+      "p": 0.0575,
+      "profile": 8287.93726505018
+    },
+    {
+      "mar": 15218.92022023633,
+      "naive_binary": 7887.80871848145,
+      "p": 0.06,
+      "profile": 7887.808718481451
+    },
+    {
+      "mar": 14785.304198891285,
+      "naive_binary": 7508.989001159698,
+      "p": 0.0625,
+      "profile": 7508.9890011597
+    },
+    {
+      "mar": 14371.204253945021,
+      "naive_binary": 7149.831678979196,
+      "p": 0.065,
+      "profile": 7149.831678979197
+    },
+    {
+      "mar": 13975.15984779636,
+      "naive_binary": 6808.876997840801,
+      "p": 0.0675,
+      "profile": 6808.8769978408
+    },
+    {
+      "mar": 13595.869948937754,
+      "naive_binary": 6484.824716049083,
+      "p": 0.07,
+      "profile": 6484.824716049084
+    },
+    {
+      "mar": 13232.17063378766,
+      "naive_binary": 6176.511706212665,
+      "p": 0.0725,
+      "profile": 6176.511706212662
+    },
+    {
+      "mar": 12883.016487229166,
+      "naive_binary": 5882.893355851703,
+      "p": 0.075,
+      "profile": 5882.893355851704
+    },
+    {
+      "mar": 12547.465054046133,
+      "naive_binary": 5603.028018903837,
+      "p": 0.0775,
+      "profile": 5603.028018903837
+    },
+    {
+      "mar": 12224.663759754254,
+      "naive_binary": 5336.063936625919,
+      "p": 0.08,
+      "profile": 5336.06393662592
+    },
+    {
+      "mar": 11913.838844660215,
+      "naive_binary": 5081.228171724971,
+      "p": 0.0825,
+      "profile": 5081.228171724971
+    },
+    {
+      "mar": 11614.285950364369,
+      "naive_binary": 4837.817194933443,
+      "p": 0.085,
+      "profile": 4837.817194933444
+    },
+    {
+      "mar": 11325.36207117061,
+      "naive_binary": 4605.188836492852,
+      "p": 0.08750000000000001,
+      "profile": 4605.188836492852
+    },
+    {
+      "mar": 11046.478639598205,
+      "naive_binary": 4382.75537174022,
+      "p": 0.09,
+      "profile": 4382.755371740219
+    },
+    {
+      "mar": 10777.095559478643,
+      "naive_binary": 4169.977554280662,
+      "p": 0.0925,
+      "profile": 4169.977554280662
+    },
+    {
+      "mar": 10516.7160349556,
+      "naive_binary": 3966.359445064119,
+      "p": 0.095,
+      "profile": 3966.3594450641194
+    },
+    {
+      "mar": 10264.882071298225,
+      "naive_binary": 3771.4439132764564,
+      "p": 0.0975,
+      "profile": 3771.4439132764555
+    },
+    {
+      "mar": 10021.170545438965,
+      "naive_binary": 3584.8087069561475,
+      "p": 0.1,
+      "profile": 3584.808706956146
+    },
+    {
+      "mar": 9785.189761799928,
+      "naive_binary": 3406.0630089006895,
+      "p": 0.10250000000000001,
+      "profile": 3406.063008900691
+    },
+    {
+      "mar": 9556.576423220136,
+      "naive_binary": 3234.844407674913,
+      "p": 0.105,
+      "profile": 3234.844407674913
+    },
+    {
+      "mar": 9334.992958360954,
+      "naive_binary": 3070.8162250986925,
+      "p": 0.1075,
+      "profile": 3070.816225098691
+    },
+    {
+      "mar": 9120.12515640416,
+      "naive_binary": 2913.6651510283655,
+      "p": 0.11,
+      "profile": 2913.665151028367
+    },
+    {
+      "mar": 8911.680067597008,
+      "naive_binary": 2763.099143986442,
+      "p": 0.1125,
+      "profile": 2763.099143986443
+    },
+    {
+      "mar": 8709.384134577136,
+      "naive_binary": 2618.8455625721795,
+      "p": 0.115,
+      "profile": 2618.84556257218
+    },
+    {
+      "mar": 8512.98152469086,
+      "naive_binary": 2480.649497866933,
+      "p": 0.11750000000000001,
+      "profile": 2480.6494978669316
+    },
+    {
+      "mar": 8322.232637909397,
+      "naive_binary": 2348.2722814385397,
+      "p": 0.12,
+      "profile": 2348.2722814385406
+    },
+    {
+      "mar": 8136.912768613965,
+      "naive_binary": 2221.4901472159,
+      "p": 0.1225,
+      "profile": 2221.4901472159013
+    },
+    {
+      "mar": 7956.810902594465,
+      "naive_binary": 2100.0930285783916,
+      "p": 0.125,
+      "profile": 2100.0930285783897
+    },
+    {
+      "mar": 7781.728633193035,
+      "naive_binary": 1983.8834745914787,
+      "p": 0.1275,
+      "profile": 1983.8834745914796
+    },
+    {
+      "mar": 7611.4791827084955,
+      "naive_binary": 1872.675671504498,
+      "p": 0.13,
+      "profile": 1872.675671504499
+    },
+    {
+      "mar": 7445.886517029254,
+      "naive_binary": 1766.294557478267,
+      "p": 0.1325,
+      "profile": 1766.2945574782661
+    },
+    {
+      "mar": 7284.7845430372145,
+      "naive_binary": 1664.575020085067,
+      "p": 0.135,
+      "profile": 1664.575020085066
+    },
+    {
+      "mar": 7128.016379668461,
+      "naive_binary": 1567.3611674667907,
+      "p": 0.1375,
+      "profile": 1567.3611674667911
+    },
+    {
+      "mar": 6975.433694666481,
+      "naive_binary": 1474.5056651870264,
+      "p": 0.14,
+      "profile": 1474.505665187025
+    },
+    {
+      "mar": 6826.896100050514,
+      "naive_binary": 1385.8691317997232,
+      "p": 0.14250000000000002,
+      "profile": 1385.8691317997243
+    },
+    {
+      "mar": 6682.270600171373,
+      "naive_binary": 1301.319587006796,
+      "p": 0.145,
+      "profile": 1301.3195870067957
+    },
+    {
+      "mar": 6541.431086960267,
+      "naive_binary": 1220.7319470102125,
+      "p": 0.1475,
+      "profile": 1220.731947010212
+    },
+    {
+      "mar": 6404.25787761112,
+      "naive_binary": 1143.9875622990876,
+      "p": 0.15,
+      "profile": 1143.9875622990864
+    },
+    {
+      "mar": 6270.637290487523,
+      "naive_binary": 1070.973793662965,
+      "p": 0.1525,
+      "profile": 1070.9737936629663
+    },
+    {
+      "mar": 6140.461255524728,
+      "naive_binary": 1001.5836227017232,
+      "p": 0.155,
+      "profile": 1001.5836227017223
+    },
+    {
+      "mar": 6013.626955814811,
+      "naive_binary": 935.7152935202023,
+      "p": 0.1575,
+      "profile": 935.7152935202041
+    },
+    {
+      "mar": 5890.036497428317,
+      "naive_binary": 873.2719826610138,
+      "p": 0.16,
+      "profile": 873.2719826610137
+    },
+    {
+      "mar": 5769.596604845525,
+      "naive_binary": 814.161494648543,
+      "p": 0.1625,
+      "profile": 813.9636785051118
+    },
+    {
+      "mar": 5652.218339651337,
+      "naive_binary": 758.2959807983357,
+      "p": 0.165,
+      "profile": 757.3970235267354
+    },
+    {
+      "mar": 5537.816840394655,
+      "naive_binary": 705.5916791926284,
+      "p": 0.1675,
+      "profile": 703.4965583106548
+    },
+    {
+      "mar": 5426.311081730952,
+      "naive_binary": 655.9686739408713,
+      "p": 0.17,
+      "profile": 652.1940391186556
+    },
+    {
+      "mar": 5317.623651158952,
+      "naive_binary": 609.3506720360914,
+      "p": 0.17250000000000001,
+      "profile": 603.4243071520816
+    },
+    {
+      "mar": 5211.680541832556,
+      "naive_binary": 565.664796288364,
+      "p": 0.17500000000000002,
+      "profile": 557.1251121301618
+    },
+    {
+      "mar": 5108.410960079899,
+      "naive_binary": 524.8413929671952,
+      "p": 0.1775,
+      "profile": 513.2369483988318
+    },
+    {
+      "mar": 5007.7471463954425,
+      "naive_binary": 486.81385291888205,
+      "p": 0.18,
+      "profile": 471.7029025189097
+    },
+    {
+      "mar": 4909.62420879019,
+      "naive_binary": 451.51844504389385,
+      "p": 0.1825,
+      "profile": 432.46851138371676
+    },
+    {
+      "mar": 4813.979967491299,
+      "naive_binary": 418.89416112551453,
+      "p": 0.185,
+      "profile": 395.48163000678437
+    },
+    {
+      "mar": 4720.754810077104,
+      "naive_binary": 388.88257109601307,
+      "p": 0.1875,
+      "profile": 360.69230820118264
+    },
+    {
+      "mar": 4629.891556218415,
+      "naive_binary": 361.42768791103015,
+      "p": 0.19,
+      "profile": 328.0526754439986
+    },
+    {
+      "mar": 4541.335331272802,
+      "naive_binary": 336.47584127900984,
+      "p": 0.1925,
+      "profile": 297.51683328428703
+    },
+    {
+      "mar": 4455.033448046587,
+      "naive_binary": 313.9755595604321,
+      "p": 0.195,
+      "profile": 269.0407547107277
+    },
+    {
+      "mar": 4370.935296100415,
+      "naive_binary": 293.8774592127944,
+      "p": 0.1975,
+      "profile": 242.58218994734443
+    },
+    {
+      "mar": 4288.992238029285,
+      "naive_binary": 276.1341412122098,
+      "p": 0.2,
+      "profile": 218.1005781924216
+    },
+    {
+      "mar": 4209.157512197329,
+      "naive_binary": 260.7000939319554,
+      "p": 0.2025,
+      "profile": 195.5569648578803
+    },
+    {
+      "mar": 4131.386141452361,
+      "naive_binary": 247.53160200303319,
+      "p": 0.20500000000000002,
+      "profile": 174.91392390453643
+    },
+    {
+      "mar": 4055.6348473854546,
+      "naive_binary": 236.58666072211622,
+      "p": 0.20750000000000002,
+      "profile": 156.0730709139125
+    },
+    {
+      "mar": 3981.861969737334,
+      "naive_binary": 227.8248956086171,
+      "p": 0.21,
+      "profile": 138.72031086374795
+    },
+    {
+      "mar": 3910.0273905863064,
+      "naive_binary": 221.20748674566903,
+      "p": 0.2125,
+      "profile": 122.79429725615887
+    },
+    {
+      "mar": 3840.0924629823744,
+      "naive_binary": 216.69709756973816,
+      "p": 0.215,
+      "profile": 108.26933113225346
+    },
+    {
+      "mar": 3772.0199437193755,
+      "naive_binary": 214.2578078007714,
+      "p": 0.2175,
+      "profile": 95.12067747671404
+    },
+    {
+      "mar": 3705.773929961598,
+      "naive_binary": 213.855050229276,
+      "p": 0.22,
+      "profile": 83.32446677219832
+    },
+    {
+      "mar": 3641.3197994637276,
+      "naive_binary": 215.45555109939505,
+      "p": 0.2225,
+      "profile": 72.6667040102891
+    },
+    {
+      "mar": 3578.6241541435397,
+      "naive_binary": 219.02727384727268,
+      "p": 0.225,
+      "profile": 62.950819169293254
+    },
+    {
+      "mar": 3517.6547667852033,
+      "naive_binary": 224.53936597278152,
+      "p": 0.2275,
+      "profile": 54.16125485064754
+    },
+    {
+      "mar": 3458.3805306682084,
+      "naive_binary": 231.962108839527,
+      "p": 0.23,
+      "profile": 46.28301433022921
+    },
+    {
+      "mar": 3400.7714119323496,
+      "naive_binary": 241.26687021376983,
+      "p": 0.2325,
+      "profile": 39.30163796256306
+    },
+    {
+      "mar": 3344.7984045034223,
+      "naive_binary": 252.42605936682367,
+      "p": 0.23500000000000001,
+      "profile": 33.20318085738086
+    },
+    {
+      "mar": 3290.433487417348,
+      "naive_binary": 265.4130845788379,
+      "p": 0.23750000000000002,
+      "profile": 27.974191748021667
+    },
+    {
+      "mar": 3237.6495843922185,
+      "naive_binary": 280.20231289339176,
+      "p": 0.24,
+      "profile": 23.52734467485493
+    },
+    {
+      "mar": 3186.4205255088123,
+      "naive_binary": 296.7690319836138,
+      "p": 0.2425,
+      "profile": 19.624471761360837
+    },
+    {
+      "mar": 3136.721010870034,
+      "naive_binary": 315.0894140003022,
+      "p": 0.245,
+      "profile": 16.241920996647877
+    },
+    {
+      "mar": 3088.526576119065,
+      "naive_binary": 335.14048128178956,
+      "p": 0.2475,
+      "profile": 13.372280886346744
+    },
+    {
+      "mar": 3041.81355970434,
+      "naive_binary": 356.9000738139332,
+      "p": 0.25,
+      "profile": 11.008316633930917
+    },
+    {
+      "mar": 2996.5590717873574,
+      "naive_binary": 380.3468183361763,
+      "p": 0.2525,
+      "profile": 8.994689023293404
+    },
+    {
+      "mar": 2952.7409646965193,
+      "naive_binary": 405.46009899690443,
+      "p": 0.255,
+      "profile": 7.191862500708567
+    },
+    {
+      "mar": 2910.337804836729,
+      "naive_binary": 432.2200294679742,
+      "p": 0.2575,
+      "profile": 5.5969950393018735
+    },
+    {
+      "mar": 2869.328845970677,
+      "naive_binary": 460.60742643439767,
+      "p": 0.26,
+      "profile": 4.207339730930471
+    },
+    {
+      "mar": 2829.694003793333,
+      "naive_binary": 490.6037843807849,
+      "p": 0.2625,
+      "profile": 3.0202413159147454
+    },
+    {
+      "mar": 2791.413831726385,
+      "naive_binary": 522.1912516012583,
+      "p": 0.265,
+      "profile": 2.0331328801212294
+    },
+    {
+      "mar": 2754.4694978642024,
+      "naive_binary": 555.3526073646153,
+      "p": 0.2675,
+      "profile": 1.2435327100213271
+    },
+    {
+      "mar": 2718.8427630073675,
+      "naive_binary": 590.0712401707895,
+      "p": 0.27,
+      "profile": 0.6490412969687895
+    },
+    {
+      "mar": 2684.5159597239,
+      "naive_binary": 626.331127038856,
+      "p": 0.2725,
+      "profile": 0.24733848250525625
+    },
+    {
+      "mar": 2651.471972382221,
+      "naive_binary": 664.116813770635,
+      "p": 0.275,
+      "profile": 0.036180737020458764
+    },
+    {
+      "mar": 2619.69421810338,
+      "naive_binary": 703.4133961375683,
+      "p": 0.2775,
+      "profile": 0.0
+    },
+    {
+      "mar": 2589.166628583418,
+      "naive_binary": 744.206501941783,
+      "p": 0.28,
+      "profile": 0.0
+    },
+    {
+      "mar": 2559.873632739766,
+      "naive_binary": 786.4822739053884,
+      "p": 0.28250000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2531.800140138476,
+      "naive_binary": 830.2273533447803,
+      "p": 0.28500000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2504.9315251616827,
+      "naive_binary": 875.4288645895206,
+      "p": 0.28750000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2479.2536118771886,
+      "naive_binary": 922.0744001078062,
+      "p": 0.29,
+      "profile": 0.0
+    },
+    {
+      "mar": 2454.752659574401,
+      "naive_binary": 970.1520063027299,
+      "p": 0.2925,
+      "profile": 0.0
+    },
+    {
+      "mar": 2431.4153489328583,
+      "naive_binary": 1019.6501699458181,
+      "p": 0.295,
+      "profile": 0.0
+    },
+    {
+      "mar": 2409.228768791791,
+      "naive_binary": 1070.5578052162268,
+      "p": 0.2975,
+      "profile": 0.0
+    },
+    {
+      "mar": 2388.1804034908128,
+      "naive_binary": 1122.864241315928,
+      "p": 0.3,
+      "profile": 0.0
+    },
+    {
+      "mar": 2368.2581207537323,
+      "naive_binary": 1176.5592106329054,
+      "p": 0.3025,
+      "profile": 0.0
+    },
+    {
+      "mar": 2349.4501600890067,
+      "naive_binary": 1231.6328374260406,
+      "p": 0.305,
+      "profile": 0.0
+    },
+    {
+      "mar": 2331.745121681949,
+      "naive_binary": 1288.0756270068555,
+      "p": 0.3075,
+      "profile": 0.0
+    },
+    {
+      "mar": 2315.131955755182,
+      "naive_binary": 1345.8784553946923,
+      "p": 0.31,
+      "profile": 0.0
+    },
+    {
+      "mar": 2299.599952375155,
+      "naive_binary": 1405.0325594233695,
+      "p": 0.3125,
+      "profile": 0.0
+    },
+    {
+      "mar": 2285.1387316838227,
+      "naive_binary": 1465.5295272784738,
+      "p": 0.315,
+      "profile": 0.0
+    },
+    {
+      "mar": 2271.7382345357296,
+      "naive_binary": 1527.3612894455857,
+      "p": 0.3175,
+      "profile": 0.0
+    },
+    {
+      "mar": 2259.3887135218347,
+      "naive_binary": 1590.5201100509867,
+      "p": 0.32,
+      "profile": 0.0
+    },
+    {
+      "mar": 2248.0807243624536,
+      "naive_binary": 1654.998578577317,
+      "p": 0.3225,
+      "profile": 0.0
+    },
+    {
+      "mar": 2237.805117652666,
+      "naive_binary": 1720.7896019376915,
+      "p": 0.325,
+      "profile": 0.0
+    },
+    {
+      "mar": 2228.553030944381,
+      "naive_binary": 1787.8863968925275,
+      "p": 0.3275,
+      "profile": 0.0
+    },
+    {
+      "mar": 2220.3158811502253,
+      "naive_binary": 1856.2824827944305,
+      "p": 0.33,
+      "profile": 0.0
+    },
+    {
+      "mar": 2213.0853572550604,
+      "naive_binary": 1925.9716746471158,
+      "p": 0.3325,
+      "profile": 0.0
+    },
+    {
+      "mar": 2206.85341332183,
+      "naive_binary": 1996.948076465177,
+      "p": 0.335,
+      "profile": 0.0
+    },
+    {
+      "mar": 2201.6122617790807,
+      "naive_binary": 2069.206074922158,
+      "p": 0.3375,
+      "profile": 0.0
+    },
+    {
+      "mar": 2197.3543669781066,
+      "naive_binary": 2142.740333275095,
+      "p": 0.34,
+      "profile": 0.0
+    },
+    {
+      "mar": 2194.072439008485,
+      "naive_binary": 2217.545785554389,
+      "p": 0.3425,
+      "profile": 0.0
+    },
+    {
+      "mar": 2191.7594277610883,
+      "naive_binary": 2293.6176310083456,
+      "p": 0.34500000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2190.408517228504,
+      "naive_binary": 2370.951328792353,
+      "p": 0.34750000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2190.013120033048,
+      "naive_binary": 2449.542592893142,
+      "p": 0.35000000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2190.5668721733136,
+      "naive_binary": 2529.3873872792165,
+      "p": 0.3525,
+      "profile": 0.0
+    },
+    {
+      "mar": 2192.063627980443,
+      "naive_binary": 2610.48192126883,
+      "p": 0.355,
+      "profile": 0.0
+    },
+    {
+      "mar": 2194.497455275875,
+      "naive_binary": 2692.822645107418,
+      "p": 0.3575,
+      "profile": 0.0
+    },
+    {
+      "mar": 2197.8626307227623,
+      "naive_binary": 2776.406245746871,
+      "p": 0.36,
+      "profile": 0.0
+    },
+    {
+      "mar": 2202.153635363488,
+      "naive_binary": 2861.229642819302,
+      "p": 0.3625,
+      "profile": 0.0
+    },
+    {
+      "mar": 2207.365150336339,
+      "naive_binary": 2947.2899847985177,
+      "p": 0.365,
+      "profile": 0.0
+    },
+    {
+      "mar": 2213.4920527644827,
+      "naive_binary": 3034.5846453426084,
+      "p": 0.3675,
+      "profile": 0.0
+    },
+    {
+      "mar": 2220.529411810924,
+      "naive_binary": 3123.111219811463,
+      "p": 0.37,
+      "profile": 0.0
+    },
+    {
+      "mar": 2228.472484893333,
+      "naive_binary": 3212.867521953338,
+      "p": 0.3725,
+      "profile": 0.0
+    },
+    {
+      "mar": 2237.3167140530095,
+      "naive_binary": 3303.8515807550143,
+      "p": 0.375,
+      "profile": 0.0
+    },
+    {
+      "mar": 2247.05772247244,
+      "naive_binary": 3396.0616374501997,
+      "p": 0.3775,
+      "profile": 0.0
+    },
+    {
+      "mar": 2257.6913111362883,
+      "naive_binary": 3489.4961426812024,
+      "p": 0.38,
+      "profile": 0.0
+    },
+    {
+      "mar": 2269.2134556308183,
+      "naive_binary": 3584.1537538091507,
+      "p": 0.3825,
+      "profile": 0.0
+    },
+    {
+      "mar": 2281.6203030770857,
+      "naive_binary": 3680.0333323683753,
+      "p": 0.385,
+      "profile": 0.0
+    },
+    {
+      "mar": 2294.9081691933598,
+      "naive_binary": 3777.133941660638,
+      "p": 0.3875,
+      "profile": 0.0
+    },
+    {
+      "mar": 2309.0735354825792,
+      "naive_binary": 3875.454844485242,
+      "p": 0.39,
+      "profile": 0.0
+    },
+    {
+      "mar": 2324.113046540757,
+      "naive_binary": 3974.99550100122,
+      "p": 0.3925,
+      "profile": 0.0
+    },
+    {
+      "mar": 2340.0235074825096,
+      "naive_binary": 4075.7555667181186,
+      "p": 0.395,
+      "profile": 0.0
+    },
+    {
+      "mar": 2356.8018814800485,
+      "naive_binary": 4177.734890611917,
+      "p": 0.3975,
+      "profile": 0.0
+    },
+    {
+      "mar": 2374.4452874121816,
+      "naive_binary": 4280.9335133629575,
+      "p": 0.4,
+      "profile": 0.0
+    },
+    {
+      "mar": 2392.950997619995,
+      "naive_binary": 4385.351665712822,
+      "p": 0.4025,
+      "profile": 0.0
+    },
+    {
+      "mar": 2412.3164357661344,
+      "naive_binary": 4490.989766937458,
+      "p": 0.405,
+      "profile": 0.0
+    },
+    {
+      "mar": 2432.5391747946846,
+      "naive_binary": 4597.848423433812,
+      "p": 0.40750000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2453.6169349888582,
+      "naive_binary": 4705.928427417495,
+      "p": 0.41000000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2475.547582123758,
+      "naive_binary": 4815.230755729136,
+      "p": 0.41250000000000003,
+      "profile": 0.0
+    },
+    {
+      "mar": 2498.3291257117808,
+      "naive_binary": 4925.75656874731,
+      "p": 0.41500000000000004,
+      "profile": 0.0
+    },
+    {
+      "mar": 2521.9597173381962,
+      "naive_binary": 5037.507209405934,
+      "p": 0.4175,
+      "profile": 0.0
+    },
+    {
+      "mar": 2546.437649084647,
+      "naive_binary": 5150.4842023142355,
+      "p": 0.42,
+      "profile": 0.0
+    },
+    {
+      "mar": 2571.761352038412,
+      "naive_binary": 5264.689252977578,
+      "p": 0.4225,
+      "profile": 0.0
+    },
+    {
+      "mar": 2597.929394885463,
+      "naive_binary": 5380.124247117385,
+      "p": 0.425,
+      "profile": 0.0
+    },
+    {
+      "mar": 2624.940482585309,
+      "naive_binary": 5496.791250088861,
+      "p": 0.4275,
+      "profile": 0.0
+    },
+    {
+      "mar": 2652.793455125922,
+      "naive_binary": 5614.69250639493,
+      "p": 0.43,
+      "profile": 0.0
+    },
+    {
+      "mar": 2681.4872863569567,
+      "naive_binary": 5733.830439295205,
+      "p": 0.4325,
+      "profile": 0.0
+    },
+    {
+      "mar": 2711.021082899737,
+      "naive_binary": 5854.20765050877,
+      "p": 0.435,
+      "profile": 0.000611456682690914
+    },
+    {
+      "mar": 2741.394083132468,
+      "naive_binary": 5975.826920009906,
+      "p": 0.4375,
+      "profile": 0.14470226472531067
+    },
+    {
+      "mar": 2772.6056562493022,
+      "naive_binary": 6098.6912059155875,
+      "p": 0.44,
+      "profile": 0.541354604656135
+    },
+    {
+      "mar": 2804.655301391911,
+      "naive_binary": 6222.803644464094,
+      "p": 0.4425,
+      "profile": 1.2117485424432743
+    },
+    {
+      "mar": 2837.5426468523815,
+      "naive_binary": 6348.167550083951,
+      "p": 0.445,
+      "profile": 2.3640345415192314
+    },
+    {
+      "mar": 2871.267449346274,
+      "naive_binary": 6474.7864155525795,
+      "p": 0.4475,
+      "profile": 4.0493158869389845
+    },
+    {
+      "mar": 2905.8295933547997,
+      "naive_binary": 6602.663912244194,
+      "p": 0.45,
+      "profile": 6.2665196111843215
+    },
+    {
+      "mar": 2941.22909053515,
+      "naive_binary": 6731.80389046642,
+      "p": 0.4525,
+      "profile": 9.014656714439298
+    },
+    {
+      "mar": 2977.466079198096,
+      "naive_binary": 6862.21037988539,
+      "p": 0.455,
+      "profile": 12.292821518073652
+    },
+    {
+      "mar": 3014.540823852005,
+      "naive_binary": 6993.887590039097,
+      "p": 0.4575,
+      "profile": 16.100191063379498
+    },
+    {
+      "mar": 3052.453714812621,
+      "naive_binary": 7126.8399109388265,
+      "p": 0.46,
+      "profile": 20.436024554808682
+    },
+    {
+      "mar": 3091.2052678778546,
+      "naive_binary": 7261.071913758654,
+      "p": 0.4625,
+      "profile": 25.29966284707143
+    },
+    {
+      "mar": 3130.79612406705,
+      "naive_binary": 7396.588351613024,
+      "p": 0.465,
+      "profile": 30.69052797546192
+    },
+    {
+      "mar": 3171.227049424203,
+      "naive_binary": 7533.394160422658,
+      "p": 0.4675,
+      "profile": 36.60835518985414
+    },
+    {
+      "mar": 3212.498934884681,
+      "naive_binary": 7671.494459868937,
+      "p": 0.47000000000000003,
+      "profile": 43.169585082810954
+    },
+    {
+      "mar": 3254.612796205056,
+      "naive_binary": 7810.894554437098,
+      "p": 0.47250000000000003,
+      "profile": 50.47128105897173
+    },
+    {
+      "mar": 3297.56977395575,
+      "naive_binary": 7951.599934548707,
+      "p": 0.47500000000000003,
+      "profile": 58.512955312164195
+    },
+    {
+      "mar": 3341.371133576261,
+      "naive_binary": 8093.616277783897,
+      "p": 0.47750000000000004,
+      "profile": 67.29423209230708
+    },
+    {
+      "mar": 3386.0182654927885,
+      "naive_binary": 8236.949450194053,
+      "p": 0.48,
+      "profile": 76.81484735675394
+    },
+    {
+      "mar": 3431.5126852981266,
+      "naive_binary": 8381.605507705473,
+      "p": 0.4825,
+      "profile": 87.07464847838855
+    },
+    {
+      "mar": 3477.8560339938276,
+      "naive_binary": 8527.590697614994,
+      "p": 0.485,
+      "profile": 98.07359401019812
+    },
+    {
+      "mar": 3525.050078294622,
+      "naive_binary": 8674.91146017833,
+      "p": 0.4875,
+      "profile": 109.81175350590865
+    },
+    {
+      "mar": 3573.0967109951907,
+      "naive_binary": 8823.574430292185,
+      "p": 0.49,
+      "profile": 122.28930739649513
+    },
+    {
+      "mar": 3621.9979513994604,
+      "naive_binary": 8973.586439271226,
+      "p": 0.4925,
+      "profile": 135.50654692232183
+    },
+    {
+      "mar": 3671.755945812615,
+      "naive_binary": 9124.95451672101,
+      "p": 0.495,
+      "profile": 149.46387412079275
+    },
+    {
+      "mar": 3722.3729680961296,
+      "naive_binary": 9277.68589250818,
+      "p": 0.4975,
+      "profile": 164.18268043626676
+    },
+    {
+      "mar": 3773.8514202861743,
+      "naive_binary": 9431.787998829359,
+      "p": 0.5,
+      "profile": 179.83600885318083
+    },
+    {
+      "mar": 3826.1938332757745,
+      "naive_binary": 9587.268472380207,
+      "p": 0.5025000000000001,
+      "profile": 196.4629494403007
+    },
+    {
+      "mar": 3879.402867561256,
+      "naive_binary": 9744.135156626087,
+      "p": 0.505,
+      "profile": 214.06438228423667
+    },
+    {
+      "mar": 3933.481314053503,
+      "naive_binary": 9902.396104176243,
+      "p": 0.5075000000000001,
+      "profile": 232.64133380245994
+    },
+    {
+      "mar": 3988.4320949546172,
+      "naive_binary": 10062.059579263083,
+      "p": 0.51,
+      "profile": 252.19497709522057
+    },
+    {
+      "mar": 4044.258264700759,
+      "naive_binary": 10223.134060328688,
+      "p": 0.5125,
+      "profile": 272.7266323710646
+    },
+    {
+      "mar": 4100.963010971786,
+      "naive_binary": 10385.628242720337,
+      "p": 0.515,
+      "profile": 294.2377674462473
+    },
+    {
+      "mar": 4158.549655768666,
+      "naive_binary": 10549.551041497327,
+      "p": 0.5175,
+      "profile": 316.7299983185444
+    },
+    {
+      "mar": 4217.021656559446,
+      "naive_binary": 10714.911594351397,
+      "p": 0.52,
+      "profile": 340.2050898159846
+    },
+    {
+      "mar": 4276.3826074948165,
+      "naive_binary": 10881.719264642945,
+      "p": 0.5225,
+      "profile": 364.66495632109036
+    },
+    {
+      "mar": 4336.636240694343,
+      "naive_binary": 11049.983644555768,
+      "p": 0.525,
+      "profile": 390.1116625713553
+    },
+    {
+      "mar": 4397.786427604373,
+      "naive_binary": 11219.714558372756,
+      "p": 0.5275,
+      "profile": 416.54742453670997
+    },
+    {
+      "mar": 4459.837180428981,
+      "naive_binary": 11390.922065875537,
+      "p": 0.53,
+      "profile": 443.9746103748148
+    },
+    {
+      "mar": 4522.792653635134,
+      "naive_binary": 11563.616465870746,
+      "p": 0.5325,
+      "profile": 472.3957414651959
+    },
+    {
+      "mar": 4586.657145533454,
+      "naive_binary": 11737.808299846214,
+      "p": 0.535,
+      "profile": 501.8134935231383
+    },
+    {
+      "mar": 4651.4350999360795,
+      "naive_binary": 11913.508355760054,
+      "p": 0.5375,
+      "profile": 532.2306977945614
+    },
+    {
+      "mar": 4717.131107893134,
+      "naive_binary": 12090.727671966231,
+      "p": 0.54,
+      "profile": 563.6503423330328
+    },
+    {
+      "mar": 4783.749909509421,
+      "naive_binary": 12269.477541279932,
+      "p": 0.5425,
+      "profile": 596.0755733601941
+    },
+    {
+      "mar": 4851.296395843126,
+      "naive_binary": 12449.76951518657,
+      "p": 0.545,
+      "profile": 629.5096967110653
+    },
+    {
+      "mar": 4919.775610888259,
+      "naive_binary": 12631.615408198215,
+      "p": 0.5475,
+      "profile": 663.9561793656476
+    },
+    {
+      "mar": 4989.192753642853,
+      "naive_binary": 12815.027302361475,
+      "p": 0.55,
+      "profile": 699.4186510684754
+    },
+    {
+      "mar": 5059.553180264866,
+      "naive_binary": 13000.017551921077,
+      "p": 0.5525,
+      "profile": 735.9009060377334
+    },
+    {
+      "mar": 5130.862406317961,
+      "naive_binary": 13186.598788143607,
+      "p": 0.555,
+      "profile": 773.40690476585
+    },
+    {
+      "mar": 5203.126109109369,
+      "naive_binary": 13374.78392430585,
+      "p": 0.5575,
+      "profile": 811.9407759133628
+    },
+    {
+      "mar": 5276.350130122238,
+      "naive_binary": 13564.586160852814,
+      "p": 0.56,
+      "profile": 851.5068182981527
+    },
+    {
+      "mar": 5350.540477544835,
+      "naive_binary": 13756.018990730196,
+      "p": 0.5625,
+      "profile": 892.1095029821695
+    },
+    {
+      "mar": 5425.703328899368,
+      "naive_binary": 13949.096204896807,
+      "p": 0.5650000000000001,
+      "profile": 933.7534754578833
+    },
+    {
+      "mar": 5501.845033772938,
+      "naive_binary": 14143.831898022227,
+      "p": 0.5675,
+      "profile": 976.4435579368678
+    },
+    {
+      "mar": 5578.972116653658,
+      "naive_binary": 14340.240474375638,
+      "p": 0.5700000000000001,
+      "profile": 1020.1847517430492
+    },
+    {
+      "mar": 5657.091279874812,
+      "naive_binary": 14538.336653911672,
+      "p": 0.5725,
+      "profile": 1064.982239813227
+    },
+    {
+      "mar": 5736.209406670262,
+      "naive_binary": 14738.135478559669,
+      "p": 0.5750000000000001,
+      "profile": 1110.8413893076827
+    },
+    {
+      "mar": 5816.333564344327,
+      "naive_binary": 14939.652318722756,
+      "p": 0.5775,
+      "profile": 1157.767754333806
+    },
+    {
+      "mar": 5897.471007559643,
+      "naive_binary": 15142.902879993773,
+      "p": 0.58,
+      "profile": 1205.7670787858397
+    },
+    {
+      "mar": 5979.629181746548,
+      "naive_binary": 15347.90321009499,
+      "p": 0.5825,
+      "profile": 1254.8452993039436
+    },
+    {
+      "mar": 6062.815726637802,
+      "naive_binary": 15554.669706049157,
+      "p": 0.585,
+      "profile": 1305.0085483560188
+    },
+    {
+      "mar": 6147.038479932587,
+      "naive_binary": 15763.219121589831,
+      "p": 0.5875,
+      "profile": 1356.26315744589
+    },
+    {
+      "mar": 6232.305481093912,
+      "naive_binary": 15973.56857481879,
+      "p": 0.59,
+      "profile": 1408.615660451529
+    },
+    {
+      "mar": 6318.624975283814,
+      "naive_binary": 16185.735556119456,
+      "p": 0.5925,
+      "profile": 1462.0727970973585
+    },
+    {
+      "mar": 6406.0054174407705,
+      "naive_binary": 16399.737936334823,
+      "p": 0.595,
+      "profile": 1516.6415165646767
+    },
+    {
+      "mar": 6494.455476504244,
+      "naive_binary": 16615.59397521952,
+      "p": 0.5975,
+      "profile": 1572.3289812446174
+    },
+    {
+      "mar": 6583.984039791141,
+      "naive_binary": 16833.322330175506,
+      "p": 0.6,
+      "profile": 1629.1425706381674
+    },
+    {
+      "mar": 6674.600217529588,
+      "naive_binary": 17052.94206528169,
+      "p": 0.6025,
+      "profile": 1687.0898854080033
+    },
+    {
+      "mar": 6766.313347555255,
+      "naive_binary": 17274.472660627973,
+      "p": 0.605,
+      "profile": 1746.178751587193
+    },
+    {
+      "mar": 6859.133000176195,
+      "naive_binary": 17497.934021964997,
+      "p": 0.6075,
+      "profile": 1806.4172249499852
+    },
+    {
+      "mar": 6953.068983211904,
+      "naive_binary": 17723.34649068102,
+      "p": 0.61,
+      "profile": 1867.8135955501862
+    },
+    {
+      "mar": 7048.131347213098,
+      "naive_binary": 17950.730854118265,
+      "p": 0.6125,
+      "profile": 1930.376392432955
+    },
+    {
+      "mar": 7144.330390868579,
+      "naive_binary": 18180.108356241333,
+      "p": 0.615,
+      "profile": 1994.1143885260044
+    },
+    {
+      "mar": 7241.676666606213,
+      "naive_binary": 18411.500708671054,
+      "p": 0.6175,
+      "profile": 2059.036605716614
+    },
+    {
+      "mar": 7340.180986395092,
+      "naive_binary": 18644.930102097696,
+      "p": 0.62,
+      "profile": 2125.152320121087
+    },
+    {
+      "mar": 7439.854427756492,
+      "naive_binary": 18880.419218088202,
+      "p": 0.6225,
+      "profile": 2192.4710675536808
+    },
+    {
+      "mar": 7540.708339991525,
+      "naive_binary": 19117.991241302552,
+      "p": 0.625,
+      "profile": 2261.002649202276
+    },
+    {
+      "mar": 7642.754350633757,
+      "naive_binary": 19357.66987213558,
+      "p": 0.6275000000000001,
+      "profile": 2330.7571375185744
+    },
+    {
+      "mar": 7746.004372135476,
+      "naive_binary": 19599.47933980063,
+      "p": 0.63,
+      "profile": 2401.7448823307946
+    },
+    {
+      "mar": 7850.470608796761,
+      "naive_binary": 19843.444415873077,
+      "p": 0.6325000000000001,
+      "profile": 2473.9765171874355
+    },
+    {
+      "mar": 7956.165563946834,
+      "naive_binary": 20089.590428311694,
+      "p": 0.635,
+      "profile": 2547.4629659409134
+    },
+    {
+      "mar": 8063.102047387869,
+      "naive_binary": 20337.94327597772,
+      "p": 0.6375000000000001,
+      "profile": 2622.215449580517
+    },
+    {
+      "mar": 8171.29318311154,
+      "naive_binary": 20588.529443671345,
+      "p": 0.64,
+      "profile": 2698.2454933243466
+    },
+    {
+      "mar": 8280.752417299693,
+      "naive_binary": 20841.376017707422,
+      "p": 0.6425,
+      "profile": 2775.5649339806782
+    },
+    {
+      "mar": 8391.493526620388,
+      "naive_binary": 21096.510702052437,
+      "p": 0.645,
+      "profile": 2854.1859275894944
+    },
+    {
+      "mar": 8503.530626831773,
+      "naive_binary": 21353.961835046168,
+      "p": 0.6475,
+      "profile": 2934.120957355522
+    },
+    {
+      "mar": 8616.878181706461,
+      "naive_binary": 21613.75840673301,
+      "p": 0.65,
+      "profile": 3015.3828418848407
+    },
+    {
+      "mar": 8731.55101228986,
+      "naive_binary": 21875.930076828336,
+      "p": 0.6525,
+      "profile": 3097.984743737499
+    },
+    {
+      "mar": 8847.564306506702,
+      "naive_binary": 22140.50719334764,
+      "p": 0.655,
+      "profile": 3181.9401783094368
+    },
+    {
+      "mar": 8964.93362913044,
+      "naive_binary": 22407.520811926533,
+      "p": 0.6575,
+      "profile": 3267.263023057562
+    },
+    {
+      "mar": 9083.674932131467,
+      "naive_binary": 22677.002715862047,
+      "p": 0.66,
+      "profile": 3353.9675270826156
+    },
+    {
+      "mar": 9203.804565420261,
+      "naive_binary": 22948.985436906725,
+      "p": 0.6625,
+      "profile": 3442.0683210852435
+    },
+    {
+      "mar": 9325.33928800307,
+      "naive_binary": 23223.502276848714,
+      "p": 0.665,
+      "profile": 3531.5804277114253
+    },
+    {
+      "mar": 9448.296279568203,
+      "naive_binary": 23500.587329912985,
+      "p": 0.6675,
+      "profile": 3622.5192723043656
+    },
+    {
+      "mar": 9572.693152522239,
+      "naive_binary": 23780.27550602067,
+      "p": 0.67,
+      "profile": 3714.900694080831
+    },
+    {
+      "mar": 9698.547964496318,
+      "naive_binary": 24062.60255494501,
+      "p": 0.6725,
+      "profile": 3808.7409577507965
+    },
+    {
+      "mar": 9825.879231343935,
+      "naive_binary": 24347.605091405465,
+      "p": 0.675,
+      "profile": 3904.0567656005373
+    },
+    {
+      "mar": 9954.705940652628,
+      "naive_binary": 24635.320621142448,
+      "p": 0.6775,
+      "profile": 4000.865270060003
+    },
+    {
+      "mar": 10085.047565793413,
+      "naive_binary": 24925.78756801897,
+      "p": 0.68,
+      "profile": 4099.184086776957
+    },
+    {
+      "mar": 10216.924080532892,
+      "naive_binary": 25219.0453021965,
+      "p": 0.6825,
+      "profile": 4199.031308221058
+    },
+    {
+      "mar": 10350.355974234522,
+      "naive_binary": 25515.134169436507,
+      "p": 0.685,
+      "profile": 4300.425517842901
+    },
+    {
+      "mar": 10485.364267677007,
+      "naive_binary": 25814.095521580446,
+      "p": 0.6875,
+      "profile": 4403.385804813972
+    },
+    {
+      "mar": 10621.970529519142,
+      "naive_binary": 26115.971748265496,
+      "p": 0.6900000000000001,
+      "profile": 4507.931779375254
+    },
+    {
+      "mar": 10760.196893442459,
+      "naive_binary": 26420.80630993518,
+      "p": 0.6925,
+      "profile": 4614.083588823634
+    },
+    {
+      "mar": 10900.066076004534,
+      "naive_binary": 26728.64377220864,
+      "p": 0.6950000000000001,
+      "profile": 4721.86193416708
+    },
+    {
+      "mar": 11041.601395237787,
+      "naive_binary": 27039.529841674834,
+      "p": 0.6975,
+      "profile": 4831.2880874810935
+    },
+    {
+      "mar": 11184.826790030766,
+      "naive_binary": 27353.511403182976,
+      "p": 0.7000000000000001,
+      "profile": 4942.383910001243
+    },
+    {
+      "mar": 11329.766840330845,
+      "naive_binary": 27670.636558703605,
+      "p": 0.7025,
+      "profile": 5055.171870988184
+    },
+    {
+      "mar": 11476.44678820982,
+      "naive_binary": 27990.95466783989,
+      "p": 0.705,
+      "profile": 5169.67506740408
+    },
+    {
+      "mar": 11624.89255983619,
+      "naive_binary": 28314.516390073146,
+      "p": 0.7075,
+      "profile": 5285.917244441498
+    },
+    {
+      "mar": 11775.130788400551,
+      "naive_binary": 28641.373728831582,
+      "p": 0.71,
+      "profile": 5403.9228169482985
+    },
+    {
+      "mar": 11927.18883804355,
+      "naive_binary": 28971.58007747691,
+      "p": 0.7125,
+      "profile": 5523.716891794871
+    },
+    {
+      "mar": 12081.094828838533,
+      "naive_binary": 29305.190267308986,
+      "p": 0.715,
+      "profile": 5645.325291232665
+    },
+    {
+      "mar": 12236.877662884634,
+      "naive_binary": 29642.260617695112,
+      "p": 0.7175,
+      "profile": 5768.774577296197
+    },
+    {
+      "mar": 12394.567051569136,
+      "naive_binary": 29982.848988436857,
+      "p": 0.72,
+      "profile": 5894.092077303834
+    },
+    {
+      "mar": 12554.193544061998,
+      "naive_binary": 30327.014834495003,
+      "p": 0.7225,
+      "profile": 6021.305910516234
+    },
+    {
+      "mar": 12715.78855710911,
+      "naive_binary": 30674.819263199937,
+      "p": 0.725,
+      "profile": 6150.445016014909
+    },
+    {
+      "mar": 12879.384406195368,
+      "naive_binary": 31026.325094084103,
+      "p": 0.7275,
+      "profile": 6281.539181867689
+    },
+    {
+      "mar": 13045.014338153018,
+      "naive_binary": 31381.59692148066,
+      "p": 0.73,
+      "profile": 6414.619075651648
+    },
+    {
+      "mar": 13212.71256529589,
+      "naive_binary": 31740.701180043296,
+      "p": 0.7325,
+      "profile": 6549.716276409382
+    },
+    {
+      "mar": 13382.514301165093,
+      "naive_binary": 32103.706213350793,
+      "p": 0.735,
+      "profile": 6686.863308118698
+    },
+    {
+      "mar": 13554.455797977933,
+      "naive_binary": 32470.68234577233,
+      "p": 0.7375,
+      "profile": 6826.093674761884
+    },
+    {
+      "mar": 13728.57438587734,
+      "naive_binary": 32841.70195778004,
+      "p": 0.74,
+      "profile": 6967.441897085867
+    },
+    {
+      "mar": 13904.90851408628,
+      "naive_binary": 33216.83956490889,
+      "p": 0.7425,
+      "profile": 7110.9435511512165
+    },
+    {
+      "mar": 14083.497794078326,
+      "naive_binary": 33596.171900576745,
+      "p": 0.745,
+      "profile": 7256.635308774266
+    },
+    {
+      "mar": 14264.38304488351,
+      "naive_binary": 33979.77800299335,
+      "p": 0.7475,
+      "profile": 7404.554979974249
+    },
+    {
+      "mar": 14447.606340656655,
+      "naive_binary": 34367.73930640127,
+      "p": 0.75,
+      "profile": 7554.741557544588
+    },
+    {
+      "mar": 14633.211060644586,
+      "naive_binary": 34760.13973691086,
+      "p": 0.7525000000000001,
+      "profile": 7707.2352638765415
+    },
+    {
+      "mar": 14821.24194169805,
+      "naive_binary": 35157.065813207955,
+      "p": 0.755,
+      "profile": 7862.077600171822
+    },
+    {
+      "mar": 15011.745133484965,
+      "naive_binary": 35558.60675243495,
+      "p": 0.7575000000000001,
+      "profile": 8019.311398191282
+    },
+    {
+      "mar": 15204.768256572537,
+      "naive_binary": 35964.85458156593,
+      "p": 0.76,
+      "profile": 8178.980874696823
+    },
+    {
+      "mar": 15400.360463558687,
+      "naive_binary": 36375.90425462155,
+      "p": 0.7625000000000001,
+      "profile": 8341.131688755764
+    },
+    {
+      "mar": 15598.572503445863,
+      "naive_binary": 36791.85377609385,
+      "p": 0.765,
+      "profile": 8505.811002089005
+    },
+    {
+      "mar": 15799.456789465534,
+      "naive_binary": 37212.80433097973,
+      "p": 0.7675000000000001,
+      "profile": 8673.067542658204
+    },
+    {
+      "mar": 16003.06747057672,
+      "naive_binary": 37638.860421851256,
+      "p": 0.77,
+      "profile": 8842.951671701765
+    },
+    {
+      "mar": 16209.460506879655,
+      "naive_binary": 38070.13001342453,
+      "p": 0.7725,
+      "profile": 9015.51545444568
+    },
+    {
+      "mar": 16418.6937492037,
+      "naive_binary": 38506.72468512376,
+      "p": 0.775,
+      "profile": 9190.812734732543
+    },
+    {
+      "mar": 16630.82702314946,
+      "naive_binary": 38948.759792176534,
+      "p": 0.7775,
+      "profile": 9368.899213831257
+    },
+    {
+      "mar": 16845.922217886906,
+      "naive_binary": 39396.35463581893,
+      "p": 0.78,
+      "profile": 9549.832533710727
+    },
+    {
+      "mar": 17064.043380035353,
+      "naive_binary": 39849.63264323423,
+      "p": 0.7825,
+      "profile": 9733.672365083314
+    },
+    {
+      "mar": 17285.256812977943,
+      "naive_binary": 40308.721557901365,
+      "p": 0.785,
+      "profile": 9920.48050054887
+    },
+    {
+      "mar": 17509.63118199156,
+      "naive_binary": 40773.7536410824,
+      "p": 0.7875,
+      "profile": 10110.320953196953
+    },
+    {
+      "mar": 17737.23762560538,
+      "naive_binary": 41244.86588524095,
+      "p": 0.79,
+      "profile": 10303.26006105474
+    },
+    {
+      "mar": 17968.149873635102,
+      "naive_binary": 41722.20024024788,
+      "p": 0.7925,
+      "profile": 10499.36659780038
+    },
+    {
+      "mar": 18202.444372378686,
+      "naive_binary": 42205.903853305004,
+      "p": 0.795,
+      "profile": 10698.711890197483
+    },
+    {
+      "mar": 18440.200417500324,
+      "naive_binary": 42696.129323595815,
+      "p": 0.7975,
+      "profile": 10901.369942745125
+    },
+    {
+      "mar": 18681.500295175993,
+      "naive_binary": 43193.034972761794,
+      "p": 0.8,
+      "profile": 11107.41757008127
+    },
+    {
+      "mar": 18926.429432123623,
+      "naive_binary": 43696.785132397774,
+      "p": 0.8025,
+      "profile": 11316.934537724484
+    },
+    {
+      "mar": 19175.0765551973,
+      "naive_binary": 44207.55044986785,
+      "p": 0.805,
+      "profile": 11530.003711791154
+    },
+    {
+      "mar": 19427.533861285476,
+      "naive_binary": 44725.50821385966,
+      "p": 0.8075,
+      "profile": 11746.71121838294
+    },
+    {
+      "mar": 19683.897198321694,
+      "naive_binary": 45250.84270122574,
+      "p": 0.81,
+      "profile": 11967.146613402929
+    },
+    {
+      "mar": 19944.266258290467,
+      "naive_binary": 45783.74554680293,
+      "p": 0.8125,
+      "profile": 12191.403063628828
+    },
+    {
+      "mar": 20208.744783194776,
+      "naive_binary": 46324.41613806138,
+      "p": 0.8150000000000001,
+      "profile": 12419.577539950142
+    },
+    {
+      "mar": 20477.440785042876,
+      "naive_binary": 46873.062036609175,
+      "p": 0.8175,
+      "profile": 12651.771023761798
+    },
+    {
+      "mar": 20750.466781014937,
+      "naive_binary": 47429.89942877618,
+      "p": 0.8200000000000001,
+      "profile": 12888.088727603346
+    },
+    {
+      "mar": 21027.94004508305,
+      "naive_binary": 47995.15360771654,
+      "p": 0.8225,
+      "profile": 13128.640331238737
+    },
+    {
+      "mar": 21309.982877485294,
+      "naive_binary": 48569.05948971329,
+      "p": 0.8250000000000001,
+      "profile": 13373.540234491074
+    },
+    {
+      "mar": 21596.72289359487,
+      "naive_binary": 49151.86216763726,
+      "p": 0.8275,
+      "profile": 13622.907828278523
+    },
+    {
+      "mar": 21888.2933338836,
+      "naive_binary": 49743.817504815626,
+      "p": 0.8300000000000001,
+      "profile": 13876.867785445887
+    },
+    {
+      "mar": 22184.833396854618,
+      "naive_binary": 50345.19277290168,
+      "p": 0.8325,
+      "profile": 14135.550373151247
+    },
+    {
+      "mar": 22486.48859701708,
+      "naive_binary": 50956.267337716934,
+      "p": 0.835,
+      "profile": 14399.091788752798
+    },
+    {
+      "mar": 22793.41115019686,
+      "naive_binary": 51577.33339745982,
+      "p": 0.8375,
+      "profile": 14667.634521348478
+    },
+    {
+      "mar": 23105.76038872618,
+      "naive_binary": 52208.696778153164,
+      "p": 0.84,
+      "profile": 14941.32774135498
+    },
+    {
+      "mar": 23423.703209336145,
+      "naive_binary": 52850.67779173956,
+      "p": 0.8425,
+      "profile": 15220.327720775593
+    },
+    {
+      "mar": 23747.414556891286,
+      "naive_binary": 53503.61216283907,
+      "p": 0.845,
+      "profile": 15504.79828710337
+    },
+    {
+      "mar": 24077.077947464044,
+      "naive_binary": 54167.85203086958,
+      "p": 0.8475,
+      "profile": 15794.911314141405
+    },
+    {
+      "mar": 24412.886034650437,
+      "naive_binary": 54843.76703500407,
+      "p": 0.85,
+      "profile": 16090.847253401622
+    },
+    {
+      "mar": 24755.041223488566,
+      "naive_binary": 55531.74549032007,
+      "p": 0.8525,
+      "profile": 16392.795710174883
+    },
+    {
+      "mar": 25103.756336862414,
+      "naive_binary": 56232.19566449487,
+      "p": 0.855,
+      "profile": 16700.95606885412
+    },
+    {
+      "mar": 25459.25533986901,
+      "naive_binary": 56945.547165540884,
+      "p": 0.8575,
+      "profile": 17015.68533513018
+    },
+    {
+      "mar": 25821.77412830478,
+      "naive_binary": 57672.25245237395,
+      "p": 0.86,
+      "profile": 17337.36806262344
+    },
+    {
+      "mar": 26191.561388204536,
+      "naive_binary": 58412.788481496806,
+      "p": 0.8625,
+      "profile": 17666.246721008614
+    },
+    {
+      "mar": 26568.879534256208,
+      "naive_binary": 59167.658504785286,
+      "p": 0.865,
+      "profile": 18002.57715260039
+    },
+    {
+      "mar": 26954.005735939423,
+      "naive_binary": 59937.39403532656,
+      "p": 0.8675,
+      "profile": 18346.629620406653
+    },
+    {
+      "mar": 27347.23304141471,
+      "naive_binary": 60722.55700051885,
+      "p": 0.87,
+      "profile": 18698.68990615433
+    },
+    {
+      "mar": 27748.87161055469,
+      "naive_binary": 61523.742104254554,
+      "p": 0.8725,
+      "profile": 19059.06051495164
+    },
+    {
+      "mar": 28159.25007008673,
+      "naive_binary": 62341.57942303277,
+      "p": 0.875,
+      "profile": 19428.061999258403
+    },
+    {
+      "mar": 28578.71700565207,
+      "naive_binary": 63176.73726436341,
+      "p": 0.8775000000000001,
+      "profile": 19806.0344166295
+    },
+    {
+      "mar": 29007.64260772312,
+      "naive_binary": 64029.925319917944,
+      "p": 0.88,
+      "profile": 20193.338937783945
+    },
+    {
+      "mar": 29446.420490818527,
+      "naive_binary": 64901.898150667956,
+      "p": 0.8825000000000001,
+      "profile": 20590.359623992943
+    },
+    {
+      "mar": 29895.469708382196,
+      "naive_binary": 65793.45904685817,
+      "p": 0.885,
+      "profile": 20997.505395639397
+    },
+    {
+      "mar": 30355.236989135323,
+      "naive_binary": 66705.46431225684,
+      "p": 0.8875000000000001,
+      "profile": 21415.212217165164
+    },
+    {
+      "mar": 30826.19922477055,
+      "naive_binary": 67638.828029904,
+      "p": 0.89,
+      "profile": 21843.945527589403
+    },
+    {
+      "mar": 31308.866243666613,
+      "naive_binary": 68594.52737579148,
+      "p": 0.8925000000000001,
+      "profile": 22284.202950479852
+    },
+    {
+      "mar": 31803.783911014274,
+      "naive_binary": 69573.60855785127,
+      "p": 0.895,
+      "profile": 22736.517322840496
+    },
+    {
+      "mar": 32311.537602561104,
+      "naive_binary": 70577.19347068884,
+      "p": 0.8975,
+      "profile": 23201.460089038803
+    },
+    {
+      "mar": 32832.7561073436,
+      "naive_binary": 71606.48717213083,
+      "p": 0.9,
+      "profile": 23679.64511386982
+    },
+    {
+      "mar": 33368.1160245922,
+      "naive_binary": 72662.78630646419,
+      "p": 0.9025,
+      "profile": 24171.732978445652
+    },
+    {
+      "mar": 33918.34673185142,
+      "naive_binary": 73747.4886219569,
+      "p": 0.905,
+      "profile": 24678.43583418322
+    },
+    {
+      "mar": 34484.23601574398,
+      "naive_binary": 74862.103757812,
+      "p": 0.9075,
+      "profile": 25200.522904219808
+    },
+    {
+      "mar": 35066.636474351515,
+      "naive_binary": 76008.26550931418,
+      "p": 0.91,
+      "profile": 25738.826738726395
+    },
+    {
+      "mar": 35666.47282168094,
+      "naive_binary": 77187.74582111035,
+      "p": 0.9125,
+      "profile": 26294.250351591778
+    },
+    {
+      "mar": 36284.750251172365,
+      "naive_binary": 78402.47080930584,
+      "p": 0.915,
+      "profile": 26867.77539182907
+    },
+    {
+      "mar": 36922.56404801777,
+      "naive_binary": 79654.53917591905,
+      "p": 0.9175,
+      "profile": 27460.471535115827
+    },
+    {
+      "mar": 37581.11068095735,
+      "naive_binary": 80946.24345758578,
+      "p": 0.92,
+      "profile": 28073.507320837976
+    },
+    {
+      "mar": 38261.70065551008,
+      "naive_binary": 82280.0946486593,
+      "p": 0.9225,
+      "profile": 28708.16271011872
+    },
+    {
+      "mar": 38965.7734753492,
+      "naive_binary": 83658.85086290428,
+      "p": 0.925,
+      "profile": 29365.843703581733
+    },
+    {
+      "mar": 39694.915140858466,
+      "naive_binary": 85085.55085569236,
+      "p": 0.9275,
+      "profile": 30048.09943803216
+    },
+    {
+      "mar": 40450.87871936261,
+      "naive_binary": 86563.55343063321,
+      "p": 0.93,
+      "profile": 30756.642284274083
+    },
+    {
+      "mar": 41235.60865768151,
+      "naive_binary": 88096.58401541202,
+      "p": 0.9325,
+      "profile": 31493.371601314226
+    },
+    {
+      "mar": 42051.269684963685,
+      "naive_binary": 89688.79003126928,
+      "p": 0.935,
+      "profile": 32260.40197543414
+    },
+    {
+      "mar": 42900.28138673443,
+      "naive_binary": 91344.8071268819,
+      "p": 0.9375,
+      "profile": 33060.097000244285
+    },
+    {
+      "mar": 43785.35984023786,
+      "naive_binary": 93069.83893963415,
+      "p": 0.9400000000000001,
+      "profile": 33895.10995587708
+    },
+    {
+      "mar": 44709.56811565368,
+      "naive_binary": 94869.75384133108,
+      "p": 0.9425,
+      "profile": 34768.43315045992
+    },
+    {
+      "mar": 45676.37800984232,
+      "naive_binary": 96751.20320217723,
+      "p": 0.9450000000000001,
+      "profile": 35683.45823617353
+    },
+    {
+      "mar": 46689.746150771556,
+      "naive_binary": 98721.76718481,
+      "p": 0.9475,
+      "profile": 36644.050565984835
+    },
+    {
+      "mar": 47754.20868381051,
+      "naive_binary": 100790.13613579917,
+      "p": 0.9500000000000001,
+      "profile": 37654.67749169369
+    },
+    {
+      "mar": 48875.000265051756,
+      "naive_binary": 102966.33854235866,
+      "p": 0.9525,
+      "profile": 38721.39282630355
+    },
+    {
+      "mar": 50058.20525669017,
+      "naive_binary": 105262.0306788543,
+      "p": 0.9550000000000001,
+      "profile": 39850.66331786006
+    },
+    {
+      "mar": 51310.95218329441,
+      "naive_binary": 107690.8691286293,
+      "p": 0.9575,
+      "profile": 41049.616749772234
+    },
+    {
+      "mar": 52641.667209044885,
+      "naive_binary": 110268.99637287471,
+      "p": 0.96,
+      "profile": 42326.6785508586
+    },
+    {
+      "mar": 54060.40952981585,
+      "naive_binary": 113015.68330457238,
+      "p": 0.9625,
+      "profile": 43691.90718736919
+    },
+    {
+      "mar": 55579.32265490747,
+      "naive_binary": 115954.19375337947,
+      "p": 0.965,
+      "profile": 45157.445444657904
+    },
+    {
+      "mar": 57213.253221948515,
+      "naive_binary": 119112.96995545553,
+      "p": 0.9675,
+      "profile": 46738.13924202651
+    },
+    {
+      "mar": 58980.61800735071,
+      "naive_binary": 122527.29349394838,
+      "p": 0.97,
+      "profile": 48452.404643121045
+    },
+    {
+      "mar": 60904.649088014085,
+      "naive_binary": 126241.67066755041,
+      "p": 0.9725,
+      "profile": 50323.473017579716
+    },
+    {
+      "mar": 63015.2341513498,
+      "naive_binary": 130313.3579905399,
+      "p": 0.975,
+      "profile": 52381.23135099952
+    },
+    {
+      "mar": 65351.72973560531,
+      "naive_binary": 134817.75154497087,
+      "p": 0.9775,
+      "profile": 54665.035485205226
+    },
+    {
+      "mar": 67967.43841252019,
+      "naive_binary": 139856.96396355145,
+      "p": 0.98,
+      "profile": 57228.18730085041
+    },
+    {
+      "mar": 70937.09133590476,
+      "naive_binary": 145574.15882157828,
+      "p": 0.9825,
+      "profile": 60145.417265941636
+    },
+    {
+      "mar": 74370.13790830538,
+      "naive_binary": 152179.00978210452,
+      "p": 0.985,
+      "profile": 63526.17410244989
+    },
+    {
+      "mar": 78436.2619549343,
+      "naive_binary": 159996.58218132588,
+      "p": 0.9875,
+      "profile": 67540.14096018762
+    },
+    {
+      "mar": 83419.7336934451,
+      "naive_binary": 169571.45563167782,
+      "p": 0.99,
+      "profile": 72471.58738653174
+    },
+    {
+      "mar": 89853.46308613419,
+      "naive_binary": 181924.5313471349,
+      "p": 0.9925,
+      "profile": 78853.42267857335
+    },
+    {
+      "mar": 98933.85398639295,
+      "naive_binary": 199347.77231182705,
+      "p": 0.995,
+      "profile": 87882.05002951916
+    },
+    {
+      "mar": 114478.53736608905,
+      "naive_binary": 229154.65207872505,
+      "p": 0.9975,
+      "profile": 103375.09975602198
+    },
+    {
+      "mar": null,
+      "naive_binary": null,
+      "p": 1.0,
+      "profile": null
+    }
+  ],
+  "quarantined_partitions": [
+    {
+      "allowed_use": [],
+      "first_release_verified": false,
+      "mirror_posted_at": "2025-11-22T10:50:46Z",
+      "observation_role": "quarantined",
+      "period": "2024-Q1",
+      "reason": "Unknown containment ambiguous or missing; do not infer it from a nominal nonadvanced label",
+      "source_id": "c631f9f1168eff646c82d1df87de4020a0b816ac721b9684302c8eaf79d9c044",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q1-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "c631f9f1168eff646c82d1df87de4020a0b816ac721b9684302c8eaf79d9c044",
+      "status": "quarantined"
+    },
+    {
+      "allowed_use": [],
+      "first_release_verified": false,
+      "mirror_posted_at": "2025-11-22T10:53:57Z",
+      "observation_role": "quarantined",
+      "period": "2024-Q2",
+      "reason": "Unknown containment ambiguous or missing; do not infer it from a nominal nonadvanced label",
+      "source_id": "3deae8dbd54834cbfd3d480c84ff3180d366ea5897b699fe8037409d35ca7685",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q2-HIV-AIDS-Surveillance-of-the-Philippines.pdf",
+      "source_sha256": "3deae8dbd54834cbfd3d480c84ff3180d366ea5897b699fe8037409d35ca7685",
+      "status": "quarantined"
+    },
+    {
+      "allowed_use": [],
+      "first_release_verified": false,
+      "mirror_posted_at": "2025-11-22T10:56:09Z",
+      "observation_role": "quarantined",
+      "period": "2024-Q3",
+      "reason": "Unknown containment ambiguous or missing; do not infer it from a nominal nonadvanced label",
+      "source_id": "938ea0716dd38accb6b79d428c2a7cd4cc1903643289723f8b53385e466353c5",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/HASP-Q3-2024-1.pdf",
+      "source_sha256": "938ea0716dd38accb6b79d428c2a7cd4cc1903643289723f8b53385e466353c5",
+      "status": "quarantined"
+    },
+    {
+      "allowed_use": [],
+      "first_release_verified": false,
+      "mirror_posted_at": "2025-11-22T11:02:08Z",
+      "observation_role": "quarantined",
+      "period": "2024-Q4",
+      "reason": "Unknown containment ambiguous or missing; do not infer it from a nominal nonadvanced label",
+      "source_id": "9ac03ba1ea36e74be5406830ef823cfdec7ca2a7bccefcde5ffd9e4220107b9e",
+      "source_page": 1,
+      "source_path": "src/epigraph_ph/harp_archive/HIV_Data/downloaded_hasp/2024_Q4-HIV-AIDS-Surveillance-of-the-Philippines-2.pdf",
+      "source_sha256": "9ac03ba1ea36e74be5406830ef823cfdec7ca2a7bccefcde5ffd9e4220107b9e",
+      "status": "quarantined"
+    }
+  ],
+  "run_id": "p3d-r98-ahd-missingness-20260911-s00"
+}

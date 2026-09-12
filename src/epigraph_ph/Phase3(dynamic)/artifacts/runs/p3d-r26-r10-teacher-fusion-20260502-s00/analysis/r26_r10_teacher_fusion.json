@@ -1,0 +1,1298 @@
+{
+  "artifact_paths": {
+    "csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r26-r10-teacher-fusion-20260502-s00/analysis/r26_r10_teacher_fusion_split_rows.csv",
+    "dashboard_png": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r26-r10-teacher-fusion-20260502-s00/analysis/r26_r10_teacher_fusion_dashboard.png",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r26-r10-teacher-fusion-20260502-s00/analysis/r26_r10_teacher_fusion.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r26-r10-teacher-fusion-20260502-s00/analysis/r26_r10_teacher_fusion.md"
+  },
+  "blockers": [
+    "fusion_not_better_than_matched_r10"
+  ],
+  "generated_at": "2026-05-02T11:47:32.873935+00:00",
+  "horizon_rows": [
+    {
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/tr-v3-r10-horizon-replay-dense-h1-20260430-s00/analysis/tr_v3_experiment_suite_report.json",
+      "blockers": [
+        "fusion_not_better_than_matched_r10"
+      ],
+      "carry_forward_mean_mae": 0.14136962808267026,
+      "fusion_mean_mae": 0.10942649571598057,
+      "fusion_minus_carry_forward": -0.03194313236668969,
+      "fusion_minus_r10": 0.014123036985635565,
+      "horizon_years": 1,
+      "matched_r10_mean_mae": 0.095303458730345,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "replay_reference_mean_mae": 0.09530345873034501,
+      "reproduction_abs_delta": 1.3877787807814457e-17,
+      "split_count": 11,
+      "split_rows": [
+        {
+          "carry_forward_mean_mae": 0.13790313512579122,
+          "fusion_mean_mae": 0.18680338262390253,
+          "fusion_minus_carry_forward": 0.04890024749811131,
+          "fusion_minus_r10": 0.0,
+          "fusion_worst_mae": 0.4187876710549791,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "identity"
+              },
+              "diagnosed_plhiv": {
+                "kind": "identity"
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity"
+              }
+            },
+            "policy_id": "identity_r10",
+            "previous_record_count": 0,
+            "selected_metric_count": 0
+          },
+          "r10_mean_mae": 0.18680338262390253,
+          "r10_worst_mae": 0.4187876710549791,
+          "record_count": 12,
+          "train_end_year": 2014
+        },
+        {
+          "carry_forward_mean_mae": 0.1380318574060719,
+          "fusion_mean_mae": 0.22593824798207032,
+          "fusion_minus_carry_forward": 0.08790639057599842,
+          "fusion_minus_r10": 0.09299623206308505,
+          "fusion_worst_mae": 0.5736354773069867,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.08305134978500739,
+                "mean_mae": 0.07909025015715186,
+                "worst_mae": 0.23491088796720508
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.5529254762866147,
+                "mean_mae": 0.052253765048982354,
+                "worst_mae": 0.1710349024300196
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": 0.11817687182327008,
+                "mean_mae": 0.04689217040828343,
+                "worst_mae": 0.0809447461724742
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 12,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.13294201591898527,
+          "r10_worst_mae": 0.5120332584431206,
+          "record_count": 10,
+          "train_end_year": 2015
+        },
+        {
+          "carry_forward_mean_mae": 0.1202658505247102,
+          "fusion_mean_mae": 0.20284525655207455,
+          "fusion_minus_carry_forward": 0.08257940602736435,
+          "fusion_minus_r10": 0.032002590946763776,
+          "fusion_worst_mae": 0.6377386851544881,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.06832466943883642,
+                "mean_mae": 0.07322381945412137,
+                "worst_mae": 0.24609667665162235
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.07377733185595081,
+                "worst_mae": 0.1811317080662722
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": 0.13099082475965673,
+                "mean_mae": 0.09149250330214923,
+                "worst_mae": 0.44370844633491513
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 22,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.17084266560531078,
+          "r10_worst_mae": 0.48489937847571923,
+          "record_count": 11,
+          "train_end_year": 2016
+        },
+        {
+          "carry_forward_mean_mae": 0.11002309422455474,
+          "fusion_mean_mae": 0.04880950073772121,
+          "fusion_minus_carry_forward": -0.06121359348683353,
+          "fusion_minus_r10": 0.004751750450441239,
+          "fusion_worst_mae": 0.17463791988213598,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.056980136717895924,
+                "mean_mae": 0.06730399758784586,
+                "worst_mae": 0.25460189514622683
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.06345877451368609,
+                "worst_mae": 0.1811317080662722
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.24142067671300857,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 33,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.04405775028727997,
+          "r10_worst_mae": 0.22035401686833414,
+          "record_count": 10,
+          "train_end_year": 2017
+        },
+        {
+          "carry_forward_mean_mae": 0.10368043956073814,
+          "fusion_mean_mae": 0.0680978543907362,
+          "fusion_minus_carry_forward": -0.03558258517000193,
+          "fusion_minus_r10": -0.006399903615956812,
+          "fusion_worst_mae": 0.17141376258021318,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.054332971629491134,
+                "mean_mae": 0.0715301267279064,
+                "worst_mae": 0.2565726809658793
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.06274819962543644,
+                "worst_mae": 0.1811317080662722
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.17468918954876655,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 43,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.07449775800669302,
+          "r10_worst_mae": 0.21523337444742796,
+          "record_count": 10,
+          "train_end_year": 2018
+        },
+        {
+          "carry_forward_mean_mae": 0.12744001003620264,
+          "fusion_mean_mae": 0.1529759381251943,
+          "fusion_minus_carry_forward": 0.02553592808899166,
+          "fusion_minus_r10": -0.0021109069247569057,
+          "fusion_worst_mae": 0.47577026943693196,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.056980136717895924,
+                "mean_mae": 0.07314300271061373,
+                "worst_mae": 0.25460189514622683
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.06476147415879342,
+                "worst_mae": 0.1811317080662722
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.14724174068258467,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 53,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.1550868450499512,
+          "r10_worst_mae": 0.47577026943693196,
+          "record_count": 9,
+          "train_end_year": 2019
+        },
+        {
+          "carry_forward_mean_mae": 0.13034592271798787,
+          "fusion_mean_mae": 0.051328095206345334,
+          "fusion_minus_carry_forward": -0.07901782751164253,
+          "fusion_minus_r10": -0.0024131124476733934,
+          "fusion_worst_mae": 0.09034652444137736,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.05631148089460147,
+                "mean_mae": 0.07719478693440421,
+                "worst_mae": 0.25510019475074186
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.061446990240995474,
+                "worst_mae": 0.1811317080662722
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.16546261035988288,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 62,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.05374120765401873,
+          "r10_worst_mae": 0.13714647288903714,
+          "record_count": 7,
+          "train_end_year": 2020
+        },
+        {
+          "carry_forward_mean_mae": 0.37384589064063634,
+          "fusion_mean_mae": 0.07835247506445296,
+          "fusion_minus_carry_forward": -0.29549341557618336,
+          "fusion_minus_r10": 0.01586088252669212,
+          "fusion_worst_mae": 0.1559392789373814,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.052354462364380794,
+                "mean_mae": 0.07314864727441425,
+                "worst_mae": 0.2580422567335218
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.05915306159979219,
+                "worst_mae": 0.1811317080662722
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.16144355581976227,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 69,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.06249159253776084,
+          "r10_worst_mae": 0.1640248047528405,
+          "record_count": 12,
+          "train_end_year": 2021
+        },
+        {
+          "carry_forward_mean_mae": 0.1278520400313292,
+          "fusion_mean_mae": 0.06019277569406569,
+          "fusion_minus_carry_forward": -0.06765926433726349,
+          "fusion_minus_r10": 0.009362733267205929,
+          "fusion_worst_mae": 0.23079948603790115,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.05631148089460147,
+                "mean_mae": 0.06970953662598907,
+                "worst_mae": 0.25510019475074186
+              },
+              "diagnosed_plhiv": {
+                "alpha": 0.9342543332359678,
+                "kind": "alpha_blend",
+                "mean_mae": 0.06849585348025589,
+                "worst_mae": 0.18230117544661284
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.1485295099898339,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 81,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.05083004242685976,
+          "r10_worst_mae": 0.23079948603790115,
+          "record_count": 11,
+          "train_end_year": 2022
+        },
+        {
+          "carry_forward_mean_mae": 0.1032740890946091,
+          "fusion_mean_mae": 0.05681203718381884,
+          "fusion_minus_carry_forward": -0.04646205191079026,
+          "fusion_minus_r10": -0.004645778431375279,
+          "fusion_worst_mae": 0.2849488614459961,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.052354462364380794,
+                "mean_mae": 0.06623460415787798,
+                "worst_mae": 0.2580422567335218
+              },
+              "diagnosed_plhiv": {
+                "alpha": 0.7927930292490227,
+                "kind": "alpha_blend",
+                "mean_mae": 0.0636238038000879,
+                "worst_mae": 0.18481745353360746
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.14504202990989437,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 92,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.06145781561519412,
+          "r10_worst_mae": 0.2849488614459961,
+          "record_count": 12,
+          "train_end_year": 2023
+        },
+        {
+          "carry_forward_mean_mae": 0.08240357954674152,
+          "fusion_mean_mae": 0.07153588931540454,
+          "fusion_minus_carry_forward": -0.010867690231336977,
+          "fusion_minus_r10": 0.01594891900756574,
+          "fusion_worst_mae": 0.21743706790100198,
+          "horizon_years": 1,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.04759825985308197,
+                "mean_mae": 0.06121400172964215,
+                "worst_mae": 0.2615631442128201
+              },
+              "diagnosed_plhiv": {
+                "alpha": 0.7898101335342417,
+                "kind": "alpha_blend",
+                "mean_mae": 0.056649382437938094,
+                "worst_mae": 0.18487051253215583
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.14450664500753446,
+                "worst_mae": 0.5120332584431206
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 104,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.0555869703078388,
+          "r10_worst_mae": 0.21743706790100198,
+          "record_count": 12,
+          "train_end_year": 2024
+        }
+      ],
+      "status": "fail"
+    },
+    {
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/tr-v3-r10-horizon-replay-dense-h3-20260430-s00/analysis/tr_v3_experiment_suite_report.json",
+      "blockers": [
+        "fusion_not_better_than_matched_r10"
+      ],
+      "carry_forward_mean_mae": 0.1896769711489078,
+      "fusion_mean_mae": 0.1404888208976715,
+      "fusion_minus_carry_forward": -0.049188150251236296,
+      "fusion_minus_r10": 0.02483823867650943,
+      "horizon_years": 3,
+      "matched_r10_mean_mae": 0.11565058222116208,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "replay_reference_mean_mae": 0.11565058222116206,
+      "reproduction_abs_delta": 1.3877787807814457e-17,
+      "split_count": 11,
+      "split_rows": [
+        {
+          "carry_forward_mean_mae": 0.17733874273778305,
+          "fusion_mean_mae": 0.225862426056342,
+          "fusion_minus_carry_forward": 0.04852368331855894,
+          "fusion_minus_r10": 0.0,
+          "fusion_worst_mae": 0.5809523809523808,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "identity"
+              },
+              "diagnosed_plhiv": {
+                "kind": "identity"
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity"
+              }
+            },
+            "policy_id": "identity_r10",
+            "previous_record_count": 0,
+            "selected_metric_count": 0
+          },
+          "r10_mean_mae": 0.225862426056342,
+          "r10_worst_mae": 0.5809523809523808,
+          "record_count": 33,
+          "train_end_year": 2014
+        },
+        {
+          "carry_forward_mean_mae": 0.19214551653269632,
+          "fusion_mean_mae": 0.14078198415453838,
+          "fusion_minus_carry_forward": -0.05136353237815794,
+          "fusion_minus_r10": 0.007209753263499791,
+          "fusion_worst_mae": 0.40481380979862264,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.10011281273245665,
+                "worst_mae": 0.2970941868328649
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.5658719943499708,
+                "mean_mae": 0.0441406791502601,
+                "worst_mae": 0.12817659107997026
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": 0.19854715487858954,
+                "mean_mae": 0.08937787579055602,
+                "worst_mae": 0.4888696073123281
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 33,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.1335722308910386,
+          "r10_worst_mae": 0.5120332584431206,
+          "record_count": 31,
+          "train_end_year": 2015
+        },
+        {
+          "carry_forward_mean_mae": 0.15749529675304536,
+          "fusion_mean_mae": 0.3708593246885932,
+          "fusion_minus_carry_forward": 0.21336402793554782,
+          "fusion_minus_r10": 0.12100614673596649,
+          "fusion_worst_mae": 0.8948582748575173,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.1056402042272113,
+                "worst_mae": 0.3248013513335875
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.459113670531595,
+                "mean_mae": 0.1208237451056563,
+                "worst_mae": 0.27563710214004356
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": 0.17366289620361108,
+                "mean_mae": 0.07360352231976798,
+                "worst_mae": 0.501437079803149
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 64,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.24985317795262668,
+          "r10_worst_mae": 0.6476456231636116,
+          "record_count": 31,
+          "train_end_year": 2016
+        },
+        {
+          "carry_forward_mean_mae": 0.18654295925595668,
+          "fusion_mean_mae": 0.10048316969132894,
+          "fusion_minus_carry_forward": -0.08605978956462774,
+          "fusion_minus_r10": 0.013764965706323073,
+          "fusion_worst_mae": 0.5003602229584927,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.12996082017365396,
+                "mean_mae": 0.09516956802568535,
+                "worst_mae": 0.40541266921517627
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.12342747470085537,
+                "worst_mae": 0.32385246479388535
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.2753161206467463,
+                "worst_mae": 0.6476456231636116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 95,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.08671820398500586,
+          "r10_worst_mae": 0.5003602229584927,
+          "record_count": 29,
+          "train_end_year": 2017
+        },
+        {
+          "carry_forward_mean_mae": 0.09667597593202346,
+          "fusion_mean_mae": 0.09956032009965744,
+          "fusion_minus_carry_forward": 0.002884344167633987,
+          "fusion_minus_r10": 0.007017486681090701,
+          "fusion_worst_mae": 0.4863721791239518,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.11518359956422586,
+                "mean_mae": 0.09368929378996313,
+                "worst_mae": 0.41413500380993135
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.11778467473094162,
+                "worst_mae": 0.32385246479388535
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.2293383328004923,
+                "worst_mae": 0.6476456231636116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 124,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.09254283341856674,
+          "r10_worst_mae": 0.4863721791239518,
+          "record_count": 26,
+          "train_end_year": 2018
+        },
+        {
+          "carry_forward_mean_mae": 0.15818569952335096,
+          "fusion_mean_mae": 0.10973407730647684,
+          "fusion_minus_carry_forward": -0.048451622216874116,
+          "fusion_minus_r10": 0.02040468019089274,
+          "fusion_worst_mae": 0.47577026943693185,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.11065204397206596,
+                "mean_mae": 0.0909497879855853,
+                "worst_mae": 0.4167840581701496
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.10892638897389868,
+                "worst_mae": 0.32385246479388535
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.2156598680456469,
+                "worst_mae": 0.6476456231636116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 150,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.0893293971155841,
+          "r10_worst_mae": 0.47577026943693185,
+          "record_count": 28,
+          "train_end_year": 2019
+        },
+        {
+          "carry_forward_mean_mae": 0.26828552055878485,
+          "fusion_mean_mae": 0.12258316565381723,
+          "fusion_minus_carry_forward": -0.14570235490496763,
+          "fusion_minus_r10": 0.007173863871346428,
+          "fusion_worst_mae": 0.44871871522482315,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.08599663172079275,
+                "mean_mae": 0.09302124954541922,
+                "worst_mae": 0.43098864433927125
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.09814206386196495,
+                "worst_mae": 0.32385246479388535
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": -0.013419222549114096,
+                "mean_mae": 0.2029757660540681,
+                "worst_mae": 0.6302706438191885
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 178,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.1154093017824708,
+          "r10_worst_mae": 0.441268214448114,
+          "record_count": 30,
+          "train_end_year": 2020
+        },
+        {
+          "carry_forward_mean_mae": 0.40229582884121,
+          "fusion_mean_mae": 0.10704709486205605,
+          "fusion_minus_carry_forward": -0.29524873397915397,
+          "fusion_minus_r10": 0.029023418450210225,
+          "fusion_worst_mae": 0.3404797912403997,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.07712220971555972,
+                "mean_mae": 0.0862143511908246,
+                "worst_mae": 0.43601630442717093
+              },
+              "diagnosed_plhiv": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.09707153896724292,
+                "worst_mae": 0.32385246479388535
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.21167673453935432,
+                "worst_mae": 0.6476456231636116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 208,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.07802367641184582,
+          "r10_worst_mae": 0.28910552017701646,
+          "record_count": 35,
+          "train_end_year": 2021
+        },
+        {
+          "carry_forward_mean_mae": 0.21956672214229878,
+          "fusion_mean_mae": 0.08309590583591964,
+          "fusion_minus_carry_forward": -0.13647081630637914,
+          "fusion_minus_r10": 0.00777882853806533,
+          "fusion_worst_mae": 0.32106520455713267,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.06962461943397713,
+                "mean_mae": 0.07783487621181895,
+                "worst_mae": 0.4402293095766924
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.10141196847584677,
+                "mean_mae": 0.10581662493437101,
+                "worst_mae": 0.437014081914236
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.059227686902792384,
+                "kind": "alpha_blend",
+                "mean_mae": 0.194479633515558,
+                "worst_mae": 0.5929774263153281
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 243,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.0753170772978543,
+          "r10_worst_mae": 0.3005913046104759,
+          "record_count": 35,
+          "train_end_year": 2022
+        },
+        {
+          "carry_forward_mean_mae": 0.14551084081409502,
+          "fusion_mean_mae": 0.0892634491881497,
+          "fusion_minus_carry_forward": -0.05624739162594532,
+          "fusion_minus_r10": 0.01932233997454072,
+          "fusion_worst_mae": 0.29218537862364696,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.05631148089460147,
+                "mean_mae": 0.07198736777714694,
+                "worst_mae": 0.4476327559521202
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.09615410707013972,
+                "mean_mae": 0.09812690702095665,
+                "worst_mae": 0.4397537422247747
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.028536777857150315,
+                "kind": "alpha_blend",
+                "mean_mae": 0.19006527152515587,
+                "worst_mae": 0.6151489329199789
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 278,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.06994110921360898,
+          "r10_worst_mae": 0.2850681412600702,
+          "record_count": 24,
+          "train_end_year": 2023
+        },
+        {
+          "carry_forward_mean_mae": 0.08240357954674152,
+          "fusion_mean_mae": 0.09610611233750722,
+          "fusion_minus_carry_forward": 0.013702532790765706,
+          "fusion_minus_r10": 0.04051914202966842,
+          "fusion_worst_mae": 0.21903346131081605,
+          "horizon_years": 3,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.052064949505140845,
+                "mean_mae": 0.06863025616720883,
+                "worst_mae": 0.4499735969087316
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.08459967435333393,
+                "mean_mae": 0.09476838759216219,
+                "worst_mae": 0.44572392166146574
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.012662275070757845,
+                "kind": "alpha_blend",
+                "mean_mae": 0.1877448600918151,
+                "worst_mae": 0.6332262646497003
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 302,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.0555869703078388,
+          "r10_worst_mae": 0.21743706790100198,
+          "record_count": 12,
+          "train_end_year": 2024
+        }
+      ],
+      "status": "fail"
+    },
+    {
+      "artifact_path": "/media/gaurav/New_Volume/EpiGraph_PH/artifacts/runs/tr-v3-r10-horizon-replay-dense-h5-20260430-s00/analysis/tr_v3_experiment_suite_report.json",
+      "blockers": [
+        "fusion_not_better_than_matched_r10"
+      ],
+      "carry_forward_mean_mae": 0.22952004455230784,
+      "fusion_mean_mae": 0.17649256598690702,
+      "fusion_minus_carry_forward": -0.053027478565400826,
+      "fusion_minus_r10": 0.04707147823669677,
+      "horizon_years": 5,
+      "matched_r10_mean_mae": 0.12942108775021025,
+      "reference_experiment_id": "EXP-R10-DENSE-M1-C1-H1",
+      "replay_reference_mean_mae": 0.12942108775021025,
+      "reproduction_abs_delta": 0.0,
+      "split_count": 11,
+      "split_rows": [
+        {
+          "carry_forward_mean_mae": 0.24329001686248544,
+          "fusion_mean_mae": 0.24845495202495746,
+          "fusion_minus_carry_forward": 0.0051649351624720174,
+          "fusion_minus_r10": 0.0,
+          "fusion_worst_mae": 0.696441860465116,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "identity"
+              },
+              "diagnosed_plhiv": {
+                "kind": "identity"
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity"
+              }
+            },
+            "policy_id": "identity_r10",
+            "previous_record_count": 0,
+            "selected_metric_count": 0
+          },
+          "r10_mean_mae": 0.24845495202495746,
+          "r10_worst_mae": 0.696441860465116,
+          "record_count": 53,
+          "train_end_year": 2014
+        },
+        {
+          "carry_forward_mean_mae": 0.23900995151149496,
+          "fusion_mean_mae": 0.15768983137698528,
+          "fusion_minus_carry_forward": -0.08132012013450968,
+          "fusion_minus_r10": 0.00749963144801466,
+          "fusion_worst_mae": 0.5473793544263349,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.14830267179502182,
+                "worst_mae": 0.4438704430561768
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.5754886200733207,
+                "mean_mae": 0.04118072649421323,
+                "worst_mae": 0.14681846750300293
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": 0.37026315454980097,
+                "mean_mae": 0.08420357251360315,
+                "worst_mae": 0.3930735930735933
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 53,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.15019019992897062,
+          "r10_worst_mae": 0.5120332584431206,
+          "record_count": 50,
+          "train_end_year": 2015
+        },
+        {
+          "carry_forward_mean_mae": 0.1695961181670185,
+          "fusion_mean_mae": 0.41551552128735736,
+          "fusion_minus_carry_forward": 0.24591940312033886,
+          "fusion_minus_r10": 0.12595779167488558,
+          "fusion_worst_mae": 1.4518928994132305,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.14769658871188,
+                "worst_mae": 0.4438704430561768
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.5645544036928811,
+                "mean_mae": 0.09441900254916316,
+                "worst_mae": 0.2842733540380384
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "log_residual",
+                "log_residual": 0.19854715487858954,
+                "mean_mae": 0.1028585091830622,
+                "worst_mae": 0.4888696073123283
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 103,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.2895577296124718,
+          "r10_worst_mae": 1.1539930947165116,
+          "record_count": 47,
+          "train_end_year": 2016
+        },
+        {
+          "carry_forward_mean_mae": 0.24617823175875383,
+          "fusion_mean_mae": 0.20515651886823952,
+          "fusion_minus_carry_forward": -0.04102171289051432,
+          "fusion_minus_r10": 0.10984627437242625,
+          "fusion_worst_mae": 0.4821789773778714,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "alpha": 1.0,
+                "kind": "alpha_blend",
+                "mean_mae": 0.1246735158546084,
+                "worst_mae": 0.4438704430561768
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.44125446672983415,
+                "mean_mae": 0.12594494291944117,
+                "worst_mae": 0.28099107000578444
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.5687262038015388,
+                "kind": "alpha_blend",
+                "mean_mae": 0.2460548371398317,
+                "worst_mae": 0.6964213238985218
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 150,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.09531024449581327,
+          "r10_worst_mae": 0.5003602229584928,
+          "record_count": 48,
+          "train_end_year": 2017
+        },
+        {
+          "carry_forward_mean_mae": 0.20089404823373996,
+          "fusion_mean_mae": 0.1392680312045385,
+          "fusion_minus_carry_forward": -0.06162601702920145,
+          "fusion_minus_r10": 0.03908234236355909,
+          "fusion_worst_mae": 0.5504369952301511,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.11813968293986044,
+                "mean_mae": 0.11806070210011241,
+                "worst_mae": 0.6583723589081829
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.3423193908038682,
+                "mean_mae": 0.1284544827039973,
+                "worst_mae": 0.3242664289722976
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.5020024978042285,
+                "kind": "alpha_blend",
+                "mean_mae": 0.23424626674594198,
+                "worst_mae": 0.6828743556922756
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 198,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.10018568884097942,
+          "r10_worst_mae": 0.4782970343875389,
+          "record_count": 49,
+          "train_end_year": 2018
+        },
+        {
+          "carry_forward_mean_mae": 0.22309634100060777,
+          "fusion_mean_mae": 0.14413201794581534,
+          "fusion_minus_carry_forward": -0.07896432305479242,
+          "fusion_minus_r10": 0.04861824064544665,
+          "fusion_worst_mae": 0.41243577765796446,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.09950875844451001,
+                "mean_mae": 0.1070053114502002,
+                "worst_mae": 0.6646787020548163
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.3170679845133568,
+                "mean_mae": 0.12716426491757965,
+                "worst_mae": 0.34111636214899527
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.22915888420561292,
+                "kind": "alpha_blend",
+                "mean_mae": 0.2225839576996576,
+                "worst_mae": 0.8705504168900922
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 247,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.0955137773003687,
+          "r10_worst_mae": 0.41309126946036934,
+          "record_count": 51,
+          "train_end_year": 2019
+        },
+        {
+          "carry_forward_mean_mae": 0.3275176185415687,
+          "fusion_mean_mae": 0.16549300436568504,
+          "fusion_minus_carry_forward": -0.16202461417588365,
+          "fusion_minus_r10": 0.017301237840394584,
+          "fusion_worst_mae": 0.5247502405419721,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "alpha": 0.222802281011976,
+                "kind": "alpha_blend",
+                "mean_mae": 0.09710705848903038,
+                "worst_mae": 0.6401683725479764
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.26734637917196036,
+                "mean_mae": 0.12548883857966228,
+                "worst_mae": 0.3730766564729184
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.059227686902792384,
+                "kind": "alpha_blend",
+                "mean_mae": 0.21023033623196977,
+                "worst_mae": 1.0807353886695164
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 298,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.14819176652529045,
+          "r10_worst_mae": 0.5045751288360456,
+          "record_count": 54,
+          "train_end_year": 2020
+        },
+        {
+          "carry_forward_mean_mae": 0.42765702149658186,
+          "fusion_mean_mae": 0.0909864424474949,
+          "fusion_minus_carry_forward": -0.3366705790490869,
+          "fusion_minus_r10": -0.004396007256663989,
+          "fusion_worst_mae": 0.3298928837757271,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.057648792541190375,
+                "mean_mae": 0.09010964368133703,
+                "worst_mae": 0.6784264657717994
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.2478112839087725,
+                "mean_mae": 0.12109774521041147,
+                "worst_mae": 0.3852050821131034
+              },
+              "new_diagnosed_cases_period": {
+                "alpha": 0.046760174518368905,
+                "kind": "alpha_blend",
+                "mean_mae": 0.22209151423882734,
+                "worst_mae": 1.0961562400509721
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 352,
+            "selected_metric_count": 3
+          },
+          "r10_mean_mae": 0.09538244970415889,
+          "r10_worst_mae": 0.2970214857675543,
+          "record_count": 47,
+          "train_end_year": 2021
+        },
+        {
+          "carry_forward_mean_mae": 0.21956672214229878,
+          "fusion_mean_mae": 0.1133453463702082,
+          "fusion_minus_carry_forward": -0.10622137577209058,
+          "fusion_minus_r10": 0.03802826907235389,
+          "fusion_worst_mae": 0.3005913046104759,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.06076967415225276,
+                "mean_mae": 0.0831195751785604,
+                "worst_mae": 0.6774212324724268
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.2393752667287341,
+                "mean_mae": 0.11941519282973963,
+                "worst_mae": 0.3903698033332009
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.21187064864708574,
+                "worst_mae": 1.1539930947165116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 399,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.0753170772978543,
+          "r10_worst_mae": 0.3005913046104759,
+          "record_count": 35,
+          "train_end_year": 2022
+        },
+        {
+          "carry_forward_mean_mae": 0.14551084081409502,
+          "fusion_mean_mae": 0.12672549092471241,
+          "fusion_minus_carry_forward": -0.018785349889382602,
+          "fusion_minus_r10": 0.056784381711103435,
+          "fusion_worst_mae": 0.2850681412600702,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.055012041854018534,
+                "mean_mae": 0.07857456796778944,
+                "worst_mae": 0.6792733193673928
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.21067407495046808,
+                "mean_mae": 0.12034252695429974,
+                "worst_mae": 0.4076185973289002
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.2070420182550437,
+                "worst_mae": 1.1539930947165116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 434,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.06994110921360898,
+          "r10_worst_mae": 0.2850681412600702,
+          "record_count": 24,
+          "train_end_year": 2023
+        },
+        {
+          "carry_forward_mean_mae": 0.08240357954674152,
+          "fusion_mean_mae": 0.13465106903998306,
+          "fusion_minus_carry_forward": 0.05224748949324154,
+          "fusion_minus_r10": 0.07906409873214426,
+          "fusion_worst_mae": 0.21743706790100198,
+          "horizon_years": 5,
+          "policy": {
+            "contract": "For each metric, previous blocked replay rows can select carry-forward, log-residual correction, or exact convex blend only if that policy improves previous mean error without worsening previous worst-case error versus frozen matched R10.",
+            "metric_policy": {
+              "alive_on_art": {
+                "kind": "log_residual",
+                "log_residual": 0.052064949505140845,
+                "mean_mae": 0.07593132892131718,
+                "worst_mae": 0.6802172075050763
+              },
+              "diagnosed_plhiv": {
+                "kind": "log_residual",
+                "log_residual": 0.1906473000152804,
+                "mean_mae": 0.12255567099794448,
+                "worst_mae": 0.41936435481444295
+              },
+              "new_diagnosed_cases_period": {
+                "kind": "identity",
+                "mean_mae": 0.20442313483104793,
+                "worst_mae": 1.1539930947165116
+              }
+            },
+            "policy_id": "metric_safe_fusion",
+            "previous_record_count": 458,
+            "selected_metric_count": 2
+          },
+          "r10_mean_mae": 0.0555869703078388,
+          "r10_worst_mae": 0.21743706790100198,
+          "record_count": 12,
+          "train_end_year": 2024
+        }
+      ],
+      "status": "fail"
+    }
+  ],
+  "horizons": [
+    1,
+    3,
+    5
+  ],
+  "policy_candidates": [
+    "identity_r10",
+    "metric_carry_selector",
+    "metric_log_residual",
+    "metric_alpha_blend"
+  ],
+  "promotion_eligible": false,
+  "run_id": "p3d-r26-r10-teacher-fusion-20260502-s00",
+  "schema_version": "phase3_dynamic.r26_r10_teacher_fusion.v1",
+  "verdict": "R26 does not beat matched R10 on every tested horizon. Teacher fusion is diagnostic only and should not replace the R19 mechanistic reference."
+}

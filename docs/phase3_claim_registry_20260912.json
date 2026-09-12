@@ -1,0 +1,1649 @@
+{
+  "artifact_paths": {
+    "claim_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r53-claim-registry-r98-annual-integrity-20260912/analysis/r53_claim_rows.csv",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r53-claim-registry-r98-annual-integrity-20260912/analysis/r53_publication_claim_registry_report.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r53-claim-registry-r98-annual-integrity-20260912/analysis/r53_publication_claim_registry_report.md"
+  },
+  "blockers": [],
+  "claim_rows": [
+    {
+      "allowed_claim": "R41 is the current national research champion under the strict mapped carry-forward/R10 and annual challenge gates.",
+      "blockers": [],
+      "claim_id": "national_r41_research_champion",
+      "claim_limit": "National forecast/readout champion; not a subnational validation claim and not a causal determinant claim.",
+      "claim_scope": "national",
+      "claim_status": "promoted",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r42-r41-champion-hardening-20260502-s00/analysis/r42_r41_champion_hardening_report.json",
+      "evidence_artifact_sha256": "c14fd5e23df61e8017f37ff2a2c0e0b9b76cc8498b88e55abeb78140f5369e13",
+      "model_family": "r41_monotone_growth_component_process",
+      "primary_gate": "pass"
+    },
+    {
+      "allowed_claim": "A regional HASP cascade readout/proxy champion improves regional errors without worsening aggregate mass or regional allocation share versus carry-forward.",
+      "blockers": [],
+      "claim_id": "regional_hasp_cascade_readout_champion",
+      "claim_limit": "Regional cascade readout/proxy claim only; not province-level validation, not a mechanistic regional transition claim, and not determinant-driven scenario validation.",
+      "claim_scope": "regional",
+      "claim_status": "promoted",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r52-subnational-coherence-gate-20260503-s00/analysis/r52_subnational_coherence_gate_report.json",
+      "evidence_artifact_sha256": "ac6a4ed14a60cd7ccf1440878d7ceda5a799eb314540ffe9caad74202d687f4c",
+      "key_metrics": {
+        "carry_forward_mean_aggregate_mass_normalized_absolute_error": 0.048403137758264006,
+        "carry_forward_mean_regional_normalized_absolute_error": 0.05739543184891082,
+        "carry_forward_mean_regional_share_half_l1_error": 0.01752885157803074,
+        "promoted_mean_aggregate_mass_normalized_absolute_error": 0.044883667268024986,
+        "promoted_mean_regional_normalized_absolute_error": 0.05304270241232242,
+        "promoted_mean_regional_share_half_l1_error": 0.017528482729297485
+      },
+      "model_family": "module_local_selector",
+      "primary_gate": "coherent_subnational_champion_promoted"
+    },
+    {
+      "allowed_claim": "A national-total-constrained regional HASP adapter improves regional error, aggregate mass error, and regional share allocation versus both carry-forward and the R52 regional reference.",
+      "blockers": [],
+      "claim_id": "regional_hasp_national_total_adapter_champion",
+      "claim_limit": "Regional adapter/readout claim only; national totals and regional shares are borrowed from existing forecast candidates, not fitted determinant effects or province-level mechanisms.",
+      "claim_scope": "regional",
+      "claim_status": "promoted",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r54-national-total-regional-adapter-20260503-s00/analysis/r54_national_total_regional_adapter_report.json",
+      "evidence_artifact_sha256": "23f61eb884785b17830b19c75ebe33df437bfd32c1945dc066d10b52bd31332b",
+      "key_metrics": {
+        "promoted_mean_aggregate_mass_normalized_absolute_error": 0.04272266048766392,
+        "promoted_mean_regional_normalized_absolute_error": 0.0528560599003521,
+        "promoted_mean_regional_share_half_l1_error": 0.017437365476309998,
+        "r52_reference_mean_aggregate_mass_normalized_absolute_error": 0.044883667268024986,
+        "r52_reference_mean_regional_normalized_absolute_error": 0.05304270241232242,
+        "r52_reference_mean_regional_share_half_l1_error": 0.017528482729297485
+      },
+      "model_family": "national_total_adapter__total=train_only_region_metric_selector__share=similarity_proxy_log_delta",
+      "primary_gate": "national_total_regional_adapter_promoted"
+    },
+    {
+      "allowed_claim": "The R54 regional adapter is mean-promoted, but some period-metric splits regress versus carry-forward or the R52 reference.",
+      "blockers": [
+        "regional_nonregression_vs_carry_forward_failed",
+        "mass_nonregression_vs_carry_forward_failed",
+        "share_nonregression_vs_carry_forward_failed",
+        "regional_nonregression_vs_reference_failed",
+        "mass_nonregression_vs_reference_failed",
+        "share_nonregression_vs_reference_failed"
+      ],
+      "claim_id": "regional_adapter_split_stability_claim",
+      "claim_limit": "If split-stability is limited, report R54 as a mean-level adapter improvement with localized regressions, not as uniformly better across all periods and cascade streams.",
+      "claim_scope": "regional",
+      "claim_status": "mean_promoted_split_limited",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r55-adapter-split-stability-gate-20260503-s00/analysis/r55_adapter_split_stability_gate_report.json",
+      "evidence_artifact_sha256": "bda7080cc13e11ce1f26ba6d58e46376d46f56cfc41a8297145141e857d68993",
+      "key_metrics": {
+        "failure_counts": {
+          "mass_nonregression_vs_carry_forward": 11,
+          "mass_nonregression_vs_reference": 12,
+          "regional_nonregression_vs_carry_forward": 12,
+          "regional_nonregression_vs_reference": 12,
+          "share_nonregression_vs_carry_forward": 17,
+          "share_nonregression_vs_reference": 17
+        },
+        "metric_failure_counts": {
+          "alive_on_art": 4,
+          "diagnosed_plhiv": 5,
+          "estimated_plhiv": 5,
+          "tested_for_viral_load": 3,
+          "virally_suppressed": 4
+        },
+        "period_failure_counts": {
+          "2024-Q3": 2,
+          "2024-Q4": 2,
+          "2025-Q1": 4,
+          "2025-Q2": 5,
+          "2025-Q3": 4,
+          "2025-Q4": 4
+        },
+        "split_metric_count": 30
+      },
+      "model_family": "national_total_adapter__total=train_only_region_metric_selector__share=similarity_proxy_log_delta",
+      "primary_gate": "adapter_mean_promoted_but_split_stability_limited"
+    },
+    {
+      "allowed_claim": "R56 is a negative/diagnostic result: prior split guarding did not beat R52/R54 under the strict contract.",
+      "blockers": [
+        "selector_worsens_r52_reference_regional_error",
+        "selector_worsens_r52_reference_mass_error",
+        "selector_does_not_beat_r54_regional_error",
+        "selector_does_not_beat_r54_mass_error",
+        "selector_does_not_beat_r54_share_error",
+        "selector_not_strict_split_stable"
+      ],
+      "claim_id": "regional_split_guarded_selector_claim",
+      "claim_limit": "Selector/readout stability claim only; it uses prior split diagnostics, not determinant effects or province-level mechanisms.",
+      "claim_scope": "regional",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r56-split-guarded-regional-selector-20260503-s00/analysis/r56_split_guarded_regional_selector_report.json",
+      "evidence_artifact_sha256": "6d3a107cc022ad6cc787498ea7e6dad8f4071b02a8a4fb640ae9bdaaffd0bcca",
+      "key_metrics": {
+        "r54_reference_mean_aggregate_mass_normalized_absolute_error": 0.04272266048766392,
+        "r54_reference_mean_regional_normalized_absolute_error": 0.0528560599003521,
+        "r54_reference_mean_regional_share_half_l1_error": 0.017437365476309998,
+        "selector_mean_aggregate_mass_normalized_absolute_error": 0.04593480112170516,
+        "selector_mean_regional_normalized_absolute_error": 0.053536747671371156,
+        "selector_mean_regional_share_half_l1_error": 0.01751394642320271,
+        "split_stability_status": "adapter_mean_promoted_but_split_stability_limited"
+      },
+      "model_family": "split_guarded_regional_selector",
+      "primary_gate": "split_guarded_regional_selector_diagnostic_only"
+    },
+    {
+      "allowed_claim": "A leakage-labeled ceiling diagnostic shows that existing regional candidate families contain unrealized signal; this is not a promotable model.",
+      "blockers": [
+        "uses_same_split_holdout_targets",
+        "not_train_origin_selectable"
+      ],
+      "claim_id": "regional_candidate_space_ceiling_diagnostic",
+      "claim_limit": "Diagnostic ceiling only; it uses same-split holdout target errors and must never be reported as train-origin forecast performance.",
+      "claim_scope": "regional",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r57-regional-candidate-ceiling-diagnostic-20260503-s00/analysis/r57_regional_candidate_ceiling_diagnostic_report.json",
+      "evidence_artifact_sha256": "bfaee1b3dde14e5f2fb89b5d0ae651cf47296cd761a9060846a025a79119f805",
+      "key_metrics": {
+        "ceiling_mean_aggregate_mass_normalized_absolute_error": 0.03328368574837588,
+        "ceiling_mean_regional_normalized_absolute_error": 0.043218009672113006,
+        "ceiling_mean_regional_share_half_l1_error": 0.01609238050854459,
+        "improvement": {
+          "mass_error_delta_vs_r54": 0.009438974739288036,
+          "regional_error_delta_vs_r54": 0.009638050228239096,
+          "share_error_delta_vs_r54": 0.0013449849677654065
+        },
+        "r54_reference_mean_aggregate_mass_normalized_absolute_error": 0.04272266048766392,
+        "r54_reference_mean_regional_normalized_absolute_error": 0.0528560599003521,
+        "r54_reference_mean_regional_share_half_l1_error": 0.017437365476309998
+      },
+      "model_family": "leakage_labeled_candidate_ceiling",
+      "primary_gate": "candidate_space_has_unrealized_signal_diagnostic"
+    },
+    {
+      "allowed_claim": "The R58 Pareto-simplex regional ensemble improves mean regional/mass/share errors versus R54, but split-stability remains limited.",
+      "blockers": [
+        "ensemble_not_strict_split_stable"
+      ],
+      "claim_id": "regional_pareto_simplex_ensemble_claim",
+      "claim_limit": "Regional readout ensemble only; no determinant, province-level, or causal transition claim. If split-limited, report as mean-level improvement only.",
+      "claim_scope": "regional",
+      "claim_status": "mean_promoted_split_limited",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r58-pareto-simplex-regional-ensemble-20260503-s00/analysis/r58_pareto_simplex_regional_ensemble_report.json",
+      "evidence_artifact_sha256": "1f7ccbf8c712adee6c6ee53445105b2959e1d84f2003c893efa632edfdf51142",
+      "key_metrics": {
+        "ensemble_mean_aggregate_mass_normalized_absolute_error": 0.0426274438106405,
+        "ensemble_mean_regional_normalized_absolute_error": 0.052853906974807525,
+        "ensemble_mean_regional_share_half_l1_error": 0.01722265634009758,
+        "r54_reference_mean_aggregate_mass_normalized_absolute_error": 0.04272266048766392,
+        "r54_reference_mean_regional_normalized_absolute_error": 0.0528560599003521,
+        "r54_reference_mean_regional_share_half_l1_error": 0.017437365476309998,
+        "split_stability_status": "adapter_mean_promoted_but_split_stability_limited"
+      },
+      "model_family": "pareto_simplex_regional_ensemble",
+      "primary_gate": "pareto_simplex_regional_ensemble_mean_promoted_split_limited"
+    },
+    {
+      "allowed_claim": "The R59 anchor-stable Pareto ensemble improves mean regional/mass/share errors versus R54, but split-stability remains limited.",
+      "blockers": [
+        "ensemble_not_strict_split_stable"
+      ],
+      "claim_id": "regional_anchor_stable_pareto_ensemble_claim",
+      "claim_limit": "Regional readout ensemble only; estimated PLHIV is treated as a stock anchor, not a causal regional process. If split-limited, report as mean-level improvement only.",
+      "claim_scope": "regional",
+      "claim_status": "mean_promoted_split_limited",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r59-anchor-stable-pareto-ensemble-20260503-s00/analysis/r59_anchor_stable_pareto_ensemble_report.json",
+      "evidence_artifact_sha256": "59b06d2145d7bfb5934a918a64fa57a4de0e03323e0ad27808a3e814483b1df2",
+      "key_metrics": {
+        "ensemble_mean_aggregate_mass_normalized_absolute_error": 0.04226197037903909,
+        "ensemble_mean_regional_normalized_absolute_error": 0.05248843354320608,
+        "ensemble_mean_regional_share_half_l1_error": 0.01716726471873973,
+        "r54_reference_mean_aggregate_mass_normalized_absolute_error": 0.04272266048766392,
+        "r54_reference_mean_regional_normalized_absolute_error": 0.0528560599003521,
+        "r54_reference_mean_regional_share_half_l1_error": 0.017437365476309998,
+        "split_stability_status": "adapter_mean_promoted_but_split_stability_limited"
+      },
+      "model_family": "anchor_stable_pareto_ensemble",
+      "primary_gate": "anchor_stable_pareto_ensemble_mean_promoted_split_limited"
+    },
+    {
+      "allowed_claim": "The R60 broad regional experiment queue improves mean regional/mass/share errors over R59, but no queued candidate is split-stable.",
+      "blockers": [
+        "no_experiment_passed_strict_split_gate"
+      ],
+      "claim_id": "regional_r60_experiment_queue_claim",
+      "claim_limit": "Regional readout search claim only; if split-limited, do not claim uniform improvement across all period-metric splits.",
+      "claim_scope": "regional",
+      "claim_status": "mean_promoted_split_limited",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r60-regional-experiment-queue-20260503-s00/analysis/r60_regional_experiment_queue_report.json",
+      "evidence_artifact_sha256": "93105e48127191343cc54313415720da25a80e03753fead3f4005bbda9a62e8b",
+      "key_metrics": {
+        "best_mean_aggregate_mass_normalized_absolute_error": 0.03816230011085206,
+        "best_mean_regional_normalized_absolute_error": 0.05024606510395112,
+        "best_mean_regional_share_half_l1_error": 0.016968901021062768,
+        "best_split_gate_status": "adapter_mean_promoted_but_split_stability_limited",
+        "experiment_count": 127,
+        "mean_pass_count": 5,
+        "strict_pass_count": 0
+      },
+      "model_family": "R60-116__conditional_backhalf_rate",
+      "primary_gate": "regional_experiment_queue_mean_promoted_split_limited"
+    },
+    {
+      "allowed_claim": "The R61 split-risk router preserves the R60 mean contract, but split stability remains limited.",
+      "blockers": [
+        "no_r61_candidate_passed_strict_split_gate"
+      ],
+      "claim_id": "regional_r61_split_risk_router_claim",
+      "claim_limit": "Router/readout claim only. A negative R61 result supports the conclusion that the remaining regional failures are process/support-lineage problems, not safely fixable by stream routing.",
+      "claim_scope": "regional",
+      "claim_status": "mean_promoted_split_limited",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r61-split-risk-regional-router-20260503-s00/analysis/r61_split_risk_regional_router_report.json",
+      "evidence_artifact_sha256": "096b7fa376dd5c517005fd26eec3d85f622fd899f1ecab13397cff8bbcc8406c",
+      "key_metrics": {
+        "best_mean_aggregate_mass_normalized_absolute_error": 0.03816230011085206,
+        "best_mean_regional_normalized_absolute_error": 0.05024606510395112,
+        "best_mean_regional_share_half_l1_error": 0.016968901021062768,
+        "best_split_gate_status": "adapter_mean_promoted_but_split_stability_limited",
+        "experiment_count": 8,
+        "mean_and_r60_nonregression_count": 1,
+        "mean_pass_count": 1,
+        "strict_pass_count": 0
+      },
+      "model_family": "R61-001__best_r60_replay",
+      "primary_gate": "split_risk_regional_router_mean_promoted_split_limited"
+    },
+    {
+      "allowed_claim": "The leakage expert is useful only as an oracle/teacher diagnostic; blocked-time students do not preserve the current R60 contract.",
+      "blockers": [
+        "no_blocked_time_leakage_student_passed_strict_split_gate",
+        "no_blocked_time_leakage_student_preserved_r60_mean_contract"
+      ],
+      "claim_id": "regional_r62_leakage_expert_student_claim",
+      "claim_limit": "Same-split leakage expert predictions must never be used as promoted forecasts. Only blocked-time students may promote, and only if they pass the existing R60/R55 gates.",
+      "claim_scope": "regional",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r62-leakage-expert-student-gate-20260503-s00/analysis/r62_leakage_expert_student_gate_report.json",
+      "evidence_artifact_sha256": "b8548497495a25d4757cbdd3f64b99f99aa64de884db78d45a9e75d40fac49c9",
+      "key_metrics": {
+        "best_student_mean_aggregate_mass_normalized_absolute_error": 0.04576654867454288,
+        "best_student_mean_regional_normalized_absolute_error": 0.05542440064703165,
+        "best_student_mean_regional_share_half_l1_error": 0.017049737329857047,
+        "expert_mean_aggregate_mass_normalized_absolute_error": 0.03328368574837588,
+        "expert_mean_regional_normalized_absolute_error": 0.043218009672113006,
+        "expert_mean_regional_share_half_l1_error": 0.01609238050854459,
+        "student_mean_pass_count": 0,
+        "student_r60_safe_count": 0,
+        "student_strict_pass_count": 0
+      },
+      "model_family": "R62-003__prior_oracle_regret_student",
+      "primary_gate": "leakage_expert_only_diagnostic"
+    },
+    {
+      "allowed_claim": "The region-metric oracle exposes a large ceiling, but the blocked-time online student does not preserve the R60 contract.",
+      "blockers": [
+        "region_metric_student_not_strict_split_stable",
+        "region_metric_student_does_not_preserve_r60_mean_contract"
+      ],
+      "claim_id": "regional_r63_region_metric_online_expert_claim",
+      "claim_limit": "Same-holdout region-metric oracle predictions are diagnostic only. The failed student means current regional history is too short/nonstationary for an online expert overlay claim.",
+      "claim_scope": "regional",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r63-region-metric-online-expert-gate-20260503-s00/analysis/r63_region_metric_online_expert_gate_report.json",
+      "evidence_artifact_sha256": "572d752371f8828aceb7564a4dcfed528cb67e4f4b20d4edeb3106fc0596333b",
+      "key_metrics": {
+        "oracle_mean_aggregate_mass_normalized_absolute_error": 0.027232667222277303,
+        "oracle_mean_regional_normalized_absolute_error": 0.0330769100711215,
+        "oracle_mean_regional_share_half_l1_error": 0.012267106807747872,
+        "student_mean_aggregate_mass_normalized_absolute_error": 0.04164761379351313,
+        "student_mean_regional_normalized_absolute_error": 0.054423222794677616,
+        "student_mean_regional_share_half_l1_error": 0.01837300129757261,
+        "student_split_gate_status": "adapter_mean_promoted_but_split_stability_limited"
+      },
+      "model_family": "region_metric_online_expert_student",
+      "primary_gate": "region_metric_online_expert_diagnostic_only"
+    },
+    {
+      "allowed_claim": "R64 identifies leakage-derived evidence acquisition priorities; it does not produce forecasts.",
+      "blockers": [],
+      "claim_id": "regional_r64_leakage_support_gap_priorities",
+      "claim_limit": "Diagnostic/evidence-prioritization only. R64 rows cannot be used as fitted corrections or target-derived model inputs.",
+      "claim_scope": "regional_evidence_acquisition",
+      "claim_status": "diagnostic_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r64-leakage-support-gap-prioritizer-20260503-s00/analysis/r64_leakage_support_gap_prioritizer_report.json",
+      "evidence_artifact_sha256": "dc4798ffc42ad4e6edb50f68a217fcc5ec10ab3b21ea92b19bcfc875e19ffcb8",
+      "key_metrics": {
+        "gap_row_count": 480,
+        "top_metric": "virally_suppressed",
+        "top_metric_stream": "vl_suppression_service",
+        "top_region": "8"
+      },
+      "model_family": "leakage_support_gap_prioritizer",
+      "primary_gate": "leakage_support_gap_priorities_ready"
+    },
+    {
+      "allowed_claim": "Full transmission claims are blocked; national readout is ready, but regional full-transmission modeling remains unsupported.",
+      "blockers": [
+        "regional_full_transmission_not_ready"
+      ],
+      "claim_id": "phase3_full_transmission_model_readiness",
+      "claim_limit": "Readiness-gate claim only. Does not create a new forecast or imply regional transmission mechanisms are validated.",
+      "claim_scope": "national_and_regional_transmission",
+      "claim_status": "not_yet_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r65-transmission-model-readiness-gate-20260503-s00/analysis/r65_transmission_model_readiness_gate_report.json",
+      "evidence_artifact_sha256": "420ad8a08a669cf4027e50b2ea54b170ca9060b91385d3f72e9991411bc5549f",
+      "key_metrics": {
+        "blockers": [
+          "regional_full_transmission_not_ready"
+        ],
+        "national_forecast_readout_ready": true,
+        "regional_full_transmission_ready": false
+      },
+      "model_family": "full_transmission_readiness_gate",
+      "primary_gate": "full_transmission_model_not_yet_ready"
+    },
+    {
+      "allowed_claim": "R66 provides a tracked source base for transmission-model ideation and bounded experiments.",
+      "blockers": [],
+      "claim_id": "phase3_scientific_source_base",
+      "claim_limit": "Source/readiness claim only. It does not validate any new model family or determinant effect.",
+      "claim_scope": "source_lineage_and_model_inputs",
+      "claim_status": "diagnostic_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r66-scientific-source-base-20260506-s00/analysis/r66_scientific_source_base_report.json",
+      "evidence_artifact_sha256": "33328320cc4c054737632c827ff6c850898a6ead5bb50f72a4ac2a0ade3d6607",
+      "key_metrics": {
+        "determinant_module_count": 7,
+        "downloaded_source_count": 7,
+        "local_source_count": 114,
+        "quarantined_source_count": 9
+      },
+      "model_family": "scientific_source_base",
+      "primary_gate": "source_base_ready_for_model_family_queue"
+    },
+    {
+      "allowed_claim": "R67 defines source-backed transmission-model families with equations, overfit guards, and promotion gates.",
+      "blockers": [],
+      "claim_id": "phase3_transmission_model_family_queue",
+      "claim_limit": "Hypothesis/experiment-queue claim only. No family is promoted until it beats locked blocked-time gates.",
+      "claim_scope": "model_family_hypotheses",
+      "claim_status": "experiment_queue_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r67-transmission-model-family-queue-20260506-s00/analysis/r67_transmission_model_family_queue_report.json",
+      "evidence_artifact_sha256": "45adbeeaeef0c4610cba37bf2e9e562cae9cb061f9a645378973f8653f02a469",
+      "key_metrics": {
+        "determinant_locked_family_count": 4,
+        "ready_bounded_family_count": 6,
+        "top_ready_families": "R67-M01_hidden_service_intensity_state_space|R67-M02_competing_risk_semi_markov_cascade|R67-M03_cd4_ahd_backcalculation_incidence|R67-M05_renormalized_hierarchical_regional_pooling|R67-M06_service_capacity_queue_control"
+      },
+      "model_family": "ranked_transmission_model_family_queue",
+      "primary_gate": "model_family_queue_ready"
+    },
+    {
+      "allowed_claim": "R68 safely downloaded bulk UNAIDS/Google sources and extracted Philippines rows with allowed-use roles.",
+      "blockers": [],
+      "claim_id": "phase3_bulk_external_source_ingest",
+      "claim_limit": "Source-ingest claim only. Bulk rows cannot become training targets unless their allowed-use role permits it.",
+      "claim_scope": "external_source_lineage",
+      "claim_status": "diagnostic_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r68-bulk-external-source-ingest-20260506-s00/analysis/r68_bulk_external_source_ingest_report.json",
+      "evidence_artifact_sha256": "61b9e2ba676ecc7ee29b24013b38bd2257dd99b61967d1dee71a1c6c39505224",
+      "key_metrics": {
+        "downloaded_source_count": 5,
+        "extracted_philippines_row_count": 42027,
+        "failed_source_count": 0
+      },
+      "model_family": "bulk_external_source_ingest",
+      "primary_gate": "bulk_external_sources_ingested"
+    },
+    {
+      "allowed_claim": "R69 compiled extracted bulk sources into model-ready external challenge, program support, KP, policy, and mobility feature tables.",
+      "blockers": [],
+      "claim_id": "phase3_bulk_signal_feature_compiler",
+      "claim_limit": "Feature-readiness claim only. Determinants remain sensitivity-only unless R46 source-stability passes.",
+      "claim_scope": "model_feature_inputs",
+      "claim_status": "feature_tables_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r69-bulk-signal-feature-compiler-20260506-s00/analysis/r69_bulk_signal_feature_compiler_report.json",
+      "evidence_artifact_sha256": "cfa7ec7af480a5129b0c6fdd49485784eb31b92511c65570a353dda54fa0121b",
+      "key_metrics": {
+        "compiled_signal_row_count": 15575,
+        "feature_table_ready_family_count": 5,
+        "row_counts": {
+          "annual_external_challenge_rows": 9851,
+          "gam_program_support_rows": 187,
+          "google_mobility_quarterly_rows": 1296,
+          "kp_context_rows": 393,
+          "policy_context_rows": 3848
+        }
+      },
+      "model_family": "bulk_signal_feature_compiler",
+      "primary_gate": "bulk_signal_features_ready"
+    },
+    {
+      "allowed_claim": "R70 defines the next staged multi-hundred-step build queue with explicit promotion gates.",
+      "blockers": [],
+      "claim_id": "phase3_scientific_model_build_queue",
+      "claim_limit": "Experiment-queue claim only. No R70 step is a promoted model until separately fitted, gated, and registered.",
+      "claim_scope": "bounded_experiment_queue",
+      "claim_status": "experiment_queue_ready",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r70-scientific-model-build-queue-20260506-s00/analysis/r70_scientific_model_build_queue_report.json",
+      "evidence_artifact_sha256": "fed40af9856b63b7c2c6cd59c4640f0c89d325390c00078f560fe32714f79f5a",
+      "key_metrics": {
+        "auxiliary_diagnostic_step_count": 2,
+        "bounded_candidate_step_count": 238,
+        "queued_step_count": 240,
+        "sensitivity_or_falsification_step_count": 0
+      },
+      "model_family": "scientific_model_build_queue",
+      "primary_gate": "scientific_model_build_queue_ready"
+    },
+    {
+      "allowed_claim": "r71_service_intensity_capacity_branch is a registered negative/diagnostic result and must not replace R41.",
+      "blockers": [],
+      "claim_id": "phase3_r71_service_intensity_capacity_branch",
+      "claim_limit": "External support/mobility/program signals are not determinant-effect claims. Diagnostic-only branches may inform failure anatomy but cannot become paper champion results.",
+      "claim_scope": "national_external_signal_modeling",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r71-service-intensity-capacity-branch-20260506-s00/analysis/r71_service_intensity_capacity_branch_report.json",
+      "evidence_artifact_sha256": "ac54e13ebf91b497911c95cf0cf49c9212635792ed076365e52bfcab6da1ce43",
+      "key_metrics": {
+        "carry_forward_mean_nae": 0.2387283468089284,
+        "contemporaneous_nowcast_mean_nae": 0.4646327532490959,
+        "contract": "Only the forecast_safe branch can promote. The contemporaneous_nowcast branch is diagnostic because it may use same-quarter external support signals. No validation-only UNAIDS annual rows are used as training targets.",
+        "forecast_safe_beats_carry_forward": false,
+        "forecast_safe_beats_r41": false,
+        "forecast_safe_mean_nae": 0.37487081502172903,
+        "nowcast_beats_carry_forward": false,
+        "r41_reference_mean_nae": 0.1604468017441995,
+        "status": "r71_diagnostic_only"
+      },
+      "model_family": "r71_service_intensity_capacity_branch",
+      "primary_gate": "r71_diagnostic_only"
+    },
+    {
+      "allowed_claim": "r72_train_backtested_service_feature_selector is a registered negative/diagnostic result and must not replace R41.",
+      "blockers": [],
+      "claim_id": "phase3_r72_service_feature_selector_gate",
+      "claim_limit": "External support/mobility/program signals are not determinant-effect claims. Diagnostic-only branches may inform failure anatomy but cannot become paper champion results.",
+      "claim_scope": "national_external_signal_modeling",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r72-service-feature-selector-gate-20260506-s00/analysis/r72_service_feature_selector_gate_report.json",
+      "evidence_artifact_sha256": "d4308634a56f199fac086e32df7e4790a2f100dfb1538a54c9c6f208b681dab5",
+      "key_metrics": {
+        "carry_forward_mean_nae": 0.2387283468089284,
+        "contract": "R72 can only promote if train-origin selection beats both carry-forward and R41. Feature branch choices are allowed only when they win inside training history; otherwise metrics fall back to R41/carry-forward.",
+        "r41_reference_mean_nae": 0.1604468017441995,
+        "selected_feature_metric_count": 0,
+        "selector_beats_carry_forward": true,
+        "selector_beats_r41": false,
+        "selector_mean_nae": 0.1668956489390698,
+        "status": "r72_diagnostic_only"
+      },
+      "model_family": "r72_train_backtested_service_feature_selector",
+      "primary_gate": "r72_diagnostic_only"
+    },
+    {
+      "allowed_claim": "r73_external_signal_lag_falsification is a registered negative/diagnostic result and must not replace R41.",
+      "blockers": [],
+      "claim_id": "phase3_r73_external_signal_lag_falsification",
+      "claim_limit": "External support/mobility/program signals are not determinant-effect claims. Diagnostic-only branches may inform failure anatomy but cannot become paper champion results.",
+      "claim_scope": "national_external_signal_modeling",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r73-external-signal-lag-falsification-20260506-s00/analysis/r73_external_signal_lag_falsification_report.json",
+      "evidence_artifact_sha256": "d7c6fa45085d0b90bb012aa3f88f8d1f457b4b7e0ebbe80a38db8a272d94f453",
+      "key_metrics": {
+        "carry_forward_mean_nae": 0.2387283468089284,
+        "contract": "R73 separates forecast-origin external signal use from oracle nowcasting. Only forecast-origin selected features can promote; oracle-contemporaneous selection is leakage-labeled diagnostic evidence only.",
+        "forecast_beats_carry_forward": true,
+        "forecast_beats_r41": false,
+        "forecast_selected_feature_metric_count": 15,
+        "forecast_selector_mean_nae": 0.16946409580515104,
+        "oracle_beats_r41": false,
+        "oracle_nowcast_selector_mean_nae": 0.18243991915622046,
+        "oracle_selected_feature_metric_count": 18,
+        "r41_reference_mean_nae": 0.1604468017441995,
+        "status": "r73_diagnostic_only"
+      },
+      "model_family": "r73_external_signal_lag_falsification",
+      "primary_gate": "r73_diagnostic_only"
+    },
+    {
+      "allowed_claim": "r74_external_tail_risk_selector is a registered negative/diagnostic result and must not replace R41.",
+      "blockers": [],
+      "claim_id": "phase3_r74_external_tail_risk_selector",
+      "claim_limit": "External support/mobility/program signals are not determinant-effect claims. Diagnostic-only branches may inform failure anatomy but cannot become paper champion results.",
+      "claim_scope": "national_external_signal_modeling",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r74-external-tail-risk-selector-20260506-s00/analysis/r74_external_tail_risk_selector_report.json",
+      "evidence_artifact_sha256": "3123136183a69bdbb36326b9f3d4de4610271bb40214945c2d06e4f3042ac7ba",
+      "key_metrics": {
+        "carry_forward_mean_nae": 0.2387283468089284,
+        "contract": "R74 can only use R73 external features for metric streams whose inner-history p90 improves without mean regression versus R41.",
+        "r41_reference_mean_nae": 0.1604468017441995,
+        "r41_reference_p90_nae": 0.533665359789344,
+        "selected_metric_count": 2,
+        "selector_beats_carry_forward": true,
+        "selector_mean_nae": 0.16451855259706624,
+        "selector_mean_nonregression_vs_r41": false,
+        "selector_p90_beats_r41": false,
+        "selector_p90_nae": 0.533665359789344,
+        "status": "r74_diagnostic_only"
+      },
+      "model_family": "r74_external_tail_risk_selector",
+      "primary_gate": "r74_diagnostic_only"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r75_bulk_unaids_annual_challenge",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "national_external_annual_validation",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r75-bulk-unaids-annual-challenge-20260507-s00/analysis/r75_bulk_unaids_annual_challenge_report.json",
+      "evidence_artifact_sha256": "4fe0d5d7a60bcf0bd5ba345e80f029f5c5b5390e730078790b46d7985ac1cb8d",
+      "historical_claim_status": "external_validation_passed",
+      "key_metrics": {
+        "best_candidate_family": "multi_horizon_weighted_process",
+        "best_candidate_interval_coverage": 0.75,
+        "best_candidate_mean_norm_error": 0.24347715244338128,
+        "best_candidate_minus_carry_forward_mean_norm_error": -0.14647452155471044,
+        "best_carry_forward_interval_coverage": 0.4880952380952381,
+        "best_carry_forward_mean_norm_error": 0.3899516739980917,
+        "blockers": [],
+        "candidate_family_count": 2,
+        "contract": "R75 scores bulk UNAIDS 2025 all-ages annual estimates as validation-only official-style targets. Annual incidence, AIDS deaths, and PLHIV are predicted by train-origin weak-measurement heads with joint mass-balance PLHIV conservation; no holdout annual target enters quarterly state training.",
+        "score_row_count": 168,
+        "status": "bulk_unaids_annual_challenge_pass",
+        "target_row_count": 45
+      },
+      "model_family": "multi_horizon_weighted_process",
+      "primary_gate": "bulk_unaids_annual_challenge_pass"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r76_public_domain_annual_comparator",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "national_public_domain_annual_benchmark",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r76-public-domain-annual-comparator-20260507-s00/analysis/r76_public_domain_annual_comparator_report.json",
+      "evidence_artifact_sha256": "06a6a1d9088ad8c073a2038b396fcf7203c703c759988a45d6cbd6458c654bfe",
+      "historical_claim_status": "public_comparator_ready",
+      "key_metrics": {
+        "blockers": [],
+        "comparator_family_count": 4,
+        "contract": "R76 builds an open public-domain annual comparator from bulk UNAIDS all-ages annual targets. It is an AEM/Spectrum-style proxy benchmark only, not official AEM output. All families are fitted on train years only and scored on held-out annual incidence, AIDS deaths, and PLHIV.",
+        "public_carry_forward_interval_coverage": 0.4880952380952381,
+        "public_carry_forward_mean_norm_error": 0.3899516739980917,
+        "score_row_count": 336,
+        "selected_minus_public_carry_forward_mean_norm_error": -0.1943478324303759,
+        "selected_proxy_interval_coverage": 0.8809523809523809,
+        "selected_proxy_mean_norm_error": 0.19560384156771582,
+        "status": "public_domain_annual_comparator_ready",
+        "target_row_count": 45
+      },
+      "model_family": "public_train_selected_annual_proxy",
+      "primary_gate": "public_domain_annual_comparator_ready"
+    },
+    {
+      "allowed_claim": "The public-domain annual proxy remains the incumbent annual benchmark; Phase 3 annual superiority claims are blocked.",
+      "blockers": [
+        "model_worse_than_public_annual_proxy",
+        "model_interval_coverage_worse_than_public_annual_proxy"
+      ],
+      "claim_id": "phase3_r77_public_proxy_annual_gate",
+      "claim_limit": "This gate compares against a reproducible public-data proxy, not official AEM/Spectrum outputs. If blocked, annual validation claims must be framed as carry-forward-beating only.",
+      "claim_scope": "national_public_domain_annual_superiority_gate",
+      "claim_status": "annual_superiority_blocked",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r77-public-proxy-annual-gate-20260507-s00/analysis/r77_public_proxy_annual_gate_report.json",
+      "evidence_artifact_sha256": "e7b55d5d821dbf27e7282949d3f6b6a408c152813803bb834c90fcab86ce67fd",
+      "key_metrics": {
+        "blockers": [
+          "model_worse_than_public_annual_proxy",
+          "model_interval_coverage_worse_than_public_annual_proxy"
+        ],
+        "contract": "R77 treats the R76 train-origin public-domain annual proxy as the open incumbent annual benchmark. Phase 3 annual superiority claims are blocked unless the model's annual head matches the same held-out UNAIDS-style annual targets with no higher mean normalized error and no worse interval coverage.",
+        "model_family": "multi_horizon_weighted_process",
+        "model_interval_coverage": 0.75,
+        "model_mean_norm_error": 0.24347715244338128,
+        "model_minus_public_proxy_mean_norm_error": 0.04787331087566546,
+        "public_proxy_family": "public_train_selected_annual_proxy",
+        "public_proxy_interval_coverage": 0.8809523809523809,
+        "public_proxy_mean_norm_error": 0.19560384156771582,
+        "score_row_count": 84,
+        "status": "annual_model_blocked_by_public_proxy"
+      },
+      "model_family": "multi_horizon_weighted_process",
+      "primary_gate": "annual_model_blocked_by_public_proxy"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r78_expanded_public_annual_comparator",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "national_public_domain_annual_benchmark",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r78-public-annual-family-expansion-20260507-s00/analysis/r78_public_annual_family_expansion_report.json",
+      "evidence_artifact_sha256": "cfbf5bbaa1b6492aa976fbf7057de4454a2397e6cfe587873eed811ba1a4f2e8",
+      "historical_claim_status": "expanded_public_comparator_promoted",
+      "key_metrics": {
+        "blockers": [],
+        "contract": "R78 expands the public-domain annual comparator with robust and piecewise trend families, then requires the train-origin v2 selector to beat the R76 selected proxy on the same held-out UNAIDS-style annual targets before replacing the public annual incumbent.",
+        "expanded_family_count": 6,
+        "r76_selected_proxy_interval_coverage": 0.8809523809523809,
+        "r76_selected_proxy_mean_norm_error": 0.19560384156771582,
+        "score_row_count": 504,
+        "selected_proxy_v2_interval_coverage": 0.9285714285714286,
+        "selected_proxy_v2_mean_norm_error": 0.16381146372865757,
+        "selected_proxy_v2_minus_r76_mean_norm_error": -0.03179237783905825,
+        "status": "expanded_public_annual_comparator_promoted",
+        "target_row_count": 45
+      },
+      "model_family": "public_train_selected_annual_proxy_v2",
+      "primary_gate": "expanded_public_annual_comparator_promoted"
+    },
+    {
+      "allowed_claim": "The expanded public-domain annual proxy remains the incumbent annual benchmark; annual superiority claims are blocked.",
+      "blockers": [
+        "model_worse_than_public_annual_proxy",
+        "model_interval_coverage_worse_than_public_annual_proxy"
+      ],
+      "claim_id": "phase3_r79_expanded_public_proxy_annual_gate",
+      "claim_limit": "This is a strict benchmark gate against the expanded public proxy, not a direct official AEM/Spectrum comparison.",
+      "claim_scope": "national_public_domain_annual_superiority_gate",
+      "claim_status": "annual_superiority_blocked",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r79-expanded-public-proxy-annual-gate-20260507-s00/analysis/r79_expanded_public_proxy_annual_gate_report.json",
+      "evidence_artifact_sha256": "c9cad672329519827f2d4050eca9a8a48c836d9730f9b1793b3d104e55f149d1",
+      "key_metrics": {
+        "blockers": [
+          "model_worse_than_public_annual_proxy",
+          "model_interval_coverage_worse_than_public_annual_proxy"
+        ],
+        "contract": "R79 replaces the weaker R76 annual proxy with the promoted R78 expanded public-domain annual incumbent. Phase 3 annual superiority claims are blocked unless the model annual head beats the R78 selected proxy on matched held-out UNAIDS-style annual targets.",
+        "model_family": "multi_horizon_weighted_process",
+        "model_interval_coverage": 0.75,
+        "model_mean_norm_error": 0.24347715244338128,
+        "model_minus_public_proxy_mean_norm_error": 0.07966568871472371,
+        "public_proxy_family": "public_train_selected_annual_proxy_v2",
+        "public_proxy_interval_coverage": 0.9285714285714286,
+        "public_proxy_mean_norm_error": 0.16381146372865757,
+        "score_row_count": 84,
+        "status": "annual_model_blocked_by_expanded_public_proxy"
+      },
+      "model_family": "multi_horizon_weighted_process",
+      "primary_gate": "annual_model_blocked_by_expanded_public_proxy"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r80_public_annual_projection_head",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "national_public_domain_annual_projection",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r80-public-annual-projection-head-20260507-s00/analysis/r80_public_annual_projection_head_report.json",
+      "evidence_artifact_sha256": "2fec472810a74337b9ee26ea89e215332e9308bbea2b4cadc11c6baaca14602a",
+      "historical_claim_status": "public_projection_ready",
+      "key_metrics": {
+        "blockers": [],
+        "contract": "R80 emits public-domain AEM/Spectrum-style annual projections for incidence, AIDS deaths, and PLHIV. It uses only public annual target history, R78 train-origin family selection, and uncertainty bands derived from R78 blocked-time residuals. It is not official AEM/Spectrum output and does not train quarterly cascade dynamics.",
+        "projection_row_count": 33,
+        "selected_metric_families": {
+          "annual_aids_deaths": "public_log_linear_trend",
+          "annual_new_infections": "public_piecewise_log_linear_trend",
+          "estimated_plhiv": "public_joint_local_level_mass_balance"
+        },
+        "status": "public_annual_projection_head_ready"
+      },
+      "model_family": "public_train_selected_annual_proxy_v2_projection",
+      "primary_gate": "public_annual_projection_head_ready"
+    },
+    {
+      "allowed_claim": "Phase 2 outputs may label directional sensitivity scenarios, but cannot supply numeric intervention effect sizes.",
+      "blockers": [
+        "no_strict_phase2_quantitative_priors"
+      ],
+      "claim_id": "phase3_r81_phase2_knob_admissibility",
+      "claim_limit": "No causal or numeric policy effect claim is allowed unless strict quantitative Phase 2 priors survive blocked-time falsification.",
+      "claim_scope": "phase2_to_phase3_scenario_knobs",
+      "claim_status": "directional_sensitivity_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r81-phase2-knob-admissibility-gate-20260507-s00/analysis/r81_phase2_knob_admissibility_gate_report.json",
+      "evidence_artifact_sha256": "cde898ba86b10083194581f02857b7a0af673b640e9554f0921b8a76cf57e203",
+      "key_metrics": {
+        "blockers": [
+          "no_strict_phase2_quantitative_priors"
+        ],
+        "contract": "R81 decides whether Phase 2 outputs can modulate model outputs. Strict numeric knobs require Phase 2 direct edges that pass support ablation, source-family re-estimation, and blocked-time falsification. Source-stable but time-blocked edges may only label directional sensitivity scenarios; hidden edges remain latent-shock diagnostics and cannot be intervention knobs.",
+        "directional_sensitivity_knob_count": 3,
+        "hidden_shock_diagnostic_count": 3,
+        "quantitative_modulation_allowed_count": 0,
+        "r46_lineage_gate_status": "sensitivity_only_determinant_scenarios",
+        "r80_projection_gate_status": "public_annual_projection_head_ready",
+        "status": "phase2_directional_sensitivity_knobs_only",
+        "strict_quantitative_prior_count": 0
+      },
+      "model_family": "phase2_structural_knob_gate",
+      "primary_gate": "phase2_directional_sensitivity_knobs_only"
+    },
+    {
+      "allowed_claim": "Quarterly Phase 3 outputs cannot yet be annualized into incidence, AIDS deaths, and total PLHIV public annual targets.",
+      "blockers": [
+        "annual_new_infections_blocked_missing_quarterly_outputs",
+        "annual_aids_deaths_blocked_missing_quarterly_outputs",
+        "estimated_plhiv_blocked_missing_quarterly_outputs"
+      ],
+      "claim_id": "phase3_r82_quarterly_annual_bridge",
+      "claim_limit": "Annual weak-measurement heads are not accepted as quarterly mechanistic bridges.",
+      "claim_scope": "quarterly_mechanistic_to_public_annual_bridge",
+      "claim_status": "bridge_blocked",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r82-quarterly-annual-bridge-gate-20260507-s00/analysis/r82_quarterly_annual_bridge_gate_report.json",
+      "evidence_artifact_sha256": "facb58b3c45e0b24b7ea7195106bd9aab9334861bbca6ee07dc4c989a5b6226d",
+      "key_metrics": {
+        "annual_metric_count": 3,
+        "blockers": [
+          "annual_new_infections_blocked_missing_quarterly_outputs",
+          "annual_aids_deaths_blocked_missing_quarterly_outputs",
+          "estimated_plhiv_blocked_missing_quarterly_outputs"
+        ],
+        "bridge_available_metric_count": 0,
+        "bridge_blocked_metric_count": 3,
+        "contract": "R82 checks whether public annual targets can be evaluated from quarterly Phase 3 champion outputs without annual-target leakage. Annual weak-measurement heads do not count as quarterly-mechanistic bridges. A bridge is ready only when the quarterly champion emits the required incidence, mortality, and total PLHIV state outputs directly.",
+        "quarterly_output_scope": [
+          "diagnosed_plhiv",
+          "alive_on_art",
+          "tested_for_viral_load",
+          "virally_suppressed",
+          "new_diagnosed_cases_period"
+        ],
+        "r80_projection_gate_status": "public_annual_projection_head_ready",
+        "status": "quarterly_annual_bridge_blocked"
+      },
+      "model_family": "quarterly_annual_bridge_gate",
+      "primary_gate": "quarterly_annual_bridge_blocked"
+    },
+    {
+      "allowed_claim": "Current quarterly Phase 3 candidates do not emit the required public annual challenge quantities directly.",
+      "blockers": [
+        "annual_new_infections_not_emitted_by_quarterly_candidate",
+        "annual_aids_deaths_not_emitted_by_quarterly_candidate",
+        "estimated_plhiv_not_emitted_by_quarterly_candidate"
+      ],
+      "claim_id": "phase3_r83_quarterly_emission_bridge_audit",
+      "claim_limit": "R83 inspects actual prediction-row emissions; annual weak-measurement heads, diagnosed-stock PLHIV proxies, and aggregate attrition death proxies are not accepted.",
+      "claim_scope": "actual_quarterly_candidate_emissions_to_public_annual_targets",
+      "claim_status": "bridge_blocked",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r83-quarterly-emission-bridge-audit-20260507-s00/analysis/r83_quarterly_emission_bridge_audit_report.json",
+      "evidence_artifact_sha256": "394a3dbb355455c0c9c707a2b1831e1cf60fc72b8c4b82d9b0d3e456ecc0babf",
+      "key_metrics": {
+        "best_candidate_family": null,
+        "best_candidate_mean_norm_error": null,
+        "best_candidate_minus_carry_forward_mean_norm_error": null,
+        "best_carry_forward_mean_norm_error": null,
+        "blockers": [
+          "annual_new_infections_not_emitted_by_quarterly_candidate",
+          "annual_aids_deaths_not_emitted_by_quarterly_candidate",
+          "estimated_plhiv_not_emitted_by_quarterly_candidate"
+        ],
+        "contract": "R83 scores only annual quantities directly reconstructable from quarterly candidate prediction rows. It never applies the R75 annual weak-measurement head, never treats diagnosed stock as total PLHIV, and never treats aggregate attrition as AIDS deaths. Missing emissions block annual-mechanistic claims.",
+        "coverage_status_counts": {
+          "blocked_missing_quarterly_outputs": 84
+        },
+        "required_metric_count": 3,
+        "scored_counts_by_metric": {},
+        "scored_metric_count": 0,
+        "status": "quarterly_emission_bridge_blocked"
+      },
+      "model_family": "quarterly_emission_bridge_audit",
+      "primary_gate": "quarterly_emission_bridge_blocked"
+    },
+    {
+      "allowed_claim": "The conserved dynamic simulator emits annual ledger quantities, but the annual public-target comparison is not promotion-grade.",
+      "blockers": [
+        "annual_new_infections_incomplete_target_coverage",
+        "annual_aids_deaths_incomplete_target_coverage",
+        "conserved_ledger_not_better_than_carry_forward",
+        "conserved_ledger_interval_coverage_worse_than_carry_forward"
+      ],
+      "claim_id": "phase3_r84_conserved_quarterly_annual_ledger",
+      "claim_limit": "If diagnostic-only, R84 may be cited as a mechanistic bridge audit, not as evidence that the quarterly model beats official annual comparators.",
+      "claim_scope": "mechanistic_quarterly_state_ledger_to_public_annual_targets",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r84-conserved-quarterly-annual-ledger-20260507-s00/analysis/r84_conserved_quarterly_annual_ledger_report.json",
+      "evidence_artifact_sha256": "3cac9eb5626362f6778d9e623b68ec5ecd7a5593dfa5e2eaa7e3211c2229047a",
+      "key_metrics": {
+        "blockers": [
+          "annual_new_infections_incomplete_target_coverage",
+          "annual_aids_deaths_incomplete_target_coverage",
+          "conserved_ledger_not_better_than_carry_forward",
+          "conserved_ledger_interval_coverage_worse_than_carry_forward"
+        ],
+        "candidate_interval_coverage": 0.47058823529411764,
+        "candidate_mean_norm_error": 0.41073617976536153,
+        "candidate_minus_carry_forward_mean_norm_error": 0.020784505767269812,
+        "carry_forward_interval_coverage": 0.4880952380952381,
+        "carry_forward_mean_norm_error": 0.3899516739980917,
+        "contract": "R84 tests whether the mechanistic dynamic simulator itself can emit annual incidence, AIDS deaths, and total PLHIV through conserved quarterly state accounting. Passing requires explicit emissions, validation-only annual targets, improvement over carry-forward, and no annual weak-measurement head.",
+        "required_metric_count": 3,
+        "scored_counts_by_metric": {
+          "annual_aids_deaths": 3,
+          "annual_new_infections": 3,
+          "estimated_plhiv": 28
+        },
+        "scored_metric_count": 3,
+        "status": "conserved_quarterly_annual_ledger_diagnostic_only",
+        "target_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        }
+      },
+      "model_family": "conserved_dynamic_quarterly_ledger",
+      "primary_gate": "conserved_quarterly_annual_ledger_diagnostic_only"
+    },
+    {
+      "allowed_claim": "The forecast-grid annual ledger is evaluable, but it is not promotion-grade against carry-forward and interval coverage gates.",
+      "blockers": [
+        "forecast_grid_ledger_not_better_than_carry_forward",
+        "forecast_grid_ledger_interval_coverage_worse_than_carry_forward"
+      ],
+      "claim_id": "phase3_r85_annual_ledger_forecast_grid",
+      "claim_limit": "R85 repairs quarterly emission coverage only; if diagnostic-only, it must not be reported as an official annual-model win.",
+      "claim_scope": "complete_quarterly_emission_grid_to_public_annual_targets",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r85-annual-ledger-forecast-grid-20260507-s00/analysis/r85_annual_ledger_forecast_grid_report.json",
+      "evidence_artifact_sha256": "8df6dc2fc9f5101e221ad80eef9acca1818c32ce6ed90d5594273c1152ce1193",
+      "key_metrics": {
+        "blockers": [
+          "forecast_grid_ledger_not_better_than_carry_forward",
+          "forecast_grid_ledger_interval_coverage_worse_than_carry_forward"
+        ],
+        "candidate_interval_coverage": 0.4166666666666667,
+        "candidate_mean_norm_error": 0.641519284881962,
+        "candidate_minus_carry_forward_mean_norm_error": 0.25156761088387025,
+        "carry_forward_interval_coverage": 0.4880952380952381,
+        "carry_forward_mean_norm_error": 0.3899516739980917,
+        "contract": "R85 repairs annual ledger coverage by forecasting every quarter in each holdout year on an unscored forecast grid. It is not allowed to use annual holdout targets or synthetic quarterly truth.",
+        "required_metric_count": 3,
+        "scored_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        },
+        "scored_metric_count": 3,
+        "status": "annual_ledger_forecast_grid_diagnostic_only",
+        "target_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        }
+      },
+      "model_family": "conserved_dynamic_forecast_grid_ledger",
+      "primary_gate": "annual_ledger_forecast_grid_diagnostic_only"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r86_annual_calibrated_forecast_grid_ledger",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "train_origin_annual_calibration_on_complete_quarterly_ledger",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r86-annual-calibrated-forecast-grid-ledger-20260507-s00/analysis/r86_annual_calibrated_forecast_grid_ledger_report.json",
+      "evidence_artifact_sha256": "f4cc5353275d5b06f1afb5246421b9478149d71be3776aabbe1160b875116dce",
+      "historical_claim_status": "scoped_annual_model_win",
+      "key_metrics": {
+        "blockers": [],
+        "candidate_interval_coverage": 0.75,
+        "candidate_mean_norm_error": 0.24194594850513584,
+        "candidate_minus_carry_forward_mean_norm_error": -0.14800572549295588,
+        "carry_forward_interval_coverage": 0.4880952380952381,
+        "carry_forward_mean_norm_error": 0.3899516739980917,
+        "contract": "R86 is a scoped annual-calibrated ledger gate: it preserves complete quarterly emission support from R85, fits annual weak-measurement heads only on train-origin annual rows, distributes incidence/death annual totals by train-origin dynamic quarterly shape, and scores held-out annual targets as validation-only evidence.",
+        "required_metric_count": 3,
+        "scored_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        },
+        "scored_metric_count": 3,
+        "status": "annual_calibrated_forecast_grid_ledger_pass",
+        "target_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        }
+      },
+      "model_family": "annual_calibrated_conserved_forecast_grid_ledger",
+      "primary_gate": "annual_calibrated_forecast_grid_ledger_pass"
+    },
+    {
+      "allowed_claim": "Train-backtested raw quarterly emission calibration is evaluable but does not beat carry-forward.",
+      "blockers": [
+        "raw_emission_process_calibration_not_better_than_carry_forward",
+        "raw_emission_process_calibration_interval_coverage_worse_than_carry_forward"
+      ],
+      "claim_id": "phase3_r87_train_backtested_emission_process_calibration",
+      "claim_limit": "R87 currently falsifies free ratio/trend rescaling when diagnostic-only; do not cite it as an annual model win.",
+      "claim_scope": "raw_quarterly_emission_process_calibration_to_annual_targets",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r87-train-backtested-emission-process-calibration-20260507-s00/analysis/r87_train_backtested_emission_process_calibration_report.json",
+      "evidence_artifact_sha256": "a143aaa787a064eda9fb3ac4a581935b792e670ebc7a5f9fd40fe69472e70942",
+      "key_metrics": {
+        "blockers": [
+          "raw_emission_process_calibration_not_better_than_carry_forward",
+          "raw_emission_process_calibration_interval_coverage_worse_than_carry_forward"
+        ],
+        "candidate_interval_coverage": 0.39285714285714285,
+        "candidate_mean_norm_error": 0.7346415127272207,
+        "candidate_minus_carry_forward_mean_norm_error": 0.34468983872912895,
+        "carry_forward_interval_coverage": 0.4880952380952381,
+        "carry_forward_mean_norm_error": 0.3899516739980917,
+        "contract": "R87 is a raw-emission process calibration gate. It may rescale raw quarterly annual-ledger emissions only through metric-specific families selected by internal train-window rolling-origin error; held-out annual targets remain validation-only.",
+        "required_metric_count": 3,
+        "scored_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        },
+        "scored_metric_count": 3,
+        "status": "train_backtested_emission_process_calibration_diagnostic_only",
+        "target_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        }
+      },
+      "model_family": "train_backtested_raw_emission_process_calibration",
+      "primary_gate": "train_backtested_emission_process_calibration_diagnostic_only"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r88_guarded_annual_ledger_selector",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "guarded_raw_process_or_carry_forward_annual_ledger",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r88-guarded-annual-ledger-selector-20260507-s00/analysis/r88_guarded_annual_ledger_selector_report.json",
+      "evidence_artifact_sha256": "283a2dad08e4f3a89a935372f458480a786e6a579cf72648dee0c107f5c98a4b",
+      "historical_claim_status": "guarded_annual_model_win",
+      "key_metrics": {
+        "blockers": [],
+        "candidate_interval_coverage": 0.6428571428571429,
+        "candidate_mean_norm_error": 0.29759871319572323,
+        "candidate_minus_carry_forward_mean_norm_error": -0.09235296080236849,
+        "carry_forward_interval_coverage": 0.4880952380952381,
+        "carry_forward_mean_norm_error": 0.3899516739980917,
+        "contract": "R88 is a guarded annual-ledger selector. It is allowed to use the raw quarterly process only when internal train rolling-origin evidence beats carry-forward for that metric; otherwise it preserves a carry-forward prior and scores held-out annual targets as validation-only.",
+        "required_metric_count": 3,
+        "scored_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        },
+        "scored_metric_count": 3,
+        "status": "guarded_annual_ledger_selector_pass",
+        "target_counts_by_metric": {
+          "annual_aids_deaths": 28,
+          "annual_new_infections": 28,
+          "estimated_plhiv": 28
+        }
+      },
+      "model_family": "guarded_raw_process_or_carry_forward_annual_ledger",
+      "primary_gate": "guarded_annual_ledger_selector_pass"
+    },
+    {
+      "allowed_claim": "Raw incidence/death process claims are blocked: direct incidence support is absent or the direct reported-death bridge does not beat carry-forward.",
+      "blockers": [
+        "direct_incidence_process_support_absent",
+        "reported_death_bridge_not_better_than_carry_forward",
+        "reported_death_bridge_interval_coverage_worse_than_carry_forward"
+      ],
+      "claim_id": "phase3_r89_incidence_mortality_mechanism_support_gate",
+      "claim_limit": "R89 is an admissibility gate, not a forecast champion. When diagnostic-only, it explicitly preserves R86/R88 as scoped annual/readout wins and blocks claims that incidence or AIDS-death raw mechanisms are identified.",
+      "claim_scope": "raw_incidence_and_mortality_process_admissibility",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r89-incidence-mortality-mechanism-support-gate-20260507-s00/analysis/r89_incidence_mortality_mechanism_support_gate_report.json",
+      "evidence_artifact_sha256": "173828f656a53fd962baf4cc2fb2e4965b01cce7b24825b2e8a15f348eaddf1b",
+      "key_metrics": {
+        "blockers": [
+          "direct_incidence_process_support_absent",
+          "reported_death_bridge_not_better_than_carry_forward",
+          "reported_death_bridge_interval_coverage_worse_than_carry_forward"
+        ],
+        "contract": "R89 is an admissibility gate for true incidence/death process claims. Incidence requires direct or process-level incidence support; mortality requires the direct reported-death bridge to beat carry-forward against validation-only annual AIDS-death targets. Failure blocks raw mechanism claims without invalidating R86/R88 annual readout wins.",
+        "direct_incidence_process_support_count": 0,
+        "direct_reported_death_support_count": 20,
+        "reported_death_bridge_candidate_interval_coverage": 0.5,
+        "reported_death_bridge_candidate_mean_norm_error": 0.5529061509536614,
+        "reported_death_bridge_candidate_minus_carry_forward": 0.07646142699765002,
+        "reported_death_bridge_carry_forward_interval_coverage": 0.6071428571428571,
+        "reported_death_bridge_carry_forward_mean_norm_error": 0.47644472395601134,
+        "status": "incidence_mortality_mechanism_support_diagnostic_only",
+        "weak_annual_incidence_validation_count": 15
+      },
+      "model_family": "reported_death_bridge_and_incidence_support_gate",
+      "primary_gate": "incidence_mortality_mechanism_support_diagnostic_only"
+    },
+    {
+      "allowed_claim": "Retrospective agreement with model-estimated annual series, subject to training-role audit.",
+      "blockers": [
+        "incidence_mortality_mechanism_claim_blocked",
+        "annual_training_role_contract_requires_repair",
+        "single_revised_estimate_vintage_is_not_a_historical_information_set",
+        "target_uncertainty_containment_is_not_predictive_interval_coverage"
+      ],
+      "claim_id": "phase3_r90_claim_grade_gate",
+      "claim_limit": "Not a prospective forecast, calibrated predictive interval, or official AEM/Spectrum superiority result.",
+      "claim_scope": "publication_claim_grade_adjudication_for_r86_r88_r89",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r90-claim-grade-gate-20260509-s00/analysis/r90_claim_grade_gate_report.json",
+      "evidence_artifact_sha256": "d2991554409e94af4f6bbfaa2fc6974adc93dc23941a33a4b7c6b6c933602b00",
+      "historical_claim_status": "annual_readout_claim_grade_ready_mechanisms_blocked",
+      "key_metrics": {
+        "allowed_claims": [
+          "R86 is claim-grade as a scoped annual/readout ledger win: it beats carry-forward on validation-only annual incidence, AIDS deaths, and PLHIV targets with complete support and no per-metric or per-horizon regression.",
+          "R88 is claim-grade as a conservative guarded annual/readout selector: raw quarterly process channels are used only where train-window evidence beats carry-forward, otherwise the carry-forward prior is retained."
+        ],
+        "blocked_claims": [
+          {
+            "allowed_claim": "Raw incidence/death mechanism claims are blocked; R86/R88 can only be cited as scoped annual/readout wins.",
+            "blockers": [
+              "mechanism_support_gate_ready",
+              "direct_incidence_process_support_present",
+              "reported_death_bridge_beats_carry_forward",
+              "reported_death_bridge_interval_coverage_nonregression",
+              "direct_incidence_process_support_absent",
+              "reported_death_bridge_not_better_than_carry_forward",
+              "reported_death_bridge_interval_coverage_worse_than_carry_forward"
+            ],
+            "candidate_id": "r89_incidence_mortality_mechanism_support",
+            "claim_status": "mechanism_claim_blocked"
+          }
+        ],
+        "blockers": [
+          "incidence_mortality_mechanism_claim_blocked"
+        ],
+        "contract": "R90 separates publication-grade annual/readout wins from raw incidence/death mechanism claims. It requires validation-only scoring rows, complete annual support, per-metric and per-horizon non-regression, interval coverage non-regression, and R89 mechanism-support readiness.",
+        "incidence_mortality_mechanism_ready": false,
+        "r86_annual_calibrated_ledger_ready": true,
+        "r88_guarded_annual_ledger_ready": true,
+        "status": "claim_grade_annual_readout_ready_mechanisms_blocked"
+      },
+      "model_family": "claim_grade_gate_over_locked_annual_and_mechanism_artifacts",
+      "primary_gate": "claim_grade_annual_readout_ready_mechanisms_blocked"
+    },
+    {
+      "allowed_claim": "R91 is a negative mechanism-support diagnostic: proxy bridges do not clear the carry-forward/source-stability gate.",
+      "blockers": [
+        "direct_incidence_process_support_absent",
+        "diagnosis_flow_proxy_bridge_not_better_than_carry_forward",
+        "diagnosis_flow_proxy_bridge_interval_coverage_worse_than_carry_forward",
+        "reported_death_bridge_not_better_than_carry_forward",
+        "mortality_bridge_not_source_family_stable"
+      ],
+      "claim_id": "phase3_r91_mechanism_support_expansion_gate",
+      "claim_limit": "R91 can only promote mechanism-support admissibility. Diagnosis-flow bridges are proxy evidence, not direct incidence truth, and source-unstable mortality bridges cannot support process claims.",
+      "claim_scope": "incidence_and_mortality_mechanism_support_expansion",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r91-mechanism-support-expansion-gate-20260509-s00/analysis/r91_mechanism_support_expansion_gate_report.json",
+      "evidence_artifact_sha256": "6d555ac37369d5670c50660e8222a1edfdf5879b64262e615a0524063f73a328",
+      "key_metrics": {
+        "blockers": [
+          "direct_incidence_process_support_absent",
+          "diagnosis_flow_proxy_bridge_not_better_than_carry_forward",
+          "diagnosis_flow_proxy_bridge_interval_coverage_worse_than_carry_forward",
+          "reported_death_bridge_not_better_than_carry_forward",
+          "mortality_bridge_not_source_family_stable"
+        ],
+        "contract": "R91 expands R89 by testing train-origin proxy bridges and source-family ablation. Diagnosis flow may be a proxy/nowcast support signal, but it is not direct incidence evidence. Mechanism claims remain blocked unless direct incidence process support exists and mortality bridge performance is stable under source-family ablation.",
+        "diagnosis_flow_proxy_support_count": 29,
+        "direct_incidence_process_support_count": 0,
+        "direct_reported_death_support_count": 20,
+        "incidence_proxy_bridge": {
+          "beats_carry_forward_mean": false,
+          "bridge_id": "incidence_proxy_diagnosis_flow_bridge",
+          "candidate_interval_coverage": 0.07142857142857142,
+          "candidate_mean_norm_error": 0.485890093878449,
+          "candidate_minus_carry_forward_mean_norm_error": 0.17430086292308683,
+          "carry_forward_interval_coverage": 0.42857142857142855,
+          "carry_forward_mean_norm_error": 0.3115892309553622,
+          "coverage_nonregression": false
+        },
+        "mortality_reported_death_bridge": {
+          "beats_carry_forward_mean": false,
+          "bridge_id": "mortality_reported_death_bridge",
+          "candidate_interval_coverage": 0.6071428571428571,
+          "candidate_mean_norm_error": 0.47644472395601134,
+          "candidate_minus_carry_forward_mean_norm_error": 0.0,
+          "carry_forward_interval_coverage": 0.6071428571428571,
+          "carry_forward_mean_norm_error": 0.47644472395601134,
+          "coverage_nonregression": true
+        },
+        "status": "mechanism_support_expansion_diagnostic_only"
+      },
+      "model_family": "train_origin_proxy_bridge_and_source_family_ablation_gate",
+      "primary_gate": "mechanism_support_expansion_diagnostic_only"
+    },
+    {
+      "allowed_claim": "R92 detected a mortality/death-ascertainment process signal, but mechanism claims remain blocked by missing direct incidence support or source-family instability.",
+      "blockers": [
+        "direct_incidence_process_support_absent",
+        "mortality_process_repair_not_source_family_stable"
+      ],
+      "claim_id": "phase3_r92_process_repair_experiment_queue",
+      "claim_limit": "R92 is an experiment-queue and support-repair diagnostic unless it reaches mechanism_support_ready. Proxy diagnosis-flow and reported-death bridges are not direct incidence/death mechanisms.",
+      "claim_scope": "incidence_and_mortality_process_repair_queue",
+      "claim_status": "mortality_signal_diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r92-process-repair-experiment-queue-20260509-s00/analysis/r92_process_repair_experiment_queue_report.json",
+      "evidence_artifact_sha256": "d6b57b3242548e6d901c89f0f3f1807633c7c5cbbfd310e4e86fd1f513831273",
+      "key_metrics": {
+        "diagnosis_flow_proxy_support_count": 29,
+        "direct_incidence_process_support_count": 0,
+        "direct_reported_death_support_count": 20,
+        "incidence_mechanism_bridge": {
+          "beats_carry_forward_mean": true,
+          "bridge_id": "incidence_proxy_diagnosis_flow_bridge",
+          "candidate_interval_coverage": 1.0,
+          "candidate_mean_norm_error": 0.04965499019738679,
+          "candidate_minus_carry_forward_mean_norm_error": -0.2619342407579754,
+          "carry_forward_interval_coverage": 0.42857142857142855,
+          "carry_forward_mean_norm_error": 0.3115892309553622,
+          "coverage_nonregression": true,
+          "mode": "mechanism"
+        },
+        "mortality_mechanism_bridge": {
+          "beats_carry_forward_mean": true,
+          "bridge_id": "mortality_reported_death_bridge",
+          "candidate_interval_coverage": 1.0,
+          "candidate_mean_norm_error": 0.16363997391711513,
+          "candidate_minus_carry_forward_mean_norm_error": -0.3128047500388962,
+          "carry_forward_interval_coverage": 0.6071428571428571,
+          "carry_forward_mean_norm_error": 0.47644472395601134,
+          "coverage_nonregression": true,
+          "mode": "mechanism"
+        },
+        "mortality_source_family_stable": false
+      },
+      "model_family": "process_repair_train_selected_observation_bridge",
+      "primary_gate": "mortality_process_signal_detected_mechanism_claim_blocked"
+    },
+    {
+      "allowed_claim": "R93 freezes the open public annual incumbent comparator and blocks broad annual superiority claims until the Phase 3 annual head beats it on matched blocked-time scores.",
+      "blockers": [],
+      "claim_id": "phase3_r93_open_public_incumbent_comparator",
+      "claim_limit": "R93 compares against an open public incumbent proxy, not official Philippines AEM/Spectrum files. It governs annual incidence/deaths/PLHIV superiority claims only, not quarterly cascade, determinant, or subnational claims.",
+      "claim_scope": "public_annual_incumbent_comparison",
+      "claim_status": "annual_superiority_blocked_by_open_public_incumbent",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-open-public-incumbent-comparator-20260510-s00/analysis/r93_open_public_incumbent_comparator_report.json",
+      "evidence_artifact_sha256": "e851ae7254c7d245f6bd1b1a5bf7b3b4c819c30adc2dd638e014d82d110af8b6",
+      "key_metrics": {
+        "annual_superiority_status": "blocked_by_open_public_incumbent",
+        "incumbent_family": "public_train_selected_annual_proxy_v2",
+        "incumbent_mean_norm_error": 0.16381146372865757,
+        "matched_incumbent_interval_coverage": 0.9285714285714286,
+        "matched_incumbent_mean_norm_error": 0.16381146372865757,
+        "matched_model_interval_coverage": 0.75,
+        "matched_model_mean_norm_error": 0.24347715244338128,
+        "matched_model_minus_incumbent_mean_norm_error": 0.07966568871472371
+      },
+      "model_family": "open_public_aem_spectrum_style_annual_incumbent_comparator",
+      "primary_gate": "public_incumbent_comparator_ready_model_blocked"
+    },
+    {
+      "allowed_claim": "R94 shows the frozen R41 national branch trained through 2025-Q4 beats carry-forward on the newly supplied official 2026-Q1 HASP program metrics. The Q1 row may initialize future forecasts.",
+      "blockers": [],
+      "claim_id": "phase3_r94_2026_q1_hasp_intake_gate",
+      "claim_limit": "R94 is a post-2025 near-term holdout and evidence-intake gate. It does not change the R93 annual incumbent result and does not allow broad AEM/Spectrum superiority, determinant-causal, or subnational process claims.",
+      "claim_scope": "latest_hasp_program_holdout_and_future_anchor",
+      "claim_status": "near_term_hasp_holdout_passed",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r94-2026-q1-hasp-intake-gate-20260520-s00/analysis/r94_2026_q1_hasp_intake_gate_report.json",
+      "evidence_artifact_sha256": "d68033b19dbe267ecd1799615dbb6bdfb6321f1401e761742b5e2f83f0aa85b3",
+      "key_metrics": {
+        "candidate_mean_norm_error": 0.011992007044622225,
+        "candidate_minus_carry_mean_norm_error": -0.07313917386847985,
+        "carry_forward_mean_norm_error": 0.08513118091310207,
+        "extracted_row_count": 519,
+        "observation_role_counts": {
+          "auxiliary_likelihood": 107,
+          "direct_target": 201,
+          "prior_context": 187,
+          "validation_only": 24
+        },
+        "scored_metric_count": 5
+      },
+      "model_family": "r41_monotone_growth_component_process",
+      "primary_gate": "r94_q1_hasp_anchor_promoted_for_future_initialization"
+    },
+    {
+      "allowed_claim": "R95 shows the Q1-anchored R41 branch beats Q1 carry-forward on diagnosed PLHIV, ART, VL-tested, and viral suppression stocks in 2026-Q2, but loses on new diagnoses. The Q2 stock row may initialize future stock forecasts; diagnosis-flow/incidence interpretation remains shock-flagged.",
+      "blockers": [],
+      "claim_id": "phase3_r95_2026_q2_hasp_intake_gate",
+      "claim_limit": "R95 is a post-Q1 near-term holdout and evidence-intake gate. It does not change the R93 annual incumbent result, does not allow broad AEM/Spectrum superiority, and does not allow diagnosis-flow or incidence process claims while the Q2 diagnosis-flow shock flag is active.",
+      "claim_scope": "latest_hasp_q2_program_holdout_and_stock_anchor",
+      "claim_status": "stock_anchor_promoted_diagnosis_flow_shock_flagged",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r95-2026-q2-hasp-intake-gate-20260910-s00/analysis/r95_2026_q2_hasp_intake_gate_report.json",
+      "evidence_artifact_sha256": "e1bcd804a7c96904558c6d988d3ceb2e0b1b7e785a9613e0e3302eb55a34fe00",
+      "key_metrics": {
+        "candidate_mean_norm_error": 0.09162295097208922,
+        "candidate_minus_carry_mean_norm_error": -0.0017657004351257222,
+        "carry_forward_mean_norm_error": 0.09338865140721495,
+        "diagnosis_flow_regresses_against_carry_forward": true,
+        "extracted_row_count": 529,
+        "observation_role_counts": {
+          "auxiliary_likelihood": 113,
+          "direct_target": 194,
+          "prior_context": 195,
+          "validation_only": 27
+        },
+        "scored_metric_count": 5,
+        "stock_candidate_mean_norm_error": 0.01964242684873145,
+        "stock_carry_forward_mean_norm_error": 0.0433433729192372
+      },
+      "model_family": "r41_monotone_growth_component_process",
+      "primary_gate": "r95_q2_stock_anchor_promoted_diagnosis_flow_shock_flagged"
+    },
+    {
+      "allowed_claim": "retrospective monthly reported-diagnosis forecasting comparison",
+      "blockers": [
+        "historical_issue_dates_unverified",
+        "Q2_already_inspected_before_experiment_design",
+        "reporting_vs_diagnosis_volume_not_identified",
+        "Q1_or_Q2_fails_matched_carry_or_R41"
+      ],
+      "claim_id": "phase3_r96_monthly_diagnosis_state",
+      "claim_limit": "No R41 replacement, identified reporting shock, regional effect, or AEM superiority claim; historical issue dates are unverified and Q2 was previously inspected.",
+      "claim_scope": "retrospective_monthly_diagnosis_forecast",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r96-monthly-diagnosis-state-20260911-s01/report.json",
+      "evidence_artifact_sha256": "19f3d2f0d2698741c813e9cab1d69f702409c0f40d98e715eaaca8b220e42491",
+      "key_metrics": {
+        "extraction": {
+          "Q1_flags": [
+            {
+              "absolute_difference": 100.0,
+              "flag_id": "annex_regional_sum_check_estimated_plhiv",
+              "interpretation": "regional annex and national cascade are close enough for extraction use",
+              "metric_id": "estimated_plhiv",
+              "national_value": 288000.0,
+              "regional_sum": 287900.0,
+              "status": "pass"
+            },
+            {
+              "absolute_difference": 1101.0,
+              "flag_id": "annex_regional_sum_check_diagnosed_plhiv",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "diagnosed_plhiv",
+              "national_value": 157350.0,
+              "regional_sum": 156249.0,
+              "status": "warn"
+            },
+            {
+              "absolute_difference": 3020.0,
+              "flag_id": "annex_regional_sum_check_alive_on_art",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "alive_on_art",
+              "national_value": 108367.0,
+              "regional_sum": 105347.0,
+              "status": "warn"
+            },
+            {
+              "absolute_difference": 1016.0,
+              "flag_id": "annex_regional_sum_check_tested_for_viral_load",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "tested_for_viral_load",
+              "national_value": 61413.0,
+              "regional_sum": 60397.0,
+              "status": "warn"
+            },
+            {
+              "absolute_difference": 919.0,
+              "flag_id": "annex_regional_sum_check_virally_suppressed",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "virally_suppressed",
+              "national_value": 59540.0,
+              "regional_sum": 58621.0,
+              "status": "warn"
+            },
+            {
+              "age_text_sum": 204.0,
+              "flag_id": "death_age_text_sum_check",
+              "interpretation": "PDF paragraph reports 477 deaths but the age-count values visible in text sum to 204; do not use the age-death breakdown until manually table-verified.",
+              "metric_id": "deaths_reported_period",
+              "q1_deaths": 477.0,
+              "status": "warn"
+            }
+          ],
+          "Q1_months": 39,
+          "Q1_rows": 536,
+          "Q2_flags": [
+            {
+              "absolute_difference": 100.0,
+              "flag_id": "annex_regional_sum_check_estimated_plhiv",
+              "interpretation": "regional annex and national cascade are close enough for extraction use",
+              "metric_id": "estimated_plhiv",
+              "national_value": 288000.0,
+              "regional_sum": 287900.0,
+              "status": "pass"
+            },
+            {
+              "absolute_difference": 1113.0,
+              "flag_id": "annex_regional_sum_check_diagnosed_plhiv",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "diagnosed_plhiv",
+              "national_value": 159997.0,
+              "regional_sum": 158884.0,
+              "status": "warn"
+            },
+            {
+              "absolute_difference": 4170.0,
+              "flag_id": "annex_regional_sum_check_alive_on_art",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "alive_on_art",
+              "national_value": 111154.0,
+              "regional_sum": 106984.0,
+              "status": "warn"
+            },
+            {
+              "absolute_difference": 1119.0,
+              "flag_id": "annex_regional_sum_check_tested_for_viral_load",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "tested_for_viral_load",
+              "national_value": 65630.0,
+              "regional_sum": 64511.0,
+              "status": "warn"
+            },
+            {
+              "absolute_difference": 1049.0,
+              "flag_id": "annex_regional_sum_check_virally_suppressed",
+              "interpretation": "regional annex does not exactly reconcile to national cascade; keep lineage explicit",
+              "metric_id": "virally_suppressed",
+              "national_value": 63850.0,
+              "regional_sum": 62801.0,
+              "status": "warn"
+            }
+          ],
+          "Q2_months": 42,
+          "Q2_rows": 562
+        },
+        "history": {
+          "historical_mean": {
+            "MAE": 630.4936598124098,
+            "folds": 8,
+            "mean_train_scaled_error": 0.1457118723392209,
+            "p90_absolute_error": 1069.2200000000005
+          },
+          "last_month": {
+            "MAE": 1072.375,
+            "folds": 8,
+            "mean_train_scaled_error": 0.2487548065897985,
+            "p90_absolute_error": 2390.7
+          },
+          "local_level": {
+            "MAE": 921.8303545999034,
+            "folds": 8,
+            "mean_train_scaled_error": 0.2135705981085094,
+            "p90_absolute_error": 1840.4837025064685
+          },
+          "local_level_drift": {
+            "MAE": 968.5588826865835,
+            "folds": 8,
+            "mean_train_scaled_error": 0.22453714690376625,
+            "p90_absolute_error": 2122.2496672210505
+          },
+          "nested_selector": {
+            "MAE": 661.3625809107702,
+            "folds": 8,
+            "mean_train_scaled_error": 0.15393411409912094,
+            "p90_absolute_error": 1317.3804106360653
+          },
+          "quarter_carry": {
+            "MAE": 771.0,
+            "folds": 8,
+            "mean_train_scaled_error": 0.1783031778401191,
+            "p90_absolute_error": 1425.5
+          }
+        },
+        "quarter_comparisons": [
+          {
+            "R41_absolute_error": 73.5,
+            "R41_prediction": 4706.5,
+            "actual": 4633.0,
+            "carry_absolute_error": 359.0,
+            "carry_prediction": 4274.0,
+            "frozen_R41_carry_prediction": 4277.0,
+            "inner_scores": {
+              "historical_mean": 630.4936598124098,
+              "last_month": 1072.375,
+              "local_level": 921.8303545999034,
+              "local_level_drift": 968.5588826865835,
+              "quarter_carry": 771.0
+            },
+            "quarter": "2026-Q1",
+            "selected_absolute_error": 92.08333333333303,
+            "selected_family": "historical_mean",
+            "selected_prediction": 4540.916666666667,
+            "training_max_month": "2025-12",
+            "training_vintage": "2026-Q1"
+          },
+          {
+            "R41_absolute_error": 2119.0,
+            "R41_prediction": 5113.0,
+            "actual": 2994.0,
+            "carry_absolute_error": 1639.0,
+            "carry_prediction": 4633.0,
+            "frozen_R41_carry_prediction": 4633.0,
+            "inner_scores": {
+              "historical_mean": 570.6702902036235,
+              "last_month": 999.0,
+              "local_level": 834.2779308837776,
+              "local_level_drift": 890.8806403747056,
+              "quarter_carry": 725.2222222222222
+            },
+            "quarter": "2026-Q2",
+            "selected_absolute_error": 1554.0,
+            "selected_family": "historical_mean",
+            "selected_prediction": 4548.0,
+            "training_max_month": "2026-03",
+            "training_vintage": "2026-Q1"
+          }
+        ]
+      },
+      "model_family": "train_selected_monthly_baseline_and_local_level",
+      "primary_gate": "diagnostic_only"
+    },
+    {
+      "allowed_claim": "Report-vintage revisions and mirror-availability sensitivity; Q4 forecasts are frozen but unscored.",
+      "blockers": [
+        "first release and historical bytes not verified",
+        "only two target quarters",
+        "reporting and biological processes still confounded",
+        "no regional or AEM comparison"
+      ],
+      "claim_id": "phase3_r97_report_vintages",
+      "claim_limit": "No model promotion, verified original release dates, identified reporting process, regional or AEM superiority claim.",
+      "claim_scope": "declared_mirror_availability_and_prospective_forecast_lock",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r97-report-vintages-20260911-s01/report.json",
+      "evidence_artifact_sha256": "bd7a82abbc05685140b6ad816864d9c2c10f7206f8708f4da1670bdf85c81077",
+      "key_metrics": {
+        "accepted_reports": 8,
+        "monthly_vintage_rows": 246,
+        "prospective_status": "prospective_forecasts_frozen_unscored",
+        "quarantined_reports": 2
+      },
+      "model_family": "frozen_r96_families_no_new_epidemic_parameters",
+      "primary_gate": "diagnostic_and_prospective_lock_only"
+    },
+    {
+      "allowed_claim": "Unknown status separated from non-AHD; classification bounds and conditional forecast diagnostics.",
+      "blockers": [
+        "arbitrary status-dependent missingness prevents point identification",
+        "only six recent reconciled quarterly status partitions",
+        "first-release dates/historical PDF bytes unverified",
+        "AHD is not infection duration without a validated CD4/progression observation model"
+      ],
+      "claim_id": "phase3_r98_ahd_missingness",
+      "claim_limit": "No identified backlog, incidence/delay mechanism, full-cascade model promotion, regional or AEM superiority claim.",
+      "claim_scope": "AHD_classification_partial_identification",
+      "claim_status": "diagnostic_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r98-ahd-missingness-20260911-s00/report.json",
+      "evidence_artifact_sha256": "faced24bda2cad82cf822cdb804ab049e73865f8f1ddbfcda9f833a550e36533",
+      "key_metrics": {
+        "accepted_partitions": 6,
+        "event_time_summary": [
+          {
+            "blocked_quarters": 5,
+            "family": "last_status_mix",
+            "finite_scores": 5,
+            "mean_per_case_deviance": 0.5833943137571698
+          },
+          {
+            "blocked_quarters": 5,
+            "family": "pooled_status_mix",
+            "finite_scores": 5,
+            "mean_per_case_deviance": 0.617652552634947
+          },
+          {
+            "blocked_quarters": 5,
+            "family": "recent_coverage_pooled_known_mix",
+            "finite_scores": 5,
+            "mean_per_case_deviance": 0.5959548846340915
+          }
+        ],
+        "mirror_time_summary": [
+          {
+            "blocked_quarters": 2,
+            "family": "last_status_mix",
+            "finite_scores": 2,
+            "mean_per_case_deviance": 0.42562564540176956
+          },
+          {
+            "blocked_quarters": 2,
+            "family": "pooled_status_mix",
+            "finite_scores": 2,
+            "mean_per_case_deviance": 0.23620721189895463
+          },
+          {
+            "blocked_quarters": 2,
+            "family": "recent_coverage_pooled_known_mix",
+            "finite_scores": 2,
+            "mean_per_case_deviance": 0.4020434229546118
+          }
+        ],
+        "quarantined_partitions": 4
+      },
+      "model_family": "three_category_ascertainment_and_profile_likelihood",
+      "primary_gate": "observation_semantics_corrected_mechanism_identification_blocked"
+    },
+    {
+      "allowed_claim": "Phase 2 determinant edges may be used only as labeled sensitivity/scenario sliders.",
+      "blockers": [
+        "no_direct_edge_survives_strict_phase3_prior_gate",
+        "no_source_stable_time_validated_direct_driver"
+      ],
+      "claim_id": "phase2_determinant_driver_claim",
+      "claim_limit": "No fitted determinant prior or intervention-effect claim until source-family re-estimation and blocked-time recovery both pass.",
+      "claim_scope": "national_and_regional_scenarios",
+      "claim_status": "sensitivity_only",
+      "evidence_artifact": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r47-phase2-current-lineage-driver-gate-20260503-s01/analysis/r46_phase2_lineage_driver_gate_report.json",
+      "evidence_artifact_sha256": "3125aeb19e168c2c3a3d887df86eb42e1074ad21abbf2ead2771fb6220561990",
+      "key_metrics": {
+        "completed_source_families": [
+          "unaids",
+          "world_bank_wdi",
+          "openalex",
+          "crossref",
+          "pubmed"
+        ],
+        "completed_source_family_count": 5,
+        "sensitivity_only_driver_count": 3,
+        "strict_phase3_prior_count": 0
+      },
+      "model_family": "phase2_direct_and_hidden_structural_payload",
+      "primary_gate": "sensitivity_only_determinant_scenarios"
+    }
+  ],
+  "generated_at": "2026-09-12T11:33:44.906525+00:00",
+  "registry_gate": {
+    "annual_publication_scope": "retrospective_estimate_agreement_only_pending_role_and_vintage_repair",
+    "blockers": [],
+    "contract": "The publication registry separates promoted forecast/readout claims from sensitivity-only determinant claims. No claim may be made in a paper unless it appears here with its evidence artifact and allowed-use limit.",
+    "determinant_claim_status": "sensitivity_only",
+    "national_champion_promoted": true,
+    "official_forecast_superiority_established": false,
+    "phase3_bulk_external_ingest_status": "diagnostic_ready",
+    "phase3_bulk_signal_feature_status": "feature_tables_ready",
+    "phase3_full_transmission_readiness_status": "not_yet_ready",
+    "phase3_model_family_queue_status": "experiment_queue_ready",
+    "phase3_r71_external_signal_status": "diagnostic_only",
+    "phase3_r72_external_signal_status": "diagnostic_only",
+    "phase3_r73_external_signal_status": "diagnostic_only",
+    "phase3_r74_external_signal_status": "diagnostic_only",
+    "phase3_r75_bulk_unaids_annual_status": "diagnostic_only",
+    "phase3_r76_public_domain_annual_status": "diagnostic_only",
+    "phase3_r77_public_proxy_annual_gate_status": "annual_superiority_blocked",
+    "phase3_r78_expanded_public_annual_status": "diagnostic_only",
+    "phase3_r79_expanded_public_proxy_annual_gate_status": "annual_superiority_blocked",
+    "phase3_r80_public_annual_projection_status": "diagnostic_only",
+    "phase3_r81_phase2_knob_status": "directional_sensitivity_only",
+    "phase3_r82_quarterly_annual_bridge_status": "bridge_blocked",
+    "phase3_r83_quarterly_emission_bridge_status": "bridge_blocked",
+    "phase3_r84_conserved_ledger_status": "diagnostic_only",
+    "phase3_r85_forecast_grid_status": "diagnostic_only",
+    "phase3_r86_annual_calibrated_ledger_status": "diagnostic_only",
+    "phase3_r87_process_calibration_status": "diagnostic_only",
+    "phase3_r88_guarded_annual_status": "diagnostic_only",
+    "phase3_r89_mechanism_support_status": "diagnostic_only",
+    "phase3_r90_claim_grade_status": "diagnostic_only",
+    "phase3_r91_mechanism_expansion_status": "diagnostic_only",
+    "phase3_r92_process_repair_status": "mortality_signal_diagnostic_only",
+    "phase3_r93_public_incumbent_status": "annual_superiority_blocked_by_open_public_incumbent",
+    "phase3_r94_latest_hasp_status": "near_term_hasp_holdout_passed",
+    "phase3_r95_latest_hasp_status": "stock_anchor_promoted_diagnosis_flow_shock_flagged",
+    "phase3_scientific_model_build_queue_status": "experiment_queue_ready",
+    "phase3_scientific_source_base_status": "diagnostic_ready",
+    "regional_adapter_promoted": true,
+    "regional_adapter_stability_status": "mean_promoted_split_limited",
+    "regional_anchor_stable_ensemble_promoted": false,
+    "regional_anchor_stable_ensemble_status": "mean_promoted_split_limited",
+    "regional_candidate_ceiling_status": "diagnostic_only",
+    "regional_pareto_ensemble_promoted": false,
+    "regional_pareto_ensemble_status": "mean_promoted_split_limited",
+    "regional_r60_experiment_queue_promoted": false,
+    "regional_r60_experiment_queue_status": "mean_promoted_split_limited",
+    "regional_r61_split_risk_router_promoted": false,
+    "regional_r61_split_risk_router_status": "mean_promoted_split_limited",
+    "regional_r62_leakage_student_promoted": false,
+    "regional_r62_leakage_student_status": "diagnostic_only",
+    "regional_r63_online_expert_promoted": false,
+    "regional_r63_online_expert_status": "diagnostic_only",
+    "regional_r64_support_gap_status": "diagnostic_ready",
+    "regional_readout_promoted": true,
+    "regional_split_guarded_selector_promoted": false,
+    "regional_split_guarded_selector_status": "diagnostic_only",
+    "status": "national_and_subnational_readout_champions_ready_determinants_sensitivity_only",
+    "subnational_champion_promoted": true
+  },
+  "run_id": "p3d-r53-claim-registry-r98-annual-integrity-20260912",
+  "schema_version": "phase3_dynamic.r53_publication_claim_registry.v1",
+  "status": "national_and_subnational_readout_champions_ready_determinants_sensitivity_only"
+}
