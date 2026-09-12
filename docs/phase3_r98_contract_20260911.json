@@ -1,0 +1,32 @@
+{
+  "blockers": [
+    "arbitrary status-dependent missingness prevents point identification",
+    "only six recent reconciled quarterly status partitions",
+    "first-release dates/historical PDF bytes unverified",
+    "AHD is not infection duration without a validated CD4/progression observation model"
+  ],
+  "bounds": "[A/N,(A+M)/N]; sharp finite-cohort bounds assuming known labels correct, not confidence intervals",
+  "controls": "naive binary likelihood explicitly collapses unknown into nonadvanced, diagnostic only",
+  "definition_policy": "Preserve each HASP report's AHD definition; do not relabel to current WHO thresholds or pediatric definitions.",
+  "evaluation": "expanding event-time blocks AND declared-mirror-availability blocks; same three-category targets for every family",
+  "families": [
+    "last_status_mix",
+    "pooled_status_mix",
+    "recent_coverage_pooled_known_mix"
+  ],
+  "freeze": "R41 and R97 Q4 forecasts unchanged; no prior run overwritten",
+  "likelihood": "(A,E,M)|N ~ Multinomial(N, (p*q_A,(1-p)*q_E,1-p*q_A-(1-p)*q_E))",
+  "partitions": [
+    "known_advanced",
+    "known_nonadvanced",
+    "unknown_immunologic_clinical_status"
+  ],
+  "profile": "profile separate q_A,q_E for each evidence quarter; no pseudo-counts or handmade hazard weights",
+  "role_gate": "only accepted auxiliary_likelihood classification rows; annual incidence excluded",
+  "schema": "r98.ahd_missingness.v1",
+  "scope": "national reported AHD classification; not incidence or diagnosis-delay identification",
+  "score": "mean per-case multinomial deviance, equally weighted quarters; conditional on target N, not an unconditional count forecast",
+  "selection": "no champion selection from this small diagnostic experiment",
+  "source": "R97 locked report catalog; first-page quarterly HASP footnotes",
+  "unknown_policy": "Unknown is not nonadvanced. Accept only explicit Of these containment and exact count reconciliation."
+}

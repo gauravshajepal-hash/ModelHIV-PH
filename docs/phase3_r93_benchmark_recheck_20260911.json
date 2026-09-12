@@ -1,0 +1,378 @@
+{
+  "artifact_paths": {
+    "incumbent_horizon_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_incumbent_horizon_rows.csv",
+    "incumbent_metric_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_incumbent_metric_rows.csv",
+    "json": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_open_public_incumbent_comparator_report.json",
+    "markdown": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_open_public_incumbent_comparator_report.md",
+    "matched_horizon_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_matched_horizon_rows.csv",
+    "matched_metric_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_matched_metric_rows.csv",
+    "matched_summary_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_matched_summary_rows.csv",
+    "selection_summary_rows_csv": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r93-incumbent-recheck-20260911/analysis/r93_selection_summary_rows.csv"
+  },
+  "blockers": [],
+  "candidate_family": "open_public_aem_spectrum_style_annual_incumbent_comparator",
+  "generated_at": "2026-09-11T20:24:28.810012+00:00",
+  "incumbent_horizon_rows": [
+    {
+      "candidate_family": "public_train_selected_annual_proxy_v2",
+      "candidate_interval_coverage": 1.0,
+      "candidate_interval_miss_mean_norm": 0.0,
+      "candidate_mean_norm_error": 0.06885732071464784,
+      "candidate_minus_carry_forward_mean_norm_error": -0.08707585873314322,
+      "candidate_p90_norm_error": 0.2001016123124192,
+      "carry_forward_interval_coverage": 1.0,
+      "carry_forward_interval_miss_mean_norm": 0.0,
+      "carry_forward_mean_norm_error": 0.15593317944779106,
+      "carry_forward_p90_norm_error": 0.21596631206451955,
+      "entry_count": 18,
+      "horizon_years": 1,
+      "scored_candidate_entry_count": 18
+    },
+    {
+      "candidate_family": "public_train_selected_annual_proxy_v2",
+      "candidate_interval_coverage": 0.9722222222222222,
+      "candidate_interval_miss_mean_norm": 0.002119433512643815,
+      "candidate_mean_norm_error": 0.13561103178677952,
+      "candidate_minus_carry_forward_mean_norm_error": -0.21732806203270932,
+      "candidate_p90_norm_error": 0.3948477401924708,
+      "carry_forward_interval_coverage": 0.4166666666666667,
+      "carry_forward_interval_miss_mean_norm": 0.08675059968303231,
+      "carry_forward_mean_norm_error": 0.35293909381948885,
+      "carry_forward_p90_norm_error": 0.569508579376848,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "scored_candidate_entry_count": 36
+    },
+    {
+      "candidate_family": "public_train_selected_annual_proxy_v2",
+      "candidate_interval_coverage": 0.8333333333333334,
+      "candidate_interval_miss_mean_norm": 0.038878943457494916,
+      "candidate_mean_norm_error": 0.254624467867317,
+      "candidate_minus_carry_forward_mean_norm_error": -0.32015339907527857,
+      "candidate_p90_norm_error": 0.8053534751419218,
+      "carry_forward_interval_coverage": 0.26666666666666666,
+      "carry_forward_interval_miss_mean_norm": 0.24375230729558284,
+      "carry_forward_mean_norm_error": 0.5747778669425956,
+      "carry_forward_p90_norm_error": 1.0311329327543568,
+      "entry_count": 30,
+      "horizon_years": 5,
+      "scored_candidate_entry_count": 30
+    }
+  ],
+  "incumbent_metric_rows": [
+    {
+      "candidate_family": "public_train_selected_annual_proxy_v2",
+      "candidate_interval_coverage": 0.7857142857142857,
+      "candidate_interval_miss_mean_norm": 0.044380996792143745,
+      "candidate_mean_norm_error": 0.38082429106031873,
+      "candidate_minus_carry_forward_mean_norm_error": -0.09562043289569261,
+      "candidate_p90_norm_error": 0.8229925329035057,
+      "carry_forward_interval_coverage": 0.6071428571428571,
+      "carry_forward_interval_miss_mean_norm": 0.09431450912928756,
+      "carry_forward_mean_norm_error": 0.47644472395601134,
+      "carry_forward_p90_norm_error": 0.9740534401497332,
+      "entry_count": 28,
+      "metric_name": "annual_aids_deaths",
+      "scored_candidate_entry_count": 28
+    },
+    {
+      "candidate_family": "public_train_selected_annual_proxy_v2",
+      "candidate_interval_coverage": 1.0,
+      "candidate_interval_miss_mean_norm": 0.0,
+      "candidate_mean_norm_error": 0.04274851028848653,
+      "candidate_minus_carry_forward_mean_norm_error": -0.26884072066687564,
+      "candidate_p90_norm_error": 0.08876843833359592,
+      "carry_forward_interval_coverage": 0.42857142857142855,
+      "carry_forward_interval_miss_mean_norm": 0.11239045398096952,
+      "carry_forward_mean_norm_error": 0.3115892309553622,
+      "carry_forward_p90_norm_error": 0.613851374562754,
+      "entry_count": 28,
+      "metric_name": "annual_new_infections",
+      "scored_candidate_entry_count": 28
+    },
+    {
+      "candidate_family": "public_train_selected_annual_proxy_v2",
+      "candidate_interval_coverage": 1.0,
+      "candidate_interval_miss_mean_norm": 0.0,
+      "candidate_mean_norm_error": 0.06786158983716742,
+      "candidate_minus_carry_forward_mean_norm_error": -0.31395947724573425,
+      "candidate_p90_norm_error": 0.16893268661473063,
+      "carry_forward_interval_coverage": 0.42857142857142855,
+      "carry_forward_interval_miss_mean_norm": 0.16599470858462323,
+      "carry_forward_mean_norm_error": 0.3818210670829017,
+      "carry_forward_p90_norm_error": 0.7688900266449731,
+      "entry_count": 28,
+      "metric_name": "estimated_plhiv",
+      "scored_candidate_entry_count": 28
+    }
+  ],
+  "matched_horizon_rows": [
+    {
+      "delta_p90_norm_error": 0.09210281379887984,
+      "entry_count": 18,
+      "horizon_years": 1,
+      "model_family": "multi_horizon_weighted_process",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.08882209306859808,
+      "model_minus_public_proxy_mean_norm_error": 0.019964772353950236,
+      "model_p90_norm_error": 0.1696443071790571,
+      "public_proxy_family": "public_train_selected_annual_proxy_v2",
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.06885732071464784,
+      "public_proxy_p90_norm_error": 0.2001016123124192
+    },
+    {
+      "delta_p90_norm_error": 0.24595525040949667,
+      "entry_count": 36,
+      "horizon_years": 3,
+      "model_family": "multi_horizon_weighted_process",
+      "model_interval_coverage": 0.75,
+      "model_mean_norm_error": 0.21717568064604406,
+      "model_minus_public_proxy_mean_norm_error": 0.08156464885926454,
+      "model_p90_norm_error": 0.4583306601338333,
+      "public_proxy_family": "public_train_selected_annual_proxy_v2",
+      "public_proxy_interval_coverage": 0.9722222222222222,
+      "public_proxy_mean_norm_error": 0.13561103178677952,
+      "public_proxy_p90_norm_error": 0.3948477401924708
+    },
+    {
+      "delta_p90_norm_error": 0.43753225592907263,
+      "entry_count": 30,
+      "horizon_years": 5,
+      "model_family": "multi_horizon_weighted_process",
+      "model_interval_coverage": 0.6,
+      "model_mean_norm_error": 0.3678319542250559,
+      "model_minus_public_proxy_mean_norm_error": 0.11320748635773886,
+      "model_p90_norm_error": 0.8053534751419218,
+      "public_proxy_family": "public_train_selected_annual_proxy_v2",
+      "public_proxy_interval_coverage": 0.8333333333333334,
+      "public_proxy_mean_norm_error": 0.254624467867317,
+      "public_proxy_p90_norm_error": 0.8053534751419218
+    }
+  ],
+  "matched_metric_rows": [
+    {
+      "delta_p90_norm_error": 0.06505577427627975,
+      "entry_count": 28,
+      "metric_name": "annual_aids_deaths",
+      "model_family": "multi_horizon_weighted_process",
+      "model_interval_coverage": 0.75,
+      "model_mean_norm_error": 0.3947157778954492,
+      "model_minus_public_proxy_mean_norm_error": 0.013891486835130473,
+      "model_p90_norm_error": 0.8229925329035057,
+      "public_proxy_family": "public_train_selected_annual_proxy_v2",
+      "public_proxy_interval_coverage": 0.7857142857142857,
+      "public_proxy_mean_norm_error": 0.38082429106031873,
+      "public_proxy_p90_norm_error": 0.8229925329035057
+    },
+    {
+      "delta_p90_norm_error": 0.4598139102960108,
+      "entry_count": 28,
+      "metric_name": "annual_new_infections",
+      "model_family": "multi_horizon_weighted_process",
+      "model_interval_coverage": 0.5,
+      "model_mean_norm_error": 0.26785408959752727,
+      "model_minus_public_proxy_mean_norm_error": 0.22510557930904074,
+      "model_p90_norm_error": 0.5397421600825831,
+      "public_proxy_family": "public_train_selected_annual_proxy_v2",
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.04274851028848653,
+      "public_proxy_p90_norm_error": 0.08876843833359592
+    },
+    {
+      "delta_p90_norm_error": 0.0,
+      "entry_count": 28,
+      "metric_name": "estimated_plhiv",
+      "model_family": "multi_horizon_weighted_process",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.06786158983716742,
+      "model_minus_public_proxy_mean_norm_error": 0.0,
+      "model_p90_norm_error": 0.16893268661473063,
+      "public_proxy_family": "public_train_selected_annual_proxy_v2",
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.06786158983716742,
+      "public_proxy_p90_norm_error": 0.16893268661473063
+    }
+  ],
+  "matched_summary_rows": [
+    {
+      "delta_p90_norm_error": 0.02042711406950508,
+      "entry_count": 6,
+      "horizon_years": 1,
+      "metric_name": "annual_aids_deaths",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.1445181397956193,
+      "model_minus_public_proxy_mean_norm_error": -0.020116917012413166,
+      "model_p90_norm_error": 0.191130627979067,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.16463505680803248,
+      "public_proxy_p90_norm_error": 0.21944324233713583
+    },
+    {
+      "delta_p90_norm_error": 0.12367453712569636,
+      "entry_count": 12,
+      "horizon_years": 3,
+      "metric_name": "annual_aids_deaths",
+      "model_interval_coverage": 0.8333333333333334,
+      "model_mean_norm_error": 0.3574627468136238,
+      "model_minus_public_proxy_mean_norm_error": 0.0424719277881776,
+      "model_p90_norm_error": 0.6244638315757624,
+      "public_proxy_interval_coverage": 0.9166666666666666,
+      "public_proxy_mean_norm_error": 0.3149908190254462,
+      "public_proxy_p90_norm_error": 0.4788667840447906
+    },
+    {
+      "delta_p90_norm_error": 0.0,
+      "entry_count": 10,
+      "horizon_years": 5,
+      "metric_name": "annual_aids_deaths",
+      "model_interval_coverage": 0.5,
+      "model_mean_norm_error": 0.5895379980535376,
+      "model_minus_public_proxy_mean_norm_error": 0.0,
+      "model_p90_norm_error": 1.1059804633378723,
+      "public_proxy_interval_coverage": 0.5,
+      "public_proxy_mean_norm_error": 0.5895379980535376,
+      "public_proxy_p90_norm_error": 1.1059804633378723
+    },
+    {
+      "delta_p90_norm_error": 0.1054607299687173,
+      "entry_count": 6,
+      "horizon_years": 1,
+      "metric_name": "annual_new_infections",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.1077381873805689,
+      "model_minus_public_proxy_mean_norm_error": 0.08001123407426394,
+      "model_p90_norm_error": 0.12012505513842314,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.02772695330630495,
+      "public_proxy_p90_norm_error": 0.043457026221908474
+    },
+    {
+      "delta_p90_norm_error": 0.35843547089666666,
+      "entry_count": 12,
+      "horizon_years": 3,
+      "metric_name": "annual_new_infections",
+      "model_interval_coverage": 0.4166666666666667,
+      "model_mean_norm_error": 0.24194370699759216,
+      "model_minus_public_proxy_mean_norm_error": 0.20222201878961593,
+      "model_p90_norm_error": 0.4059238432941314,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.03972168820797622,
+      "public_proxy_p90_norm_error": 0.08104281694722923
+    },
+    {
+      "delta_p90_norm_error": 0.6480274460865533,
+      "entry_count": 10,
+      "horizon_years": 5,
+      "metric_name": "annual_new_infections",
+      "model_interval_coverage": 0.3,
+      "model_mean_norm_error": 0.3950160900476244,
+      "model_minus_public_proxy_mean_norm_error": 0.33962245907321653,
+      "model_p90_norm_error": 0.743487805196772,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.05539363097440787,
+      "public_proxy_p90_norm_error": 0.10003278220661786
+    },
+    {
+      "delta_p90_norm_error": 0.0,
+      "entry_count": 6,
+      "horizon_years": 1,
+      "metric_name": "estimated_plhiv",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.01420995202960608,
+      "model_minus_public_proxy_mean_norm_error": 0.0,
+      "model_p90_norm_error": 0.015520245908670719,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.01420995202960608,
+      "public_proxy_p90_norm_error": 0.015520245908670719
+    },
+    {
+      "delta_p90_norm_error": 0.0,
+      "entry_count": 12,
+      "horizon_years": 3,
+      "metric_name": "estimated_plhiv",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.052120588126916244,
+      "model_minus_public_proxy_mean_norm_error": 0.0,
+      "model_p90_norm_error": 0.0999334193328254,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.052120588126916244,
+      "public_proxy_p90_norm_error": 0.0999334193328254
+    },
+    {
+      "delta_p90_norm_error": 0.0,
+      "entry_count": 10,
+      "horizon_years": 5,
+      "metric_name": "estimated_plhiv",
+      "model_interval_coverage": 1.0,
+      "model_mean_norm_error": 0.11894177457400565,
+      "model_minus_public_proxy_mean_norm_error": 0.0,
+      "model_p90_norm_error": 0.2741491584396229,
+      "public_proxy_interval_coverage": 1.0,
+      "public_proxy_mean_norm_error": 0.11894177457400565,
+      "public_proxy_p90_norm_error": 0.2741491584396229
+    }
+  ],
+  "open_public_incumbent_comparator_gate": {
+    "annual_superiority_status": "blocked_by_open_public_incumbent",
+    "blockers": [],
+    "contract": "R93 freezes the promoted R78 public-domain annual proxy as the open AEM/Spectrum-style incumbent comparator for public annual incidence, AIDS deaths, and PLHIV targets. This is not official AEM/Spectrum output. Broad annual superiority is allowed only if the Phase 3 annual head beats the incumbent on matched blocked-time R79 scores without role leakage.",
+    "incumbent_family": "public_train_selected_annual_proxy_v2",
+    "incumbent_interval_coverage": 0.9285714285714286,
+    "incumbent_mean_norm_error": 0.16381146372865757,
+    "matched_incumbent_interval_coverage": 0.9285714285714286,
+    "matched_incumbent_mean_norm_error": 0.16381146372865757,
+    "matched_model_family": "multi_horizon_weighted_process",
+    "matched_model_interval_coverage": 0.75,
+    "matched_model_mean_norm_error": 0.24347715244338128,
+    "matched_model_minus_incumbent_mean_norm_error": 0.07966568871472371,
+    "r78_status": "expanded_public_annual_comparator_promoted",
+    "r79_status": "annual_model_blocked_by_expanded_public_proxy",
+    "required_metrics": [
+      "annual_new_infections",
+      "annual_aids_deaths",
+      "estimated_plhiv"
+    ],
+    "status": "public_incumbent_comparator_ready_model_blocked",
+    "target_counts_by_metric": {
+      "annual_aids_deaths": 15,
+      "annual_new_infections": 15,
+      "estimated_plhiv": 15
+    }
+  },
+  "run_id": "p3d-r93-incumbent-recheck-20260911",
+  "schema_version": "phase3_dynamic.r93_open_public_incumbent_comparator.v1",
+  "selection_summary_rows": [
+    {
+      "metric_name": "annual_aids_deaths",
+      "selected_public_family": "public_joint_local_level_mass_balance",
+      "selection_count": 6
+    },
+    {
+      "metric_name": "annual_aids_deaths",
+      "selected_public_family": "public_log_linear_trend",
+      "selection_count": 6
+    },
+    {
+      "metric_name": "annual_new_infections",
+      "selected_public_family": "public_piecewise_log_linear_trend",
+      "selection_count": 12
+    },
+    {
+      "metric_name": "estimated_plhiv",
+      "selected_public_family": "public_joint_local_level_mass_balance",
+      "selection_count": 12
+    }
+  ],
+  "source_artifacts": {
+    "r78": {
+      "path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r78-public-annual-family-expansion-20260507-s00/analysis/r78_public_annual_family_expansion_report.json",
+      "sha256": "cfbf5bbaa1b6492aa976fbf7057de4454a2397e6cfe587873eed811ba1a4f2e8"
+    },
+    "r79": {
+      "path": "/home/gaurav/codex_work/ModelHIV-PH/src/epigraph_ph/Phase3(dynamic)/artifacts/runs/p3d-r79-expanded-public-proxy-annual-gate-20260507-s00/analysis/r79_expanded_public_proxy_annual_gate_report.json",
+      "sha256": "c9cad672329519827f2d4050eca9a8a48c836d9730f9b1793b3d104e55f149d1"
+    }
+  },
+  "status": "public_incumbent_comparator_ready_model_blocked"
+}

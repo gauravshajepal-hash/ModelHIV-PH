@@ -374,6 +374,7 @@ R95_DEFAULT_REPORT = (
 )
 R96_DEFAULT_REPORT = sandbox_repo_root() / "artifacts/runs/p3d-r96-monthly-diagnosis-state-20260911-s01/report.json"
 R97_DEFAULT_REPORT = sandbox_repo_root() / "artifacts/runs/p3d-r97-report-vintages-20260911-s01/report.json"
+R98_DEFAULT_REPORT = sandbox_repo_root() / "artifacts/runs/p3d-r98-ahd-missingness-20260911-s00/report.json"
 
 
 def _load_report(path: Path) -> dict[str, Any]:
@@ -1786,6 +1787,25 @@ def _report_vintage_claim(report: dict[str, Any], path: Path) -> dict[str, Any]:
     }
 
 
+def _ahd_missingness_claim(report: dict[str, Any], path: Path) -> dict[str, Any]:
+    return {
+        "claim_id": "phase3_r98_ahd_missingness",
+        "claim_scope": "AHD_classification_partial_identification",
+        "claim_status": "diagnostic_only" if report.get("gate") else "blocked",
+        "model_family": "three_category_ascertainment_and_profile_likelihood",
+        "primary_gate": report.get("gate", {}).get("status", "missing"),
+        "blockers": report.get("contract", {}).get("blockers", ["r98_report_missing"]),
+        "evidence_artifact": path.as_posix(),
+        "evidence_artifact_sha256": _sha256(path) if path.exists() else None,
+        "allowed_claim": "Unknown status separated from non-AHD; classification bounds and conditional forecast diagnostics.",
+        "claim_limit": "No identified backlog, incidence/delay mechanism, full-cascade model promotion, regional or AEM superiority claim.",
+        "key_metrics": {"accepted_partitions": len(report.get("accepted_partitions", [])),
+                        "quarantined_partitions": len(report.get("quarantined_partitions", [])),
+                        "event_time_summary": report.get("event_time_summary"),
+                        "mirror_time_summary": report.get("mirror_time_summary")},
+    }
+
+
 def _registry_gate(claim_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_id = {str(row.get("claim_id") or ""): dict(row) for row in claim_rows}
     national_ok = str((by_id.get("national_r41_research_champion") or {}).get("claim_status")) == "promoted"
@@ -2067,6 +2087,7 @@ def run_r53_publication_claim_registry(
     r95_report_path: Path | None = None,
     r96_report_path: Path | None = None,
     r97_report_path: Path | None = None,
+    r98_report_path: Path | None = None,
 ) -> dict[str, Any]:
     r42_path = Path(r42_report_path) if r42_report_path is not None else R42_DEFAULT_REPORT
     r46_path = Path(r46_report_path) if r46_report_path is not None else R46_DEFAULT_REPORT
@@ -2115,6 +2136,7 @@ def run_r53_publication_claim_registry(
     r95_path = Path(r95_report_path) if r95_report_path is not None else R95_DEFAULT_REPORT
     r96_path = Path(r96_report_path) if r96_report_path is not None else R96_DEFAULT_REPORT
     r97_path = Path(r97_report_path) if r97_report_path is not None else R97_DEFAULT_REPORT
+    r98_path = Path(r98_report_path) if r98_report_path is not None else R98_DEFAULT_REPORT
     r42 = _load_report(r42_path)
     r46 = _load_report(r46_path)
     r52 = _load_report(r52_path)
@@ -2162,6 +2184,7 @@ def run_r53_publication_claim_registry(
     r95 = _load_report(r95_path)
     r96 = _load_report(r96_path)
     r97 = _load_report(r97_path)
+    r98 = _load_report(r98_path)
     claim_rows = [
         _national_claim(r42, r42_path),
         _subnational_claim(r52, r52_path),
@@ -2237,9 +2260,24 @@ def run_r53_publication_claim_registry(
         _latest_hasp_q2_intake_claim(r95, r95_path),
         _monthly_diagnosis_state_claim(r96, r96_path),
         _report_vintage_claim(r97, r97_path),
+        _ahd_missingness_claim(r98, r98_path),
         _determinant_claim(r46, r46_path),
     ]
+    # Historical score artifacts are preserved; the effective publication claims
+    # must reflect the stricter role/vintage/uncertainty audit of their annual data.
+    from .annual_benchmark_contract import annual_claim_limit
+
+    limited_annual_claims = {
+        "phase3_r75_bulk_unaids_annual_challenge", "phase3_r76_public_domain_annual_comparator",
+        "phase3_r78_expanded_public_annual_comparator", "phase3_r80_public_annual_projection_head",
+        "phase3_r86_annual_calibrated_forecast_grid_ledger", "phase3_r88_guarded_annual_ledger_selector",
+        "phase3_r90_claim_grade_gate",
+    }
+    claim_rows = [annual_claim_limit(row) if row["claim_id"] in limited_annual_claims
+                  and row["claim_status"] != "blocked" else row for row in claim_rows]
     gate = _registry_gate(claim_rows)
+    gate["annual_publication_scope"] = "retrospective_estimate_agreement_only_pending_role_and_vintage_repair"
+    gate["official_forecast_superiority_established"] = False
     analysis_dir = ensure_dir(sandbox_repo_root() / "artifacts" / "runs" / str(run_id) / "analysis")
     json_path = analysis_dir / "r53_publication_claim_registry_report.json"
     md_path = analysis_dir / "r53_publication_claim_registry_report.md"
@@ -2315,6 +2353,7 @@ def _main() -> None:
     parser.add_argument("--r95-report-path", default=None)
     parser.add_argument("--r96-report-path", default=None)
     parser.add_argument("--r97-report-path", default=None)
+    parser.add_argument("--r98-report-path", default=None)
     args = parser.parse_args()
     run_r53_publication_claim_registry(
         run_id=str(args.run_id),
@@ -2365,6 +2404,7 @@ def _main() -> None:
         r95_report_path=None if args.r95_report_path is None else Path(args.r95_report_path),
         r96_report_path=None if args.r96_report_path is None else Path(args.r96_report_path),
         r97_report_path=None if args.r97_report_path is None else Path(args.r97_report_path),
+        r98_report_path=None if args.r98_report_path is None else Path(args.r98_report_path),
     )
 
 

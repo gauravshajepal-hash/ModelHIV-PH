@@ -1,0 +1,24 @@
+{
+  "builder_sha256": "866b88f6d932ddfdeb53ec733faae36c1601ff04d1ac8202cbecd52a36415e0d",
+  "environment": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "scipy": "1.17.1"
+  },
+  "files": {
+    "docs/figures/phase3_r98_dashboard.pdf": "c29179c56f5f0960ab8ec8de905b7a5b509158c1458edab1d6698994c53ebaa8",
+    "docs/figures/phase3_r98_dashboard.png": "18dfaebc050993646e016e4c7eb57faf3d0cf2c2cff44c7cf001842a8c643ae1",
+    "docs/figures/phase3_r98_dashboard.svg": "a8c7b6bbd6eb0e4f254df8b891a5a524a7bddb2cab93c1b8b11e965e31bdac16",
+    "docs/phase3_r98_ahd_missingness_20260911.md": "239ccb6d5ec5cda3d2d7e8cf852491c88bb2da3ae33a53f1f76a64ec18425bb3",
+    "docs/phase3_r98_claim_card_20260911.json": "be3f9adbd6344c2ee0e3e43b3ca056a00d9d733ba1ea664991568ef64ce90207",
+    "docs/phase3_r98_contract_20260911.json": "28bd5190ff99e2df3604e90292e06360d16e70894c6fffee4cf71d6d109bcff4",
+    "docs/phase3_r98_observation_ledger_20260911.json": "54c2331a408ebbfbde42bea4232f8263f32ef7a3d6df2d215b0b3971f15a90c3",
+    "docs/phase3_r98_results_20260911.json": "faced24bda2cad82cf822cdb804ab049e73865f8f1ddbfcda9f833a550e36533",
+    "docs/phase3_r98_run_manifest_20260911.json": "43ece86f34ca119121fe95c3aa72288da1464124c6745dc3392a03a5df1c0141",
+    "docs/phase3_r98_scores_20260911.csv": "4f0f5ac3a9ab102dbbb4e152ad97afb1a5059ffad7ec7b910422b2fbfef8cd57"
+  },
+  "frozen_R97_sha256": "b864d7ede3f0db4e913868f106f04639ccc255304603d6894b1c69f86a502ccf",
+  "run_id": "p3d-r98-ahd-missingness-20260911-s00",
+  "source_report_sha256": "faced24bda2cad82cf822cdb804ab049e73865f8f1ddbfcda9f833a550e36533"
+}

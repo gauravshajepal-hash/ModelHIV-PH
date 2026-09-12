@@ -7,8 +7,8 @@
 ![Clinical use](https://img.shields.io/badge/clinical_use-not_approved-red)
 ![Current claim](https://img.shields.io/badge/current_claim-national_readout_champion-green)
 ![Determinants](https://img.shields.io/badge/Phase_2_determinants-sensitivity_only-orange)
-![Annual bridge](https://img.shields.io/badge/quarterly_to_annual_bridge-scoped_annual_win-green)
-![Claim grade](https://img.shields.io/badge/R90-annual_readout_ready_mechanisms_blocked-orange)
+![Annual bridge](https://img.shields.io/badge/annual_bridge-retrospective_agreement_only-orange)
+![Claim grade](https://img.shields.io/badge/annual_contract-role_and_vintage_repair_required-orange)
 ![Mechanism repair](https://img.shields.io/badge/R92-process_signal_diagnostic-orange)
 ![Public incumbent](https://img.shields.io/badge/R93-annual_superiority_blocked-orange)
 ![Latest HASP](https://img.shields.io/badge/R94-2026_Q1_HASP_holdout_pass-green)
@@ -17,6 +17,18 @@
 This project is not a clinical tool, not an official DOH/UNAIDS/Spectrum/AEM replacement, and not a policy engine without external review. Its purpose is scientific: make every model claim traceable to data roles, blocked-time evaluation, failure anatomy, and explicit claim cards.
 
 ## Scientific Snapshot
+
+### September 12 Update: AHD Observation Model and Annual Benchmark Audit
+
+**No new epidemic champion or UNAIDS-superiority result.** R98 separates documented advanced HIV disease (AHD), documented non-AHD, and missing clinical status. Six quarterly partitions reconcile exactly; four ambiguous older partitions remain quarantined. Q2-2026 contains **1,732 unknown-status cases out of 2,994 diagnoses**. Unknown status must not be treated as early disease or used to manufacture a uniquely identified diagnosis backlog.
+
+![R98 AHD missingness and blocked classification forecasts](docs/figures/phase3_r98_dashboard.png)
+
+The new three-category observation likelihood profiles classification uncertainty rather than guessing a disease probability. Three conditional status-forecast families were tested. Pooling improves the two mirror-availability blocks but regresses on the five event-time blocks, so **none is promoted**. The likelihood adapter is candidate-only: it has not replaced the full R41 fit. [R98 mathematics, evidence, and all results](docs/phase3_r98_ahd_missingness_20260911.md).
+
+**Important correction to older annual claim labels below:** the annual audit found that legacy fit designs consume rows labeled `validation_only`; the 2025 estimated series is not a historical as-of information set; and reported interval coverage is point containment within target uncertainty, not predictive-interval calibration. The current claim registry narrows affected annual claims, including R86/R88/R90, to **retrospective estimate-agreement diagnostics**. Frozen scores and national R41 parameters are unchanged. Historical tables below are retained for provenance, not as current publication-grade validation.
+
+The downloaded UNAIDS workbook is internally labeled **2025 estimates, ending in 2024**, even though its webpage advertises coverage through 2025. The advertised 2026 ZIP returned HTTP 403. We extracted 105 Philippine core annual estimate/uncertainty rows without inventing unrounded values or using them for training. [Annual benchmark audit, current comparison, and prioritized repairs](docs/annual_benchmark_status_20260912.md) | [Workbook vintage ledger](docs/unaids_workbook_vintage_audit_20260911.json).
 
 ### September 11 Update: R97 Report-Vintage Audit
 
@@ -42,18 +54,20 @@ R96 repaired a PDF extraction bug that had omitted monthly diagnosis rows: Q1 no
 | --- | --- | --- |
 | National quarterly cascade | `R41` promoted as current national research champion | Useful readout/forecast champion under locked gates, not a final official-model replacement |
 | Subnational modelling | readout/proxy champions exist, process claims limited | Regional claims remain constrained by sparse validation evidence |
-| Annual public challenge | `R75` passes with weak-measurement annual heads | Annual incidence/deaths/PLHIV can be scored without holdout leakage, but this is not yet a quarterly mechanistic bridge |
+| Annual public challenge | `R75` historical score pass; current claim diagnostic only | Explicit training-role and report-vintage repair required before forecasting claims |
 | Public annual projection | `R80` ready | 2025-2035 public annual projection head exists as a separate annual track |
 | Phase 2 determinant knobs | `R81` directional sensitivity only | Determinants can label scenarios, not provide numeric intervention effects |
-| Quarterly-to-annual bridge | `R86` and `R88` scoped annual model wins | Complete quarterly ledger plus train-origin calibration/guarding beats carry-forward on held-out annual incidence, AIDS deaths, and PLHIV targets |
-| Claim-grade adjudication | `R90` annual readout ready, mechanisms blocked | R86/R88 are publication-grade scoped annual/readout wins; raw incidence/death mechanism claims remain blocked by R89 |
+| Quarterly-to-annual bridge | `R86` and `R88` retrospective agreement gains | Lower historical errors against estimated targets are preserved, but not certified predictive validation |
+| Claim-grade adjudication | September 12 audit supersedes the R90 publication label | Annual claims diagnostic-only pending role, vintage, and uncertainty-contract repair |
 | Mechanism-support expansion | `R91` diagnostic only | Diagnosis-flow and reported-death proxy bridges do not beat or stably improve carry-forward, so mechanism claims remain blocked |
 | Process-repair queue | `R92` mortality/process signal diagnostic | Train-origin proxy process repair improves incidence/death bridges, but mechanism claims remain blocked by absent direct incidence support and mortality source-family instability |
-| Open public incumbent | `R93` comparator ready, annual superiority blocked | R78 public annual proxy is now the open AEM/Spectrum-style incumbent comparator; current annual head does not beat it |
+| Open public incumbent | `R93` internal comparator ready, annual superiority blocked | R78 is locally fitted, not an actual AEM/Spectrum forecast; current annual head does not beat it |
 | Latest 2026-Q1 HASP intake | `R94` post-2025 holdout passes | User-provided official 2026-Q1 HASP PDF was extracted into 519 typed rows; R41 beats carry-forward on the five main 2026-Q1 program metrics |
 | Latest 2026-Q2 HASP intake | `R95` stock anchor passes, diagnosis flow shock flagged | User-provided official 2026-Q2 HASP PDF was extracted into 529 typed rows; Q1-anchored R41 beats carry-forward on stock/back-half metrics but loses on new diagnoses |
 
 ### Latest R84-R95 Verdict
+
+This section records historical experiment outcomes. Its original "scoped win" and "claim-grade" terminology is superseded by the September 12 audit above for annual publication claims. Numerical results are not changed.
 
 `R84` added a conserved quarterly annual ledger to the dynamic simulator. `R85` repaired annual support coverage by forcing every holdout year to emit Q1-Q4 ledger quantities on an unscored forecast grid. `R86` then added a train-origin annual weak-measurement calibration head. `R87` tested free raw-emission process rescaling and failed. `R88` kept the raw quarterly process only where train-window evidence beat carry-forward and guarded weak incidence/death channels with a carry-forward prior:
 
@@ -122,9 +136,9 @@ The precise status is:
 
 | Comparison | Current Status |
 | --- | --- |
-| Versus carry-forward | R41, R75, R86, and R88 have real wins on their scoped gates |
+| Versus carry-forward | R41 retains its internal research-reference status; annual R75/R86/R88 gains are retrospective agreement diagnostics pending contract repair |
 | Versus internal R10 family | R41 beats strict matched R10 on national 1y/3y/5y mapped routes |
-| Versus open public annual incumbent | Not beaten broadly; R93 freezes R78 as the public incumbent and blocks annual superiority |
+| Versus open public annual incumbent | Not beaten broadly; R93 freezes the locally fitted R78 comparator, which is not an official forecast |
 | Versus Spectrum/EPP/AEM | Not yet claimable because official Philippines files/outputs are not in the repo |
 | Versus Naomi-style subnational estimation | Not yet; regional adapters are mean-promoted but split-stability is limited |
 
@@ -156,12 +170,12 @@ flowchart TB
     A["National R41 research champion<br/>PROMOTED"]:::pass
     B["Subnational readout/proxy layer<br/>LIMITED"]:::warn
     C["Phase 2 determinant priors<br/>SENSITIVITY ONLY"]:::warn
-    D["Annual weak-measurement challenge R75<br/>PASS"]:::pass
+    D["Annual challenge R75<br/>RETROSPECTIVE DIAGNOSTIC"]:::warn
     E["Public annual projection R80<br/>READY"]:::pass
     F["Quarterly annual bridge R82/R83<br/>BLOCKED"]:::fail
     G["Conserved annual ledger R84/R85<br/>DIAGNOSTIC ONLY"]:::warn
-    I["Annual-calibrated ledger R86<br/>SCOPED WIN"]:::pass
-    J["R90 claim-grade gate<br/>ANNUAL READY, MECHANISMS BLOCKED"]:::warn
+    I["Annual-calibrated ledger R86<br/>AGREEMENT GAIN, CLAIM LIMITED"]:::warn
+    J["Annual claim audit<br/>ROLE / VINTAGE REPAIR REQUIRED"]:::warn
     K["R91 mechanism expansion<br/>DIAGNOSTIC ONLY"]:::warn
     L["R92 process repair<br/>SIGNAL, CLAIM BLOCKED"]:::warn
     M["R93 public incumbent<br/>ANNUAL SUPERIORITY BLOCKED"]:::warn
@@ -275,6 +289,8 @@ The model is intentionally strict: diagnosis counts, annual incidence estimates,
 | R95 | Does the Q1-anchored national champion survive the official 2026-Q2 HASP PDF? | Mixed pass: stock/back-half metrics beat Q1 carry-forward, but Q2 diagnosis flow regresses and is flagged as a reporting/service shock |
 | R96 | Do train-fitted monthly diagnosis state models improve the recovered monthly series? | Nested historical selector improves carry-forward; local-level models lose. Q1 regresses versus R41; diagnostic-only |
 | R97 | Do report revisions and posting delays change which data a forecast could use? | Eight vintage tables accepted; signed revisions and availability sensitivity documented. Q4-2026 predictions frozen, unscored; no promotion |
+| R98 | Does missing AHD/CD4 status falsely identify diagnosis delay? | Exact three-category observation likelihood; six partitions accepted, four quarantined; three forecast families diagnostic-only |
+| Annual contract audit | Are historical annual wins sufficient to claim better forecasts than UNAIDS? | No: training-role mismatch, revised-vintage history, and target-interval containment require separate repairs; official comparison remains unestablished |
 
 ## What Is Currently Defensible?
 

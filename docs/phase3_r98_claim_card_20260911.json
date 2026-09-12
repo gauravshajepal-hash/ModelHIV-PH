@@ -1,0 +1,11 @@
+{
+  "R41_changed": false,
+  "R97_Q4_changed": false,
+  "backlog_point_estimate": null,
+  "backlog_point_estimate_reason": "not identifiable from classification alone",
+  "blocked_time_diagnosis_forecast_improvement": null,
+  "champion": null,
+  "claim_limit": "Classification likelihood diagnostic only; no epidemic, intervention, regional or AEM superiority claim",
+  "incidence_training_rows": 0,
+  "status": "observation_semantics_corrected_mechanism_identification_blocked"
+}
